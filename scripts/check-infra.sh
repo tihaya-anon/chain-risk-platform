@@ -45,6 +45,101 @@ check_service() {
 FAILED=0
 
 # PostgreSQL
+check_service "PostgreSQL" "PGPASSWORD=chainrisk123 psql -h $DOCKER_HOST_IP -U chainrisk -d chainrisk -c 'SELECT 1' 2>/dev/null" "5432" || ((FAILED++))
+
+# Redis
+check_service "Redis" "redis-cli -h $DOCKER_HOST_IP ping 2>/dev/null | grep -q PONG" "6379" || ((FAILED++))
+
+# Kafka (via nc or kcat)
+if command -v kcat &>/dev/null; then
+    check_service "Kafka" "timeout 2 kcat -b ${DOCKER_HOST_IP}:9092 -L 2>/dev/null" "9092" || ((FAILED++))
+else
+    check_service "Kafka" "nc -z $DOCKER_HOST_IP 9092 2>/dev/null" "9092" || ((FAILED++))
+fi
+
+# Neo4j
+check_service "Neo4j" "curl -s http://${DOCKER_HOST_IP}:7474 >/dev/null" "7474" || ((FAILED++))
+
+# Nacos
+check_service "Nacos" "curl -s http://${DOCKER_HOST_IP}:8848/nacos/v1/console/health/readiness >/dev/null" "8848" || ((FAILED++))
+
+# Prometheus
+check_service "Prometheus" "curl -s http://${DOCKER_HOST_IP}:9090/-/healthy >/dev/null" "9090" || ((FAILED++))
+
+# Grafana
+check_service "Grafana" "curl -s http://${DOCKER_HOST_IP}:3001/api/health >/dev/null" "3001" || ((FAILED++))
+
+# Jaeger
+check_service "Jaeger" "curl -s http://${DOCKER_HOST_IP}:16686 >/dev/null" "16686" || ((FAILED++))
+
+echo ""
+echo "============================================"
+if [ $FAILED -eq 0 ]; then
+    echo -e "${GREEN}All services healthy!${NC}"
+else
+    echo -e "${RED}$FAILED service(s) failed${NC}"
+fi
+echo "============================================"
+
+# Print connection info
+echo ""
+echo "Connection URLs:"
+echo "  PostgreSQL: postgresql://chainrisk:chainrisk123@${DOCKER_HOST_IP}:5432/chainrisk"
+echo "  Redis:      redis://${DOCKER_HOST_IP}:6379"
+echo "  Kafka:      ${DOCKER_HOST_IP}:9092"
+echo "  Neo4j:      bolt://${DOCKER_HOST_IP}:7687 (neo4j/chainrisk123)"
+echo "  Nacos:      http://${DOCKER_HOST_IP}:8848/nacos"
+echo "  Grafana:    http://${DOCKER_HOST_IP}:3001 (admin/admin123)"
+echo "  Jaeger:     http://${DOCKER_HOST_IP}:16686"
+
+exit $FAILED
+#!/bin/bash
+# ============================================================
+# Quick Infrastructure Health Check
+# ============================================================
+# Usage:
+#   Local:  ./scripts/check-infra.sh
+#   Remote: ./scripts/check-infra.sh 192.168.x.x
+#   Remote: DOCKER_HOST_IP=192.168.x.x ./scripts/check-infra.sh
+# ============================================================
+
+set -e
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Get Docker host IP
+DOCKER_HOST_IP="${1:-${DOCKER_HOST_IP:-localhost}}"
+
+echo "============================================"
+echo "  Infrastructure Health Check"
+echo "  Host: $DOCKER_HOST_IP"
+echo "============================================"
+echo ""
+
+check_service() {
+    local name=$1
+    local check_cmd=$2
+    local port=$3
+    
+    printf "%-15s " "$name"
+    
+    if eval "$check_cmd" &>/dev/null; then
+        echo -e "${GREEN}✓ OK${NC} (port $port)"
+        return 0
+    else
+        echo -e "${RED}✗ FAILED${NC} (port $port)"
+        return 1
+    fi
+}
+
+# Track failures
+FAILED=0
+
+# PostgreSQL
 check_service "PostgreSQL" "PGPASSWORD=chainrisk123 psql -h $DOCKER_HOST_IP -p 15432 -U chainrisk -d chainrisk -c 'SELECT 1' 2>/dev/null" "15432" || ((FAILED++))
 
 # Redis
