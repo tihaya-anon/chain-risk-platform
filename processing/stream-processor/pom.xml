@@ -16,6 +16,8 @@
 
     <properties>
         <main.class>com.chainrisk.stream.StreamProcessorApp</main.class>
+        <!-- Default scope for Flink dependencies (provided for cluster, compile for local) -->
+        <flink.scope>provided</flink.scope>
     </properties>
 
     <dependencies>
@@ -23,17 +25,17 @@
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-streaming-java</artifactId>
-            <scope>provided</scope>
+            <scope>${flink.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-clients</artifactId>
-            <scope>provided</scope>
+            <scope>${flink.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-runtime-web</artifactId>
-            <scope>provided</scope>
+            <scope>${flink.scope}</scope>
         </dependency>
 
         <!-- Flink Connectors -->
@@ -87,6 +89,16 @@
             <artifactId>flink-test-utils</artifactId>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!-- Local profile: includes Flink dependencies for standalone execution -->
+        <profile>
+            <id>local</id>
+            <properties>
+                <flink.scope>compile</flink.scope>
+            </properties>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>
