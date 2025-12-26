@@ -1,0 +1,247 @@
+# ============================================
+# Chain Risk Platform - CI Pipeline
+# ============================================
+# Monorepo CI: 只构建变更的服务
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ==================== 变更检测 ====================
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.filter.outputs.go }}
+      java: ${{ steps.filter.outputs.java }}
+      python: ${{ steps.filter.outputs.python }}
+      typescript: ${{ steps.filter.outputs.typescript }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            go:
+              - 'data-ingestion/**'
+              - 'services/query-service/**'
+              - 'services/alert-service/**'
+            java:
+              - 'processing/**'
+              - 'services/orchestrator/**'
+            python:
+              - 'services/risk-ml-service/**'
+            typescript:
+              - 'services/bff-gateway/**'
+              - 'frontend/**'
+            infra:
+              - 'docker-compose.yml'
+              - 'infra/**'
+
+  # ==================== Go Services ====================
+  go:
+    needs: changes
+    if: ${{ needs.changes.outputs.go == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - data-ingestion
+          - services/query-service
+          - services/alert-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache-dependency-path: ${{ matrix.service }}/go.sum
+
+      - name: Check if service exists
+        id: check
+        run: |
+          if [ -f "${{ matrix.service }}/go.mod" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.service }}
+        run: go build -v ./...
+
+      - name: Test
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.service }}
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Lint
+        if: steps.check.outputs.exists == 'true'
+        uses: golangci/golangci-lint-action@v3
+        with:
+          working-directory: ${{ matrix.service }}
+          version: latest
+
+  # ==================== Java Services ====================
+  java:
+    needs: changes
+    if: ${{ needs.changes.outputs.java == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - processing
+          - services/orchestrator
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Check if service exists
+        id: check
+        run: |
+          if [ -f "${{ matrix.service }}/pom.xml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build with Maven
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.service }}
+        run: mvn -B package --file pom.xml
+
+      - name: Test
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.service }}
+        run: mvn test
+
+  # ==================== Python Services ====================
+  python:
+    needs: changes
+    if: ${{ needs.changes.outputs.python == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/risk-ml-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check if service exists
+        id: check
+        run: |
+          if [ -f "pyproject.toml" ] || [ -f "requirements.txt" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        working-directory: services/risk-ml-service
+
+      - name: Install dependencies
+        if: steps.check.outputs.exists == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest pytest-cov
+          if [ -f pyproject.toml ]; then pip install -e .; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Lint with Ruff
+        if: steps.check.outputs.exists == 'true'
+        run: ruff check .
+
+      - name: Test with pytest
+        if: steps.check.outputs.exists == 'true'
+        run: pytest --cov=app --cov-report=xml
+
+  # ==================== TypeScript Services ====================
+  typescript:
+    needs: changes
+    if: ${{ needs.changes.outputs.typescript == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - services/bff-gateway
+          - frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Check if service exists
+        id: check
+        run: |
+          if [ -f "${{ matrix.service }}/package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.service }}
+        run: npm ci
+
+      - name: Lint
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.service }}
+        run: npm run lint --if-present
+
+      - name: Build
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.service }}
+        run: npm run build --if-present
+
+      - name: Test
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.service }}
+        run: npm test --if-present
+
+  # ==================== Docker Build Test ====================
+  docker:
+    needs: changes
+    if: ${{ needs.changes.outputs.infra == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose
+        run: docker-compose config
+
+  # ==================== Summary ====================
+  ci-success:
+    needs: [go, java, python, typescript, docker]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs
+        run: |
+          if [[ "${{ needs.go.result }}" == "failure" ]] || \
+             [[ "${{ needs.java.result }}" == "failure" ]] || \
+             [[ "${{ needs.python.result }}" == "failure" ]] || \
+             [[ "${{ needs.typescript.result }}" == "failure" ]] || \
+             [[ "${{ needs.docker.result }}" == "failure" ]]; then
+            echo "One or more jobs failed"
+            exit 1
+          fi
+          echo "All jobs passed or were skipped"
