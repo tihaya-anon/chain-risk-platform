@@ -6,7 +6,7 @@
 
 | Phase                   | 状态     | 进度 | 预计完成 |
 | ----------------------- | -------- | ---- | -------- |
-| Phase 1: 核心数据流     | 🔲 未开始 | 0%   | -        |
+| Phase 1: 核心数据流     | 🔶 进行中 | 60%  | -        |
 | Phase 2: 查询与风险服务 | 🔲 未开始 | 0%   | -        |
 | Phase 3: BFF与前端      | 🔲 未开始 | 0%   | -        |
 | Phase 4: 高级功能       | 🔲 未开始 | 0%   | -        |
@@ -20,31 +20,41 @@
 ### 1.1 基础设施搭建
 | 任务                  | 状态 | 备注                                    |
 | --------------------- | ---- | --------------------------------------- |
-| Docker Compose 配置   | ✅    | docker-compose.yml 已创建               |
+| Docker Compose 配置   | ✅    | docker-compose.yml                      |
 | PostgreSQL 初始化脚本 | ✅    | infra/init-scripts/postgres/01-init.sql |
 | Prometheus 配置       | ✅    | infra/prometheus/prometheus.yml         |
 | Grafana 配置          | ✅    | infra/grafana/provisioning/             |
 | 项目目录结构          | ✅    | scripts/init-project.sh                 |
 
 ### 1.2 数据采集服务 (Go)
-| 任务                 | 状态 | 备注 |
-| -------------------- | ---- | ---- |
-| Go modules 初始化    | 🔲    |      |
-| Etherscan API 客户端 | 🔲    |      |
-| 区块轮询逻辑         | 🔲    |      |
-| Kafka Producer       | 🔲    |      |
-| 配置管理             | 🔲    |      |
-| 单元测试             | 🔲    |      |
+| 任务                  | 状态 | 备注                          |
+| --------------------- | ---- | ----------------------------- |
+| Go modules 初始化     | ✅    | data-ingestion/go.mod         |
+| 配置管理 (Viper)      | ✅    | internal/config/config.go     |
+| 数据模型定义          | ✅    | internal/model/transaction.go |
+| BlockchainClient 接口 | ✅    | internal/client/client.go     |
+| Etherscan API 客户端  | ✅    | internal/client/etherscan.go  |
+| Kafka Producer        | ✅    | internal/producer/kafka.go    |
+| Ingestion Service     | ✅    | internal/service/ingestion.go |
+| 主程序入口            | ✅    | cmd/ingestion/main.go         |
+| Dockerfile            | ✅    | data-ingestion/Dockerfile     |
+| 单元测试              | 🔲    | 待补充                        |
 
 ### 1.3 流处理服务 (Java/Flink)
-| 任务             | 状态 | 备注 |
-| ---------------- | ---- | ---- |
-| Flink 项目搭建   | 🔲    |      |
-| Kafka Consumer   | 🔲    |      |
-| Transaction 解析 | 🔲    |      |
-| Transfer 提取    | 🔲    |      |
-| PostgreSQL Sink  | 🔲    |      |
-| 窗口聚合         | 🔲    |      |
+| 任务                                         | 状态 | 备注                                |
+| -------------------------------------------- | ---- | ----------------------------------- |
+| Maven 父模块配置                             | ✅    | processing/pom.xml                  |
+| stream-processor pom.xml                     | ✅    | processing/stream-processor/pom.xml |
+| 数据模型 (ChainEvent, Transaction, Transfer) | ✅    | model/*.java                        |
+| Kafka 反序列化器                             | ✅    | parser/ChainEventDeserializer.java  |
+| Transfer 解析器                              | ✅    | parser/TransferParser.java          |
+| JDBC Sink 工厂                               | ✅    | sink/JdbcSinkFactory.java           |
+| TransferExtractionJob                        | ✅    | job/TransferExtractionJob.java      |
+| 主程序入口                                   | ✅    | StreamProcessorApp.java             |
+| 配置文件                                     | ✅    | application.properties, logback.xml |
+| batch-processor pom.xml                      | ✅    | 骨架已创建                          |
+| graph-engine pom.xml                         | ✅    | 骨架已创建                          |
+| 单元测试                                     | 🔲    | 待补充                              |
 
 ---
 
@@ -145,6 +155,10 @@
 - ✅ 创建项目文档结构
 - ✅ 创建 Docker Compose 配置
 - ✅ 创建项目初始化脚本
+- ✅ 创建 Git 管理配置 (CI/CD, Makefile, .gitignore)
+- ✅ 完成 data-ingestion (Go) 服务骨架
+- ✅ 完成 stream-processor (Java/Flink) 服务骨架
+- ✅ 更新数据库初始化脚本
 
 ---
 
@@ -161,3 +175,4 @@
 - [ ] 考虑添加 GraphQL 支持
 - [ ] 研究 GNN 模型用于风险评分
 - [ ] 添加 Telegram Bot 告警通道
+- [ ] 添加 ERC20 Transfer 事件日志解析
