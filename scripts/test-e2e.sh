@@ -131,9 +131,9 @@ kafka_topics_list() {
         ip)
             # Use kcat or kafka-topics if available locally
             if command -v kcat &> /dev/null; then
-                kcat -b "${DOCKER_HOST_IP}:9092" -L 2>/dev/null | grep "topic" | awk '{print $2}' | tr -d '"'
+                kcat -b "${DOCKER_HOST_IP}:19092" -L 2>/dev/null | grep "topic" | awk '{print $2}' | tr -d '"'
             elif command -v kafka-topics &> /dev/null; then
-                kafka-topics --bootstrap-server "${DOCKER_HOST_IP}:9092" --list
+                kafka-topics --bootstrap-server "${DOCKER_HOST_IP}:19092" --list
             else
                 # Fallback: try to connect and assume topic exists
                 log_warn "No kafka client found, skipping topic list"
@@ -154,7 +154,7 @@ kafka_create_topic() {
             ;;
         ip)
             if command -v kafka-topics &> /dev/null; then
-                kafka-topics --create --bootstrap-server "${DOCKER_HOST_IP}:9092" --topic "$topic" --partitions 3 --replication-factor 1 2>/dev/null || true
+                kafka-topics --create --bootstrap-server "${DOCKER_HOST_IP}:19092" --topic "$topic" --partitions 3 --replication-factor 1 2>/dev/null || true
             else
                 log_warn "No kafka-topics command, assuming topic exists"
             fi
@@ -174,9 +174,9 @@ kafka_produce() {
             ;;
         ip)
             if command -v kcat &> /dev/null; then
-                echo "$message" | kcat -b "${DOCKER_HOST_IP}:9092" -t "$topic" -P
+                echo "$message" | kcat -b "${DOCKER_HOST_IP}:19092" -t "$topic" -P
             elif command -v kafka-console-producer &> /dev/null; then
-                echo "$message" | kafka-console-producer --bootstrap-server "${DOCKER_HOST_IP}:9092" --topic "$topic"
+                echo "$message" | kafka-console-producer --bootstrap-server "${DOCKER_HOST_IP}:19092" --topic "$topic"
             else
                 log_error "No kafka producer client found. Install kcat: brew install kcat"
                 return 1
@@ -198,7 +198,7 @@ kafka_consume() {
             ;;
         ip)
             if command -v kcat &> /dev/null; then
-                timeout "$timeout" kcat -b "${DOCKER_HOST_IP}:9092" -t "$topic" -C -c "$max_messages" -e 2>/dev/null || true
+                timeout "$timeout" kcat -b "${DOCKER_HOST_IP}:19092" -t "$topic" -C -c "$max_messages" -e 2>/dev/null || true
             else
                 log_warn "No kafka consumer client found"
             fi
@@ -217,7 +217,7 @@ psql_exec() {
             ssh "$REMOTE_HOST" "docker exec postgres psql -U chainrisk -d chainrisk -t -c \"$query\""
             ;;
         ip)
-            PGPASSWORD=chainrisk123 psql -h "${DOCKER_HOST_IP}" -U chainrisk -d chainrisk -t -c "$query"
+            PGPASSWORD=chainrisk123 psql -h "${DOCKER_HOST_IP}" -p 15432 -U chainrisk -d chainrisk -t -c "$query"
             ;;
         *)
             docker exec postgres psql -U chainrisk -d chainrisk -t -c "$query"
@@ -232,7 +232,7 @@ psql_exec_pretty() {
             ssh "$REMOTE_HOST" "docker exec postgres psql -U chainrisk -d chainrisk -c \"$query\""
             ;;
         ip)
-            PGPASSWORD=chainrisk123 psql -h "${DOCKER_HOST_IP}" -U chainrisk -d chainrisk -c "$query"
+            PGPASSWORD=chainrisk123 psql -h "${DOCKER_HOST_IP}" -p 15432 -U chainrisk -d chainrisk -c "$query"
             ;;
         *)
             docker exec postgres psql -U chainrisk -d chainrisk -c "$query"
@@ -247,7 +247,7 @@ redis_ping() {
             ssh "$REMOTE_HOST" "docker exec redis redis-cli ping"
             ;;
         ip)
-            redis-cli -h "${DOCKER_HOST_IP}" ping 2>/dev/null || echo "PONG"
+            redis-cli -h "${DOCKER_HOST_IP}" -p 16379 ping 2>/dev/null || echo "PONG"
             ;;
         *)
             docker exec redis redis-cli ping
