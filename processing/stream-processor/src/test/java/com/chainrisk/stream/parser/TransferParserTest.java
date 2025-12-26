@@ -35,7 +35,7 @@ class TransferParserTest {
         parser = new TransferParser();
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        
+
         // Create a mock collector that stores transfers
         collectedTransfers = new ArrayList<>();
         collector = mock(Collector.class);
@@ -46,7 +46,8 @@ class TransferParserTest {
         }).when(collector).collect(any(Transfer.class));
     }
 
-    private ChainEvent createChainEvent(String eventType, String network, Long blockNumber, String dataJson) throws Exception {
+    private ChainEvent createChainEvent(String eventType, String network, Long blockNumber, String dataJson)
+            throws Exception {
         ChainEvent event = new ChainEvent();
         event.setEventType(eventType);
         event.setNetwork(network);
@@ -66,15 +67,15 @@ class TransferParserTest {
         @DisplayName("Should parse native ETH transfer from transaction")
         void shouldParseNativeEthTransfer() throws Exception {
             String dataJson = """
-                {
-                    "hash": "0xabc123",
-                    "blockNumber": 12345678,
-                    "from": "0xSender",
-                    "to": "0xReceiver",
-                    "value": 1000000000000000000,
-                    "timestamp": "2024-01-01T00:00:00Z"
-                }
-                """;
+                    {
+                        "hash": "0xabc123",
+                        "blockNumber": 12345678,
+                        "from": "0xSender",
+                        "to": "0xReceiver",
+                        "value": 1000000000000000000,
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """;
             ChainEvent event = createChainEvent("transaction", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -94,15 +95,15 @@ class TransferParserTest {
         @DisplayName("Should parse native BNB transfer from BSC transaction")
         void shouldParseNativeBnbTransfer() throws Exception {
             String dataJson = """
-                {
-                    "hash": "0xbsc123",
-                    "blockNumber": 98765432,
-                    "from": "0xBscSender",
-                    "to": "0xBscReceiver",
-                    "value": 5000000000000000000,
-                    "timestamp": "2024-06-15T12:30:00Z"
-                }
-                """;
+                    {
+                        "hash": "0xbsc123",
+                        "blockNumber": 98765432,
+                        "from": "0xBscSender",
+                        "to": "0xBscReceiver",
+                        "value": 5000000000000000000,
+                        "timestamp": "2024-06-15T12:30:00Z"
+                    }
+                    """;
             ChainEvent event = createChainEvent("transaction", "bsc", 98765432L, dataJson);
 
             parser.flatMap(event, collector);
@@ -117,15 +118,15 @@ class TransferParserTest {
         @DisplayName("Should parse native MATIC transfer from Polygon transaction")
         void shouldParseNativeMaticTransfer() throws Exception {
             String dataJson = """
-                {
-                    "hash": "0xpolygon123",
-                    "blockNumber": 55555555,
-                    "from": "0xPolySender",
-                    "to": "0xPolyReceiver",
-                    "value": 2000000000000000000,
-                    "timestamp": "2024-06-15T12:30:00Z"
-                }
-                """;
+                    {
+                        "hash": "0xpolygon123",
+                        "blockNumber": 55555555,
+                        "from": "0xPolySender",
+                        "to": "0xPolyReceiver",
+                        "value": 2000000000000000000,
+                        "timestamp": "2024-06-15T12:30:00Z"
+                    }
+                    """;
             ChainEvent event = createChainEvent("transaction", "polygon", 55555555L, dataJson);
 
             parser.flatMap(event, collector);
@@ -140,15 +141,15 @@ class TransferParserTest {
         @DisplayName("Should not emit transfer when value is zero")
         void shouldNotEmitTransferWhenValueIsZero() throws Exception {
             String dataJson = """
-                {
-                    "hash": "0xzerovalue",
-                    "blockNumber": 12345678,
-                    "from": "0xSender",
-                    "to": "0xReceiver",
-                    "value": 0,
-                    "timestamp": "2024-01-01T00:00:00Z"
-                }
-                """;
+                    {
+                        "hash": "0xzerovalue",
+                        "blockNumber": 12345678,
+                        "from": "0xSender",
+                        "to": "0xReceiver",
+                        "value": 0,
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """;
             ChainEvent event = createChainEvent("transaction", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -160,14 +161,14 @@ class TransferParserTest {
         @DisplayName("Should not emit transfer when to address is null")
         void shouldNotEmitTransferWhenToAddressIsNull() throws Exception {
             String dataJson = """
-                {
-                    "hash": "0xcontractcreate",
-                    "blockNumber": 12345678,
-                    "from": "0xSender",
-                    "value": 1000000000000000000,
-                    "timestamp": "2024-01-01T00:00:00Z"
-                }
-                """;
+                    {
+                        "hash": "0xcontractcreate",
+                        "blockNumber": 12345678,
+                        "from": "0xSender",
+                        "value": 1000000000000000000,
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """;
             ChainEvent event = createChainEvent("transaction", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -185,20 +186,21 @@ class TransferParserTest {
         void shouldParseErc20TransferMethod() throws Exception {
             // transfer(address to, uint256 value) - method id: 0xa9059cbb
             // to: 0x000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-            // value: 0x0000000000000000000000000000000000000000000000000de0b6b3a7640000 (1e18)
+            // value: 0x0000000000000000000000000000000000000000000000000de0b6b3a7640000
+            // (1e18)
             String input = "0xa9059cbb000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb0000000000000000000000000000000000000000000000000de0b6b3a7640000";
-            
+
             String dataJson = String.format("""
-                {
-                    "hash": "0xerc20tx",
-                    "blockNumber": 12345678,
-                    "from": "0xSender",
-                    "to": "0xTokenContract",
-                    "value": 0,
-                    "input": "%s",
-                    "timestamp": "2024-01-01T00:00:00Z"
-                }
-                """, input);
+                    {
+                        "hash": "0xerc20tx",
+                        "blockNumber": 12345678,
+                        "from": "0xSender",
+                        "to": "0xTokenContract",
+                        "value": 0,
+                        "input": "%s",
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """, input);
             ChainEvent event = createChainEvent("transaction", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -218,20 +220,21 @@ class TransferParserTest {
             // transferFrom(address from, address to, uint256 value) - method id: 0x23b872dd
             // from: 0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
             // to: 0x000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-            // value: 0x0000000000000000000000000000000000000000000000000de0b6b3a7640000 (1e18)
+            // value: 0x0000000000000000000000000000000000000000000000000de0b6b3a7640000
+            // (1e18)
             String input = "0x23b872dd000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb0000000000000000000000000000000000000000000000000de0b6b3a7640000";
-            
+
             String dataJson = String.format("""
-                {
-                    "hash": "0xtransferfromtx",
-                    "blockNumber": 12345678,
-                    "from": "0xSpender",
-                    "to": "0xTokenContract",
-                    "value": 0,
-                    "input": "%s",
-                    "timestamp": "2024-01-01T00:00:00Z"
-                }
-                """, input);
+                    {
+                        "hash": "0xtransferfromtx",
+                        "blockNumber": 12345678,
+                        "from": "0xSpender",
+                        "to": "0xTokenContract",
+                        "value": 0,
+                        "input": "%s",
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """, input);
             ChainEvent event = createChainEvent("transaction", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -248,37 +251,37 @@ class TransferParserTest {
         @DisplayName("Should emit both native and ERC20 transfers when transaction has value and ERC20 call")
         void shouldEmitBothNativeAndErc20Transfers() throws Exception {
             String input = "0xa9059cbb000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb0000000000000000000000000000000000000000000000000de0b6b3a7640000";
-            
+
             String dataJson = String.format("""
-                {
-                    "hash": "0xmixedtx",
-                    "blockNumber": 12345678,
-                    "from": "0xSender",
-                    "to": "0xTokenContract",
-                    "value": 1000000000000000000,
-                    "input": "%s",
-                    "timestamp": "2024-01-01T00:00:00Z"
-                }
-                """, input);
+                    {
+                        "hash": "0xmixedtx",
+                        "blockNumber": 12345678,
+                        "from": "0xSender",
+                        "to": "0xTokenContract",
+                        "value": 1000000000000000000,
+                        "input": "%s",
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """, input);
             ChainEvent event = createChainEvent("transaction", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
 
             assertEquals(2, collectedTransfers.size());
-            
+
             // First should be native transfer
             Transfer nativeTransfer = collectedTransfers.stream()
-                .filter(t -> "native".equals(t.getTransferType()))
-                .findFirst()
-                .orElse(null);
+                    .filter(t -> "native".equals(t.getTransferType()))
+                    .findFirst()
+                    .orElse(null);
             assertNotNull(nativeTransfer);
             assertEquals("ETH", nativeTransfer.getTokenSymbol());
-            
+
             // Second should be ERC20 transfer
             Transfer erc20Transfer = collectedTransfers.stream()
-                .filter(t -> "erc20".equals(t.getTransferType()))
-                .findFirst()
-                .orElse(null);
+                    .filter(t -> "erc20".equals(t.getTransferType()))
+                    .findFirst()
+                    .orElse(null);
             assertNotNull(erc20Transfer);
         }
 
@@ -286,16 +289,16 @@ class TransferParserTest {
         @DisplayName("Should not parse ERC20 when input is too short")
         void shouldNotParseErc20WhenInputTooShort() throws Exception {
             String dataJson = """
-                {
-                    "hash": "0xshortinput",
-                    "blockNumber": 12345678,
-                    "from": "0xSender",
-                    "to": "0xContract",
-                    "value": 0,
-                    "input": "0xa9059cbb",
-                    "timestamp": "2024-01-01T00:00:00Z"
-                }
-                """;
+                    {
+                        "hash": "0xshortinput",
+                        "blockNumber": 12345678,
+                        "from": "0xSender",
+                        "to": "0xContract",
+                        "value": 0,
+                        "input": "0xa9059cbb",
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """;
             ChainEvent event = createChainEvent("transaction", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -308,18 +311,18 @@ class TransferParserTest {
         void shouldNotParseNonErc20MethodCalls() throws Exception {
             // approve() method - 0x095ea7b3
             String input = "0x095ea7b3000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-            
+
             String dataJson = String.format("""
-                {
-                    "hash": "0xapprovetx",
-                    "blockNumber": 12345678,
-                    "from": "0xSender",
-                    "to": "0xTokenContract",
-                    "value": 0,
-                    "input": "%s",
-                    "timestamp": "2024-01-01T00:00:00Z"
-                }
-                """, input);
+                    {
+                        "hash": "0xapprovetx",
+                        "blockNumber": 12345678,
+                        "from": "0xSender",
+                        "to": "0xTokenContract",
+                        "value": 0,
+                        "input": "%s",
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """, input);
             ChainEvent event = createChainEvent("transaction", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -336,19 +339,19 @@ class TransferParserTest {
         @DisplayName("Should parse direct transfer event")
         void shouldParseDirectTransferEvent() throws Exception {
             String dataJson = """
-                {
-                    "txHash": "0xdirecttransfer",
-                    "blockNumber": 12345678,
-                    "logIndex": 5,
-                    "fromAddress": "0xFrom",
-                    "toAddress": "0xTo",
-                    "value": 1000000000000000000,
-                    "tokenAddress": "0xToken",
-                    "tokenSymbol": "USDT",
-                    "tokenDecimal": 6,
-                    "transferType": "erc20"
-                }
-                """;
+                    {
+                        "txHash": "0xdirecttransfer",
+                        "blockNumber": 12345678,
+                        "logIndex": 5,
+                        "from": "0xFrom",
+                        "to": "0xTo",
+                        "value": 1000000000000000000,
+                        "tokenAddress": "0xToken",
+                        "tokenSymbol": "USDT",
+                        "tokenDecimal": 6,
+                        "transferType": "erc20"
+                    }
+                    """;
             ChainEvent event = createChainEvent("transfer", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -382,13 +385,13 @@ class TransferParserTest {
         @DisplayName("Should handle unknown event type")
         void shouldHandleUnknownEventType() throws Exception {
             String dataJson = """
-                {
-                    "hash": "0xunknown",
-                    "from": "0xSender",
-                    "to": "0xReceiver",
-                    "value": 1000000000000000000
-                }
-                """;
+                    {
+                        "hash": "0xunknown",
+                        "from": "0xSender",
+                        "to": "0xReceiver",
+                        "value": 1000000000000000000
+                    }
+                    """;
             ChainEvent event = createChainEvent("unknown_type", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -400,13 +403,13 @@ class TransferParserTest {
         @DisplayName("Should handle internal_tx event type (not processed)")
         void shouldHandleInternalTxEventType() throws Exception {
             String dataJson = """
-                {
-                    "hash": "0xinternaltx",
-                    "from": "0xContract",
-                    "to": "0xUser",
-                    "value": 1000000000000000000
-                }
-                """;
+                    {
+                        "hash": "0xinternaltx",
+                        "from": "0xContract",
+                        "to": "0xUser",
+                        "value": 1000000000000000000
+                    }
+                    """;
             ChainEvent event = createChainEvent("internal_tx", "ethereum", 12345678L, dataJson);
 
             parser.flatMap(event, collector);
@@ -419,10 +422,10 @@ class TransferParserTest {
         @DisplayName("Should handle malformed transaction data")
         void shouldHandleMalformedTransactionData() throws Exception {
             String dataJson = """
-                {
-                    "invalid": "data"
-                }
-                """;
+                    {
+                        "invalid": "data"
+                    }
+                    """;
             ChainEvent event = createChainEvent("transaction", "ethereum", 12345678L, dataJson);
 
             // Should not throw exception
@@ -434,15 +437,15 @@ class TransferParserTest {
         @DisplayName("Should handle unknown network with UNKNOWN symbol")
         void shouldHandleUnknownNetwork() throws Exception {
             String dataJson = """
-                {
-                    "hash": "0xunknownnet",
-                    "blockNumber": 12345678,
-                    "from": "0xSender",
-                    "to": "0xReceiver",
-                    "value": 1000000000000000000,
-                    "timestamp": "2024-01-01T00:00:00Z"
-                }
-                """;
+                    {
+                        "hash": "0xunknownnet",
+                        "blockNumber": 12345678,
+                        "from": "0xSender",
+                        "to": "0xReceiver",
+                        "value": 1000000000000000000,
+                        "timestamp": "2024-01-01T00:00:00Z"
+                    }
+                    """;
             ChainEvent event = createChainEvent("transaction", "unknown_chain", 12345678L, dataJson);
 
             parser.flatMap(event, collector);

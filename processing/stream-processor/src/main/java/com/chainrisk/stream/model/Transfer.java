@@ -1,6 +1,7 @@
 package com.chainrisk.stream.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -16,8 +17,13 @@ public class Transfer implements Serializable {
     private String txHash;
     private Long blockNumber;
     private Integer logIndex;
+    
+    @JsonProperty("from")
     private String fromAddress;
+    
+    @JsonProperty("to")
     private String toAddress;
+    
     private BigInteger value;
     private String tokenAddress;
     private String tokenSymbol;
