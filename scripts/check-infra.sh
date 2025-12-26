@@ -45,32 +45,32 @@ check_service() {
 FAILED=0
 
 # PostgreSQL
-check_service "PostgreSQL" "PGPASSWORD=chainrisk123 psql -h $DOCKER_HOST_IP -U chainrisk -d chainrisk -c 'SELECT 1' 2>/dev/null" "5432" || ((FAILED++))
+check_service "PostgreSQL" "PGPASSWORD=chainrisk123 psql -h $DOCKER_HOST_IP -p 15432 -U chainrisk -d chainrisk -c 'SELECT 1' 2>/dev/null" "15432" || ((FAILED++))
 
 # Redis
-check_service "Redis" "redis-cli -h $DOCKER_HOST_IP ping 2>/dev/null | grep -q PONG" "6379" || ((FAILED++))
+check_service "Redis" "redis-cli -h $DOCKER_HOST_IP -p 16379 ping 2>/dev/null | grep -q PONG" "16379" || ((FAILED++))
 
 # Kafka (via nc or kcat)
 if command -v kcat &>/dev/null; then
-    check_service "Kafka" "timeout 2 kcat -b ${DOCKER_HOST_IP}:9092 -L 2>/dev/null" "9092" || ((FAILED++))
+    check_service "Kafka" "timeout 2 kcat -b ${DOCKER_HOST_IP}:19092 -L 2>/dev/null" "19092" || ((FAILED++))
 else
-    check_service "Kafka" "nc -z $DOCKER_HOST_IP 9092 2>/dev/null" "9092" || ((FAILED++))
+    check_service "Kafka" "nc -z $DOCKER_HOST_IP 19092 2>/dev/null" "19092" || ((FAILED++))
 fi
 
 # Neo4j
-check_service "Neo4j" "curl -s http://${DOCKER_HOST_IP}:7474 >/dev/null" "7474" || ((FAILED++))
+check_service "Neo4j" "curl -s http://${DOCKER_HOST_IP}:17474 >/dev/null" "17474" || ((FAILED++))
 
 # Nacos
-check_service "Nacos" "curl -s http://${DOCKER_HOST_IP}:8848/nacos/v1/console/health/readiness >/dev/null" "8848" || ((FAILED++))
+check_service "Nacos" "curl -s http://${DOCKER_HOST_IP}:18848/nacos/v1/console/health/readiness >/dev/null" "18848" || ((FAILED++))
 
 # Prometheus
-check_service "Prometheus" "curl -s http://${DOCKER_HOST_IP}:9090/-/healthy >/dev/null" "9090" || ((FAILED++))
+check_service "Prometheus" "curl -s http://${DOCKER_HOST_IP}:19090/-/healthy >/dev/null" "19090" || ((FAILED++))
 
 # Grafana
-check_service "Grafana" "curl -s http://${DOCKER_HOST_IP}:3001/api/health >/dev/null" "3001" || ((FAILED++))
+check_service "Grafana" "curl -s http://${DOCKER_HOST_IP}:13001/api/health >/dev/null" "13001" || ((FAILED++))
 
 # Jaeger
-check_service "Jaeger" "curl -s http://${DOCKER_HOST_IP}:16686 >/dev/null" "16686" || ((FAILED++))
+check_service "Jaeger" "curl -s http://${DOCKER_HOST_IP}:26686 >/dev/null" "26686" || ((FAILED++))
 
 echo ""
 echo "============================================"
@@ -84,13 +84,13 @@ echo "============================================"
 # Print connection info
 echo ""
 echo "Connection URLs:"
-echo "  PostgreSQL: postgresql://chainrisk:chainrisk123@${DOCKER_HOST_IP}:5432/chainrisk"
-echo "  Redis:      redis://${DOCKER_HOST_IP}:6379"
-echo "  Kafka:      ${DOCKER_HOST_IP}:9092"
-echo "  Neo4j:      bolt://${DOCKER_HOST_IP}:7687 (neo4j/chainrisk123)"
-echo "  Nacos:      http://${DOCKER_HOST_IP}:8848/nacos"
-echo "  Grafana:    http://${DOCKER_HOST_IP}:3001 (admin/admin123)"
-echo "  Jaeger:     http://${DOCKER_HOST_IP}:16686"
+echo "  PostgreSQL: postgresql://chainrisk:chainrisk123@${DOCKER_HOST_IP}:15432/chainrisk"
+echo "  Redis:      redis://${DOCKER_HOST_IP}:16379"
+echo "  Kafka:      ${DOCKER_HOST_IP}:19092"
+echo "  Neo4j:      bolt://${DOCKER_HOST_IP}:17687 (neo4j/chainrisk123)"
+echo "  Nacos:      http://${DOCKER_HOST_IP}:18848/nacos"
+echo "  Grafana:    http://${DOCKER_HOST_IP}:13001 (admin/admin123)"
+echo "  Jaeger:     http://${DOCKER_HOST_IP}:26686"
 
 exit $FAILED
 #!/bin/bash
