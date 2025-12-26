@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.util.stream.Stream;
 
 /**
  * Main entry point for the Stream Processor application
@@ -20,9 +21,10 @@ public class StreamProcessorApp {
 
         // Load default configuration
         ParameterTool defaultParams = loadDefaultConfig();
-        
+
         // Override with command line arguments
         ParameterTool params = ParameterTool.fromArgs(args);
+
         ParameterTool finalParams = defaultParams.mergeWith(params);
 
         // Determine which job to run
@@ -36,8 +38,8 @@ public class StreamProcessorApp {
                 break;
             // Add more jobs here as needed
             // case "aggregation":
-            //     AggregationJob.main(toArgs(finalParams));
-            //     break;
+            // AggregationJob.main(toArgs(finalParams));
+            // break;
             default:
                 LOG.error("Unknown job: {}", jobName);
                 System.exit(1);
@@ -52,12 +54,12 @@ public class StreamProcessorApp {
         } catch (Exception e) {
             LOG.warn("Could not load default configuration", e);
         }
-        return ParameterTool.fromArgs(new String[]{});
+        return ParameterTool.fromArgs(new String[] {});
     }
 
     private static String[] toArgs(ParameterTool params) {
         return params.toMap().entrySet().stream()
-            .map(e -> "--" + e.getKey() + "=" + e.getValue())
-            .toArray(String[]::new);
+                .flatMap(e -> Stream.of("--" + e.getKey(), e.getValue()))
+                .toArray(String[]::new);
     }
 }
