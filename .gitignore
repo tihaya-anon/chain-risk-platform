@@ -1,171 +1,46 @@
-# ============================================
-# Chain Risk Platform - Monorepo .gitignore
-# ============================================
-
-# ==================== Global ====================
-.DS_Store
-Thumbs.db
-*.log
-*.tmp
-*.temp
-*.swp
-*.swo
-*~
-
-# IDE
-.idea/
-.vscode/
-*.iml
-*.ipr
-*.iws
-.project
-.classpath
-.settings/
-
-# Environment & Secrets (NEVER COMMIT!)
-.env
-.env.*
-!.env.example
-secrets/
-*.pem
-*.key
-*.p12
-*.jks
-
-# ==================== Go ====================
-# Binaries
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Go workspace
-go.work
-go.work.sum
-
-# Go build
-/data-ingestion/bin/
-/services/query-service/bin/
-/services/alert-service/bin/
-
-# Go vendor (optional - uncomment if not vendoring)
-# vendor/
-
-# ==================== Java ====================
-# Maven
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-
-# Gradle
-.gradle/
-build/
-!gradle/wrapper/gradle-wrapper.jar
-
-# ==================== Python ====================
+# Dependencies
+node_modules/
+vendor/
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-
-# Virtual environments
+*.pyc
 .venv/
 venv/
-ENV/
-env/
-
-# Distribution / packaging
-.Python
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# PyInstaller
-*.manifest
-*.spec
-
-# pytest / coverage
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-
-# mypy
-.mypy_cache/
-
-# ==================== TypeScript/Node.js ====================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
 
 # Build outputs
 dist/
 build/
-.next/
-out/
+target/
+*.jar
+*.war
+bin/
 
-# TypeScript
-*.tsbuildinfo
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
 
-# ==================== Docker ====================
-# Ignore local docker override
-docker-compose.override.yml
+# Environment
+.env
+.env.local
+*.local
 
-# ==================== Kubernetes ====================
-# Local k8s configs with secrets
-infra/k8s/overlays/*/secrets/
-
-# ==================== Testing ====================
-coverage/
-*.cover
-*.coverage
-test-results/
-junit.xml
-
-# ==================== Logs ====================
+# Logs
 logs/
 *.log
-npm-debug.log*
 
-# ==================== Local Development ====================
-# Local data directories (created by docker-compose)
-.data/
-data/
+# Test coverage
+coverage/
+htmlcov/
+.coverage
 
 # Temp files
 tmp/
 temp/
+*.tmp
 
-# ==================== ML/Data ====================
-# Model files (too large for git)
-*.h5
-*.pkl
-*.joblib
-*.onnx
-models/*.pt
-models/*.pth
-!models/.gitkeep
-
-# Datasets
-datasets/
-*.csv
-*.parquet
-!**/test_data/*.csv
+# Secrets (never commit!)
+secrets/
+*.pem
+*.key
