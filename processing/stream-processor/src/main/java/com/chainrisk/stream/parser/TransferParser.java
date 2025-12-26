@@ -32,7 +32,6 @@ public class TransferParser implements FlatMapFunction<ChainEvent, Transfer> {
             } else if (event.isTransfer()) {
                 parseTransfer(event, out);
             }
-            // Internal transactions can be handled similarly if needed
         } catch (Exception e) {
             LOG.error("Error parsing event: {}", event, e);
         }
@@ -49,7 +48,7 @@ public class TransferParser implements FlatMapFunction<ChainEvent, Transfer> {
      */
     private void parseTransaction(ChainEvent event, Collector<Transfer> out) throws Exception {
         Transaction tx = objectMapper.treeToValue(event.getData(), Transaction.class);
-        
+
         if (tx == null) {
             LOG.warn("Failed to parse transaction from event: {}", event);
             return;
@@ -62,8 +61,7 @@ public class TransferParser implements FlatMapFunction<ChainEvent, Transfer> {
             LOG.debug("Extracted native transfer: {}", transfer);
         }
 
-        // TODO: Parse input data for ERC20 transfers
-        // This would require decoding the input field for transfer() calls
+        // Parse ERC20 transfers from input data
         if (isERC20Transfer(tx)) {
             parseERC20Transfer(tx, event.getNetwork(), out);
         }
@@ -74,7 +72,7 @@ public class TransferParser implements FlatMapFunction<ChainEvent, Transfer> {
      */
     private void parseTransfer(ChainEvent event, Collector<Transfer> out) throws Exception {
         Transfer transfer = objectMapper.treeToValue(event.getData(), Transfer.class);
-        
+
         if (transfer == null) {
             LOG.warn("Failed to parse transfer from event: {}", event);
             return;
@@ -93,9 +91,7 @@ public class TransferParser implements FlatMapFunction<ChainEvent, Transfer> {
         if (input == null || input.length() < 10) {
             return false;
         }
-        
-        // ERC20 transfer method signature: 0xa9059cbb
-        // ERC20 transferFrom method signature: 0x23b872dd
+
         String methodId = input.substring(0, 10).toLowerCase();
         return "0xa9059cbb".equals(methodId) || "0x23b872dd".equals(methodId);
     }
@@ -105,36 +101,75 @@ public class TransferParser implements FlatMapFunction<ChainEvent, Transfer> {
      */
     private void parseERC20Transfer(Transaction tx, String network, Collector<Transfer> out) {
         String input = tx.getInput();
-        if (input == null || input.length() < 138) { // 10 (method) + 64 (address) + 64 (value)
+        if (input == null || input.length() < 138) {
             return;
         }
 
         try {
             String methodId = input.substring(0, 10).toLowerCase();
-            
+
             if ("0xa9059cbb".equals(methodId)) {
-                // transfer(address to, uint256 value)
-                String toAddress = "0x" + input.substring(34, 74);
-                String valueHex = input.substring(74, 138);
-                
-                Transfer transfer = new Transfer();
-                transfer.setTxHash(tx.getHash());
-                transfer.setBlockNumber(tx.getBlockNumber());
-                transfer.setLogIndex(0);
-                transfer.setFromAddress(tx.getFromAddress());
-                transfer.setToAddress(toAddress);
-                transfer.setValue(new java.math.BigInteger(valueHex, 16));
-                transfer.setTokenAddress(tx.getToAddress()); // Contract address
-                transfer.setTimestamp(tx.getTimestamp());
-                transfer.setTransferType("erc20");
-                transfer.setNetwork(network);
-                
-                out.collect(transfer);
-                LOG.debug("Extracted ERC20 transfer: {}", transfer);
+                parseERC20TransferMethod(tx, input, network, out);
+            } else if ("0x23b872dd".equals(methodId)) {
+                parseERC20TransferFromMethod(tx, input, network, out);
             }
-            // TODO: Handle transferFrom similarly
         } catch (Exception e) {
             LOG.warn("Failed to parse ERC20 transfer from tx: {}", tx.getHash(), e);
         }
+    }
+
+    /**
+     * Parse ERC20 transfer(address to, uint256 value) method
+     */
+    private void parseERC20TransferMethod(Transaction tx, String input, String network, Collector<Transfer> out) {
+        if (input.length() < 138) {
+            return;
+        }
+
+        String toAddress = "0x" + input.substring(34, 74);
+        String valueHex = input.substring(74, 138);
+
+        Transfer transfer = new Transfer();
+        transfer.setTxHash(tx.getHash());
+        transfer.setBlockNumber(tx.getBlockNumber());
+        transfer.setLogIndex(0);
+        transfer.setFromAddress(tx.getFromAddress());
+        transfer.setToAddress(toAddress);
+        transfer.setValue(new java.math.BigInteger(valueHex, 16));
+        transfer.setTokenAddress(tx.getToAddress());
+        transfer.setTimestamp(tx.getTimestamp());
+        transfer.setTransferType("erc20");
+        transfer.setNetwork(network);
+
+        out.collect(transfer);
+        LOG.debug("Extracted ERC20 transfer(): {}", transfer);
+    }
+
+    /**
+     * Parse ERC20 transferFrom(address from, address to, uint256 value) method
+     */
+    private void parseERC20TransferFromMethod(Transaction tx, String input, String network, Collector<Transfer> out) {
+        if (input.length() < 202) {
+            return;
+        }
+
+        String fromAddress = "0x" + input.substring(34, 74);
+        String toAddress = "0x" + input.substring(98, 138);
+        String valueHex = input.substring(138, 202);
+
+        Transfer transfer = new Transfer();
+        transfer.setTxHash(tx.getHash());
+        transfer.setBlockNumber(tx.getBlockNumber());
+        transfer.setLogIndex(0);
+        transfer.setFromAddress(fromAddress);
+        transfer.setToAddress(toAddress);
+        transfer.setValue(new java.math.BigInteger(valueHex, 16));
+        transfer.setTokenAddress(tx.getToAddress());
+        transfer.setTimestamp(tx.getTimestamp());
+        transfer.setTransferType("erc20");
+        transfer.setNetwork(network);
+
+        out.collect(transfer);
+        LOG.debug("Extracted ERC20 transferFrom(): {}", transfer);
     }
 }
