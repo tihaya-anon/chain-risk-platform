@@ -37,6 +37,11 @@
             <artifactId>flink-runtime-web</artifactId>
             <scope>${flink.scope}</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-java</artifactId>
+            <scope>${flink.scope}</scope>
+        </dependency>
 
         <!-- Flink Connectors -->
         <dependency>
