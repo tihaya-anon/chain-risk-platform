@@ -41,6 +41,11 @@
         <!-- Flink Connectors -->
         <dependency>
             <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-base</artifactId>
+            <scope>${flink.scope}</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka</artifactId>
         </dependency>
         <dependency>
