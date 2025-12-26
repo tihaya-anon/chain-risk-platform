@@ -6,13 +6,13 @@ server:
 blockchain:
   # Supported: ethereum, bsc
   network: ethereum
-  
+
   # Etherscan API
   etherscan:
     baseUrl: https://api.etherscan.io/api
     apiKey: ${ETHERSCAN_API_KEY}
-    rateLimit: 5  # requests per second
-  
+    rateLimit: 5 # requests per second
+
   # BSCScan API (alternative)
   bscscan:
     baseUrl: https://api.bscscan.com/api
@@ -21,27 +21,27 @@ blockchain:
 
   # Polling configuration
   polling:
-    intervalSeconds: 12      # ~1 block time for Ethereum
-    batchSize: 10            # blocks per batch
-    startBlock: latest       # 'latest' or specific block number
-    confirmations: 12        # wait for confirmations
-    enableInternalTx: false  # fetch internal transactions (expensive, disabled by default)
+    intervalSeconds: 12 # ~1 block time for Ethereum
+    batchSize: 10 # blocks per batch
+    startBlock: latest # 'latest' or specific block number
+    confirmations: 12 # wait for confirmations
+    enableInternalTx: false # fetch internal transactions (expensive, disabled by default)
 
 # Kafka Configuration
 kafka:
   brokers:
-    - localhost:9092
+    - ${KAFKA_BROKERS:localhost:9092}
   topic: chain-transactions
   producer:
     maxRetries: 3
     retryBackoffMs: 100
-    requiredAcks: 1          # 0=none, 1=leader, -1=all
-    compression: snappy      # none, gzip, snappy, lz4, zstd
+    requiredAcks: 1 # 0=none, 1=leader, -1=all
+    compression: snappy # none, gzip, snappy, lz4, zstd
 
 # Logging Configuration
 logging:
-  level: info                # debug, info, warn, error
-  format: json               # json, console
+  level: info # debug, info, warn, error
+  format: json # json, console
   outputPaths:
     - stdout
     - logs/ingestion.log
