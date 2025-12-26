@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ============== Message Queue ==============
   zookeeper:
@@ -58,8 +56,8 @@ services:
       NEO4J_AUTH: neo4j/chainrisk123
       NEO4J_PLUGINS: '["apoc"]'
     ports:
-      - "7474:7474"  # HTTP
-      - "7687:7687"  # Bolt
+      - "7474:7474" # HTTP
+      - "7687:7687" # Bolt
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
@@ -83,8 +81,8 @@ services:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
 
   grafana:
     image: grafana/grafana:10.1.0
@@ -143,9 +141,9 @@ services:
     image: jaegertracing/all-in-one:1.50
     container_name: jaeger
     ports:
-      - "16686:16686"  # UI
-      - "14268:14268"  # HTTP collector
-      - "6831:6831/udp"  # Thrift compact
+      - "16686:16686" # UI
+      - "14268:14268" # HTTP collector
+      - "6831:6831/udp" # Thrift compact
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
 
