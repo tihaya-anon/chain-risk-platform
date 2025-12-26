@@ -35,10 +35,11 @@ type EtherscanConfig struct {
 }
 
 type PollingConfig struct {
-	IntervalSeconds int    `mapstructure:"intervalSeconds"`
-	BatchSize       int    `mapstructure:"batchSize"`
-	StartBlock      string `mapstructure:"startBlock"`
-	Confirmations   int    `mapstructure:"confirmations"`
+	IntervalSeconds  int    `mapstructure:"intervalSeconds"`
+	BatchSize        int    `mapstructure:"batchSize"`
+	StartBlock       string `mapstructure:"startBlock"`
+	Confirmations    int    `mapstructure:"confirmations"`
+	EnableInternalTx bool   `mapstructure:"enableInternalTx"`
 }
 
 type KafkaConfig struct {

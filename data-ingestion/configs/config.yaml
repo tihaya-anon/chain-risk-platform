@@ -25,6 +25,7 @@ blockchain:
     batchSize: 10            # blocks per batch
     startBlock: latest       # 'latest' or specific block number
     confirmations: 12        # wait for confirmations
+    enableInternalTx: false  # fetch internal transactions (expensive, disabled by default)
 
 # Kafka Configuration
 kafka:

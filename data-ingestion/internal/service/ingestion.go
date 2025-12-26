@@ -177,9 +177,10 @@ func (s *Service) processBlock(ctx context.Context, blockNumber uint64) error {
 			}
 		}
 
-		// Get internal transactions (optional, can be expensive)
-		// Uncomment if needed:
-		// s.processInternalTransactions(ctx, tx.Hash)
+		// Get internal transactions (expensive API calls, disabled by default)
+		if s.cfg.Blockchain.Polling.EnableInternalTx {
+			s.processInternalTransactions(ctx, tx.Hash)
+		}
 	}
 
 	return nil
