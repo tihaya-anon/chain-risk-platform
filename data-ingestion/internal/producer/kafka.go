@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/IBM/sarama"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/config"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
+	"github.com/IBM/sarama"
 	"go.uber.org/zap"
 )
 
@@ -22,13 +22,13 @@ type KafkaProducer struct {
 // NewKafkaProducer creates a new Kafka producer
 func NewKafkaProducer(cfg *config.KafkaConfig, logger *zap.Logger) (*KafkaProducer, error) {
 	saramaConfig := sarama.NewConfig()
-	
+
 	// Producer settings
 	saramaConfig.Producer.Return.Successes = true
 	saramaConfig.Producer.Return.Errors = true
 	saramaConfig.Producer.Retry.Max = cfg.Producer.MaxRetries
 	saramaConfig.Producer.Retry.Backoff = time.Duration(cfg.Producer.RetryBackoffMs) * time.Millisecond
-	
+
 	// Required acks
 	switch cfg.Producer.RequiredAcks {
 	case 0:
@@ -90,7 +90,7 @@ func (p *KafkaProducer) SendInternalTransaction(ctx context.Context, network str
 // SendBatch sends multiple events to Kafka
 func (p *KafkaProducer) SendBatch(ctx context.Context, events []*model.ChainEvent) error {
 	messages := make([]*sarama.ProducerMessage, len(events))
-	
+
 	for i, event := range events {
 		data, err := json.Marshal(event)
 		if err != nil {
@@ -99,7 +99,7 @@ func (p *KafkaProducer) SendBatch(ctx context.Context, events []*model.ChainEven
 
 		// Use block number as key for ordering within partition
 		key := fmt.Sprintf("%d", event.BlockNumber)
-		
+
 		messages[i] = &sarama.ProducerMessage{
 			Topic: p.topic,
 			Key:   sarama.StringEncoder(key),
@@ -121,7 +121,7 @@ func (p *KafkaProducer) SendBatch(ctx context.Context, events []*model.ChainEven
 }
 
 // sendEvent sends a single event to Kafka
-func (p *KafkaProducer) sendEvent(ctx context.Context, key string, event *model.ChainEvent) error {
+func (p *KafkaProducer) sendEvent(_ context.Context, key string, event *model.ChainEvent) error {
 	data, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
