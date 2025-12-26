@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <!-- Console: simplified output -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss} %-5level %logger{20} - %msg%n</pattern>
         </encoder>
     </appender>
 
+    <!-- File: full details -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/stream-processor.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -17,14 +19,22 @@
         </encoder>
     </appender>
 
-    <!-- Flink logging -->
-    <logger name="org.apache.flink" level="INFO"/>
+    <!-- Reduce Flink noise -->
+    <logger name="org.apache.flink" level="WARN"/>
+    <logger name="org.apache.flink.runtime.jobmaster" level="INFO"/>
+    <logger name="org.apache.flink.runtime.checkpoint" level="WARN"/>
+    
+    <!-- Reduce Kafka noise -->
     <logger name="org.apache.kafka" level="WARN"/>
     
+    <!-- Reduce Pekko/Akka noise -->
+    <logger name="org.apache.pekko" level="WARN"/>
+    <logger name="akka" level="WARN"/>
+    
     <!-- Application logging -->
-    <logger name="com.chainrisk" level="DEBUG"/>
+    <logger name="com.chainrisk" level="INFO"/>
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>
