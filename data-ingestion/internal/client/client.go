@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/model"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
 )
 
 // BlockchainClient defines the interface for blockchain data retrieval

@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/client"
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/config"
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/producer"
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/service"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/client"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/config"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/producer"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/service"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

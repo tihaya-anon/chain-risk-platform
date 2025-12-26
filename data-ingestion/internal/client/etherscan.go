@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/model"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
 	"go.uber.org/zap"
 )
 

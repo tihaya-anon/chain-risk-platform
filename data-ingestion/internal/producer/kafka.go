@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/config"
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/model"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/config"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
 	"go.uber.org/zap"
 )
 

@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/client"
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/config"
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/model"
-	"github.com/yourusername/chain-risk-platform/data-ingestion/internal/producer"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/client"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/config"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/producer"
 	"go.uber.org/zap"
 )
 

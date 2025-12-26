@@ -30,14 +30,14 @@ Frontend (React) → BFF (Nest.js) → Microservices (Go/Python/Java)
 
 ## 🛠️ 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| **Frontend** | React, TypeScript, Vite |
-| **BFF** | Nest.js, TypeScript |
-| **Services** | Go (Gin), Python (FastAPI), Java (Spring Cloud) |
-| **Processing** | Apache Flink, Kafka |
-| **Storage** | PostgreSQL, Neo4j, Redis |
-| **Infra** | Docker, Kubernetes |
+| 层级           | 技术                                            |
+| -------------- | ----------------------------------------------- |
+| **Frontend**   | React, TypeScript, Vite                         |
+| **BFF**        | Nest.js, TypeScript                             |
+| **Services**   | Go (Gin), Python (FastAPI), Java (Spring Cloud) |
+| **Processing** | Apache Flink, Kafka                             |
+| **Storage**    | PostgreSQL, Neo4j, Redis                        |
+| **Infra**      | Docker, Kubernetes                              |
 
 ## 📁 项目结构
 
@@ -73,7 +73,7 @@ chain-risk-platform/
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/yourusername/chain-risk-platform.git
+git clone https://github.com/0ksks/chain-risk-platform.git
 cd chain-risk-platform
 
 # 2. 启动基础设施
@@ -84,16 +84,16 @@ docker-compose up -d
 
 ### 服务端口
 
-| 服务 | 端口 |
-|------|------|
-| BFF Gateway | 3000 |
-| Query Service | 8081 |
+| 服务            | 端口 |
+| --------------- | ---- |
+| BFF Gateway     | 3000 |
+| Query Service   | 8081 |
 | Risk ML Service | 8082 |
-| Alert Service | 8083 |
-| Frontend | 5173 |
-| PostgreSQL | 5432 |
-| Redis | 6379 |
-| Kafka | 9092 |
+| Alert Service   | 8083 |
+| Frontend        | 5173 |
+| PostgreSQL      | 5432 |
+| Redis           | 6379 |
+| Kafka           | 9092 |
 
 ## 📚 文档
 

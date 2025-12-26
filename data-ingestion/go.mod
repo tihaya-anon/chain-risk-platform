@@ -1,4 +1,4 @@
-module github.com/yourusername/chain-risk-platform/data-ingestion
+module github.com/0ksks/chain-risk-platform/data-ingestion
 
 go 1.21
 
