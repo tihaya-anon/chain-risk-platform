@@ -7,6 +7,7 @@ import org.apache.flink.connector.jdbc.JdbcSink;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 
 /**
  * Factory for creating JDBC sinks
@@ -28,45 +29,48 @@ public class JdbcSinkFactory {
      */
     public SinkFunction<Transfer> createTransferSink() {
         String sql = """
-            INSERT INTO chain_data.transfers 
-            (tx_hash, block_number, log_index, from_address, to_address, value, 
-             token_address, token_symbol, token_decimal, timestamp, transfer_type, network)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT (tx_hash, log_index) DO UPDATE SET
-                from_address = EXCLUDED.from_address,
-                to_address = EXCLUDED.to_address,
-                value = EXCLUDED.value,
-                timestamp = EXCLUDED.timestamp
-            """;
+                INSERT INTO chain_data.transfers
+                (tx_hash, block_number, log_index, from_address, to_address, value,
+                 token_address, token_symbol, token_decimal, timestamp, transfer_type, network)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (tx_hash, log_index) DO UPDATE SET
+                    from_address = EXCLUDED.from_address,
+                    to_address = EXCLUDED.to_address,
+                    value = EXCLUDED.value,
+                    timestamp = EXCLUDED.timestamp
+                """;
 
         return JdbcSink.sink(
-            sql,
-            (statement, transfer) -> {
-                statement.setString(1, transfer.getTxHash());
-                statement.setLong(2, transfer.getBlockNumber());
-                statement.setInt(3, transfer.getLogIndex());
-                statement.setString(4, transfer.getFromAddress());
-                statement.setString(5, transfer.getToAddress());
-                statement.setBigDecimal(6, new java.math.BigDecimal(transfer.getValue()));
-                statement.setString(7, transfer.getTokenAddress());
-                statement.setString(8, transfer.getTokenSymbol());
-                statement.setObject(9, transfer.getTokenDecimal());
-                statement.setTimestamp(10, Timestamp.from(transfer.getTimestamp()));
-                statement.setString(11, transfer.getTransferType());
-                statement.setString(12, transfer.getNetwork());
-            },
-            JdbcExecutionOptions.builder()
-                .withBatchSize(1000)
-                .withBatchIntervalMs(200)
-                .withMaxRetries(3)
-                .build(),
-            new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                .withUrl(jdbcUrl)
-                .withDriverName("org.postgresql.Driver")
-                .withUsername(username)
-                .withPassword(password)
-                .build()
-        );
+                sql,
+                (statement, transfer) -> {
+                    statement.setString(1, transfer.getTxHash());
+                    statement.setLong(2, transfer.getBlockNumber() != null ? transfer.getBlockNumber() : 0L);
+                    statement.setInt(3, transfer.getLogIndex() != null ? transfer.getLogIndex() : 0);
+                    statement.setString(4, transfer.getFromAddress());
+                    statement.setString(5, transfer.getToAddress());
+                    statement.setBigDecimal(6, transfer.getValue() != null
+                            ? new java.math.BigDecimal(transfer.getValue())
+                            : java.math.BigDecimal.ZERO);
+                    statement.setString(7, transfer.getTokenAddress());
+                    statement.setString(8, transfer.getTokenSymbol());
+                    statement.setObject(9, transfer.getTokenDecimal());
+                    // Handle null timestamp - use current time as fallback
+                    Instant ts = transfer.getTimestamp() != null ? transfer.getTimestamp() : Instant.now();
+                    statement.setTimestamp(10, Timestamp.from(ts));
+                    statement.setString(11, transfer.getTransferType());
+                    statement.setString(12, transfer.getNetwork());
+                },
+                JdbcExecutionOptions.builder()
+                        .withBatchSize(1000)
+                        .withBatchIntervalMs(200)
+                        .withMaxRetries(3)
+                        .build(),
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(jdbcUrl)
+                        .withDriverName("org.postgresql.Driver")
+                        .withUsername(username)
+                        .withPassword(password)
+                        .build());
     }
 
     /**
@@ -74,11 +78,11 @@ public class JdbcSinkFactory {
      */
     public JdbcConnectionOptions getConnectionOptions() {
         return new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-            .withUrl(jdbcUrl)
-            .withDriverName("org.postgresql.Driver")
-            .withUsername(username)
-            .withPassword(password)
-            .build();
+                .withUrl(jdbcUrl)
+                .withDriverName("org.postgresql.Driver")
+                .withUsername(username)
+                .withPassword(password)
+                .build();
     }
 
     /**
@@ -86,9 +90,9 @@ public class JdbcSinkFactory {
      */
     public JdbcExecutionOptions getExecutionOptions(int batchSize, long batchIntervalMs) {
         return JdbcExecutionOptions.builder()
-            .withBatchSize(batchSize)
-            .withBatchIntervalMs(batchIntervalMs)
-            .withMaxRetries(3)
-            .build();
+                .withBatchSize(batchSize)
+                .withBatchIntervalMs(batchIntervalMs)
+                .withMaxRetries(3)
+                .build();
     }
 }
