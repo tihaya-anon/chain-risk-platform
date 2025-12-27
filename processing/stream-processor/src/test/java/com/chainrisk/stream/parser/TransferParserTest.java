@@ -2,7 +2,6 @@ package com.chainrisk.stream.parser;
 
 import com.chainrisk.stream.model.ChainEvent;
 import com.chainrisk.stream.model.Transfer;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.flink.util.Collector;
@@ -10,14 +9,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for TransferParser
@@ -25,10 +22,26 @@ import static org.mockito.Mockito.*;
 @DisplayName("TransferParser Tests")
 class TransferParserTest {
 
+    private List<Transfer> collectedTransfers;
+
+    /**
+     * Simple Collector implementation that stores transfers in a list
+     */
+    class TransferCollector implements Collector<Transfer> {
+
+        @Override
+        public void collect(Transfer record) {
+            collectedTransfers.add(record);
+        }
+
+        @Override
+        public void close() {
+        }
+    }
+
     private TransferParser parser;
     private ObjectMapper objectMapper;
-    private Collector<Transfer> collector;
-    private List<Transfer> collectedTransfers;
+    private TransferCollector collector;
 
     @BeforeEach
     void setUp() {
@@ -36,14 +49,9 @@ class TransferParserTest {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        // Create a mock collector that stores transfers
+        // Create a real collector that stores transfers
         collectedTransfers = new ArrayList<>();
-        collector = mock(Collector.class);
-        doAnswer(invocation -> {
-            Transfer transfer = invocation.getArgument(0);
-            collectedTransfers.add(transfer);
-            return null;
-        }).when(collector).collect(any(Transfer.class));
+        collector = new TransferCollector();
     }
 
     private ChainEvent createChainEvent(String eventType, String network, Long blockNumber, String dataJson)
