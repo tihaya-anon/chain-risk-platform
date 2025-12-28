@@ -30,7 +30,7 @@ blockchain:
 # Kafka Configuration
 kafka:
   brokers:
-    - localhost:9092
+    - localhost:19092
   topic: chain-transactions
   producer:
     maxRetries: 3

@@ -3,9 +3,11 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -71,6 +73,21 @@ type MetricsConfig struct {
 
 // Load reads configuration from file and environment variables
 func Load(configPath string) (*Config, error) {
+	// Load .env.local file if exists (from project root)
+	// Try to find .env.local relative to config file location
+	configDir := filepath.Dir(configPath)
+	envPaths := []string{
+		filepath.Join(configDir, "..", ".env.local"),
+		".env.local",
+		"../.env.local",
+	}
+	for _, envPath := range envPaths {
+		if _, err := os.Stat(envPath); err == nil {
+			_ = godotenv.Load(envPath)
+			break
+		}
+	}
+
 	v := viper.New()
 
 	// Set config file

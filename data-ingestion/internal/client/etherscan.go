@@ -136,10 +136,23 @@ func (c *EtherscanClient) GetLatestBlockNumber(ctx context.Context) (uint64, err
 	}
 
 	var resp struct {
-		Result string `json:"result"`
+		Status  string `json:"status"`
+		Message string `json:"message"`
+		Result  string `json:"result"`
 	}
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return 0, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	// Check for API error response
+	// Etherscan returns status "0" for errors, or result contains error message
+	if resp.Status == "0" || (resp.Message != "" && resp.Message != "OK") {
+		return 0, fmt.Errorf("API error: %s (result: %s)", resp.Message, resp.Result)
+	}
+
+	// Check if result looks like an error message rather than a hex number
+	if len(resp.Result) > 0 && resp.Result[0] != '0' {
+		return 0, fmt.Errorf("API error: %s", resp.Result)
 	}
 
 	blockNumber, err := strconv.ParseUint(resp.Result, 0, 64)
