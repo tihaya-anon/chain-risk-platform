@@ -1,7 +1,7 @@
 #!/bin/bash
 cd processing/stream-processor
 
-mvn clean package -DskipTests -Plocal
+mvn clean package -DskipTests -Plocal -q
 	
 java \
     --add-opens java.base/java.util=ALL-UNNAMED \
