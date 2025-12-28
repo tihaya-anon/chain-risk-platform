@@ -68,6 +68,12 @@ check_service "Grafana" "curl -s http://${DOCKER_HOST_IP}:13001/api/health >/dev
 # Jaeger
 check_service "Jaeger" "curl -s http://${DOCKER_HOST_IP}:26686 >/dev/null" "26686" || ((FAILED++))
 
+# Kafka Exporter
+check_service "KafkaExporter" "curl -s http://${DOCKER_HOST_IP}:19308/metrics >/dev/null" "19308" || ((FAILED++))
+
+# Postgres Exporter
+check_service "PGExporter" "curl -s http://${DOCKER_HOST_IP}:19187/metrics >/dev/null" "19187" || ((FAILED++))
+
 echo ""
 echo "============================================"
 if [ $FAILED -eq 0 ]; then
@@ -80,13 +86,16 @@ echo "============================================"
 # Print connection info
 echo ""
 echo "Connection URLs:"
-echo "  PostgreSQL: postgresql://chainrisk:chainrisk123@${DOCKER_HOST_IP}:15432/chainrisk"
-echo "  Redis:      redis://${DOCKER_HOST_IP}:16379"
-echo "  Kafka:      ${DOCKER_HOST_IP}:19092"
-echo "  Neo4j:      bolt://${DOCKER_HOST_IP}:17687 (neo4j/chainrisk123)"
-echo "  Nacos:      http://${DOCKER_HOST_IP}:18848/nacos"
-echo "  Grafana:    http://${DOCKER_HOST_IP}:13001 (admin/admin123)"
-echo "  Jaeger:     http://${DOCKER_HOST_IP}:26686"
+echo "  PostgreSQL:         postgresql://chainrisk:chainrisk123@${DOCKER_HOST_IP}:15432/chainrisk"
+echo "  Redis:              redis://${DOCKER_HOST_IP}:16379"
+echo "  Kafka:              ${DOCKER_HOST_IP}:19092"
+echo "  Neo4j:              bolt://${DOCKER_HOST_IP}:17687 (neo4j/chainrisk123)"
+echo "  Nacos:              http://${DOCKER_HOST_IP}:18848/nacos"
+echo "  Prometheus:         http://${DOCKER_HOST_IP}:19090"
+echo "  Grafana:            http://${DOCKER_HOST_IP}:13001 (admin/admin123)"
+echo "  Jaeger:             http://${DOCKER_HOST_IP}:26686"
+echo "  Kafka Exporter:     http://${DOCKER_HOST_IP}:19308"
+echo "  Postgres Exporter:  http://${DOCKER_HOST_IP}:19187"
 
 exit $FAILED
 #!/bin/bash
