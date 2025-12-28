@@ -24,16 +24,16 @@ echo "Setting up environment for Docker host: $DOCKER_HOST_IP"
 
 # Export all service endpoints
 export DOCKER_HOST_IP
-export KAFKA_BROKERS="${DOCKER_HOST_IP}:9092"
+export KAFKA_BROKERS="${DOCKER_HOST_IP}:19092"
 export POSTGRES_HOST="${DOCKER_HOST_IP}"
-export POSTGRES_PORT="5432"
+export POSTGRES_PORT="15432"
 export POSTGRES_USER="chainrisk"
 export POSTGRES_PASSWORD="chainrisk123"
 export REDIS_HOST="${DOCKER_HOST_IP}"
-export REDIS_PORT="6379"
+export REDIS_PORT="16379"
 export NEO4J_HOST="${DOCKER_HOST_IP}"
-export NEO4J_URI="bolt://${DOCKER_HOST_IP}:7687"
-export NACOS_SERVER="${DOCKER_HOST_IP}:8848"
+export NEO4J_URI="bolt://${DOCKER_HOST_IP}:17687"
+export NACOS_SERVER="${DOCKER_HOST_IP}:18848"
 export JAEGER_AGENT_HOST="${DOCKER_HOST_IP}"
 export JAEGER_ENDPOINT="http://${DOCKER_HOST_IP}:14268/api/traces"
 

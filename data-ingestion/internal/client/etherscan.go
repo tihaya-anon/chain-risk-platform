@@ -17,21 +17,21 @@ import (
 
 // EtherscanClient implements BlockchainClient for Etherscan-compatible APIs
 type EtherscanClient struct {
-	network    string
-	baseURL    string
-	apiKey     string
-	httpClient *http.Client
+	network     string
+	baseURL     string
+	apiKey      string
+	httpClient  *http.Client
 	rateLimiter *rateLimiter
-	logger     *zap.Logger
+	logger      *zap.Logger
 }
 
 // rateLimiter implements a simple rate limiter
 type rateLimiter struct {
-	mu       sync.Mutex
-	tokens   int
+	mu        sync.Mutex
+	tokens    int
 	maxTokens int
-	interval time.Duration
-	lastTime time.Time
+	interval  time.Duration
+	lastTime  time.Time
 }
 
 func newRateLimiter(rateLimit int) *rateLimiter {
@@ -49,9 +49,9 @@ func (r *rateLimiter) Wait() {
 
 	now := time.Now()
 	elapsed := now.Sub(r.lastTime)
-	
+
 	// Refill tokens based on elapsed time
-	tokensToAdd := int(elapsed / r.interval) * r.maxTokens
+	tokensToAdd := int(elapsed/r.interval) * r.maxTokens
 	r.tokens = min(r.tokens+tokensToAdd, r.maxTokens)
 	r.lastTime = now
 
@@ -61,14 +61,14 @@ func (r *rateLimiter) Wait() {
 		r.tokens = r.maxTokens
 		r.lastTime = time.Now()
 	}
-	
+
 	r.tokens--
 }
 
 // NewEtherscanClient creates a new Etherscan client
 func NewEtherscanClient(network, baseURL, apiKey string, rateLimit int) (*EtherscanClient, error) {
 	logger, _ := zap.NewProduction()
-	
+
 	return &EtherscanClient{
 		network: network,
 		baseURL: baseURL,
@@ -128,8 +128,8 @@ func (c *EtherscanClient) doRequest(ctx context.Context, url string) ([]byte, er
 
 // GetLatestBlockNumber returns the latest block number
 func (c *EtherscanClient) GetLatestBlockNumber(ctx context.Context) (uint64, error) {
-	url := fmt.Sprintf("%s?module=proxy&action=eth_blockNumber&apikey=%s", c.baseURL, c.apiKey)
-	
+	url := fmt.Sprintf("%s&module=proxy&action=eth_blockNumber&apikey=%s", c.baseURL, c.apiKey)
+
 	body, err := c.doRequest(ctx, url)
 	if err != nil {
 		return 0, err
@@ -152,7 +152,7 @@ func (c *EtherscanClient) GetLatestBlockNumber(ctx context.Context) (uint64, err
 
 // GetBlockByNumber returns a block with its transactions
 func (c *EtherscanClient) GetBlockByNumber(ctx context.Context, blockNumber uint64) (*model.Block, error) {
-	url := fmt.Sprintf("%s?module=proxy&action=eth_getBlockByNumber&tag=0x%x&boolean=true&apikey=%s",
+	url := fmt.Sprintf("%s&module=proxy&action=eth_getBlockByNumber&tag=0x%x&boolean=true&apikey=%s",
 		c.baseURL, blockNumber, c.apiKey)
 
 	body, err := c.doRequest(ctx, url)
@@ -176,13 +176,13 @@ func (c *EtherscanClient) GetBlockByNumber(ctx context.Context, blockNumber uint
 
 // ethBlock represents the Etherscan block response
 type ethBlock struct {
-	Number       string        `json:"number"`
-	Hash         string        `json:"hash"`
-	ParentHash   string        `json:"parentHash"`
-	Timestamp    string        `json:"timestamp"`
-	Miner        string        `json:"miner"`
-	GasUsed      string        `json:"gasUsed"`
-	GasLimit     string        `json:"gasLimit"`
+	Number       string           `json:"number"`
+	Hash         string           `json:"hash"`
+	ParentHash   string           `json:"parentHash"`
+	Timestamp    string           `json:"timestamp"`
+	Miner        string           `json:"miner"`
+	GasUsed      string           `json:"gasUsed"`
+	GasLimit     string           `json:"gasLimit"`
 	Transactions []ethTransaction `json:"transactions"`
 }
 
@@ -263,7 +263,7 @@ func (c *EtherscanClient) GetTransactionsByBlock(ctx context.Context, blockNumbe
 
 // GetInternalTransactions returns internal transactions for a tx hash
 func (c *EtherscanClient) GetInternalTransactions(ctx context.Context, txHash string) ([]*model.InternalTransaction, error) {
-	url := fmt.Sprintf("%s?module=account&action=txlistinternal&txhash=%s&apikey=%s",
+	url := fmt.Sprintf("%s&module=account&action=txlistinternal&txhash=%s&apikey=%s",
 		c.baseURL, txHash, c.apiKey)
 
 	body, err := c.doRequest(ctx, url)
@@ -308,7 +308,7 @@ func (c *EtherscanClient) GetInternalTransactions(ctx context.Context, txHash st
 		blockNum, _ := strconv.ParseUint(itx.BlockNumber, 10, 64)
 		gas, _ := strconv.ParseUint(itx.Gas, 10, 64)
 		gasUsed, _ := strconv.ParseUint(itx.GasUsed, 10, 64)
-		
+
 		value := new(big.Int)
 		value.SetString(itx.Value, 10)
 
@@ -344,7 +344,7 @@ func (c *EtherscanClient) GetTokenTransfers(ctx context.Context, startBlock, end
 
 // GetNormalTransactions returns normal transactions for an address
 func (c *EtherscanClient) GetNormalTransactions(ctx context.Context, address string, startBlock, endBlock uint64) ([]*model.Transaction, error) {
-	url := fmt.Sprintf("%s?module=account&action=txlist&address=%s&startblock=%d&endblock=%d&sort=asc&apikey=%s",
+	url := fmt.Sprintf("%s&module=account&action=txlist&address=%s&startblock=%d&endblock=%d&sort=asc&apikey=%s",
 		c.baseURL, address, startBlock, endBlock, c.apiKey)
 
 	body, err := c.doRequest(ctx, url)

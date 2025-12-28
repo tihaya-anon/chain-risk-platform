@@ -2,213 +2,170 @@
 # Chain Risk Platform - Monorepo Makefile
 # ============================================
 # 统一构建入口，简化多语言项目管理
-
+SHELL := /bin/bash
 .PHONY: help init clean build test lint docker-up docker-down
 
 # Default target
 help:
 	@echo "Chain Risk Platform - Available Commands"
-	@echo "=========================================="
-	@echo ""
-	@echo "Setup:"
-	@echo "  make init          - Initialize all services"
-	@echo "  make clean         - Clean all build artifacts"
-	@echo ""
-	@echo "Development:"
-	@echo "  make build         - Build all services"
-	@echo "  make test          - Run all tests"
-	@echo "  make lint          - Lint all services"
-	@echo ""
-	@echo "Infrastructure:"
-	@echo "  make docker-up     - Start all infrastructure"
-	@echo "  make docker-down   - Stop all infrastructure"
-	@echo ""
-	@echo "Individual Services:"
-	@echo "  make build-go      - Build Go services"
-	@echo "  make build-java    - Build Java services"
-	@echo "  make build-python  - Build Python services"
-	@echo "  make build-ts      - Build TypeScript services"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 
 # ==================== Setup ====================
 
-init: init-go init-java init-python init-ts
+init: ## Initialize all services
+	init-go init-java init-python init-ts
 	@echo "✅ All services initialized"
 
-init-go:
+init-go: ## Initialize Go services
 	@echo "📦 Initializing Go services..."
 	@cd data-ingestion && go mod tidy 2>/dev/null || true
 	@cd services/query-service && go mod tidy 2>/dev/null || true
 	@cd services/alert-service && go mod tidy 2>/dev/null || true
 
-init-java:
+init-java: ## Initialize Java services
 	@echo "📦 Initializing Java services..."
 	@cd processing && mvn clean install -DskipTests 2>/dev/null || true
 	@cd services/orchestrator && mvn clean install -DskipTests 2>/dev/null || true
 
-init-python:
+init-python: ## Initialize Python services
 	@echo "📦 Initializing Python services..."
 	@cd services/risk-ml-service && pip install -e . 2>/dev/null || true
 
-init-ts:
+init-ts: ## Initialize TypeScript services
 	@echo "📦 Initializing TypeScript services..."
 	@cd services/bff-gateway && npm install 2>/dev/null || true
 	@cd frontend && npm install 2>/dev/null || true
 
 # ==================== Build ====================
 
-build: build-go build-java build-python build-ts
+build: ## Build all services
+	build-go build-java build-python build-ts
 	@echo "✅ All services built"
 
-build-go:
+build-go: ## Build Go services
 	@echo "🔨 Building Go services..."
 	@cd data-ingestion && go build -o bin/ingestion ./cmd/... 2>/dev/null || echo "⏭️  data-ingestion: skipped (not initialized)"
 	@cd services/query-service && go build -o bin/query ./cmd/... 2>/dev/null || echo "⏭️  query-service: skipped (not initialized)"
 	@cd services/alert-service && go build -o bin/alert ./cmd/... 2>/dev/null || echo "⏭️  alert-service: skipped (not initialized)"
 
-build-java:
+build-java: ## Build Java services
 	@echo "🔨 Building Java services..."
 	@cd processing && mvn package -DskipTests 2>/dev/null || echo "⏭️  processing: skipped (not initialized)"
 	@cd services/orchestrator && mvn package -DskipTests 2>/dev/null || echo "⏭️  orchestrator: skipped (not initialized)"
 
-build-python:
+build-python: ## Build Python services
 	@echo "🔨 Building Python services..."
 	@cd services/risk-ml-service && python -m build 2>/dev/null || echo "⏭️  risk-ml-service: skipped (not initialized)"
 
-build-ts:
+build-ts: ## Build TypeScript services
 	@echo "🔨 Building TypeScript services..."
 	@cd services/bff-gateway && npm run build 2>/dev/null || echo "⏭️  bff-gateway: skipped (not initialized)"
 	@cd frontend && npm run build 2>/dev/null || echo "⏭️  frontend: skipped (not initialized)"
 
 # ==================== Test ====================
 
-test: test-go test-java test-python test-ts
+test: ## Run all tests
+	test-go test-java test-python test-ts
 	@echo "✅ All tests completed"
 
-test-go:
+test-go: ## Test Go services
 	@echo "🧪 Testing Go services..."
 	@cd data-ingestion && go test ./... 2>/dev/null || echo "⏭️  data-ingestion: skipped"
 	@cd services/query-service && go test ./... 2>/dev/null || echo "⏭️  query-service: skipped"
 	@cd services/alert-service && go test ./... 2>/dev/null || echo "⏭️  alert-service: skipped"
 
-test-java:
+test-java: ## Test Java services
 	@echo "🧪 Testing Java services..."
 	@cd processing && mvn test 2>/dev/null || echo "⏭️  processing: skipped"
 	@cd services/orchestrator && mvn test 2>/dev/null || echo "⏭️  orchestrator: skipped"
 
-test-python:
+test-python: ## Test Python services
 	@echo "🧪 Testing Python services..."
 	@cd services/risk-ml-service && pytest 2>/dev/null || echo "⏭️  risk-ml-service: skipped"
 
-test-ts:
+test-ts: ## Test TypeScript services
 	@echo "🧪 Testing TypeScript services..."
 	@cd services/bff-gateway && npm test 2>/dev/null || echo "⏭️  bff-gateway: skipped"
 	@cd frontend && npm test 2>/dev/null || echo "⏭️  frontend: skipped"
 
 # ==================== Lint ====================
 
-lint: lint-go lint-java lint-python lint-ts
+lint: ## Lint all services
+	lint-go lint-java lint-python lint-ts
 	@echo "✅ All linting completed"
 
-lint-go:
+lint-go: ## Lint Go services
 	@echo "🔍 Linting Go services..."
 	@cd data-ingestion && golangci-lint run 2>/dev/null || echo "⏭️  data-ingestion: skipped"
 	@cd services/query-service && golangci-lint run 2>/dev/null || echo "⏭️  query-service: skipped"
 	@cd services/alert-service && golangci-lint run 2>/dev/null || echo "⏭️  alert-service: skipped"
 
-lint-java:
+lint-java: ## Lint Java services
 	@echo "🔍 Linting Java services..."
 	@cd processing && mvn checkstyle:check 2>/dev/null || echo "⏭️  processing: skipped"
 
-lint-python:
+lint-python: ## Lint Python services
 	@echo "🔍 Linting Python services..."
 	@cd services/risk-ml-service && ruff check . 2>/dev/null || echo "⏭️  risk-ml-service: skipped"
 
-lint-ts:
+lint-ts: ## Lint TypeScript services
 	@echo "🔍 Linting TypeScript services..."
 	@cd services/bff-gateway && npm run lint 2>/dev/null || echo "⏭️  bff-gateway: skipped"
 	@cd frontend && npm run lint 2>/dev/null || echo "⏭️  frontend: skipped"
 
 # ==================== Clean ====================
 
-clean: clean-go clean-java clean-python clean-ts
+clean: ## Clean all artifacts
+	clean-go clean-java clean-python clean-ts
 	@echo "✅ All artifacts cleaned"
 
-clean-go:
+clean-go: ## Clean Go artifacts
 	@echo "🧹 Cleaning Go artifacts..."
 	@rm -rf data-ingestion/bin
 	@rm -rf services/query-service/bin
 	@rm -rf services/alert-service/bin
 
-clean-java:
+clean-java: ## Clean Java artifacts
 	@echo "🧹 Cleaning Java artifacts..."
 	@cd processing && mvn clean 2>/dev/null || true
 	@cd services/orchestrator && mvn clean 2>/dev/null || true
 
-clean-python:
+clean-python: ## Clean Python artifacts
 	@echo "🧹 Cleaning Python artifacts..."
 	@find services/risk-ml-service -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@rm -rf services/risk-ml-service/dist
 	@rm -rf services/risk-ml-service/*.egg-info
 
-clean-ts:
+clean-ts: ## Clean TypeScript artifacts
 	@echo "🧹 Cleaning TypeScript artifacts..."
 	@rm -rf services/bff-gateway/dist
 	@rm -rf frontend/dist
 
-# ==================== Docker ====================
-
-docker-up:
-	@echo "🐳 Starting infrastructure..."
-	docker-compose up -d
-	@echo "✅ Infrastructure started"
-	@echo ""
-	@echo "Services:"
-	@echo "  - Kafka:      localhost:9092"
-	@echo "  - PostgreSQL: localhost:5432"
-	@echo "  - Redis:      localhost:6379"
-	@echo "  - Neo4j:      localhost:7474 (browser), localhost:7687 (bolt)"
-	@echo "  - Nacos:      localhost:8848"
-	@echo "  - Prometheus: localhost:9090"
-	@echo "  - Grafana:    localhost:3001 (admin/admin123)"
-	@echo "  - Jaeger:     localhost:16686"
-
-docker-down:
-	@echo "🐳 Stopping infrastructure..."
-	docker-compose down
-	@echo "✅ Infrastructure stopped"
-
-docker-clean:
-	@echo "🐳 Cleaning infrastructure (including volumes)..."
-	docker-compose down -v
-	@echo "✅ Infrastructure cleaned"
-
 # ==================== Individual Service Commands ====================
 
-# Data Ingestion (Go)
-run-ingestion:
+run-ingestion: ## Data Ingestion (Go)
 	@cd data-ingestion && go run ./cmd/...
 
-# Query Service (Go)
-run-query:
+run-query: ## Query Service (Go)
 	@cd services/query-service && go run ./cmd/...
 
-# Alert Service (Go)
-run-alert:
+run-alert: ## Alert Service (Go)
 	@cd services/alert-service && go run ./cmd/...
 
-# Risk ML Service (Python)
-run-risk:
+run-risk: ## Risk ML Service (Python)
 	@cd services/risk-ml-service && uvicorn app.main:app --reload --port 8082
 
-# BFF Gateway (TypeScript)
-run-bff:
+run-bff: ## BFF Gateway (TypeScript)
 	@cd services/bff-gateway && npm run start:dev
 
-# Frontend (React)
-run-frontend:
+run-frontend: ## Frontend (React)
 	@cd frontend && npm run dev
 
-# Orchestrator (Java)
-run-orchestrator:
+run-orchestrator: ## Orchestrator (Java)
 	@cd services/orchestrator && mvn spring-boot:run
+
+run-flink: ## Flink (Java)
+	@source ./scripts/env-remote.sh > /dev/null 2>&1 && \
+ 	./scripts/run-flink.sh

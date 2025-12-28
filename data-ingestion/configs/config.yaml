@@ -7,15 +7,15 @@ blockchain:
   # Supported: ethereum, bsc
   network: ethereum
 
-  # Etherscan API
+  # Etherscan API (V2)
   etherscan:
-    baseUrl: https://api.etherscan.io/api
+    baseUrl: https://api.etherscan.io/v2/api?chainid=1
     apiKey: ${ETHERSCAN_API_KEY}
     rateLimit: 5 # requests per second
 
-  # BSCScan API (alternative)
+  # BSCScan API (V2)
   bscscan:
-    baseUrl: https://api.bscscan.com/api
+    baseUrl: https://api.bscscan.com/v2/api?chainid=56
     apiKey: ${BSCSCAN_API_KEY}
     rateLimit: 5
 
@@ -30,7 +30,7 @@ blockchain:
 # Kafka Configuration
 kafka:
   brokers:
-    - ${KAFKA_BROKERS:localhost:9092}
+    - localhost:9092
   topic: chain-transactions
   producer:
     maxRetries: 3

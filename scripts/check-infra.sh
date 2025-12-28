@@ -51,11 +51,7 @@ check_service "PostgreSQL" "PGPASSWORD=chainrisk123 psql -h $DOCKER_HOST_IP -p 1
 check_service "Redis" "redis-cli -h $DOCKER_HOST_IP -p 16379 ping 2>/dev/null | grep -q PONG" "16379" || ((FAILED++))
 
 # Kafka (via nc or kcat)
-if command -v kcat &>/dev/null; then
-    check_service "Kafka" "timeout 2 kcat -b ${DOCKER_HOST_IP}:19092 -L 2>/dev/null" "19092" || ((FAILED++))
-else
-    check_service "Kafka" "nc -z $DOCKER_HOST_IP 19092 2>/dev/null" "19092" || ((FAILED++))
-fi
+check_service "Kafka" "nc -z $DOCKER_HOST_IP 19092 2>/dev/null" "19092" || ((FAILED++))
 
 # Neo4j
 check_service "Neo4j" "curl -s http://${DOCKER_HOST_IP}:17474 >/dev/null" "17474" || ((FAILED++))

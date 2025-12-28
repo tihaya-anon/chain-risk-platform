@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -89,10 +91,33 @@ func Load(configPath string) (*Config, error) {
 		return nil, err
 	}
 
+	// Override with environment variables
+	overrideFromEnv(&cfg)
+
 	// Set defaults
 	setDefaults(&cfg)
 
 	return &cfg, nil
+}
+
+// overrideFromEnv overrides config values from environment variables
+func overrideFromEnv(cfg *Config) {
+	// Kafka brokers: KAFKA_BROKERS or DOCKER_HOST_IP:19092
+	if brokers := os.Getenv("KAFKA_BROKERS"); brokers != "" {
+		cfg.Kafka.Brokers = strings.Split(brokers, ",")
+	} else if dockerIP := os.Getenv("DOCKER_HOST_IP"); dockerIP != "" {
+		cfg.Kafka.Brokers = []string{fmt.Sprintf("%s:19092", dockerIP)}
+	}
+
+	// Etherscan API Key
+	if apiKey := os.Getenv("ETHERSCAN_API_KEY"); apiKey != "" {
+		cfg.Blockchain.Etherscan.APIKey = apiKey
+	}
+
+	// BSCScan API Key
+	if apiKey := os.Getenv("BSCSCAN_API_KEY"); apiKey != "" {
+		cfg.Blockchain.BSCScan.APIKey = apiKey
+	}
 }
 
 func setDefaults(cfg *Config) {
