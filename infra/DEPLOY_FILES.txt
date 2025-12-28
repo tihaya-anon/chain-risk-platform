@@ -1,0 +1,22 @@
+# Docker Deployment Required Files
+# ================================
+# Use this list to sync files to remote docker host
+#
+# Sync command:
+#   rsync -avR --files-from=infra/DEPLOY_FILES.txt . user@remote:~/chain-risk-platform/
+#
+# Or use sparse-checkout on remote:
+#   scripts/sparse-clone.sh <repo-url>
+
+# Core
+docker-compose.yml
+.env.example
+
+# Prometheus
+infra/prometheus/prometheus.yml
+
+# Grafana
+infra/grafana/provisioning/datasources/datasources.yml
+
+# PostgreSQL init
+infra/init-scripts/postgres/01-init.sql
