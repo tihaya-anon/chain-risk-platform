@@ -17,6 +17,8 @@ infra/prometheus/prometheus.yml
 
 # Grafana
 infra/grafana/provisioning/datasources/datasources.yml
+infra/grafana/provisioning/dashboards/dashboards.yml
+infra/grafana/provisioning/dashboards/data-pipeline-overview.json
 
 # PostgreSQL init
 infra/init-scripts/postgres/01-init.sql
