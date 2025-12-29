@@ -180,3 +180,42 @@ volumes:
 networks:
   default:
     name: chainrisk-network
+
+  # ============== Application Services ==============
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    ports:
+      - "0.0.0.0:8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production-min-256-bits}
+      BFF_URL: http://bff:3001
+    depends_on:
+      - redis
+      - bff
+    restart: unless-stopped
+    networks:
+      - default
+
+  bff:
+    build:
+      context: ./services/bff
+      dockerfile: Dockerfile
+    container_name: bff
+    ports:
+      - "0.0.0.0:3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production-min-256-bits}
+      # Backend service URLs
+      ADDRESS_SERVICE_URL: http://address-service:8081
+      RISK_SERVICE_URL: http://risk-service:8082
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - default

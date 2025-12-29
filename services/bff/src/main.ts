@@ -32,8 +32,8 @@ async function bootstrap() {
   // Swagger documentation (only in non-production)
   if (config.server.env !== 'production') {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('Chain Risk Platform - BFF Gateway')
-      .setDescription('BFF Gateway API for Chain Risk Platform')
+      .setTitle('Chain Risk Platform - BFF')
+      .setDescription('BFF API for Chain Risk Platform')
       .setVersion('1.0')
       .addBearerAuth()
       .addTag('auth', 'Authentication endpoints')
@@ -49,7 +49,7 @@ async function bootstrap() {
 
   await app.listen(config.server.port);
 
-  logger.info('BFF Gateway started', {
+  logger.info('BFF started', {
     name: config.server.name,
     port: config.server.port,
     env: config.server.env,

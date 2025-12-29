@@ -1,7 +1,7 @@
 {
-  "name": "bff-gateway",
+  "name": "bff",
   "version": "0.1.0",
-  "description": "BFF Gateway for Chain Risk Platform",
+  "description": "BFF (Backend for Frontend) for Chain Risk Platform",
   "author": "",
   "private": true,
   "license": "MIT",
