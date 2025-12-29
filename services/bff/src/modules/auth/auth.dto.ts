@@ -29,3 +29,14 @@ export class UserPayload {
   username: string;
   role: string;
 }
+
+export class UserProfileResponse {
+  @ApiProperty({ description: 'User ID', example: '1' })
+  id: string;
+
+  @ApiProperty({ description: 'Username', example: 'admin' })
+  username: string;
+
+  @ApiProperty({ description: 'User role', example: 'admin', enum: ['admin', 'user'] })
+  role: string;
+}

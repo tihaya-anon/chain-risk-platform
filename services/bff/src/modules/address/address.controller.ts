@@ -1,8 +1,19 @@
-import { Controller, Get, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { AddressService } from './address.service';
-import { AddressQueryDto, TransferQueryDto } from './address.dto';
+import {
+  AddressQueryDto,
+  TransferQueryDto,
+  AddressInfoResponse,
+  PaginatedTransfersResponse,
+  AddressStatsResponse,
+} from './address.dto';
 import { GatewayAuthGuard } from '../../common/guards';
+import { GatewayUser } from '../../common/decorators/gateway-user.decorator';
+import { UserPayload } from '../auth/auth.dto';
+import { getLogger } from '../../common/logger';
+
+const logger = getLogger('AddressController');
 
 @ApiTags('addresses')
 @Controller('addresses')
@@ -15,38 +26,43 @@ export class AddressController {
 
   @Get(':address')
   @ApiOperation({ summary: 'Get address information' })
-  @ApiResponse({ status: 200, description: 'Address information' })
+  @ApiResponse({ status: 200, description: 'Address information', type: AddressInfoResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized - Missing Gateway headers' })
+  @ApiResponse({ status: 404, description: 'Address not found' })
   async getAddressInfo(
     @Param('address') address: string,
     @Query() query: AddressQueryDto,
-    @Request() req: any,
-  ) {
-    // User context available in req.user if needed for logging/auditing
+    @GatewayUser() user: UserPayload,
+  ): Promise<AddressInfoResponse> {
+    logger.debug('Getting address info', { address, userId: user.sub });
     return this.addressService.getAddressInfo(address, query.network);
   }
 
   @Get(':address/transfers')
   @ApiOperation({ summary: 'Get address transfers' })
-  @ApiResponse({ status: 200, description: 'Address transfers' })
+  @ApiResponse({ status: 200, description: 'Address transfers', type: PaginatedTransfersResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized - Missing Gateway headers' })
+  @ApiResponse({ status: 404, description: 'Address not found' })
   async getAddressTransfers(
     @Param('address') address: string,
     @Query() query: TransferQueryDto,
-    @Request() req: any,
-  ) {
+    @GatewayUser() user: UserPayload,
+  ): Promise<PaginatedTransfersResponse> {
+    logger.debug('Getting address transfers', { address, userId: user.sub });
     return this.addressService.getAddressTransfers(address, query);
   }
 
   @Get(':address/stats')
   @ApiOperation({ summary: 'Get address statistics' })
-  @ApiResponse({ status: 200, description: 'Address statistics' })
+  @ApiResponse({ status: 200, description: 'Address statistics', type: AddressStatsResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized - Missing Gateway headers' })
+  @ApiResponse({ status: 404, description: 'Address not found' })
   async getAddressStats(
     @Param('address') address: string,
     @Query() query: AddressQueryDto,
-    @Request() req: any,
-  ) {
+    @GatewayUser() user: UserPayload,
+  ): Promise<AddressStatsResponse> {
+    logger.debug('Getting address stats', { address, userId: user.sub });
     return this.addressService.getAddressStats(address, query.network);
   }
 }

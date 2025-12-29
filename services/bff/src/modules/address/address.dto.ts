@@ -104,6 +104,28 @@ export class TransferResponse {
   network: string;
 }
 
+export class PaginationMetadata {
+  @ApiProperty()
+  page: number;
+
+  @ApiProperty()
+  pageSize: number;
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  totalPages: number;
+}
+
+export class PaginatedTransfersResponse {
+  @ApiProperty({ type: [TransferResponse] })
+  items: TransferResponse[];
+
+  @ApiProperty({ type: PaginationMetadata })
+  pagination: PaginationMetadata;
+}
+
 export class AddressStatsResponse {
   @ApiProperty()
   totalValueSent: string;

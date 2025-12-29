@@ -38,7 +38,7 @@ init-python: ## Initialize Python services
 
 init-ts: ## Initialize TypeScript services
 	@echo "📦 Initializing TypeScript services..."
-	@cd services/bff-gateway && npm install 2>/dev/null || true
+	@cd services/bff && npm install 2>/dev/null || true
 	@cd frontend && npm install 2>/dev/null || true
 
 # ==================== Build ====================
@@ -64,7 +64,7 @@ build-python: ## Build Python services
 
 build-ts: ## Build TypeScript services
 	@echo "🔨 Building TypeScript services..."
-	@cd services/bff-gateway && npm run build 2>/dev/null || echo "⏭️  bff-gateway: skipped (not initialized)"
+	@cd services/bff && npm run build 2>/dev/null || echo "⏭️  bff: skipped (not initialized)"
 	@cd frontend && npm run build 2>/dev/null || echo "⏭️  frontend: skipped (not initialized)"
 
 # ==================== Test ====================
@@ -90,7 +90,7 @@ test-python: ## Test Python services
 
 test-ts: ## Test TypeScript services
 	@echo "🧪 Testing TypeScript services..."
-	@cd services/bff-gateway && npm test 2>/dev/null || echo "⏭️  bff-gateway: skipped"
+	@cd services/bff && npm test 2>/dev/null || echo "⏭️  bff: skipped"
 	@cd frontend && npm test 2>/dev/null || echo "⏭️  frontend: skipped"
 
 # ==================== Lint ====================
@@ -115,7 +115,7 @@ lint-python: ## Lint Python services
 
 lint-ts: ## Lint TypeScript services
 	@echo "🔍 Linting TypeScript services..."
-	@cd services/bff-gateway && npm run lint 2>/dev/null || echo "⏭️  bff-gateway: skipped"
+	@cd services/bff && npm run lint 2>/dev/null || echo "⏭️  bff: skipped"
 	@cd frontend && npm run lint 2>/dev/null || echo "⏭️  frontend: skipped"
 
 # ==================== Clean ====================
@@ -143,7 +143,7 @@ clean-python: ## Clean Python artifacts
 
 clean-ts: ## Clean TypeScript artifacts
 	@echo "🧹 Cleaning TypeScript artifacts..."
-	@rm -rf services/bff-gateway/dist
+	@rm -rf services/bff/dist
 	@rm -rf frontend/dist
 
 # ==================== Individual Service Commands ====================
@@ -160,8 +160,8 @@ run-alert: ## Alert Service (Go)
 run-risk: ## Risk ML Service (Python)
 	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/risk-ml-service && uv run uvicorn app.main:app --reload --port 8082'
 
-run-bff: ## BFF Gateway (TypeScript)
-	@cd services/bff-gateway && npm run start:dev
+run-bff: ## BFF (TypeScript)
+	@cd services/bff && npm run start:dev
 
 run-frontend: ## Frontend (React)
 	@cd frontend && npm run dev

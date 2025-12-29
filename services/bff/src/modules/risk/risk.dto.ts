@@ -88,3 +88,17 @@ export class BatchRiskScoreResponse {
   @ApiProperty()
   failed: number;
 }
+
+export class RiskRule {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  description: string;
+
+  @ApiProperty()
+  enabled: boolean;
+}

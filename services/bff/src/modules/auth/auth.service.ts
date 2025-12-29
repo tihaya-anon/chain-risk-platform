@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-import { LoginDto, UserPayload } from './auth.dto';
+import { LoginDto, LoginResponse, UserPayload, UserProfileResponse } from './auth.dto';
 import { getLogger } from '../../common/logger';
 import { getConfig } from '../../config/config';
 
@@ -15,7 +15,7 @@ const DEMO_USERS = [
 
 @Injectable()
 export class AuthService {
-  async login(dto: LoginDto): Promise<{ accessToken: string; tokenType: string; expiresIn: string }> {
+  async login(dto: LoginDto): Promise<LoginResponse> {
     const user = DEMO_USERS.find(
       (u) => u.username === dto.username && u.password === dto.password,
     );
@@ -42,6 +42,20 @@ export class AuthService {
       accessToken,
       tokenType: 'Bearer',
       expiresIn: config.jwt.expiresIn,
+    };
+  }
+
+  /**
+   * Build user profile from Gateway headers
+   * In production, this could fetch additional user data from database
+   */
+  getUserProfile(userPayload: UserPayload): UserProfileResponse {
+    logger.debug('Building user profile', { userId: userPayload.sub });
+
+    return {
+      id: userPayload.sub,
+      username: userPayload.username,
+      role: userPayload.role,
     };
   }
 }
