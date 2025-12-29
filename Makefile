@@ -171,3 +171,82 @@ run-orchestrator: ## Orchestrator (Java)
 
 run-flink: ## Flink (Java)
 	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/run-flink.sh'
+
+# ==================== Combined Service Commands ====================
+
+# Log directory for background services
+LOGS_DIR := .logs
+
+run-svc: ## Run query, risk, bff in background (logs in .logs/)
+	@mkdir -p $(LOGS_DIR)
+	@echo "🚀 Starting services in background..."
+	@echo "   Logs: $(LOGS_DIR)/"
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/query-service && go run ./cmd/... > ../../$(LOGS_DIR)/query.log 2>&1 &'
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/risk-ml-service && uv run uvicorn app.main:app --reload --port 8082 > ../../$(LOGS_DIR)/risk.log 2>&1 &'
+	@cd services/bff && npm run start:dev > ../../$(LOGS_DIR)/bff.log 2>&1 &
+	@sleep 2
+	@echo "✅ Services started:"
+	@echo "   - Query Service: http://localhost:8081 (log: $(LOGS_DIR)/query.log)"
+	@echo "   - Risk Service:  http://localhost:8082 (log: $(LOGS_DIR)/risk.log)"
+	@echo "   - BFF Service:   http://localhost:3001 (log: $(LOGS_DIR)/bff.log)"
+	@echo ""
+	@echo "📋 Commands:"
+	@echo "   make logs-query  # Tail query service logs"
+	@echo "   make logs-risk   # Tail risk service logs"
+	@echo "   make logs-bff    # Tail bff service logs"
+	@echo "   make stop-svc    # Stop all services"
+
+run-svc-tmux: ## Run query, risk, bff in tmux split panes
+	@command -v tmux >/dev/null 2>&1 || { echo "❌ tmux not installed. Run: brew install tmux"; exit 1; }
+	@tmux new-session -d -s chain-risk -n services
+	@tmux send-keys -t chain-risk:services "make run-query" C-m
+	@tmux split-window -h -t chain-risk:services
+	@tmux send-keys -t chain-risk:services "make run-risk" C-m
+	@tmux split-window -v -t chain-risk:services
+	@tmux send-keys -t chain-risk:services "make run-bff" C-m
+	@tmux select-layout -t chain-risk:services tiled
+	@echo "✅ Services started in tmux session 'chain-risk'"
+	@echo "   Run: tmux attach -t chain-risk"
+
+run-svc-iterm: ## Run query, risk, bff in iTerm2 tabs (macOS only)
+	@osascript -e 'tell application "iTerm2"' \
+		-e 'tell current window' \
+		-e 'create tab with default profile' \
+		-e 'tell current session' \
+		-e 'write text "cd $(PWD) && make run-query"' \
+		-e 'end tell' \
+		-e 'end tell' \
+		-e 'tell current window' \
+		-e 'create tab with default profile' \
+		-e 'tell current session' \
+		-e 'write text "cd $(PWD) && make run-risk"' \
+		-e 'end tell' \
+		-e 'end tell' \
+		-e 'tell current window' \
+		-e 'create tab with default profile' \
+		-e 'tell current session' \
+		-e 'write text "cd $(PWD) && make run-bff"' \
+		-e 'end tell' \
+		-e 'end tell' \
+		-e 'end tell'
+	@echo "✅ Services started in iTerm2 tabs"
+
+stop-svc: ## Stop all background services
+	@echo "🛑 Stopping services..."
+	@-pkill -f "query-service" 2>/dev/null || true
+	@-pkill -f "uvicorn app.main:app" 2>/dev/null || true
+	@-pkill -f "nest start" 2>/dev/null || true
+	@-pkill -f "ts-node" 2>/dev/null || true
+	@echo "✅ Services stopped"
+
+logs-query: ## Tail query service logs
+	@tail -f $(LOGS_DIR)/query.log
+
+logs-risk: ## Tail risk service logs
+	@tail -f $(LOGS_DIR)/risk.log
+
+logs-bff: ## Tail bff service logs
+	@tail -f $(LOGS_DIR)/bff.log
+
+logs-all: ## Tail all service logs
+	@tail -f $(LOGS_DIR)/*.log

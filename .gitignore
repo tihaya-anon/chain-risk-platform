@@ -44,3 +44,4 @@ temp/
 secrets/
 *.pem
 *.key
+.logs/
