@@ -158,7 +158,7 @@ run-alert: ## Alert Service (Go)
 	@cd services/alert-service && go run ./cmd/...
 
 run-risk: ## Risk ML Service (Python)
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/risk-ml-service && uvicorn app.main:app --reload --port 8082'
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/risk-ml-service && uv run uvicorn app.main:app --reload --port 8082'
 
 run-bff: ## BFF Gateway (TypeScript)
 	@cd services/bff-gateway && npm run start:dev
