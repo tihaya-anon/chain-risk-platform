@@ -5,6 +5,9 @@
 SHELL := /bin/bash
 .PHONY: help init clean build test lint docker-up docker-down
 
+# Export all variables to sub-makes and shell commands
+export
+
 # Default target
 help:
 	@echo "Chain Risk Platform - Available Commands"
@@ -146,7 +149,7 @@ clean-ts: ## Clean TypeScript artifacts
 # ==================== Individual Service Commands ====================
 
 run-ingestion: ## Data Ingestion (Go)
-	@cd data-ingestion && go run ./cmd/...
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd data-ingestion && go run ./cmd/...'
 
 run-query: ## Query Service (Go)
 	@cd services/query-service && go run ./cmd/...
@@ -167,5 +170,4 @@ run-orchestrator: ## Orchestrator (Java)
 	@cd services/orchestrator && mvn spring-boot:run
 
 run-flink: ## Flink (Java)
-	@source ./scripts/env-remote.sh > /dev/null 2>&1 && \
- 	./scripts/run-flink.sh
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/run-flink.sh'

@@ -28,6 +28,7 @@ blockchain:
     enableInternalTx: false # fetch internal transactions (expensive, disabled by default)
 
 # Kafka Configuration
+# Override with KAFKA_BROKERS or DOCKER_HOST_IP env var for remote deployment
 kafka:
   brokers:
     - localhost:19092
