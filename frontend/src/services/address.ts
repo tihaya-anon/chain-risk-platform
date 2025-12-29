@@ -1,9 +1,4 @@
-import api, { isMockMode } from './api'
-import {
-  mockGetAddressInfo,
-  mockGetAddressTransfers,
-  mockGetAddressStats,
-} from './mock'
+import api from './api'
 import type { AddressInfo, AddressStats, Transfer, PaginatedResponse } from '@/types'
 
 export interface TransferQuery {
@@ -17,51 +12,27 @@ export interface TransferQuery {
 
 export const addressService = {
   getAddressInfo: async (address: string, network = 'ethereum'): Promise<AddressInfo> => {
-    try {
-      const response = await api.get<AddressInfo>(`/addresses/${address}`, {
-        params: { network },
-      })
-      return response.data
-    } catch (error) {
-      if (isMockMode()) {
-        console.log('[Mock] addressService.getAddressInfo', address)
-        return mockGetAddressInfo(address)
-      }
-      throw error
-    }
+    const response = await api.get<AddressInfo>(`/addresses/${address}`, {
+      params: { network },
+    })
+    return response.data
   },
 
   getAddressTransfers: async (
     address: string,
     query: TransferQuery = {}
   ): Promise<PaginatedResponse<Transfer>> => {
-    try {
-      const response = await api.get<PaginatedResponse<Transfer>>(
-        `/addresses/${address}/transfers`,
-        { params: query }
-      )
-      return response.data
-    } catch (error) {
-      if (isMockMode()) {
-        console.log('[Mock] addressService.getAddressTransfers', address)
-        return mockGetAddressTransfers(address)
-      }
-      throw error
-    }
+    const response = await api.get<PaginatedResponse<Transfer>>(
+      `/addresses/${address}/transfers`,
+      { params: query }
+    )
+    return response.data
   },
 
   getAddressStats: async (address: string, network = 'ethereum'): Promise<AddressStats> => {
-    try {
-      const response = await api.get<AddressStats>(`/addresses/${address}/stats`, {
-        params: { network },
-      })
-      return response.data
-    } catch (error) {
-      if (isMockMode()) {
-        console.log('[Mock] addressService.getAddressStats', address)
-        return mockGetAddressStats()
-      }
-      throw error
-    }
+    const response = await api.get<AddressStats>(`/addresses/${address}/stats`, {
+      params: { network },
+    })
+    return response.data
   },
 }

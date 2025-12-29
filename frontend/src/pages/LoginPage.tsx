@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { Button, Input } from '@/components/common'
 import { authService } from '@/services'
-import { setMockMode, isMockMode } from '@/services/api'
 import { useAuthStore } from '@/store/auth'
 
 export function LoginPage() {
@@ -12,7 +11,6 @@ export function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [mockEnabled, setMockEnabled] = useState(isMockMode())
 
   const loginMutation = useMutation({
     mutationFn: authService.login,
@@ -28,15 +26,8 @@ export function LoginPage() {
       })
       navigate('/')
     },
-    onError: (err: Error) => {
-      // If network error, enable mock mode and retry
-      if (err.message.includes('Network Error') && !isMockMode()) {
-        setMockMode(true)
-        setMockEnabled(true)
-        setError('Backend unavailable. Mock mode enabled. Try again.')
-      } else {
-        setError('Invalid username or password')
-      }
+    onError: () => {
+      setError('Invalid username or password')
     },
   })
 
@@ -44,12 +35,6 @@ export function LoginPage() {
     e.preventDefault()
     setError('')
     loginMutation.mutate({ username, password })
-  }
-
-  const toggleMockMode = () => {
-    const newValue = !mockEnabled
-    setMockMode(newValue)
-    setMockEnabled(newValue)
   }
 
   return (
@@ -102,24 +87,6 @@ export function LoginPage() {
             <p>Demo accounts:</p>
             <p className="font-mono">admin / admin123</p>
             <p className="font-mono">user / user123</p>
-          </div>
-
-          {/* Mock mode toggle */}
-          <div className="pt-4 border-t border-gray-200">
-            <label className="flex items-center justify-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={mockEnabled}
-                onChange={toggleMockMode}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-600">
-                Mock Mode {mockEnabled && <span className="text-green-600">(Active)</span>}
-              </span>
-            </label>
-            <p className="text-xs text-gray-400 text-center mt-1">
-              Enable to use fake data when backend is unavailable
-            </p>
           </div>
         </form>
       </div>

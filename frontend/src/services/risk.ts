@@ -1,5 +1,4 @@
-import api, { isMockMode } from './api'
-import { mockScoreAddress, mockScoreAddressesBatch, mockListRules } from './mock'
+import api from './api'
 import type {
   RiskScore,
   RiskScoreRequest,
@@ -10,41 +9,17 @@ import type {
 
 export const riskService = {
   scoreAddress: async (request: RiskScoreRequest): Promise<RiskScore> => {
-    try {
-      const response = await api.post<RiskScore>('/risk/score', request)
-      return response.data
-    } catch (error) {
-      if (isMockMode()) {
-        console.log('[Mock] riskService.scoreAddress', request.address)
-        return mockScoreAddress(request.address)
-      }
-      throw error
-    }
+    const response = await api.post<RiskScore>('/risk/score', request)
+    return response.data
   },
 
   scoreAddressesBatch: async (request: BatchRiskScoreRequest): Promise<BatchRiskScoreResponse> => {
-    try {
-      const response = await api.post<BatchRiskScoreResponse>('/risk/batch', request)
-      return response.data
-    } catch (error) {
-      if (isMockMode()) {
-        console.log('[Mock] riskService.scoreAddressesBatch', request.addresses.length)
-        return mockScoreAddressesBatch(request.addresses)
-      }
-      throw error
-    }
+    const response = await api.post<BatchRiskScoreResponse>('/risk/score/batch', request)
+    return response.data
   },
 
   listRules: async (): Promise<RiskRule[]> => {
-    try {
-      const response = await api.get<RiskRule[]>('/risk/rules')
-      return response.data
-    } catch (error) {
-      if (isMockMode()) {
-        console.log('[Mock] riskService.listRules')
-        return mockListRules()
-      }
-      throw error
-    }
+    const response = await api.get<RiskRule[]>('/risk/rules')
+    return response.data
   },
 }
