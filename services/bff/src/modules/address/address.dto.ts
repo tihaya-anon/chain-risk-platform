@@ -86,6 +86,9 @@ export class TransferResponse {
   blockNumber: number;
 
   @ApiProperty()
+  logIndex: number;
+
+  @ApiProperty()
   fromAddress: string;
 
   @ApiProperty()
@@ -102,6 +105,15 @@ export class TransferResponse {
 
   @ApiProperty()
   network: string;
+
+  @ApiPropertyOptional({ description: 'Token contract address (for ERC20 transfers)' })
+  tokenAddress?: string;
+
+  @ApiPropertyOptional({ description: 'Token symbol (for ERC20 transfers)' })
+  tokenSymbol?: string;
+
+  @ApiPropertyOptional({ description: 'Token decimal places (for ERC20 transfers)' })
+  tokenDecimal?: number;
 }
 
 export class PaginationMetadata {
