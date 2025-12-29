@@ -1,0 +1,40 @@
+server:
+  name: risk-ml-service
+  port: 8082
+  env: development
+
+# PostgreSQL Configuration
+database:
+  host: localhost
+  port: 15432
+  user: chainrisk
+  password: chainrisk123
+  dbname: chainrisk
+  sslmode: disable
+
+# Redis Configuration
+redis:
+  host: localhost
+  port: 16379
+  password: ""
+  db: 1
+  cacheTTL: 300  # seconds
+
+# Query Service
+queryService:
+  url: http://localhost:8081
+  timeout: 10  # seconds
+
+# Risk Scoring Thresholds
+risk:
+  highRiskThreshold: 0.7
+  mediumRiskThreshold: 0.4
+  largeTxThreshold: "10000000000000000000"  # 10 ETH in wei
+
+# Logging Configuration
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR
+  format: console  # console, json
+  outputPaths:
+    - stdout
+    - logs/risk-ml-service.log

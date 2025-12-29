@@ -1,7 +1,7 @@
 import json
 from typing import Optional
 import redis.asyncio as redis
-from app.core.config import get_settings
+from app.core.config import get_config
 from app.core.logging import get_logger
 from app.models.risk import RiskScoreResponse
 from app.rules.engine import RuleEngine
@@ -14,7 +14,7 @@ class RiskService:
     """Service for computing risk scores."""
 
     def __init__(self):
-        self.settings = get_settings()
+        self.config = get_config()
         self.rule_engine = RuleEngine()
         self.query_client = QueryServiceClient()
         self._redis: Optional[redis.Redis] = None
@@ -24,7 +24,7 @@ class RiskService:
         if self._redis is None:
             try:
                 self._redis = redis.from_url(
-                    self.settings.redis_url,
+                    self.config.redis.url,
                     encoding="utf-8",
                     decode_responses=True,
                 )
@@ -128,7 +128,7 @@ class RiskService:
 
             await redis_client.setex(
                 key,
-                self.settings.cache_ttl,
+                self.config.redis.cache_ttl,
                 value.model_dump_json(),
             )
         except Exception as e:

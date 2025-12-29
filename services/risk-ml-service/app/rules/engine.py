@@ -14,7 +14,7 @@ from app.rules.base import (
     NewAddressRule,
     RoundAmountRule,
 )
-from app.core.config import get_settings
+from app.core.config import get_config
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -24,7 +24,7 @@ class RuleEngine:
     """Rule engine for evaluating address risk."""
 
     def __init__(self):
-        self.settings = get_settings()
+        self.config = get_config()
         self.rules: list[BaseRule] = [
             BlacklistRule(),
             HighFrequencyRule(),
@@ -108,9 +108,9 @@ class RuleEngine:
         """Determine risk level based on score."""
         if score >= 0.8:
             return RiskLevel.CRITICAL
-        elif score >= self.settings.high_risk_threshold:
+        elif score >= self.config.risk.high_risk_threshold:
             return RiskLevel.HIGH
-        elif score >= self.settings.medium_risk_threshold:
+        elif score >= self.config.risk.medium_risk_threshold:
             return RiskLevel.MEDIUM
         else:
             return RiskLevel.LOW

@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import datetime
 import httpx
-from app.core.config import get_settings
+from app.core.config import get_config
 from app.core.logging import get_logger
 from app.models.risk import AddressInfo, TransferInfo
 
@@ -12,9 +12,9 @@ class QueryServiceClient:
     """Client for communicating with Query Service."""
 
     def __init__(self):
-        self.settings = get_settings()
-        self.base_url = self.settings.query_service_url
-        self.timeout = httpx.Timeout(10.0, connect=5.0)
+        self.config = get_config()
+        self.base_url = self.config.query_service.url
+        self.timeout = httpx.Timeout(float(self.config.query_service.timeout), connect=5.0)
 
     async def get_address_info(
         self, address: str, network: str = "ethereum"
