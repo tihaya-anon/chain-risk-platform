@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* Custom styles */
+:root {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-success: #10b981;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}
+
+/* Risk level colors */
+.risk-low {
+  @apply text-green-600 bg-green-50;
+}
+
+.risk-medium {
+  @apply text-yellow-600 bg-yellow-50;
+}
+
+.risk-high {
+  @apply text-orange-600 bg-orange-50;
+}
+
+.risk-critical {
+  @apply text-red-600 bg-red-50;
+}
