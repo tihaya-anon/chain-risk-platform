@@ -152,13 +152,13 @@ run-ingestion: ## Data Ingestion (Go)
 	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd data-ingestion && go run ./cmd/...'
 
 run-query: ## Query Service (Go)
-	@cd services/query-service && go run ./cmd/...
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/query-service && go run ./cmd/...'
 
 run-alert: ## Alert Service (Go)
 	@cd services/alert-service && go run ./cmd/...
 
 run-risk: ## Risk ML Service (Python)
-	@cd services/risk-ml-service && uvicorn app.main:app --reload --port 8082
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/risk-ml-service && uvicorn app.main:app --reload --port 8082'
 
 run-bff: ## BFF Gateway (TypeScript)
 	@cd services/bff-gateway && npm run start:dev
