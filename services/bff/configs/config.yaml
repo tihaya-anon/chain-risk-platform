@@ -1,6 +1,6 @@
 server:
-  name: bff-gateway
-  port: 3000
+  name: bff
+  port: 3001
   env: development
 
 # Backend Services
@@ -12,7 +12,8 @@ services:
     url: http://localhost:8082
     timeout: 10000
 
-# JWT Configuration
+# JWT Configuration (for generating tokens only, not for validation)
+# BFF trusts Gateway for authentication, but still generates JWT for login response
 jwt:
   secret: your-super-secret-key-change-in-production
   expiresIn: 1d
@@ -26,7 +27,7 @@ rateLimit:
 cors:
   origins:
     - http://localhost:5173
-    - http://localhost:3000
+    - http://localhost:8080
   credentials: true
 
 # Logging
@@ -35,4 +36,4 @@ logging:
   format: console  # console, json
   outputPaths:
     - stdout
-    - logs/bff-gateway.log
+    - logs/bff.log

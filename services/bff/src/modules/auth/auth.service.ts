@@ -1,9 +1,11 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import * as jwt from 'jsonwebtoken';
 import { LoginDto, UserPayload } from './auth.dto';
 import { getLogger } from '../../common/logger';
+import { getConfig } from '../../config/config';
 
 const logger = getLogger('AuthService');
+const config = getConfig();
 
 // Demo users - in production, use a database
 const DEMO_USERS = [
@@ -13,8 +15,6 @@ const DEMO_USERS = [
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
-
   async login(dto: LoginDto): Promise<{ accessToken: string; tokenType: string; expiresIn: string }> {
     const user = DEMO_USERS.find(
       (u) => u.username === dto.username && u.password === dto.password,
@@ -31,22 +31,17 @@ export class AuthService {
       role: user.role,
     };
 
-    const accessToken = this.jwtService.sign(payload);
+    // Generate JWT token for Gateway
+    const accessToken = jwt.sign(payload, config.jwt.secret, {
+      expiresIn: config.jwt.expiresIn,
+    } as jwt.SignOptions);
 
     logger.info('Login successful', { username: user.username, role: user.role });
 
     return {
       accessToken,
       tokenType: 'Bearer',
-      expiresIn: '1d',
+      expiresIn: config.jwt.expiresIn,
     };
-  }
-
-  async validateUser(payload: UserPayload): Promise<UserPayload | null> {
-    const user = DEMO_USERS.find((u) => u.id === payload.sub);
-    if (!user) {
-      return null;
-    }
-    return payload;
   }
 }
