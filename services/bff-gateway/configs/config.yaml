@@ -1,0 +1,38 @@
+server:
+  name: bff-gateway
+  port: 3000
+  env: development
+
+# Backend Services
+services:
+  query:
+    url: http://localhost:8081
+    timeout: 10000
+  risk:
+    url: http://localhost:8082
+    timeout: 10000
+
+# JWT Configuration
+jwt:
+  secret: your-super-secret-key-change-in-production
+  expiresIn: 1d
+
+# Rate Limiting
+rateLimit:
+  ttl: 60000  # 1 minute
+  limit: 100  # requests per ttl
+
+# CORS
+cors:
+  origins:
+    - http://localhost:5173
+    - http://localhost:3000
+  credentials: true
+
+# Logging
+logging:
+  level: info  # debug, info, warn, error
+  format: console  # console, json
+  outputPaths:
+    - stdout
+    - logs/bff-gateway.log
