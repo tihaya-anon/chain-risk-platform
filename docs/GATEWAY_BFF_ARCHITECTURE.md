@@ -1,4 +1,4 @@
-# Gateway + BFF Architecture
+# Orchestrator + BFF Architecture
 
 ## 架构概览
 
@@ -10,7 +10,7 @@
      │
      ▼
 ┌──────────────────┐
-│   Gateway        │  ← JWT 认证、路由、添加用户上下文
+│   Orchestrator        │  ← JWT 认证、路由、添加用户上下文
 │   (Java)         │
 │   Port: 8080     │
 └────┬─────────────┘
@@ -34,7 +34,7 @@
 
 ## 职责划分
 
-### Gateway (Java + Spring Cloud Gateway)
+### Orchestrator (Java + Spring Cloud Orchestrator)
 **端口**: 8080  
 **职责**:
 - ✅ JWT Token 验证
@@ -58,18 +58,18 @@
 - ✅ 业务逻辑聚合
 - ✅ 调用后端微服务
 - ✅ 数据格式转换
-- ✅ 接收 Gateway 转发的用户上下文
+- ✅ 接收 Orchestrator 转发的用户上下文
 - ✅ 为前端提供定制化 API
 
 **不负责**:
-- ❌ JWT 验证 (Gateway 已处理)
-- ❌ 限流熔断 (Gateway 已处理)
+- ❌ JWT 验证 (Orchestrator 已处理)
+- ❌ 限流熔断 (Orchestrator 已处理)
 
 ## 请求流程
 
 ### 1. 登录流程 (无需认证)
 ```
-Frontend → Gateway → BFF → Auth Service
+Frontend → Orchestrator → BFF → Auth Service
          (直接转发)  (生成JWT)
 ```
 
@@ -77,7 +77,7 @@ Frontend → Gateway → BFF → Auth Service
 ```
 Frontend 
   ↓ (携带 JWT Token)
-Gateway
+Orchestrator
   ↓ (验证 JWT)
   ↓ (提取用户信息)
   ↓ (添加请求头: X-User-Id, X-User-Username, X-User-Role)
@@ -89,7 +89,7 @@ Backend Services
 
 ## 用户上下文传递
 
-### Gateway 添加的请求头
+### Orchestrator 添加的请求头
 ```http
 GET /api/v1/addresses/0x123... HTTP/1.1
 Host: bff:3001
@@ -101,12 +101,12 @@ X-User-Role: admin
 
 ### BFF 接收方式
 
-#### 方式1: 使用 GatewayAuthGuard (推荐)
+#### 方式1: 使用 OrchestratorAuthGuard (推荐)
 ```typescript
 @Get(':address')
-@UseGuards(GatewayAuthGuard, JwtAuthGuard)
+@UseGuards(OrchestratorAuthGuard, JwtAuthGuard)
 async getAddressInfo(@Request() req: any) {
-  const user = req.user; // { sub, username, role, fromGateway }
+  const user = req.user; // { sub, username, role, fromOrchestrator }
   // ...
 }
 ```
@@ -114,7 +114,7 @@ async getAddressInfo(@Request() req: any) {
 #### 方式2: 使用自定义装饰器
 ```typescript
 @Get(':address')
-async getAddressInfo(@GatewayUser() user: UserInfo) {
+async getAddressInfo(@OrchestratorUser() user: UserInfo) {
   // user: { sub, username, role }
   // ...
 }
@@ -124,9 +124,9 @@ async getAddressInfo(@GatewayUser() user: UserInfo) {
 
 BFF 支持两种访问模式:
 
-### 模式1: 通过 Gateway (生产环境)
+### 模式1: 通过 Orchestrator (生产环境)
 ```
-Frontend → Gateway (8080) → BFF (3001)
+Frontend → Orchestrator (8080) → BFF (3001)
            [JWT验证]         [用户上下文]
 ```
 
@@ -137,17 +137,17 @@ Frontend → BFF (3001)
 ```
 
 **实现原理**:
-- `GatewayAuthGuard` 优先检查 Gateway 请求头
-- 如果没有 Gateway 请求头,`JwtAuthGuard` 验证 JWT
+- `OrchestratorAuthGuard` 优先检查 Orchestrator 请求头
+- 如果没有 Orchestrator 请求头,`JwtAuthGuard` 验证 JWT
 - 两种方式都能正确获取用户信息
 
 ## 配置
 
-### Gateway 配置 (application.yml)
+### Orchestrator 配置 (application.yml)
 ```yaml
 spring:
   cloud:
-    gateway:
+    orchestrator:
       routes:
         - id: auth-route
           uri: http://bff:3001
@@ -182,7 +182,7 @@ export const config = {
 
 ## 环境变量
 
-### Gateway
+### Orchestrator
 ```bash
 JWT_SECRET=your-secret-key-change-this-in-production-min-256-bits
 BFF_URL=http://bff:3001
@@ -195,44 +195,44 @@ ADDRESS_SERVICE_URL=http://address-service:8081
 RISK_SERVICE_URL=http://risk-service:8082
 ```
 
-**注意**: Gateway 和 BFF 的 JWT_SECRET 必须一致!
+**注意**: Orchestrator 和 BFF 的 JWT_SECRET 必须一致!
 
 ## 启动顺序
 
 1. 基础设施 (Redis, Postgres, etc.)
 2. 后端微服务 (Address Service, Risk Service, etc.)
 3. **BFF** (端口 3001)
-4. **Gateway** (端口 8080)
+4. **Orchestrator** (端口 8080)
 5. Frontend (端口 5173)
 
 ## 开发建议
 
 ### 本地开发
 - 直接访问 BFF (http://localhost:3001)
-- 跳过 Gateway,减少复杂度
+- 跳过 Orchestrator,减少复杂度
 
 ### 集成测试
-- 通过 Gateway 访问 (http://localhost:8080)
+- 通过 Orchestrator 访问 (http://localhost:8080)
 - 测试完整的认证流程
 
 ### 生产环境
-- 只暴露 Gateway (端口 8080)
+- 只暴露 Orchestrator (端口 8080)
 - BFF 不对外暴露
 
 ## 安全考虑
 
 1. **JWT Secret**: 生产环境必须使用强密钥
-2. **内网隔离**: BFF 只接受来自 Gateway 的请求
+2. **内网隔离**: BFF 只接受来自 Orchestrator 的请求
 3. **请求头验证**: BFF 可选择性验证请求来源
 4. **HTTPS**: 生产环境使用 HTTPS
 
 ## 监控
 
-- Gateway: `/actuator/health`, `/actuator/metrics`
+- Orchestrator: `/actuator/health`, `/actuator/metrics`
 - BFF: `/api/v1/health` (需添加)
 
 ## 扩展性
 
-- Gateway 和 BFF 都是无状态的,可水平扩展
+- Orchestrator 和 BFF 都是无状态的,可水平扩展
 - 使用 Redis 做分布式限流
 - 使用 Nacos 做服务发现

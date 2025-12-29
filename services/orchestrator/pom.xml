@@ -13,14 +13,15 @@
     </parent>
 
     <groupId>com.chainrisk</groupId>
-    <artifactId>gateway</artifactId>
+    <artifactId>orchestrator</artifactId>
     <version>0.1.0</version>
-    <name>Chain Risk Platform - Gateway</name>
-    <description>API Gateway for Chain Risk Platform</description>
+    <name>Chain Risk Platform - Orchestrator</name>
+    <description>API Gateway and Orchestrator for Chain Risk Platform</description>
 
     <properties>
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
+        <resilience4j.version>2.1.0</resilience4j.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -33,13 +34,13 @@
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
 
-        <!-- Spring Boot Starter Web Flux (required for Gateway) -->
+        <!-- Spring Boot Starter Web Flux -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
-        <!-- Spring Security for JWT validation -->
+        <!-- Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
@@ -64,13 +65,35 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Redis for rate limiting (optional) -->
+        <!-- Resilience4j for Circuit Breaker, Rate Limiter, Retry -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-reactor</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-ratelimiter</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+
+        <!-- Redis for distributed rate limiting -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
         </dependency>
 
-        <!-- Actuator for health checks -->
+        <!-- Actuator -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>

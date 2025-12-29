@@ -1,4 +1,4 @@
-package com.chainrisk.gateway.config;
+package com.chainrisk.orchestrator.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

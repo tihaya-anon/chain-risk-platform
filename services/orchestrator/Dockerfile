@@ -1,4 +1,4 @@
-# Multi-stage build for Java Gateway
+# Multi-stage build for Orchestrator
 FROM maven:3.9-eclipse-temurin-17-alpine AS builder
 
 WORKDIR /app
@@ -17,7 +17,7 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # Copy jar from builder
-COPY --from=builder /app/target/gateway-*.jar app.jar
+COPY --from=builder /app/target/orchestrator-*.jar app.jar
 
 # Expose port
 EXPOSE 8080

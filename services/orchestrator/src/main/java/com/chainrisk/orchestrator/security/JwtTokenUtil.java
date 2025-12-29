@@ -1,6 +1,6 @@
-package com.chainrisk.gateway.security;
+package com.chainrisk.orchestrator.security;
 
-import com.chainrisk.gateway.config.JwtConfig;
+import com.chainrisk.orchestrator.config.JwtConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;

@@ -1,0 +1,130 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: orchestrator
+  
+  # Redis Configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+  
+  cloud:
+    gateway:
+      # Global CORS configuration
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+      
+      # Route definitions
+      routes:
+        # Auth routes (no authentication required)
+        - id: auth-route
+          uri: http://localhost:3001
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - StripPrefix=0
+        
+        # Address routes (authentication required)
+        - id: address-route
+          uri: http://localhost:3001
+          predicates:
+            - Path=/api/v1/addresses/**
+          filters:
+            - StripPrefix=0
+            - name: AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: bffCircuitBreaker
+                fallbackUri: forward:/fallback/bff
+        
+        # Risk routes (authentication required)
+        - id: risk-route
+          uri: http://localhost:3001
+          predicates:
+            - Path=/api/v1/risk/**
+          filters:
+            - StripPrefix=0
+            - name: AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: bffCircuitBreaker
+                fallbackUri: forward:/fallback/bff
+        
+        # Orchestration routes (complex multi-service calls)
+        - id: orchestration-route
+          uri: http://localhost:8080
+          predicates:
+            - Path=/api/v1/orchestration/**
+          filters:
+            - name: AuthenticationFilter
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-change-this-in-production-min-256-bits}
+  expiration: 86400000 # 24 hours
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      bffCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+  
+  ratelimiter:
+    instances:
+      default:
+        limitForPeriod: 100
+        limitRefreshPeriod: 1s
+        timeoutDuration: 0s
+  
+  retry:
+    instances:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.chainrisk.orchestrator: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers,ratelimiters
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
