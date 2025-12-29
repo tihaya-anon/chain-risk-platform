@@ -1,0 +1,357 @@
+definitions:
+  model.APIError:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  model.APIResponse:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/model.APIError'
+      meta: {}
+      success:
+        type: boolean
+    type: object
+  model.AddressInfoResponse:
+    properties:
+      address:
+        type: string
+      firstSeen:
+        type: string
+      lastSeen:
+        type: string
+      network:
+        type: string
+      receivedTxCount:
+        type: integer
+      sentTxCount:
+        type: integer
+      totalTxCount:
+        type: integer
+      uniqueInteracted:
+        type: integer
+    type: object
+  model.AddressStats:
+    properties:
+      avgTxValue:
+        type: string
+      maxTxValue:
+        type: string
+      minTxValue:
+        type: string
+      totalValueReceived:
+        type: string
+      totalValueSent:
+        type: string
+    type: object
+  model.TransferResponse:
+    properties:
+      blockNumber:
+        type: integer
+      fromAddress:
+        type: string
+      id:
+        type: integer
+      logIndex:
+        type: integer
+      network:
+        type: string
+      timestamp:
+        type: string
+      toAddress:
+        type: string
+      tokenAddress:
+        type: string
+      tokenDecimal:
+        type: integer
+      tokenSymbol:
+        type: string
+      transferType:
+        type: string
+      txHash:
+        type: string
+      value:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/addresses/{address}:
+    get:
+      consumes:
+      - application/json
+      description: Get aggregated information for a blockchain address
+      parameters:
+      - description: Blockchain Address
+        in: path
+        name: address
+        required: true
+        type: string
+      - default: ethereum
+        description: Network
+        in: query
+        name: network
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AddressInfoResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+      summary: Get address information
+      tags:
+      - addresses
+  /api/v1/addresses/{address}/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get value statistics for a blockchain address
+      parameters:
+      - description: Blockchain Address
+        in: path
+        name: address
+        required: true
+        type: string
+      - default: ethereum
+        description: Network
+        in: query
+        name: network
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AddressStats'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+      summary: Get address statistics
+      tags:
+      - addresses
+  /api/v1/addresses/{address}/transfers:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of transfers for a specific address
+      parameters:
+      - description: Blockchain Address
+        in: path
+        name: address
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - default: ethereum
+        description: Network
+        in: query
+        name: network
+        type: string
+      - description: Filter by transfer type
+        in: query
+        name: transferType
+        type: string
+      - description: Filter by start time (RFC3339)
+        in: query
+        name: startTime
+        type: string
+      - description: Filter by end time (RFC3339)
+        in: query
+        name: endTime
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+      summary: Get address transfers
+      tags:
+      - addresses
+  /api/v1/transfers:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of transfers with optional filters
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Filter by address (from or to)
+        in: query
+        name: address
+        type: string
+      - description: Filter by sender address
+        in: query
+        name: fromAddress
+        type: string
+      - description: Filter by receiver address
+        in: query
+        name: toAddress
+        type: string
+      - description: Filter by token contract address
+        in: query
+        name: tokenAddress
+        type: string
+      - description: Filter by transfer type (native, erc20)
+        in: query
+        name: transferType
+        type: string
+      - default: ethereum
+        description: Filter by network
+        in: query
+        name: network
+        type: string
+      - description: Filter by start time (RFC3339)
+        in: query
+        name: startTime
+        type: string
+      - description: Filter by end time (RFC3339)
+        in: query
+        name: endTime
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+      summary: List transfers
+      tags:
+      - transfers
+  /api/v1/transfers/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a single transfer by its ID
+      parameters:
+      - description: Transfer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.TransferResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+      summary: Get transfer by ID
+      tags:
+      - transfers
+  /api/v1/transfers/tx/{txHash}:
+    get:
+      consumes:
+      - application/json
+      description: Get all transfers for a specific transaction
+      parameters:
+      - description: Transaction Hash
+        in: path
+        name: txHash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/model.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.TransferResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.APIResponse'
+      summary: Get transfers by transaction hash
+      tags:
+      - transfers
+swagger: "2.0"

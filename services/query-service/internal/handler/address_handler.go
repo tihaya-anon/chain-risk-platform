@@ -74,7 +74,7 @@ func (h *AddressHandler) GetAddressInfo(c *gin.Context) {
 // @Param transferType query string false "Filter by transfer type"
 // @Param startTime query string false "Filter by start time (RFC3339)"
 // @Param endTime query string false "Filter by end time (RFC3339)"
-// @Success 200 {object} model.APIResponse{data=model.ListResponse[model.TransferResponse]}
+// @Success 200 {object} model.APIResponse
 // @Failure 400 {object} model.APIResponse
 // @Failure 500 {object} model.APIResponse
 // @Router /api/v1/addresses/{address}/transfers [get]

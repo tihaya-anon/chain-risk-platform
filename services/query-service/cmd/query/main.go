@@ -17,11 +17,15 @@ import (
 	"github.com/0ksks/chain-risk-platform/query-service/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	_ "github.com/0ksks/chain-risk-platform/query-service/docs"
 )
 
 var (
@@ -228,6 +232,12 @@ func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, a
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// Swagger docs (disabled in production)
+	if cfg.Server.Env != "production" {
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		zapLogger.Info("Swagger UI enabled", zap.String("url", "/swagger/index.html"))
+	}
 
 	// API routes
 	api := router.Group("/api/v1")
