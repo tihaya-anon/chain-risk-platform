@@ -1,8 +1,10 @@
 package com.chainrisk.stream.job;
 
 import com.chainrisk.stream.model.ChainEvent;
+import com.chainrisk.stream.model.Transaction;
 import com.chainrisk.stream.model.Transfer;
 import com.chainrisk.stream.parser.ChainEventDeserializer;
+import com.chainrisk.stream.parser.TransactionParser;
 import com.chainrisk.stream.parser.TransferParser;
 import com.chainrisk.stream.sink.JdbcSinkFactory;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -17,8 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 
 /**
- * Main Flink job for processing blockchain transactions and extracting
- * transfers
+ * Main Flink job for processing blockchain transactions and extracting transfers
  */
 public class TransferExtractionJob {
     private static final Logger LOG = LoggerFactory.getLogger(TransferExtractionJob.class);
@@ -30,13 +31,12 @@ public class TransferExtractionJob {
         String kafkaTopic = params.get("kafka.topic", "chain-transactions");
         String kafkaGroupId = params.get("kafka.group.id", "stream-processor");
 
-        // PostgreSQL configuration (default port 15432 for docker-compose external
-        // access)
+        // PostgreSQL configuration
         String jdbcUrl = params.get("jdbc.url", "jdbc:postgresql://localhost:15432/chainrisk");
         String jdbcUser = params.get("jdbc.user", "chainrisk");
         String jdbcPassword = params.get("jdbc.password", "chainrisk123");
 
-        LOG.info("Starting Transfer Extraction Job");
+        LOG.info("Starting Chain Data Processing Job");
         LOG.info("Kafka brokers: {}", kafkaBrokers);
         LOG.info("Kafka topic: {}", kafkaTopic);
         LOG.info("JDBC URL: {}", jdbcUrl);
@@ -61,8 +61,8 @@ public class TransferExtractionJob {
         // Create watermark strategy with bounded out-of-orderness
         WatermarkStrategy<ChainEvent> watermarkStrategy = WatermarkStrategy
                 .<ChainEvent>forBoundedOutOfOrderness(Duration.ofMinutes(1))
-                .withTimestampAssigner((event,
-                        timestamp) -> event.getTimestamp() != null ? event.getTimestamp().toEpochMilli() : timestamp);
+                .withTimestampAssigner((event, timestamp) -> 
+                        event.getTimestamp() != null ? event.getTimestamp().toEpochMilli() : timestamp);
 
         // Read from Kafka
         DataStream<ChainEvent> eventStream = env
@@ -74,27 +74,45 @@ public class TransferExtractionJob {
                 .filter(event -> event != null && event.getData() != null)
                 .name("Filter Valid Events");
 
-        // Parse events and extract transfers
+        // Create JDBC sink factory
+        JdbcSinkFactory sinkFactory = new JdbcSinkFactory(jdbcUrl, jdbcUser, jdbcPassword);
+
+        // ============== Transaction Stream ==============
+        // Parse and write transactions to chain_data.transactions
+        DataStream<Transaction> transactions = validEvents
+                .filter(ChainEvent::isTransaction)
+                .flatMap(new TransactionParser())
+                .name("Parse Transactions");
+
+        DataStream<Transaction> validTransactions = transactions
+                .filter(tx -> tx != null && tx.getHash() != null && tx.getFromAddress() != null)
+                .name("Filter Valid Transactions");
+
+        validTransactions
+                .addSink(sinkFactory.createTransactionSink())
+                .name("Transaction PostgreSQL Sink");
+
+        LOG.info("Transaction sink configured");
+
+        // ============== Transfer Stream ==============
+        // Parse and write transfers to chain_data.transfers
         DataStream<Transfer> transfers = validEvents
                 .flatMap(new TransferParser())
                 .name("Parse Transfers");
 
-        // Filter out null transfers
         DataStream<Transfer> validTransfers = transfers
                 .filter(transfer -> transfer != null &&
                         transfer.getFromAddress() != null &&
                         transfer.getToAddress() != null)
                 .name("Filter Valid Transfers");
 
-        // Create JDBC sink
-        JdbcSinkFactory sinkFactory = new JdbcSinkFactory(jdbcUrl, jdbcUser, jdbcPassword);
-
-        // Write to PostgreSQL
         validTransfers
                 .addSink(sinkFactory.createTransferSink())
-                .name("PostgreSQL Sink");
+                .name("Transfer PostgreSQL Sink");
+
+        LOG.info("Transfer sink configured");
 
         // Execute the job
-        env.execute("Transfer Extraction Job");
+        env.execute("Chain Data Processing Job");
     }
 }

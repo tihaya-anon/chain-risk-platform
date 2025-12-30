@@ -1,5 +1,6 @@
 package com.chainrisk.stream.sink;
 
+import com.chainrisk.stream.model.Transaction;
 import com.chainrisk.stream.model.Transfer;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -59,6 +60,59 @@ public class JdbcSinkFactory {
                     statement.setTimestamp(10, Timestamp.from(ts));
                     statement.setString(11, transfer.getTransferType());
                     statement.setString(12, transfer.getNetwork());
+                },
+                JdbcExecutionOptions.builder()
+                        .withBatchSize(1000)
+                        .withBatchIntervalMs(200)
+                        .withMaxRetries(3)
+                        .build(),
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(jdbcUrl)
+                        .withDriverName("org.postgresql.Driver")
+                        .withUsername(username)
+                        .withPassword(password)
+                        .build());
+    }
+
+    /**
+     * Create a sink for Transaction records
+     */
+    public SinkFunction<Transaction> createTransactionSink() {
+        String sql = """
+                INSERT INTO chain_data.transactions
+                (hash, block_number, block_hash, transaction_index, from_address, to_address,
+                 value, gas, gas_price, gas_used, nonce, input, timestamp, is_error, contract_address, network)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (hash) DO UPDATE SET
+                    gas_used = EXCLUDED.gas_used,
+                    is_error = EXCLUDED.is_error
+                """;
+
+        return JdbcSink.sink(
+                sql,
+                (statement, tx) -> {
+                    statement.setString(1, tx.getHash());
+                    statement.setLong(2, tx.getBlockNumber() != null ? tx.getBlockNumber() : 0L);
+                    statement.setString(3, tx.getBlockHash());
+                    statement.setObject(4, tx.getTransactionIndex());
+                    statement.setString(5, tx.getFromAddress());
+                    statement.setString(6, tx.getToAddress());
+                    statement.setBigDecimal(7, tx.getValue() != null
+                            ? new java.math.BigDecimal(tx.getValue())
+                            : java.math.BigDecimal.ZERO);
+                    statement.setObject(8, tx.getGas());
+                    statement.setBigDecimal(9, tx.getGasPrice() != null
+                            ? new java.math.BigDecimal(tx.getGasPrice())
+                            : null);
+                    statement.setObject(10, tx.getGasUsed());
+                    statement.setObject(11, tx.getNonce());
+                    statement.setString(12, tx.getInput());
+                    // Handle null timestamp
+                    Instant ts = tx.getTimestamp() != null ? tx.getTimestamp() : Instant.now();
+                    statement.setTimestamp(13, Timestamp.from(ts));
+                    statement.setBoolean(14, tx.getIsError() != null ? tx.getIsError() : false);
+                    statement.setString(15, tx.getContractAddress());
+                    statement.setString(16, tx.getNetwork());
                 },
                 JdbcExecutionOptions.builder()
                         .withBatchSize(1000)

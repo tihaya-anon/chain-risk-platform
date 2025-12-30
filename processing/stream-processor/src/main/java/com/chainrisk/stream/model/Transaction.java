@@ -35,6 +35,7 @@ public class Transaction implements Serializable {
     private Boolean isError;
     private String txReceiptStatus;
     private String contractAddress;
+    private String network;
 
     // Default constructor for Jackson
     public Transaction() {}
@@ -168,6 +169,14 @@ public class Transaction implements Serializable {
         this.contractAddress = contractAddress;
     }
 
+    public String getNetwork() {
+        return network;
+    }
+
+    public void setNetwork(String network) {
+        this.network = network;
+    }
+
     /**
      * Check if this is a contract creation transaction
      */
@@ -191,6 +200,7 @@ public class Transaction implements Serializable {
                 ", from='" + fromAddress + '\'' +
                 ", to='" + toAddress + '\'' +
                 ", value=" + value +
+                ", network='" + network + '\'' +
                 '}';
     }
 }
