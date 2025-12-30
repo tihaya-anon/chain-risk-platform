@@ -87,6 +87,12 @@
             <version>${resilience4j.version}</version>
         </dependency>
 
+        <!-- Spring Cloud CircuitBreaker for Gateway integration -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
+        </dependency>
+
         <!-- Redis for distributed rate limiting -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

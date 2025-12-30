@@ -291,24 +291,24 @@ bff-clean: ## Clean bff artifacts
 
 orchestrator-init: ## Initialize orchestrator dependencies
 	@echo "📦 Initializing orchestrator..."
-	@cd services/orchestrator && mvn clean install -DskipTests -q
+	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q
 	@echo "✅ orchestrator initialized"
 
 orchestrator-build: ## Build orchestrator
 	@echo "🔨 Building orchestrator..."
-	@cd services/orchestrator && mvn package -DskipTests -q
+	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q
 	@echo "✅ orchestrator built"
 
 orchestrator-run: ## Run orchestrator
-	@cd services/orchestrator && mvn spring-boot:run
+	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn spring-boot:run
 
 orchestrator-test: ## Test orchestrator
 	@echo "🧪 Testing orchestrator..."
-	@cd services/orchestrator && mvn test
+	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn test
 
 orchestrator-clean: ## Clean orchestrator artifacts
 	@echo "🧹 Cleaning orchestrator..."
-	@cd services/orchestrator && mvn clean -q
+	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn clean -q
 	@echo "✅ orchestrator cleaned"
 
 # ============================================
@@ -317,12 +317,12 @@ orchestrator-clean: ## Clean orchestrator artifacts
 
 graph-init: ## Initialize graph-engine dependencies
 	@echo "📦 Initializing graph-engine..."
-	@cd processing/graph-engine && mvn clean install -DskipTests -q
+	@cd processing/graph-engine && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q
 	@echo "✅ graph-engine initialized"
 
 graph-build: ## Build graph-engine
 	@echo "🔨 Building graph-engine..."
-	@cd processing/graph-engine && mvn package -DskipTests -q
+	@cd processing/graph-engine && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q
 	@echo "✅ graph-engine built"
 
 graph-run: ## Run graph-engine
@@ -333,11 +333,11 @@ graph-run-build: ## Build and run graph-engine
 
 graph-test: ## Test graph-engine
 	@echo "🧪 Testing graph-engine..."
-	@cd processing/graph-engine && mvn test
+	@cd processing/graph-engine && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn test
 
 graph-clean: ## Clean graph-engine artifacts
 	@echo "🧹 Cleaning graph-engine..."
-	@cd processing/graph-engine && mvn clean -q
+	@cd processing/graph-engine && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn clean -q
 	@echo "✅ graph-engine cleaned"
 
 graph-stop: ## Stop graph-engine
