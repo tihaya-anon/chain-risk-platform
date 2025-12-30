@@ -24,6 +24,33 @@ func NewAddressHandler(svc *service.QueryService, logger *zap.Logger) *AddressHa
 	}
 }
 
+// RegisterRoutes implements RouteRegistrar interface
+// Returns the route configuration for address-related endpoints
+func (h *AddressHandler) RegisterRoutes() RouteGroup {
+	return RouteGroup{
+		Prefix: "/addresses",
+		Routes: []Route{
+			{
+
+				Method:  GET,
+				Path:    "/:address",
+				Handler: h.GetAddressInfo,
+			},
+			{
+
+				Method:  GET,
+				Path:    "/:address/transfers",
+				Handler: h.GetAddressTransfers,
+			},
+			{
+				Method:  GET,
+				Path:    "/:address/stats",
+				Handler: h.GetAddressStats,
+			},
+		},
+	}
+}
+
 // GetAddressInfo godoc
 // @Summary Get address information
 // @Description Get aggregated information for a blockchain address

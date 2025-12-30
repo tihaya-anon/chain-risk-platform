@@ -239,24 +239,13 @@ func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, a
 		zapLogger.Info("Swagger UI enabled", zap.String("url", "/swagger/index.html"))
 	}
 
-	// API routes
 	api := router.Group("/api/v1")
 	{
-		// Transfer routes
-		transfers := api.Group("/transfers")
-		{
-			transfers.GET("", transferHandler.ListTransfers)
-			transfers.GET("/:id", transferHandler.GetTransfer)
-			transfers.GET("/tx/:txHash", transferHandler.GetTransfersByTxHash)
-		}
-
-		// Address routes
-		addresses := api.Group("/addresses")
-		{
-			addresses.GET("/:address", addressHandler.GetAddressInfo)
-			addresses.GET("/:address/transfers", addressHandler.GetAddressTransfers)
-			addresses.GET("/:address/stats", addressHandler.GetAddressStats)
-		}
+		// Register all handlers that implement RouteRegistrar interface
+		handler.RegisterAll(api,
+			transferHandler,
+			addressHandler,
+		)
 	}
 
 	return router

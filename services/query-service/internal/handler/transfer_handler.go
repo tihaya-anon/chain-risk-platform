@@ -25,6 +25,33 @@ func NewTransferHandler(svc *service.QueryService, logger *zap.Logger) *Transfer
 	}
 }
 
+// RegisterRoutes implements RouteRegistrar interface
+// Returns the route configuration for transfer-related endpoints
+func (h *TransferHandler) RegisterRoutes() RouteGroup {
+	return RouteGroup{
+		Prefix: "/transfers",
+		Routes: []Route{
+			{
+
+				Method:  GET,
+				Path:    "",
+				Handler: h.ListTransfers,
+			},
+			{
+
+				Method:  GET,
+				Path:    "/:id",
+				Handler: h.GetTransfer,
+			},
+			{
+				Method:  GET,
+				Path:    "/tx/:txHash",
+				Handler: h.GetTransfersByTxHash,
+			},
+		},
+	}
+}
+
 // GetTransfer godoc
 // @Summary Get transfer by ID
 // @Description Get a single transfer by its ID
