@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -59,8 +60,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
+    /**
+     * Don't handle NoResourceFoundException - let Spring handle static resources
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Void> handleNoResourceFound(NoResourceFoundException ex) {
+        // Return 404 without logging error for static resources (favicon, etc.)
+        return ResponseEntity.notFound().build();
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        // Don't log static resource errors
+        if (ex instanceof NoResourceFoundException) {
+            return ResponseEntity.notFound().build();
+        }
+        
         log.error("Unexpected error", ex);
         
         Map<String, Object> response = new HashMap<>();

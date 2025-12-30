@@ -23,6 +23,13 @@ spring:
       minimum-idle: 2
       connection-timeout: 30000
 
+  # MVC Configuration
+  mvc:
+    static-path-pattern: /**
+  web:
+    resources:
+      add-mappings: true
+
 # Graph Engine Configuration
 graph:
   sync:
@@ -74,3 +81,5 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
