@@ -63,7 +63,10 @@
 | 数据模型 (ChainEvent, Transaction, Transfer) | ✅    | model/*.java                        |
 | Kafka 反序列化器                             | ✅    | parser/ChainEventDeserializer.java  |
 | Transfer 解析器                              | ✅    | parser/TransferParser.java          |
+| Transaction 解析器                           | ✅    | parser/TransactionParser.java       |
 | JDBC Sink 工厂                               | ✅    | sink/JdbcSinkFactory.java           |
+| Transaction Sink                             | ✅    | 写入 chain_data.transactions        |
+| Processing State Tracker                     | ✅    | 写入 chain_data.processing_state    |
 | TransferExtractionJob                        | ✅    | job/TransferExtractionJob.java      |
 | 主程序入口                                   | ✅    | StreamProcessorApp.java             |
 | 配置文件                                     | ✅    | application.properties, logback.xml |
@@ -206,6 +209,9 @@
 
 ### 2025-12-30
 - 📝 更新开发进度文档，反映 Phase 2/3 实际完成状态
+- ✅ Phase 4B: Flink 添加 Transaction Sink
+- ✅ Phase 4B: Flink 添加 Processing State Tracker
+- 🔶 开始 Phase 4C: Graph Engine
 
 ### 2025-12-29
 - ✅ 添加 kafka-exporter 和 postgres-exporter 监控
