@@ -176,6 +176,13 @@ func overrideFromEnv(cfg *Config) {
 			cfg.Blockchain.Polling.IntervalSeconds = val
 		}
 	}
+
+	// Confirmations override (for testing)
+	if confirmations := os.Getenv("CONFIRMATIONS"); confirmations != "" {
+		if val, err := strconv.Atoi(confirmations); err == nil {
+			cfg.Blockchain.Polling.Confirmations = val
+		}
+	}
 }
 
 func setDefaults(cfg *Config) {

@@ -55,7 +55,8 @@ POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-chainrisk123}"
 
 # Test parameters
 START_BLOCK=1000
-NUM_BLOCKS=10
+NUM_BLOCKS=30  # Must be > confirmations (12) + some buffer
+CONFIRMATIONS=0  # Disable confirmations for testing
 EXPECTED_TRANSFERS=$((NUM_BLOCKS * 3))  # ~3 transfers per block on average
 
 log_info "Using Docker Host: $DOCKER_HOST_IP"
@@ -225,6 +226,7 @@ run_data_ingestion() {
     log_info "  ETHERSCAN_BASE_URL=http://localhost:$MOCK_SERVER_PORT/api?"
     log_info "  KAFKA_BROKERS=$KAFKA_BROKER"
     log_info "  START_BLOCK=$START_BLOCK"
+    log_info "  CONFIRMATIONS=$CONFIRMATIONS"
     
     cd "$PROJECT_ROOT/data-ingestion"
     
@@ -239,6 +241,7 @@ run_data_ingestion() {
     export KAFKA_BROKERS="$KAFKA_BROKER"
     export START_BLOCK="$START_BLOCK"
     export POLL_INTERVAL_SECONDS=1
+    export CONFIRMATIONS="$CONFIRMATIONS"
     
     # Run data-ingestion
     ./bin/ingestion &
@@ -258,11 +261,13 @@ run_data_ingestion() {
     # Verify topic was created
     cd "$PROJECT_ROOT"
     if ! ensure_kafka_topic; then
-        log_error "Data ingestion may have failed - Kafka topic not created"
+        log_error "Data ingestion failed - Kafka topic not created"
         log_error "Check data-ingestion/logs/ingestion.log for details"
+        return 1
     fi
     
     log_info "Data ingestion completed"
+    return 0
 }
 
 # Run Flink stream processor using run-flink.sh
@@ -361,7 +366,13 @@ main() {
     check_prerequisites
     clear_test_data
     start_mock_server
-    run_data_ingestion
+    
+    # Run data ingestion and check if it succeeded
+    if ! run_data_ingestion; then
+        log_error "Data ingestion failed, stopping test"
+        exit 1
+    fi
+    
     run_stream_processor
     verify_results
     print_sample_data
