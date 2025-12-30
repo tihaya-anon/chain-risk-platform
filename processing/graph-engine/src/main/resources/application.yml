@@ -1,0 +1,76 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: graph-engine
+
+  # Neo4j Configuration
+  neo4j:
+    uri: bolt://${NEO4J_HOST:localhost}:${NEO4J_PORT:7687}
+    authentication:
+      username: ${NEO4J_USERNAME:neo4j}
+      password: ${NEO4J_PASSWORD:chainrisk123}
+
+  # PostgreSQL Configuration (for reading transfers)
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:chainrisk}
+    username: ${POSTGRES_USER:chainrisk}
+    password: ${POSTGRES_PASSWORD:chainrisk123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+
+# Graph Engine Configuration
+graph:
+  sync:
+    enabled: true
+    # Sync interval in milliseconds (5 minutes)
+    interval: 300000
+    # Batch size for syncing transfers
+    batch-size: 1000
+    # Network to sync
+    network: ethereum
+
+  clustering:
+    # Minimum cluster size to persist
+    min-cluster-size: 2
+    # Maximum depth for common input analysis
+    max-depth: 3
+
+  propagation:
+    # Maximum hops for tag propagation
+    max-hops: 5
+    # Decay factor per hop (0.0 - 1.0)
+    decay-factor: 0.7
+    # Minimum score threshold to continue propagation
+    min-threshold: 0.1
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.chainrisk.graph: DEBUG
+    org.neo4j: INFO
+    org.springframework.data.neo4j: INFO
+
+# OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
