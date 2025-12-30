@@ -1,8 +1,14 @@
 {
+    "schemes": [],
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "",
+        "title": "",
+        "contact": {},
+        "version": ""
     },
+    "host": "",
+    "basePath": "",
     "paths": {
         "/api/v1/addresses/{address}": {
             "get": {

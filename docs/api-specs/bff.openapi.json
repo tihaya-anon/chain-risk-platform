@@ -130,16 +130,6 @@
                         }
                     },
                     {
-                        "name": "address",
-                        "required": true,
-                        "in": "query",
-                        "description": "Ethereum address",
-                        "schema": {
-                            "example": "0x742d35Cc6634C0532925a3b844Bc9e7595f1b7E0",
-                            "type": "string"
-                        }
-                    },
-                    {
                         "name": "network",
                         "required": false,
                         "in": "query",
@@ -331,16 +321,6 @@
                         "required": true,
                         "in": "path",
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "address",
-                        "required": true,
-                        "in": "query",
-                        "description": "Ethereum address",
-                        "schema": {
-                            "example": "0x742d35Cc6634C0532925a3b844Bc9e7595f1b7E0",
                             "type": "string"
                         }
                     },

@@ -3,10 +3,6 @@ import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AddressQueryDto {
-  @ApiProperty({ description: 'Ethereum address', example: '0x742d35Cc6634C0532925a3b844Bc9e7595f1b7E0' })
-  @IsString()
-  address: string;
-
   @ApiPropertyOptional({ description: 'Network', default: 'ethereum' })
   @IsString()
   @IsOptional()
