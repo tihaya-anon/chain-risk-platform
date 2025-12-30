@@ -146,3 +146,22 @@ management:
       enabled: true
     ratelimiters:
       enabled: true
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: Orchestrator APIs
+        url: /v3/api-docs
+      - name: BFF APIs
+        url: ${services.bff.url:http://localhost:3001}/docs-json
+    urls-primary-name: Orchestrator APIs
+    doc-expansion: list
+    tags-sorter: alpha
+    operations-sorter: alpha
+  show-actuator: false
