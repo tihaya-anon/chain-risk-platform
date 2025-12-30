@@ -282,11 +282,11 @@ build-graph-engine: ## Build graph-engine service
 	@cd processing/graph-engine && mvn clean package -DskipTests -q
 	@echo "✅ graph-engine built"
 
-run-graph-engine: ## Run graph-engine service (local Docker)
-	@./scripts/run-graph-engine.sh local
+run-graph-engine: ## Run graph-engine service
+	@./scripts/run-graph-engine.sh
 
-run-graph-engine-remote: ## Run graph-engine service (remote Docker)
-	@./scripts/run-graph-engine.sh remote
+run-graph-engine-build: ## Build and run graph-engine service
+	@./scripts/run-graph-engine.sh --build
 
 stop-graph-engine: ## Stop graph-engine service
 	@./scripts/stop-graph-engine.sh

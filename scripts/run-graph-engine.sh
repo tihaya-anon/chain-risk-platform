@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Graph Engine startup script
-# Usage: ./run-graph-engine.sh [local|remote]
+# Usage: ./run-graph-engine.sh [--build]
 
 set -e
 
@@ -27,40 +27,39 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Load environment variables
-ENV_MODE="${1:-local}"
-
-if [ "$ENV_MODE" = "remote" ]; then
-    log_info "Using remote Docker environment"
-    if [ -f "$PROJECT_ROOT/.env.local" ]; then
-        source "$PROJECT_ROOT/.env.local"
-    fi
-    
-    # Remote Docker host settings
-    export POSTGRES_HOST="${DOCKER_HOST_IP:-localhost}"
-    export POSTGRES_PORT="${POSTGRES_PORT:-15432}"
-    export NEO4J_HOST="${DOCKER_HOST_IP:-localhost}"
-    export NEO4J_PORT="${NEO4J_BOLT_PORT:-17687}"
+# Load environment variables from .env.local
+if [ -f "$PROJECT_ROOT/.env.local" ]; then
+    log_info "Loading environment from .env.local"
+    set -a
+    source "$PROJECT_ROOT/.env.local"
+    set +a
 else
-    log_info "Using local Docker environment"
-    export POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
-    export POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-    export NEO4J_HOST="${NEO4J_HOST:-localhost}"
-    export NEO4J_PORT="${NEO4J_PORT:-7687}"
+    log_error ".env.local not found. Please create it with DOCKER_HOST_IP"
+    exit 1
 fi
 
-# Common settings
+# Validate DOCKER_HOST_IP
+if [ -z "$DOCKER_HOST_IP" ]; then
+    log_error "DOCKER_HOST_IP not set in .env.local"
+    exit 1
+fi
+
+# Remote Docker host settings
+export POSTGRES_HOST="$DOCKER_HOST_IP"
+export POSTGRES_PORT="${POSTGRES_PORT:-15432}"
 export POSTGRES_DB="${POSTGRES_DB:-chainrisk}"
 export POSTGRES_USER="${POSTGRES_USER:-chainrisk}"
 export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-chainrisk123}"
+
+export NEO4J_HOST="$DOCKER_HOST_IP"
+export NEO4J_PORT="${NEO4J_BOLT_PORT:-17687}"
 export NEO4J_USERNAME="${NEO4J_USERNAME:-neo4j}"
 export NEO4J_PASSWORD="${NEO4J_PASSWORD:-chainrisk123}"
 
 log_info "Configuration:"
-echo "  POSTGRES_HOST: $POSTGRES_HOST"
-echo "  POSTGRES_PORT: $POSTGRES_PORT"
-echo "  NEO4J_HOST: $NEO4J_HOST"
-echo "  NEO4J_PORT: $NEO4J_PORT"
+echo "  DOCKER_HOST_IP: $DOCKER_HOST_IP"
+echo "  POSTGRES: $POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB"
+echo "  NEO4J: $NEO4J_HOST:$NEO4J_PORT"
 
 # Check if Maven is installed
 if ! command -v mvn &> /dev/null; then
@@ -84,7 +83,7 @@ fi
 cd "$GRAPH_ENGINE_DIR"
 
 # Build if needed
-if [ ! -f "target/graph-engine-1.0.0-SNAPSHOT.jar" ] || [ "$2" = "--build" ]; then
+if [ ! -f "target/graph-engine-1.0.0-SNAPSHOT.jar" ] || [ "$1" = "--build" ]; then
     log_info "Building graph-engine..."
     mvn clean package -DskipTests -q
     if [ $? -ne 0 ]; then
@@ -98,13 +97,13 @@ fi
 log_info "Checking PostgreSQL connectivity..."
 if ! nc -z "$POSTGRES_HOST" "$POSTGRES_PORT" 2>/dev/null; then
     log_warn "Cannot connect to PostgreSQL at $POSTGRES_HOST:$POSTGRES_PORT"
-    log_warn "Make sure PostgreSQL is running"
+    log_warn "Make sure remote Docker services are running"
 fi
 
 log_info "Checking Neo4j connectivity..."
 if ! nc -z "$NEO4J_HOST" "$NEO4J_PORT" 2>/dev/null; then
     log_warn "Cannot connect to Neo4j at $NEO4J_HOST:$NEO4J_PORT"
-    log_warn "Make sure Neo4j is running"
+    log_warn "Make sure remote Docker services are running"
 fi
 
 # Create logs directory
