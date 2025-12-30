@@ -7,8 +7,34 @@ This directory contains integration tests for the Chain Risk Platform data pipel
 The integration test validates the complete data flow:
 
 ```
-Mock Etherscan Server → data-ingestion → Kafka → stream-processor → PostgreSQL
+Mock Etherscan Server (local) → data-ingestion (local) → Kafka (remote) → stream-processor (local) → PostgreSQL (remote)
 ```
+
+**Note**: The test runs services locally but connects to infrastructure (Kafka, PostgreSQL, etc.) on a remote Docker host.
+
+## Environment Configuration
+
+The test automatically reads configuration from:
+
+1. **`.env.local`** - Contains `DOCKER_HOST_IP` (your remote Docker server IP)
+2. **`scripts/env-remote.sh`** - Sets up all service connection URLs
+
+Example `.env.local`:
+```bash
+DOCKER_HOST_IP=100.120.144.128
+ETHERSCAN_API_KEY=your-api-key
+```
+
+### Remote Docker Ports
+
+| Service    | Port  |
+| ---------- | ----- |
+| PostgreSQL | 15432 |
+| Redis      | 16379 |
+| Kafka      | 19092 |
+| Neo4j HTTP | 17474 |
+| Neo4j Bolt | 17687 |
+| Nacos      | 18848 |
 
 ## Components
 
@@ -33,28 +59,26 @@ go run main.go -port 8545 -start-block 1000 -num-blocks 10
 - `-start-block`: Starting block number (default: 1000)
 - `-num-blocks`: Number of blocks to simulate (default: 10)
 
-### Test Fixtures (`fixtures/`)
-
-Contains predefined test data files for specific test scenarios.
-
 ### Test Scripts (`scripts/`)
 
 #### `run_integration_test.sh`
 
 Main integration test script that:
-1. Checks prerequisites (Docker, Go, running containers)
-2. Clears existing test data from PostgreSQL
-3. Starts the Mock Etherscan Server
-4. Runs data-ingestion service pointing to mock server
-5. Runs Flink stream-processor to process Kafka messages
-6. Verifies data in PostgreSQL
-7. Prints sample data for inspection
+1. Sources environment from `.env.local` and `env-remote.sh`
+2. Checks prerequisites (Go, Java, Maven, psql, remote connections)
+3. Clears existing test data from PostgreSQL
+4. Starts the Mock Etherscan Server (locally)
+5. Runs data-ingestion service pointing to mock server
+6. Runs Flink stream-processor to process Kafka messages
+7. Verifies data in PostgreSQL
+8. Prints sample data for inspection
 
 ## Prerequisites
 
-1. **Docker containers running:**
+1. **Remote Docker containers running:**
    ```bash
-   docker-compose up -d
+   # Check infrastructure health
+   ./scripts/check-infra.sh $DOCKER_HOST_IP
    ```
 
 2. **Go 1.21+ installed**
@@ -62,45 +86,64 @@ Main integration test script that:
 3. **Java 17+ and Maven installed** (for Flink)
 
 4. **PostgreSQL client (psql) installed**
+   ```bash
+   # macOS
+   brew install postgresql
+   ```
+
+5. **netcat (nc) installed** (for Kafka connectivity check)
 
 ## Running Tests
 
 ### Full Integration Test
 
 ```bash
+# Make sure .env.local has correct DOCKER_HOST_IP
 cd tests/integration/scripts
 ./run_integration_test.sh
 ```
 
+### Check Infrastructure First
+
+```bash
+# Verify all remote services are accessible
+./scripts/check-infra.sh
+```
+
 ### Manual Testing
 
-1. **Start Mock Server:**
+1. **Source environment:**
+   ```bash
+   source .env.local
+   source scripts/env-remote.sh
+   ```
+
+2. **Start Mock Server:**
    ```bash
    cd tests/integration/mock_server
    go run main.go -port 8545 -start-block 1000 -num-blocks 10
    ```
 
-2. **Run data-ingestion:**
+3. **Run data-ingestion:**
    ```bash
    cd data-ingestion
    ETHERSCAN_BASE_URL="http://localhost:8545/api?" \
    ETHERSCAN_API_KEY="test" \
-   KAFKA_BROKERS="localhost:19092" \
    go run ./cmd/ingestion
    ```
 
-3. **Run stream-processor:**
+4. **Run stream-processor:**
    ```bash
    cd processing/stream-processor
    mvn clean package -DskipTests
    java -jar target/stream-processor-1.0-SNAPSHOT.jar \
-     --kafka.brokers localhost:19092 \
-     --jdbc.url jdbc:postgresql://localhost:15432/chainrisk
+     --kafka.brokers $KAFKA_BROKERS \
+     --jdbc.url jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/chainrisk
    ```
 
-4. **Verify data:**
+5. **Verify data:**
    ```bash
-   PGPASSWORD=chainrisk123 psql -h localhost -p 15432 -U chainrisk -d chainrisk -c \
+   PGPASSWORD=chainrisk123 psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U chainrisk -d chainrisk -c \
      "SELECT COUNT(*) FROM chain_data.transfers"
    ```
 
@@ -136,32 +179,41 @@ Transactions with `input` starting with `0xa9059cbb` (transfer method) or `0x23b
 
 ## Troubleshooting
 
+### Cannot Connect to Remote Docker
+
+```bash
+# Check if DOCKER_HOST_IP is set correctly
+echo $DOCKER_HOST_IP
+
+# Test connectivity
+ping $DOCKER_HOST_IP
+
+# Check all services
+./scripts/check-infra.sh $DOCKER_HOST_IP
+```
+
 ### Kafka Connection Issues
 ```bash
-# Check Kafka is running
-docker ps | grep kafka
+# Check Kafka is accessible
+nc -z $DOCKER_HOST_IP 19092
 
-# Check topic exists
-docker exec -it kafka kafka-topics.sh --list --bootstrap-server localhost:9092
+# Check topic exists (if kcat installed)
+kcat -b $DOCKER_HOST_IP:19092 -L
 ```
 
 ### PostgreSQL Connection Issues
 ```bash
-# Check PostgreSQL is running
-docker ps | grep postgres
-
 # Test connection
-PGPASSWORD=chainrisk123 psql -h localhost -p 15432 -U chainrisk -d chainrisk -c "SELECT 1"
+PGPASSWORD=chainrisk123 psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U chainrisk -d chainrisk -c "SELECT 1"
+
+# Check schema exists
+PGPASSWORD=chainrisk123 psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U chainrisk -d chainrisk -c "\dt chain_data.*"
 ```
 
 ### No Data in Database
-1. Check Kafka messages:
+1. Check Kafka messages (if kcat installed):
    ```bash
-   docker exec -it kafka kafka-console-consumer.sh \
-     --bootstrap-server localhost:9092 \
-     --topic chain-transactions \
-     --from-beginning \
-     --max-messages 5
+   kcat -b $DOCKER_HOST_IP:19092 -t chain-transactions -C -c 5
    ```
 
 2. Check Flink logs for errors
@@ -170,3 +222,9 @@ PGPASSWORD=chainrisk123 psql -h localhost -p 15432 -U chainrisk -d chainrisk -c 
    ```bash
    curl "http://localhost:8545/api?module=proxy&action=eth_blockNumber"
    ```
+
+### Schema Not Found
+If `chain_data` schema doesn't exist, run the init script:
+```bash
+PGPASSWORD=chainrisk123 psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U chainrisk -d chainrisk -f infra/postgres/init.sql
+```
