@@ -275,6 +275,22 @@ logs-bff: ## Tail bff service logs
 logs-all: ## Tail all service logs
 	@tail -f $(LOGS_DIR)/*.log
 
+# ==================== Graph Engine ====================
+
+build-graph-engine: ## Build graph-engine service
+	@echo "🔨 Building graph-engine..."
+	@cd processing/graph-engine && mvn clean package -DskipTests -q
+	@echo "✅ graph-engine built"
+
+run-graph-engine: ## Run graph-engine service (local Docker)
+	@./scripts/run-graph-engine.sh local
+
+run-graph-engine-remote: ## Run graph-engine service (remote Docker)
+	@./scripts/run-graph-engine.sh remote
+
+stop-graph-engine: ## Stop graph-engine service
+	@./scripts/stop-graph-engine.sh
+
 # ==================== Integration Test ====================
 
 test-integration: ## Run integration test (mock server + data pipeline)
