@@ -133,13 +133,29 @@ check_prerequisites() {
 
 # Ensure Kafka topic exists by producing a test message
 ensure_kafka_topic() {
-    log_info "Ensuring Kafka topic '$KAFKA_TOPIC' exists..."
+    log_info "Checking if Kafka topic '$KAFKA_TOPIC' exists..."
     
-    # Try to create topic using kafka-topics.sh via docker exec if available
-    # Or just let data-ingestion create it automatically
-    # For now, we'll rely on auto-create and wait for data-ingestion to write
-    
-    log_info "Topic will be auto-created when data-ingestion writes first message"
+    # Use kcat/kafkacat if available to check topic
+    if command -v kcat &> /dev/null; then
+        if kcat -b $KAFKA_BROKER -L 2>/dev/null | grep -q "$KAFKA_TOPIC"; then
+            log_info "Topic '$KAFKA_TOPIC' exists"
+            return 0
+        else
+            log_warn "Topic '$KAFKA_TOPIC' does not exist yet"
+            return 1
+        fi
+    elif command -v kafkacat &> /dev/null; then
+        if kafkacat -b $KAFKA_BROKER -L 2>/dev/null | grep -q "$KAFKA_TOPIC"; then
+            log_info "Topic '$KAFKA_TOPIC' exists"
+            return 0
+        else
+            log_warn "Topic '$KAFKA_TOPIC' does not exist yet"
+            return 1
+        fi
+    else
+        log_warn "kcat/kafkacat not installed, cannot verify topic existence"
+        return 0
+    fi
 }
 
 # Clear test data from database
@@ -231,12 +247,20 @@ run_data_ingestion() {
     log_info "Data-ingestion started (PID: $INGESTION_PID)"
     
     # Wait for data to be ingested
-    log_info "Waiting for data ingestion to complete (~$((NUM_BLOCKS * 2 + 5)) seconds)..."
-    sleep $((NUM_BLOCKS * 2 + 5))
+    WAIT_TIME=$((NUM_BLOCKS * 2 + 10))
+    log_info "Waiting for data ingestion to complete (~$WAIT_TIME seconds)..."
+    sleep $WAIT_TIME
     
     # Stop ingestion
     kill $INGESTION_PID 2>/dev/null || true
     INGESTION_PID=""
+    
+    # Verify topic was created
+    cd "$PROJECT_ROOT"
+    if ! ensure_kafka_topic; then
+        log_error "Data ingestion may have failed - Kafka topic not created"
+        log_error "Check data-ingestion/logs/ingestion.log for details"
+    fi
     
     log_info "Data ingestion completed"
 }
