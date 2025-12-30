@@ -7,6 +7,7 @@ import com.chainrisk.stream.parser.ChainEventDeserializer;
 import com.chainrisk.stream.parser.TransactionParser;
 import com.chainrisk.stream.parser.TransferParser;
 import com.chainrisk.stream.sink.JdbcSinkFactory;
+import com.chainrisk.stream.sink.ProcessingStateTracker;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.connector.kafka.source.KafkaSource;
@@ -36,10 +37,14 @@ public class TransferExtractionJob {
         String jdbcUser = params.get("jdbc.user", "chainrisk");
         String jdbcPassword = params.get("jdbc.password", "chainrisk123");
 
+        // Processing state tracking
+        boolean enableStateTracking = params.getBoolean("enable.state.tracking", true);
+
         LOG.info("Starting Chain Data Processing Job");
         LOG.info("Kafka brokers: {}", kafkaBrokers);
         LOG.info("Kafka topic: {}", kafkaTopic);
         LOG.info("JDBC URL: {}", jdbcUrl);
+        LOG.info("State tracking enabled: {}", enableStateTracking);
 
         // Create execution environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -76,6 +81,23 @@ public class TransferExtractionJob {
 
         // Create JDBC sink factory
         JdbcSinkFactory sinkFactory = new JdbcSinkFactory(jdbcUrl, jdbcUser, jdbcPassword);
+
+        // ============== Processing State Tracking ==============
+        if (enableStateTracking) {
+            // Extract block numbers and track processing state per network
+            validEvents
+                    .map(event -> new org.apache.flink.api.java.tuple.Tuple2<>(
+                            event.getNetwork(),
+                            event.getBlockNumber()))
+                    .returns(org.apache.flink.api.common.typeinfo.Types.TUPLE(
+                            org.apache.flink.api.common.typeinfo.Types.STRING,
+                            org.apache.flink.api.common.typeinfo.Types.LONG))
+                    .keyBy(tuple -> tuple.f0)
+                    .process(new ProcessingStateTracker(jdbcUrl, jdbcUser, jdbcPassword, "stream-processor"))
+                    .name("Processing State Tracker");
+
+            LOG.info("Processing state tracker configured");
+        }
 
         // ============== Transaction Stream ==============
         // Parse and write transactions to chain_data.transactions
