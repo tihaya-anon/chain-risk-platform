@@ -43,9 +43,9 @@ public interface AddressRepository extends Neo4jRepository<AddressNode, String> 
      * Get outgoing neighbors of an address
      */
     @Query("""
-        MATCH (a:Address {address: $address})-[t:TRANSFER]->(b:Address)
-        WITH b, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
-        RETURN b, transferCount, totalValue, lastTransfer
+        MATCH (a:Address {address: $address})-[t:TRANSFER]->(neighbor:Address)
+        WITH neighbor, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
+        RETURN neighbor, transferCount, totalValue, lastTransfer
         ORDER BY transferCount DESC
         LIMIT $limit
         """)
@@ -55,9 +55,9 @@ public interface AddressRepository extends Neo4jRepository<AddressNode, String> 
      * Get incoming neighbors of an address
      */
     @Query("""
-        MATCH (a:Address)-[t:TRANSFER]->(b:Address {address: $address})
-        WITH a, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
-        RETURN a, transferCount, totalValue, lastTransfer
+        MATCH (neighbor:Address)-[t:TRANSFER]->(b:Address {address: $address})
+        WITH neighbor, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
+        RETURN neighbor, transferCount, totalValue, lastTransfer
         ORDER BY transferCount DESC
         LIMIT $limit
         """)
@@ -135,8 +135,7 @@ public interface AddressRepository extends Neo4jRepository<AddressNode, String> 
      * Projection interface for neighbor queries
      */
     interface NeighborProjection {
-        AddressNode getA();
-        AddressNode getB();
+        AddressNode getNeighbor();
         Integer getTransferCount();
         Double getTotalValue();
         java.time.Instant getLastTransfer();

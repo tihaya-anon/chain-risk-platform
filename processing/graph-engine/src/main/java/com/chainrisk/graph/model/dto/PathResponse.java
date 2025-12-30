@@ -43,6 +43,11 @@ public class PathResponse {
     private Integer maxDepth;
 
     /**
+     * Optional message (e.g., for edge cases)
+     */
+    private String message;
+
+    /**
      * Path nodes and edges
      */
     private List<PathNode> path;

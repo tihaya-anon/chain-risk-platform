@@ -46,7 +46,7 @@ public class GraphQueryServiceImpl implements GraphQueryService {
         // Get outgoing neighbors
         var outgoing = addressRepository.findOutgoingNeighbors(normalizedAddress, limit / 2);
         for (var projection : outgoing) {
-            AddressNode neighbor = projection.getB();
+            AddressNode neighbor = projection.getNeighbor();
             if (neighbor != null) {
                 neighbors.add(AddressNeighborsResponse.NeighborInfo.builder()
                         .address(neighbor.getAddress())
@@ -64,7 +64,7 @@ public class GraphQueryServiceImpl implements GraphQueryService {
         // Get incoming neighbors
         var incoming = addressRepository.findIncomingNeighbors(normalizedAddress, limit / 2);
         for (var projection : incoming) {
-            AddressNode neighbor = projection.getA();
+            AddressNode neighbor = projection.getNeighbor();
             if (neighbor != null) {
                 neighbors.add(AddressNeighborsResponse.NeighborInfo.builder()
                         .address(neighbor.getAddress())
@@ -101,6 +101,23 @@ public class GraphQueryServiceImpl implements GraphQueryService {
 
     @Override
     public PathResponse findPath(String fromAddress, String toAddress, int maxDepth) {
+        String normalizedFrom = fromAddress.toLowerCase();
+        String normalizedTo = toAddress.toLowerCase();
+
+        // Handle case when start and end nodes are the same
+        if (normalizedFrom.equals(normalizedTo)) {
+            log.warn("Path finding requested with same start and end address: {}", normalizedFrom);
+            return PathResponse.builder()
+                    .found(true)
+                    .fromAddress(normalizedFrom)
+                    .toAddress(normalizedTo)
+                    .pathLength(0)
+                    .maxDepth(maxDepth)
+                    .path(Collections.emptyList())
+                    .message("Start and end addresses are the same")
+                    .build();
+        }
+
         String cypher = """
             MATCH path = shortestPath(
                 (a:Address {address: $fromAddress})-[t:TRANSFER*1..%d]->(b:Address {address: $toAddress})
@@ -110,8 +127,8 @@ public class GraphQueryServiceImpl implements GraphQueryService {
 
         try (Session session = neo4jDriver.session()) {
             Result result = session.run(cypher, Map.of(
-                    "fromAddress", fromAddress.toLowerCase(),
-                    "toAddress", toAddress.toLowerCase()
+                    "fromAddress", normalizedFrom,
+                    "toAddress", normalizedTo
             ));
 
             if (result.hasNext()) {
@@ -146,7 +163,8 @@ public class GraphQueryServiceImpl implements GraphQueryService {
                         builder.txHash(rel.get("txHash").asString());
                         builder.value(rel.get("value").asString());
                         if (!rel.get("timestamp").isNull()) {
-                            builder.timestamp(rel.get("timestamp").asZonedDateTime().toInstant());
+                            long timestampMillis = rel.get("timestamp").asLong();
+                            builder.timestamp(Instant.ofEpochMilli(timestampMillis));
                         }
                     }
 
@@ -155,8 +173,8 @@ public class GraphQueryServiceImpl implements GraphQueryService {
 
                 return PathResponse.builder()
                         .found(true)
-                        .fromAddress(fromAddress.toLowerCase())
-                        .toAddress(toAddress.toLowerCase())
+                        .fromAddress(normalizedFrom)
+                        .toAddress(normalizedTo)
                         .pathLength(pathLength)
                         .maxDepth(maxDepth)
                         .path(pathNodes)
@@ -168,8 +186,8 @@ public class GraphQueryServiceImpl implements GraphQueryService {
 
         return PathResponse.builder()
                 .found(false)
-                .fromAddress(fromAddress.toLowerCase())
-                .toAddress(toAddress.toLowerCase())
+                .fromAddress(normalizedFrom)
+                .toAddress(normalizedTo)
                 .pathLength(0)
                 .maxDepth(maxDepth)
                 .path(Collections.emptyList())
