@@ -143,15 +143,21 @@
 
 ### 任务清单
 
-#### 4.1 Graph Engine (Java)
-- [ ] Neo4j 集成
-- [ ] 地址聚类算法
-  - [ ] 基于共同输入的聚类
-  - [ ] 基于行为模式的聚类
-- [ ] Tag Propagation 实现
-  - [ ] 风险标签传播
-  - [ ] 置信度衰减
-- [ ] 图查询 API
+#### 4.1 Graph Engine (Java) ✅ 已完成
+- [x] Neo4j 集成
+- [x] 地址聚类算法
+  - [x] 基于共同输入的聚类 (CommonInputClusteringService)
+  - [x] Union-Find 算法实现
+- [x] Tag Propagation 实现
+  - [x] BFS 风险标签传播 (BfsTagPropagationService)
+  - [x] 置信度衰减
+- [x] 图查询 API
+  - [x] 地址信息查询
+  - [x] 邻居查询
+  - [x] 最短路径查询
+  - [x] 集群查询
+- [x] PostgreSQL 数据同步 (GraphSyncService)
+- [x] 自定义 Neo4j 类型转换器 (Long ↔ Instant)
 
 #### 4.2 ML 风险模型 (Python)
 - [ ] 特征工程
