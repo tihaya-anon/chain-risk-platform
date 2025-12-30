@@ -76,6 +76,8 @@ type MetricsConfig struct {
 func Load(configPath string) (*Config, error) {
 	// Load .env.local file if exists (from project root)
 	// Try to find .env.local relative to config file location
+	// NOTE: We use a custom loader that doesn't override existing env vars
+	// This allows command-line env vars to take precedence over .env.local
 	configDir := filepath.Dir(configPath)
 	envPaths := []string{
 		filepath.Join(configDir, "..", ".env.local"),
@@ -84,7 +86,8 @@ func Load(configPath string) (*Config, error) {
 	}
 	for _, envPath := range envPaths {
 		if _, err := os.Stat(envPath); err == nil {
-			_ = godotenv.Load(envPath)
+			// Load env file without overriding existing variables
+			loadEnvFileNoOverride(envPath)
 			break
 		}
 	}
@@ -116,6 +119,21 @@ func Load(configPath string) (*Config, error) {
 	setDefaults(&cfg)
 
 	return &cfg, nil
+}
+
+// loadEnvFileNoOverride loads environment variables from a file
+// but does NOT override variables that are already set
+func loadEnvFileNoOverride(filename string) {
+	envMap, err := godotenv.Read(filename)
+	if err != nil {
+		return
+	}
+	for key, value := range envMap {
+		// Only set if not already present in environment
+		if os.Getenv(key) == "" {
+			os.Setenv(key, value)
+		}
+	}
 }
 
 // overrideFromEnv overrides config values from environment variables
