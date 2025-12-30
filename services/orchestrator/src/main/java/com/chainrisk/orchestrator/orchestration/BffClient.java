@@ -17,6 +17,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unchecked")
 public class BffClient {
 
     private final WebClient bffWebClient;
@@ -37,6 +38,7 @@ public class BffClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
                 .doOnError(error -> log.error("Failed to get address info: {}", error.getMessage()));
     }
 
@@ -56,6 +58,7 @@ public class BffClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
                 .doOnError(error -> log.error("Failed to get transfers: {}", error.getMessage()));
     }
 
@@ -77,6 +80,7 @@ public class BffClient {
                 ))
                 .retrieve()
                 .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
                 .doOnError(error -> log.error("Failed to get risk score: {}", error.getMessage()));
     }
 
@@ -93,6 +97,7 @@ public class BffClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
                 .doOnError(error -> log.error("Failed to get graph address info: {}", error.getMessage()));
     }
 
@@ -111,6 +116,7 @@ public class BffClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
                 .doOnError(error -> log.error("Failed to get graph neighbors: {}", error.getMessage()));
     }
 
@@ -125,6 +131,7 @@ public class BffClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(List.class)
+                .map(list -> (List<String>) list)
                 .doOnError(error -> log.error("Failed to get graph tags: {}", error.getMessage()));
     }
 
@@ -139,6 +146,7 @@ public class BffClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
                 .doOnError(error -> log.error("Failed to get graph cluster: {}", error.getMessage()));
     }
 
@@ -156,6 +164,7 @@ public class BffClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
                 .doOnError(error -> log.error("Failed to get graph path: {}", error.getMessage()));
     }
 
@@ -173,6 +182,7 @@ public class BffClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(List.class)
+                .map(list -> (List<Map<String, Object>>) list)
                 .doOnError(error -> log.error("Failed to search by tag: {}", error.getMessage()));
     }
 
@@ -191,6 +201,7 @@ public class BffClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(List.class)
+                .map(list -> (List<Map<String, Object>>) list)
                 .doOnError(error -> log.error("Failed to get high-risk addresses: {}", error.getMessage()));
     }
 }
