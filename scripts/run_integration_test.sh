@@ -7,7 +7,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Source environment configuration
 if [ -f "$PROJECT_ROOT/.env.local" ]; then
@@ -135,12 +135,28 @@ EOF
     log_info "Test data cleared"
 }
 
+# Build mock Etherscan server
+build_mock_server() {
+    log_info "Building Mock Etherscan Server..."
+    
+    cd "$PROJECT_ROOT/tests/integration/mock_server"
+    mkdir -p bin
+    go build -o bin/mock_server .
+    
+    log_info "Mock server built: tests/integration/mock_server/bin/mock_server"
+}
+
 # Start mock Etherscan server
 start_mock_server() {
     log_info "Starting Mock Etherscan Server..."
     
     cd "$PROJECT_ROOT/tests/integration/mock_server"
-    go build -o ./bin/mock_server .
+    
+    # Build if not exists
+    if [ ! -f "bin/mock_server" ]; then
+        build_mock_server
+    fi
+    
     ./bin/mock_server -port $MOCK_SERVER_PORT -start-block $START_BLOCK -num-blocks $NUM_BLOCKS &
     MOCK_SERVER_PID=$!
     
@@ -156,14 +172,27 @@ start_mock_server() {
     log_info "Mock Etherscan Server started (PID: $MOCK_SERVER_PID)"
 }
 
+# Build data-ingestion
+build_data_ingestion() {
+    log_info "Building data-ingestion..."
+    
+    cd "$PROJECT_ROOT/data-ingestion"
+    mkdir -p bin
+    go build -o bin/ingestion ./cmd/ingestion
+    
+    log_info "Data-ingestion built: data-ingestion/bin/ingestion"
+}
+
 # Run data-ingestion with mock server
 run_data_ingestion() {
     log_info "Running data-ingestion service..."
     
     cd "$PROJECT_ROOT/data-ingestion"
     
-    # Build if needed
-    go build -o ./bin/ingestion ./cmd/ingestion
+    # Build if not exists
+    if [ ! -f "bin/ingestion" ]; then
+        build_data_ingestion
+    fi
     
     # Run with mock server URL and remote Kafka
     # ETHERSCAN_BASE_URL overrides the config file's baseUrl
@@ -189,25 +218,15 @@ run_data_ingestion() {
     log_info "Data ingestion completed"
 }
 
-# Run Flink stream processor
+# Run Flink stream processor using run-flink.sh
 run_stream_processor() {
     log_info "Running Flink stream processor..."
     
-    cd "$PROJECT_ROOT/processing/stream-processor"
+    cd "$PROJECT_ROOT"
     
-    # Check if jar exists, build if not
-    if [ ! -f "target/stream-processor-1.0.0-SNAPSHOT.jar" ]; then
-        log_info "Building stream-processor..."
-        mvn clean package -DskipTests -q
-    fi
-    
-    # Run the job with remote connections
-    java -jar target/stream-processor-1.0.0-SNAPSHOT.jar \
-        --kafka.brokers $KAFKA_BROKER \
-        --kafka.topic $KAFKA_TOPIC \
-        --jdbc.url "jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB" \
-        --jdbc.user $POSTGRES_USER \
-        --jdbc.password $POSTGRES_PASSWORD &
+    # Use the existing run-flink.sh script (it handles build and run)
+    # Run in background and capture PID
+    bash -c './scripts/run-flink.sh' &
     FLINK_PID=$!
     
     log_info "Stream processor started (PID: $FLINK_PID)"

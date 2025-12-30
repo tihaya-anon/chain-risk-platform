@@ -12,6 +12,13 @@ Mock Etherscan Server (local) → data-ingestion (local) → Kafka (remote) → 
 
 **Note**: The test runs services locally but connects to infrastructure (Kafka, PostgreSQL, etc.) on a remote Docker host.
 
+## Quick Start
+
+```bash
+# From project root
+make test-integration
+```
+
 ## Environment Configuration
 
 The test automatically reads configuration from:
@@ -36,6 +43,24 @@ ETHERSCAN_API_KEY=your-api-key
 | Neo4j Bolt | 17687 |
 | Nacos      | 18848 |
 
+## Directory Structure
+
+```
+tests/integration/
+├── mock_server/          # Mock Etherscan API server
+│   ├── main.go
+│   ├── go.mod
+│   └── bin/              # Built binary (gitignored)
+├── fixtures/             # Test data fixtures
+└── README.md
+
+scripts/
+├── run_integration_test.sh  # Main integration test script
+├── run-flink.sh             # Flink runner (used by integration test)
+├── env-remote.sh            # Environment setup
+└── check-infra.sh           # Infrastructure health check
+```
+
 ## Components
 
 ### Mock Etherscan Server (`mock_server/`)
@@ -48,10 +73,15 @@ A Go HTTP server that simulates the Etherscan API, providing predictable test da
 - Generates deterministic test data based on block number
 - Includes both native ETH transfers and ERC20 transfers
 
-**Usage:**
+**Build:**
 ```bash
-cd mock_server
-go run main.go -port 8545 -start-block 1000 -num-blocks 10
+make build-mock-server
+```
+
+**Manual Run:**
+```bash
+cd tests/integration/mock_server
+./bin/mock_server -port 8545 -start-block 1000 -num-blocks 10
 ```
 
 **Parameters:**
@@ -59,9 +89,7 @@ go run main.go -port 8545 -start-block 1000 -num-blocks 10
 - `-start-block`: Starting block number (default: 1000)
 - `-num-blocks`: Number of blocks to simulate (default: 10)
 
-### Test Scripts (`scripts/`)
-
-#### `run_integration_test.sh`
+### Integration Test Script (`scripts/run_integration_test.sh`)
 
 Main integration test script that:
 1. Sources environment from `.env.local` and `env-remote.sh`
@@ -69,7 +97,7 @@ Main integration test script that:
 3. Clears existing test data from PostgreSQL
 4. Starts the Mock Etherscan Server (locally)
 5. Runs data-ingestion service pointing to mock server
-6. Runs Flink stream-processor to process Kafka messages
+6. Runs Flink stream-processor via `run-flink.sh`
 7. Verifies data in PostgreSQL
 8. Prints sample data for inspection
 
@@ -77,8 +105,7 @@ Main integration test script that:
 
 1. **Remote Docker containers running:**
    ```bash
-   # Check infrastructure health
-   ./scripts/check-infra.sh $DOCKER_HOST_IP
+   make ensure-infra
    ```
 
 2. **Go 1.21+ installed**
@@ -95,19 +122,16 @@ Main integration test script that:
 
 ## Running Tests
 
-### Full Integration Test
+### Full Integration Test (Recommended)
 
 ```bash
-# Make sure .env.local has correct DOCKER_HOST_IP
-cd tests/integration/scripts
-./run_integration_test.sh
+make test-integration
 ```
 
 ### Check Infrastructure First
 
 ```bash
-# Verify all remote services are accessible
-./scripts/check-infra.sh
+make ensure-infra
 ```
 
 ### Manual Testing
@@ -120,8 +144,9 @@ cd tests/integration/scripts
 
 2. **Start Mock Server:**
    ```bash
+   make build-mock-server
    cd tests/integration/mock_server
-   go run main.go -port 8545 -start-block 1000 -num-blocks 10
+   ./bin/mock_server -port 8545 -start-block 1000 -num-blocks 10
    ```
 
 3. **Run data-ingestion:**
@@ -134,11 +159,7 @@ cd tests/integration/scripts
 
 4. **Run stream-processor:**
    ```bash
-   cd processing/stream-processor
-   mvn clean package -DskipTests
-   java -jar target/stream-processor-1.0-SNAPSHOT.jar \
-     --kafka.brokers $KAFKA_BROKERS \
-     --jdbc.url jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/chainrisk
+   make run-flink
    ```
 
 5. **Verify data:**
@@ -189,7 +210,7 @@ echo $DOCKER_HOST_IP
 ping $DOCKER_HOST_IP
 
 # Check all services
-./scripts/check-infra.sh $DOCKER_HOST_IP
+make ensure-infra
 ```
 
 ### Kafka Connection Issues

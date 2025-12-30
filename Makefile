@@ -275,6 +275,16 @@ logs-bff: ## Tail bff service logs
 logs-all: ## Tail all service logs
 	@tail -f $(LOGS_DIR)/*.log
 
+# ==================== Integration Test ====================
+
+test-integration: ## Run integration test (mock server + data pipeline)
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/run_integration_test.sh'
+
+build-mock-server: ## Build mock Etherscan server
+	@echo "🔨 Building mock server..."
+	@cd tests/integration/mock_server && mkdir -p bin && go build -o bin/mock_server .
+	@echo "✅ Mock server built: tests/integration/mock_server/bin/mock_server"
+
 # ==================== Helper Combination Commands ====================
 
 ensure-infra: ## Ensure infrastructure is available
