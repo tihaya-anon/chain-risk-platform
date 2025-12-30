@@ -545,6 +545,1051 @@
                     "risk"
                 ]
             }
+        },
+        "/api/v1/graph/address/{address}": {
+            "get": {
+                "operationId": "GraphController_getAddressInfo",
+                "summary": "Get address information from graph",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain address (0x-prefixed)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Address information",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AddressInfoResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing Gateway headers"
+                    },
+                    "404": {
+                        "description": "Address not found"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/address/{address}/neighbors": {
+            "get": {
+                "operationId": "GraphController_getAddressNeighbors",
+                "summary": "Get address neighbors",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain address",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "depth",
+                        "required": false,
+                        "in": "query",
+                        "description": "Search depth (1-3)",
+                        "schema": {
+                            "default": 1,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Maximum number of neighbors to return",
+                        "schema": {
+                            "default": 50,
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Address neighbors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AddressNeighborsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/address/{address}/tags": {
+            "get": {
+                "operationId": "GraphController_getAddressTags",
+                "summary": "Get address tags",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain address",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Address tags",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            },
+            "post": {
+                "operationId": "GraphController_addAddressTags",
+                "summary": "Add tags to address",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain address",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AddTagRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated address info",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AddressInfoResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/address/{address}/tags/{tag}": {
+            "delete": {
+                "operationId": "GraphController_removeAddressTag",
+                "summary": "Remove tag from address",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain address",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tag",
+                        "required": true,
+                        "in": "path",
+                        "description": "Tag to remove",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tag removed"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/address/{address}/cluster": {
+            "get": {
+                "operationId": "GraphController_getAddressCluster",
+                "summary": "Get cluster that address belongs to",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain address",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cluster information",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClusterResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Address not in any cluster"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/path/{fromAddress}/{toAddress}": {
+            "get": {
+                "operationId": "GraphController_findPath",
+                "summary": "Find shortest path between two addresses",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "fromAddress",
+                        "required": true,
+                        "in": "path",
+                        "description": "Source address",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "toAddress",
+                        "required": true,
+                        "in": "path",
+                        "description": "Target address",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "maxDepth",
+                        "required": false,
+                        "in": "query",
+                        "description": "Maximum path depth",
+                        "schema": {
+                            "default": 5,
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Path result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PathResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/cluster/{clusterId}": {
+            "get": {
+                "operationId": "GraphController_getCluster",
+                "summary": "Get cluster by ID",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "clusterId",
+                        "required": true,
+                        "in": "path",
+                        "description": "Cluster ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cluster information",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClusterResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Cluster not found"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/cluster/run": {
+            "post": {
+                "operationId": "GraphController_runClustering",
+                "summary": "Run clustering algorithm",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Clustering result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClusteringResultResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/cluster/manual": {
+            "post": {
+                "operationId": "GraphController_manualCluster",
+                "summary": "Manually cluster addresses",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ManualClusterRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Clustering result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClusteringResultResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/search/tag/{tag}": {
+            "get": {
+                "operationId": "GraphController_searchByTag",
+                "summary": "Search addresses by tag",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tag",
+                        "required": true,
+                        "in": "path",
+                        "description": "Tag to search for",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Maximum results",
+                        "schema": {
+                            "default": 50,
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Matching addresses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AddressInfoResponse"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/search/high-risk": {
+            "get": {
+                "operationId": "GraphController_getHighRiskAddresses",
+                "summary": "Get high-risk addresses",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "threshold",
+                        "required": false,
+                        "in": "query",
+                        "description": "Risk score threshold (0.0 - 1.0)",
+                        "schema": {
+                            "default": 0.6,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Maximum results",
+                        "schema": {
+                            "default": 50,
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "High-risk addresses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AddressInfoResponse"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/sync/status": {
+            "get": {
+                "operationId": "GraphController_getSyncStatus",
+                "summary": "Get sync status",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sync status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SyncStatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/sync": {
+            "post": {
+                "operationId": "GraphController_triggerSync",
+                "summary": "Trigger data sync",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sync triggered",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SyncStatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/propagate": {
+            "post": {
+                "operationId": "GraphController_propagateTags",
+                "summary": "Propagate risk tags to neighbors",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Propagation result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PropagationResultResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
+        },
+        "/api/v1/graph/propagate/{address}": {
+            "post": {
+                "operationId": "GraphController_propagateFromAddress",
+                "summary": "Propagate risk from specific address",
+                "parameters": [
+                    {
+                        "name": "X-User-Role",
+                        "in": "header",
+                        "description": "User role (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Username",
+                        "in": "header",
+                        "description": "Username (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "description": "User ID (provided by Gateway)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Source address",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Propagation result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PropagationResultResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "tags": [
+                    "graph"
+                ]
+            }
         }
     },
     "info": {
@@ -648,39 +1693,51 @@
                 "type": "object",
                 "properties": {
                     "address": {
-                        "type": "string"
-                    },
-                    "network": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Blockchain address"
                     },
                     "firstSeen": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "First seen timestamp"
                     },
                     "lastSeen": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Last seen timestamp"
                     },
-                    "totalTxCount": {
-                        "type": "number"
+                    "txCount": {
+                        "type": "number",
+                        "description": "Transaction count"
                     },
-                    "sentTxCount": {
-                        "type": "number"
+                    "riskScore": {
+                        "type": "number",
+                        "description": "Risk score (0.0 - 1.0)"
                     },
-                    "receivedTxCount": {
-                        "type": "number"
+                    "tags": {
+                        "description": "Tags associated with the address",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     },
-                    "uniqueInteracted": {
-                        "type": "number"
+                    "clusterId": {
+                        "type": "string",
+                        "description": "Cluster ID if address belongs to a cluster"
+                    },
+                    "network": {
+                        "type": "string",
+                        "description": "Network (e.g., ethereum)"
+                    },
+                    "incomingCount": {
+                        "type": "number",
+                        "description": "Incoming transfer count"
+                    },
+                    "outgoingCount": {
+                        "type": "number",
+                        "description": "Outgoing transfer count"
                     }
                 },
                 "required": [
-                    "address",
-                    "network",
-                    "firstSeen",
-                    "lastSeen",
-                    "totalTxCount",
-                    "sentTxCount",
-                    "receivedTxCount",
-                    "uniqueInteracted"
+                    "address"
                 ]
             },
             "TransferResponse": {
@@ -979,6 +2036,361 @@
                     "name",
                     "description",
                     "enabled"
+                ]
+            },
+            "NeighborInfo": {
+                "type": "object",
+                "properties": {
+                    "address": {
+                        "type": "string",
+                        "description": "Neighbor address"
+                    },
+                    "direction": {
+                        "type": "string",
+                        "description": "Direction of transfers (IN, OUT, BOTH)"
+                    },
+                    "transferCount": {
+                        "type": "number",
+                        "description": "Number of transfers"
+                    },
+                    "totalValue": {
+                        "type": "string",
+                        "description": "Total value transferred"
+                    },
+                    "lastTransfer": {
+                        "type": "string",
+                        "description": "Last transfer timestamp"
+                    },
+                    "riskScore": {
+                        "type": "number",
+                        "description": "Risk score"
+                    },
+                    "tags": {
+                        "description": "Tags",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "address"
+                ]
+            },
+            "AddressNeighborsResponse": {
+                "type": "object",
+                "properties": {
+                    "address": {
+                        "type": "string",
+                        "description": "Center address"
+                    },
+                    "neighbors": {
+                        "description": "List of neighbors",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NeighborInfo"
+                        }
+                    },
+                    "totalCount": {
+                        "type": "number",
+                        "description": "Total neighbor count"
+                    },
+                    "depth": {
+                        "type": "number",
+                        "description": "Search depth used"
+                    }
+                },
+                "required": [
+                    "address",
+                    "neighbors"
+                ]
+            },
+            "AddTagRequestDto": {
+                "type": "object",
+                "properties": {
+                    "tags": {
+                        "description": "Tags to add",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "Source of the tag"
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "description": "Confidence score (0.0 - 1.0)"
+                    }
+                },
+                "required": [
+                    "tags"
+                ]
+            },
+            "ClusterResponse": {
+                "type": "object",
+                "properties": {
+                    "clusterId": {
+                        "type": "string",
+                        "description": "Cluster ID"
+                    },
+                    "size": {
+                        "type": "number",
+                        "description": "Number of addresses in cluster"
+                    },
+                    "riskScore": {
+                        "type": "number",
+                        "description": "Aggregate risk score"
+                    },
+                    "label": {
+                        "type": "string",
+                        "description": "Cluster label"
+                    },
+                    "category": {
+                        "type": "string",
+                        "description": "Cluster category"
+                    },
+                    "tags": {
+                        "description": "Cluster tags",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "addresses": {
+                        "description": "Addresses in cluster",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "description": "Creation timestamp"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "description": "Last update timestamp"
+                    },
+                    "network": {
+                        "type": "string",
+                        "description": "Network"
+                    }
+                },
+                "required": [
+                    "clusterId"
+                ]
+            },
+            "PathNode": {
+                "type": "object",
+                "properties": {
+                    "address": {
+                        "type": "string",
+                        "description": "Address in the path"
+                    },
+                    "txHash": {
+                        "type": "string",
+                        "description": "Transaction hash"
+                    },
+                    "value": {
+                        "type": "string",
+                        "description": "Transfer value"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "description": "Transfer timestamp"
+                    },
+                    "riskScore": {
+                        "type": "number",
+                        "description": "Risk score"
+                    },
+                    "tags": {
+                        "description": "Tags",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "address"
+                ]
+            },
+            "PathResponse": {
+                "type": "object",
+                "properties": {
+                    "found": {
+                        "type": "boolean",
+                        "description": "Whether a path was found"
+                    },
+                    "fromAddress": {
+                        "type": "string",
+                        "description": "Source address"
+                    },
+                    "toAddress": {
+                        "type": "string",
+                        "description": "Target address"
+                    },
+                    "pathLength": {
+                        "type": "number",
+                        "description": "Path length (number of hops)"
+                    },
+                    "maxDepth": {
+                        "type": "number",
+                        "description": "Maximum depth searched"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Message (e.g., path not found reason)"
+                    },
+                    "path": {
+                        "description": "Path nodes",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PathNode"
+                        }
+                    }
+                },
+                "required": [
+                    "found",
+                    "fromAddress",
+                    "toAddress"
+                ]
+            },
+            "ClusteringResultResponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "description": "Clustering status"
+                    },
+                    "clustersCreated": {
+                        "type": "number",
+                        "description": "Number of clusters created"
+                    },
+                    "addressesClustered": {
+                        "type": "number",
+                        "description": "Number of addresses clustered"
+                    },
+                    "durationMs": {
+                        "type": "number",
+                        "description": "Duration in milliseconds"
+                    },
+                    "startedAt": {
+                        "type": "string",
+                        "description": "Start timestamp"
+                    },
+                    "completedAt": {
+                        "type": "string",
+                        "description": "Completion timestamp"
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "description": "Error message if failed"
+                    }
+                },
+                "required": [
+                    "status"
+                ]
+            },
+            "ManualClusterRequestDto": {
+                "type": "object",
+                "properties": {
+                    "addresses": {
+                        "description": "List of addresses to cluster",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "addresses"
+                ]
+            },
+            "SyncStatusResponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "description": "Sync status (IDLE, RUNNING, COMPLETED, FAILED)"
+                    },
+                    "lastSyncedBlock": {
+                        "type": "number",
+                        "description": "Last synced block number"
+                    },
+                    "totalAddresses": {
+                        "type": "number",
+                        "description": "Total addresses in graph"
+                    },
+                    "totalTransfers": {
+                        "type": "number",
+                        "description": "Total transfers in graph"
+                    },
+                    "lastSyncTime": {
+                        "type": "string",
+                        "description": "Last sync timestamp"
+                    },
+                    "nextSyncTime": {
+                        "type": "string",
+                        "description": "Next scheduled sync time"
+                    },
+                    "network": {
+                        "type": "string",
+                        "description": "Network"
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "description": "Error message if failed"
+                    }
+                },
+                "required": [
+                    "status"
+                ]
+            },
+            "PropagationResultResponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "description": "Propagation status"
+                    },
+                    "addressesAffected": {
+                        "type": "number",
+                        "description": "Number of addresses affected"
+                    },
+                    "tagsPropagated": {
+                        "type": "number",
+                        "description": "Number of tags propagated"
+                    },
+                    "maxHops": {
+                        "type": "number",
+                        "description": "Maximum hops used"
+                    },
+                    "decayFactor": {
+                        "type": "number",
+                        "description": "Decay factor used"
+                    },
+                    "durationMs": {
+                        "type": "number",
+                        "description": "Duration in milliseconds"
+                    },
+                    "startedAt": {
+                        "type": "string",
+                        "description": "Start timestamp"
+                    },
+                    "completedAt": {
+                        "type": "string",
+                        "description": "Completion timestamp"
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "description": "Error message if failed"
+                    }
+                },
+                "required": [
+                    "status"
                 ]
             }
         }

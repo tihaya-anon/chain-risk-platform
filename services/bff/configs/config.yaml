@@ -11,6 +11,9 @@ services:
   risk:
     url: http://localhost:8082
     timeout: 10000
+  graph:
+    url: http://localhost:8084
+    timeout: 15000
 
 # JWT Configuration (for generating tokens only, not for validation)
 # BFF trusts Gateway for authentication, but still generates JWT for login response

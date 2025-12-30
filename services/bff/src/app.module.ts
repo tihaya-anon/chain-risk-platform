@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AddressModule } from './modules/address/address.module';
 import { RiskModule } from './modules/risk/risk.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { GraphModule } from './modules/graph/graph.module';
 import { getConfig } from './config/config';
 
 const config = getConfig();
@@ -21,6 +22,7 @@ const config = getConfig();
     AuthModule,
     AddressModule,
     RiskModule,
+    GraphModule,
   ],
   providers: [
     // Global rate limit guard
