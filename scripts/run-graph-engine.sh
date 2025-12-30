@@ -27,6 +27,15 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Set JAVA_HOME to Java 17 (required for Lombok compatibility)
+if /usr/libexec/java_home -v 17 &>/dev/null; then
+    export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+    log_info "Using Java 17: $JAVA_HOME"
+else
+    log_error "Java 17 not found. Please install Java 17."
+    exit 1
+fi
+
 # Load environment variables from .env.local
 if [ -f "$PROJECT_ROOT/.env.local" ]; then
     log_info "Loading environment from .env.local"
@@ -64,19 +73,6 @@ echo "  NEO4J: $NEO4J_HOST:$NEO4J_PORT"
 # Check if Maven is installed
 if ! command -v mvn &> /dev/null; then
     log_error "Maven is not installed. Please install Maven first."
-    exit 1
-fi
-
-# Check if Java is installed
-if ! command -v java &> /dev/null; then
-    log_error "Java is not installed. Please install Java 17+ first."
-    exit 1
-fi
-
-# Check Java version
-JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1)
-if [ "$JAVA_VERSION" -lt 17 ]; then
-    log_error "Java 17+ is required. Current version: $JAVA_VERSION"
     exit 1
 fi
 
