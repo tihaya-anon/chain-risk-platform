@@ -198,15 +198,30 @@ run-svc: ## Run query, risk, bff in background (logs in .logs/)
 
 run-svc-tmux: ## Run query, risk, bff in tmux split panes
 	@command -v tmux >/dev/null 2>&1 || { echo "❌ tmux not installed. Run: brew install tmux"; exit 1; }
-	@tmux new-session -d -s chain-risk -n services
-	@tmux send-keys -t chain-risk:services "make run-query" C-m
-	@tmux split-window -h -t chain-risk:services
-	@tmux send-keys -t chain-risk:services "make run-risk" C-m
-	@tmux split-window -v -t chain-risk:services
-	@tmux send-keys -t chain-risk:services "make run-bff" C-m
-	@tmux select-layout -t chain-risk:services tiled
-	@echo "✅ Services started in tmux session 'chain-risk'"
-	@echo "   Run: tmux attach -t chain-risk"
+	@if tmux has-session -t chain-risk 2>/dev/null; then \
+		echo "✅ tmux session 'chain-risk' already exists"; \
+		read -p "🔗 Attach to session? [y/N] " answer; \
+		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+			tmux attach -t chain-risk; \
+		else \
+			echo "   Run manually: tmux attach -t chain-risk"; \
+		fi \
+	else \
+		tmux new-session -d -s chain-risk -n services; \
+		tmux send-keys -t chain-risk:services "make run-query" C-m; \
+		tmux split-window -h -t chain-risk:services; \
+		tmux send-keys -t chain-risk:services "make run-risk" C-m; \
+		tmux split-window -v -t chain-risk:services; \
+		tmux send-keys -t chain-risk:services "make run-bff" C-m; \
+		tmux select-layout -t chain-risk:services tiled; \
+		echo "✅ Services started in tmux session 'chain-risk'"; \
+		read -p "🔗 Attach to session? [y/N] " answer; \
+		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+			tmux attach -t chain-risk; \
+		else \
+			echo "   Run manually: tmux attach -t chain-risk"; \
+		fi \
+	fi
 
 run-svc-iterm: ## Run query, risk, bff in iTerm2 tabs (macOS only)
 	@osascript -e 'tell application "iTerm2"' \
@@ -231,13 +246,22 @@ run-svc-iterm: ## Run query, risk, bff in iTerm2 tabs (macOS only)
 		-e 'end tell'
 	@echo "✅ Services started in iTerm2 tabs"
 
-stop-svc: ## Stop all background services
+stop-svc: ## Stop all background services (including tmux session)
 	@echo "🛑 Stopping services..."
 	@-pkill -f "query-service" 2>/dev/null || true
 	@-pkill -f "uvicorn app.main:app" 2>/dev/null || true
 	@-pkill -f "nest start" 2>/dev/null || true
 	@-pkill -f "ts-node" 2>/dev/null || true
 	@echo "✅ Services stopped"
+	@if tmux has-session -t chain-risk 2>/dev/null; then \
+		read -p "🗑️  Kill tmux session 'chain-risk'? [y/N] " answer; \
+		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+			tmux kill-session -t chain-risk; \
+			echo "✅ tmux session killed"; \
+		else \
+			echo "   tmux session kept. Run manually: tmux kill-session -t chain-risk"; \
+		fi \
+	fi
 
 logs-query: ## Tail query service logs
 	@tail -f $(LOGS_DIR)/query.log
