@@ -43,39 +43,47 @@ public class GraphQueryServiceImpl implements GraphQueryService {
         
         List<AddressNeighborsResponse.NeighborInfo> neighbors = new ArrayList<>();
 
-        // Get outgoing neighbors
-        var outgoing = addressRepository.findOutgoingNeighbors(normalizedAddress, limit / 2);
-        for (var projection : outgoing) {
-            AddressNode neighbor = projection.getNeighbor();
-            if (neighbor != null) {
-                neighbors.add(AddressNeighborsResponse.NeighborInfo.builder()
-                        .address(neighbor.getAddress())
-                        .direction("outgoing")
-                        .transferCount(projection.getTransferCount())
-                        .totalValue(projection.getTotalValue() != null ? 
-                                String.valueOf(projection.getTotalValue().longValue()) : "0")
-                        .lastTransfer(projection.getLastTransfer())
-                        .riskScore(neighbor.getRiskScore())
-                        .tags(neighbor.getTags())
-                        .build());
+        // Get outgoing neighbors using native Neo4j driver
+        String outgoingCypher = """
+            MATCH (a:Address {address: $address})-[t:TRANSFER]->(neighbor:Address)
+            WITH neighbor, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
+            RETURN neighbor.address as address, neighbor.riskScore as riskScore, neighbor.tags as tags,
+                   transferCount, totalValue, lastTransfer
+            ORDER BY transferCount DESC
+            LIMIT $limit
+            """;
+
+        try (Session session = neo4jDriver.session()) {
+            Result outgoingResult = session.run(outgoingCypher, Map.of(
+                    "address", normalizedAddress,
+                    "limit", limit / 2
+            ));
+
+            while (outgoingResult.hasNext()) {
+                Record record = outgoingResult.next();
+                neighbors.add(buildNeighborInfo(record, "outgoing"));
             }
         }
 
-        // Get incoming neighbors
-        var incoming = addressRepository.findIncomingNeighbors(normalizedAddress, limit / 2);
-        for (var projection : incoming) {
-            AddressNode neighbor = projection.getNeighbor();
-            if (neighbor != null) {
-                neighbors.add(AddressNeighborsResponse.NeighborInfo.builder()
-                        .address(neighbor.getAddress())
-                        .direction("incoming")
-                        .transferCount(projection.getTransferCount())
-                        .totalValue(projection.getTotalValue() != null ? 
-                                String.valueOf(projection.getTotalValue().longValue()) : "0")
-                        .lastTransfer(projection.getLastTransfer())
-                        .riskScore(neighbor.getRiskScore())
-                        .tags(neighbor.getTags())
-                        .build());
+        // Get incoming neighbors using native Neo4j driver
+        String incomingCypher = """
+            MATCH (neighbor:Address)-[t:TRANSFER]->(b:Address {address: $address})
+            WITH neighbor, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
+            RETURN neighbor.address as address, neighbor.riskScore as riskScore, neighbor.tags as tags,
+                   transferCount, totalValue, lastTransfer
+            ORDER BY transferCount DESC
+            LIMIT $limit
+            """;
+
+        try (Session session = neo4jDriver.session()) {
+            Result incomingResult = session.run(incomingCypher, Map.of(
+                    "address", normalizedAddress,
+                    "limit", limit / 2
+            ));
+
+            while (incomingResult.hasNext()) {
+                Record record = incomingResult.next();
+                neighbors.add(buildNeighborInfo(record, "incoming"));
             }
         }
 
@@ -84,6 +92,33 @@ public class GraphQueryServiceImpl implements GraphQueryService {
                 .neighbors(neighbors)
                 .totalCount(neighbors.size())
                 .depth(depth)
+                .build();
+    }
+
+    /**
+     * Build NeighborInfo from Neo4j Record
+     */
+    private AddressNeighborsResponse.NeighborInfo buildNeighborInfo(Record record, String direction) {
+        String neighborAddress = record.get("address").asString();
+        Double riskScore = record.get("riskScore").isNull() ? null : record.get("riskScore").asDouble();
+        List<String> tags = record.get("tags").isNull() ? 
+                Collections.emptyList() : 
+                record.get("tags").asList(v -> v.asString());
+        int transferCount = record.get("transferCount").asInt();
+        Double totalValue = record.get("totalValue").isNull() ? null : record.get("totalValue").asDouble();
+        Instant lastTransfer = null;
+        if (!record.get("lastTransfer").isNull()) {
+            lastTransfer = Instant.ofEpochMilli(record.get("lastTransfer").asLong());
+        }
+
+        return AddressNeighborsResponse.NeighborInfo.builder()
+                .address(neighborAddress)
+                .direction(direction)
+                .transferCount(transferCount)
+                .totalValue(totalValue != null ? String.valueOf(totalValue.longValue()) : "0")
+                .lastTransfer(lastTransfer)
+                .riskScore(riskScore)
+                .tags(tags)
                 .build();
     }
 

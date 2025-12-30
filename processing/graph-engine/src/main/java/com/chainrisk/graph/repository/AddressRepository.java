@@ -40,30 +40,6 @@ public interface AddressRepository extends Neo4jRepository<AddressNode, String> 
     List<AddressNode> findHighRiskAddresses(@Param("threshold") Double threshold, @Param("limit") int limit);
 
     /**
-     * Get outgoing neighbors of an address
-     */
-    @Query("""
-        MATCH (a:Address {address: $address})-[t:TRANSFER]->(neighbor:Address)
-        WITH neighbor, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
-        RETURN neighbor, transferCount, totalValue, lastTransfer
-        ORDER BY transferCount DESC
-        LIMIT $limit
-        """)
-    List<NeighborProjection> findOutgoingNeighbors(@Param("address") String address, @Param("limit") int limit);
-
-    /**
-     * Get incoming neighbors of an address
-     */
-    @Query("""
-        MATCH (neighbor:Address)-[t:TRANSFER]->(b:Address {address: $address})
-        WITH neighbor, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
-        RETURN neighbor, transferCount, totalValue, lastTransfer
-        ORDER BY transferCount DESC
-        LIMIT $limit
-        """)
-    List<NeighborProjection> findIncomingNeighbors(@Param("address") String address, @Param("limit") int limit);
-
-    /**
      * Count outgoing transfers
      */
     @Query("MATCH (a:Address {address: $address})-[t:TRANSFER]->() RETURN count(t)")
@@ -74,17 +50,6 @@ public interface AddressRepository extends Neo4jRepository<AddressNode, String> 
      */
     @Query("MATCH ()-[t:TRANSFER]->(a:Address {address: $address}) RETURN count(t)")
     Integer countIncomingTransfers(@Param("address") String address);
-
-    /**
-     * Find shortest path between two addresses
-     */
-    @Query("""
-        MATCH path = shortestPath((a:Address {address: $fromAddress})-[t:TRANSFER*1..%s]->(b:Address {address: $toAddress}))
-        RETURN path
-        """)
-    List<Object> findShortestPath(@Param("fromAddress") String fromAddress, 
-                                   @Param("toAddress") String toAddress,
-                                   @Param("maxDepth") int maxDepth);
 
     /**
      * Get total address count
@@ -130,14 +95,4 @@ public interface AddressRepository extends Neo4jRepository<AddressNode, String> 
      */
     @Query("MATCH (a:Address {address: $address}) SET a.riskScore = $riskScore RETURN a")
     AddressNode updateRiskScore(@Param("address") String address, @Param("riskScore") Double riskScore);
-
-    /**
-     * Projection interface for neighbor queries
-     */
-    interface NeighborProjection {
-        AddressNode getNeighbor();
-        Integer getTransferCount();
-        Double getTotalValue();
-        java.time.Instant getLastTransfer();
-    }
 }
