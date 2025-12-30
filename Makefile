@@ -294,7 +294,7 @@ stop-graph-engine: ## Stop graph-engine service
 # ==================== Integration Test ====================
 
 test-integration: ## Run integration test (mock server + data pipeline)
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/run_integration_test.sh'
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/run-integration-test.sh'
 
 build-mock-server: ## Build mock Etherscan server
 	@echo "🔨 Building mock server..."
