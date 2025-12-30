@@ -65,6 +65,19 @@ spring:
                 name: bffCircuitBreaker
                 fallbackUri: forward:/fallback/bff
 
+        # Graph routes (authentication required)
+        - id: graph-route
+          uri: ${services.bff.url:http://localhost:3001}
+          predicates:
+            - Path=/api/v1/graph/**
+          filters:
+            - StripPrefix=0
+            - name: AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: bffCircuitBreaker
+                fallbackUri: forward:/fallback/bff
+
         # Orchestration routes (complex multi-service calls)
         - id: orchestration-route
           uri: http://localhost:${server.port:8080}
