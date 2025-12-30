@@ -1,0 +1,474 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "Chain Risk Platform - Orchestrator API",
+        "description": "API Gateway and Orchestration layer for Chain Risk Platform.\n\n## Overview\nThe Orchestrator serves two main purposes:\n1. **API Gateway**: Routes requests to BFF with authentication, rate limiting, and circuit breaking\n2. **Orchestration**: Provides aggregated endpoints that combine multiple API calls\n\n## Authentication\nAll endpoints (except /api/v1/auth/**) require JWT authentication.\nInclude the token in the Authorization header: `Bearer <token>`\n\n## Orchestration Endpoints\nThese endpoints aggregate data from multiple services for complex queries:\n- `/api/v1/orchestration/address-profile/{address}` - Basic address profile\n- `/api/v1/orchestration/address-analysis/{address}` - Comprehensive analysis with graph data\n- `/api/v1/orchestration/connection/{from}/{to}` - Find connection between addresses\n- `/api/v1/orchestration/high-risk-network` - High-risk addresses network\n\n## BFF APIs\nSwitch to \"BFF APIs\" in the dropdown above to see all available BFF endpoints.\n",
+        "contact": {
+            "name": "Chain Risk Team",
+            "email": "chainrisk@example.com"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8080",
+            "description": "Local Development Server"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Orchestration",
+            "description": "Aggregated endpoints that combine multiple API calls for complex queries"
+        }
+    ],
+    "paths": {
+        "/api/v1/orchestration/batch-risk-analysis": {
+            "post": {
+                "tags": [
+                    "Orchestration"
+                ],
+                "summary": "Batch address risk analysis",
+                "description": "Performs risk analysis for multiple addresses in a single request",
+                "operationId": "batchRiskAnalysis",
+                "requestBody": {
+                    "description": "List of addresses to analyze",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BatchRiskRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing JWT token",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Batch analysis completed",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error during orchestration",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orchestration/high-risk-network": {
+            "get": {
+                "tags": [
+                    "Orchestration"
+                ],
+                "summary": "Get high-risk network analysis",
+                "description": "Retrieves addresses with risk scores above the specified threshold",
+                "operationId": "getHighRiskNetwork",
+                "parameters": [
+                    {
+                        "name": "threshold",
+                        "in": "query",
+                        "description": "Risk score threshold (0.0 - 1.0)",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "double",
+                            "default": 0.7
+                        },
+                        "example": 0.7
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of addresses to return",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "High-risk network analysis completed",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing JWT token",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error during orchestration",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orchestration/connection/{fromAddress}/{toAddress}": {
+            "get": {
+                "tags": [
+                    "Orchestration"
+                ],
+                "summary": "Find connection between addresses",
+                "description": "Finds the shortest path between two addresses and provides risk analysis for both endpoints",
+                "operationId": "findConnection",
+                "parameters": [
+                    {
+                        "name": "fromAddress",
+                        "in": "path",
+                        "description": "Source address (0x-prefixed)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "toAddress",
+                        "in": "path",
+                        "description": "Target address (0x-prefixed)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "maxDepth",
+                        "in": "query",
+                        "description": "Maximum path depth to search",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 5
+                        },
+                        "example": 5
+                    },
+                    {
+                        "name": "network",
+                        "in": "query",
+                        "description": "Blockchain network",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "ethereum"
+                        },
+                        "example": "ethereum"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection analysis completed",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing JWT token",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error during orchestration",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orchestration/address-profile/{address}": {
+            "get": {
+                "tags": [
+                    "Orchestration"
+                ],
+                "summary": "Get address profile",
+                "description": "Orchestrates multiple API calls to get a comprehensive address profile including basic info, risk score, and recent transfers",
+                "operationId": "getAddressProfile",
+                "parameters": [
+                    {
+                        "name": "address",
+                        "in": "path",
+                        "description": "Blockchain address (0x-prefixed)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "network",
+                        "in": "query",
+                        "description": "Blockchain network",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "ethereum"
+                        },
+                        "example": "ethereum"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Address profile retrieved successfully",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing JWT token",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error during orchestration",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orchestration/address-analysis/{address}": {
+            "get": {
+                "tags": [
+                    "Orchestration"
+                ],
+                "summary": "Get comprehensive address analysis",
+                "description": "Orchestrates multiple API calls to get comprehensive address analysis including basic info, risk score, graph data, neighbors, tags, and cluster information",
+                "operationId": "getAddressAnalysis",
+                "parameters": [
+                    {
+                        "name": "address",
+                        "in": "path",
+                        "description": "Blockchain address (0x-prefixed)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "network",
+                        "in": "query",
+                        "description": "Blockchain network",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "ethereum"
+                        },
+                        "example": "ethereum"
+                    },
+                    {
+                        "name": "neighborDepth",
+                        "in": "query",
+                        "description": "Neighbor search depth (1-3)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "neighborLimit",
+                        "in": "query",
+                        "description": "Maximum number of neighbors to return",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing JWT token",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Address analysis retrieved successfully",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error during orchestration",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "BatchRiskRequest": {
+                "type": "object",
+                "properties": {
+                    "addresses": {
+                        "type": "array",
+                        "description": "List of addresses to analyze",
+                        "example": [
+                            "0x123...",
+                            "0x456..."
+                        ],
+                        "items": {
+                            "type": "string",
+                            "description": "List of addresses to analyze",
+                            "example": "[\"0x123...\",\"0x456...\"]"
+                        }
+                    },
+                    "network": {
+                        "type": "string",
+                        "description": "Blockchain network",
+                        "example": "ethereum"
+                    }
+                },
+                "description": "Batch risk analysis request"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "JWT token obtained from /api/v1/auth/login",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    }
+}

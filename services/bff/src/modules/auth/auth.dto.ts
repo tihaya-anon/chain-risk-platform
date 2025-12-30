@@ -7,7 +7,7 @@ export class LoginDto {
   @MinLength(3)
   username: string;
 
-  @ApiProperty({ description: 'Password', example: 'password123' })
+  @ApiProperty({ description: 'Password', example: 'admin123' })
   @IsString()
   @MinLength(6)
   password: string;
