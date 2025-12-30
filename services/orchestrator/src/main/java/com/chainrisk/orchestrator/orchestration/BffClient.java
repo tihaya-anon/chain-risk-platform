@@ -17,20 +17,14 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class BffClient {
-    
-    private final WebClient.Builder webClientBuilder;
-    
-    private WebClient getBffClient() {
-        return webClientBuilder
-                .baseUrl("http://localhost:3001")
-                .build();
-    }
-    
+
+    private final WebClient bffWebClient;
+
     /**
      * Get address information
      */
     public Mono<Map<String, Object>> getAddressInfo(String address, String network, Map<String, String> userHeaders) {
-        return getBffClient()
+        return bffWebClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/v1/addresses/{address}")
@@ -42,12 +36,12 @@ public class BffClient {
                 .bodyToMono(Map.class)
                 .doOnError(error -> log.error("Failed to get address info: {}", error.getMessage()));
     }
-    
+
     /**
      * Get risk score
      */
     public Mono<Map<String, Object>> getRiskScore(String address, String network, Map<String, String> userHeaders) {
-        return getBffClient()
+        return bffWebClient
                 .post()
                 .uri("/api/v1/risk/score")
                 .headers(headers -> userHeaders.forEach(headers::add))
@@ -61,12 +55,12 @@ public class BffClient {
                 .bodyToMono(Map.class)
                 .doOnError(error -> log.error("Failed to get risk score: {}", error.getMessage()));
     }
-    
+
     /**
      * Get address transfers
      */
     public Mono<Map<String, Object>> getAddressTransfers(String address, String network, int page, int pageSize, Map<String, String> userHeaders) {
-        return getBffClient()
+        return bffWebClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/v1/addresses/{address}/transfers")

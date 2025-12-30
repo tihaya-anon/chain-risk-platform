@@ -58,7 +58,27 @@ PORT=8080
 JWT_SECRET=your-secret-key
 REDIS_HOST=localhost
 REDIS_PORT=6379
+BFF_URL=http://localhost:3001    # BFF service URL (for container deployment: http://bff:3001)
 ```
+
+### Service URLs
+
+Service URLs are configurable via environment variables or application.yml:
+
+```yaml
+# application.yml
+services:
+  bff:
+    url: ${BFF_URL:http://localhost:3001}
+```
+
+**Deployment Examples:**
+
+| Environment       | BFF_URL                                             |
+| ----------------- | --------------------------------------------------- |
+| Local Development | `http://localhost:3001`                             |
+| Docker Compose    | `http://bff:3001`                                   |
+| Kubernetes        | `http://bff-service.default.svc.cluster.local:3001` |
 
 ### Resilience Configuration
 

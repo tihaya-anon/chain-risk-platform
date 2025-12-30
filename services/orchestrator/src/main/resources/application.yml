@@ -4,20 +4,20 @@ server:
 spring:
   application:
     name: orchestrator
-  
+
   # Redis Configuration
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       timeout: 2000ms
-  
+
   cloud:
     gateway:
       # Global CORS configuration
       globalcors:
         cors-configurations:
-          '[/**]':
+          "[/**]":
             allowedOrigins: "http://localhost:5173"
             allowedMethods:
               - GET
@@ -28,20 +28,20 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
             maxAge: 3600
-      
+
       # Route definitions
       routes:
         # Auth routes (no authentication required)
         - id: auth-route
-          uri: http://localhost:3001
+          uri: ${services.bff.url:http://localhost:3001}
           predicates:
             - Path=/api/v1/auth/**
           filters:
             - StripPrefix=0
-        
+
         # Address routes (authentication required)
         - id: address-route
-          uri: http://localhost:3001
+          uri: ${services.bff.url:http://localhost:3001}
           predicates:
             - Path=/api/v1/addresses/**
           filters:
@@ -51,10 +51,10 @@ spring:
               args:
                 name: bffCircuitBreaker
                 fallbackUri: forward:/fallback/bff
-        
+
         # Risk routes (authentication required)
         - id: risk-route
-          uri: http://localhost:3001
+          uri: ${services.bff.url:http://localhost:3001}
           predicates:
             - Path=/api/v1/risk/**
           filters:
@@ -64,14 +64,19 @@ spring:
               args:
                 name: bffCircuitBreaker
                 fallbackUri: forward:/fallback/bff
-        
+
         # Orchestration routes (complex multi-service calls)
         - id: orchestration-route
-          uri: http://localhost:8080
+          uri: http://localhost:${server.port:8080}
           predicates:
             - Path=/api/v1/orchestration/**
           filters:
             - name: AuthenticationFilter
+
+# Service URLs
+services:
+  bff:
+    url: ${BFF_URL:http://localhost:3001}
 
 # JWT Configuration
 jwt:
@@ -91,14 +96,14 @@ resilience4j:
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
         eventConsumerBufferSize: 10
-  
+
   ratelimiter:
     instances:
       default:
         limitForPeriod: 100
         limitRefreshPeriod: 1s
         timeoutDuration: 0s
-  
+
   retry:
     instances:
       default:
