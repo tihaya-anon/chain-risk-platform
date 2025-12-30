@@ -274,3 +274,8 @@ logs-bff: ## Tail bff service logs
 
 logs-all: ## Tail all service logs
 	@tail -f $(LOGS_DIR)/*.log
+
+# ==================== Helper Combination Commands ====================
+
+ensure-infra: ## Ensure infrastructure is available
+	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/check-infra.sh'

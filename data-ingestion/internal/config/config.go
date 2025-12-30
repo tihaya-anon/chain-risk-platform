@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -126,14 +127,36 @@ func overrideFromEnv(cfg *Config) {
 		cfg.Kafka.Brokers = []string{fmt.Sprintf("%s:19092", dockerIP)}
 	}
 
+	// Etherscan Base URL (for testing with mock server)
+	if baseURL := os.Getenv("ETHERSCAN_BASE_URL"); baseURL != "" {
+		cfg.Blockchain.Etherscan.BaseURL = baseURL
+	}
+
 	// Etherscan API Key
 	if apiKey := os.Getenv("ETHERSCAN_API_KEY"); apiKey != "" {
 		cfg.Blockchain.Etherscan.APIKey = apiKey
 	}
 
+	// BSCScan Base URL (for testing with mock server)
+	if baseURL := os.Getenv("BSCSCAN_BASE_URL"); baseURL != "" {
+		cfg.Blockchain.BSCScan.BaseURL = baseURL
+	}
+
 	// BSCScan API Key
 	if apiKey := os.Getenv("BSCSCAN_API_KEY"); apiKey != "" {
 		cfg.Blockchain.BSCScan.APIKey = apiKey
+	}
+
+	// Start block override
+	if startBlock := os.Getenv("START_BLOCK"); startBlock != "" {
+		cfg.Blockchain.Polling.StartBlock = startBlock
+	}
+
+	// Polling interval override
+	if interval := os.Getenv("POLL_INTERVAL_SECONDS"); interval != "" {
+		if val, err := strconv.Atoi(interval); err == nil {
+			cfg.Blockchain.Polling.IntervalSeconds = val
+		}
 	}
 }
 

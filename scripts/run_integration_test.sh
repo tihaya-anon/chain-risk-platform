@@ -140,8 +140,8 @@ start_mock_server() {
     log_info "Starting Mock Etherscan Server..."
     
     cd "$PROJECT_ROOT/tests/integration/mock_server"
-    go build -o mock_server .
-    ./mock_server -port $MOCK_SERVER_PORT -start-block $START_BLOCK -num-blocks $NUM_BLOCKS &
+    go build -o ./bin/mock_server .
+    ./bin/mock_server -port $MOCK_SERVER_PORT -start-block $START_BLOCK -num-blocks $NUM_BLOCKS &
     MOCK_SERVER_PID=$!
     
     # Wait for server to start
@@ -163,16 +163,17 @@ run_data_ingestion() {
     cd "$PROJECT_ROOT/data-ingestion"
     
     # Build if needed
-    go build -o ingestion ./cmd/ingestion
+    go build -o ./bin/ingestion ./cmd/ingestion
     
     # Run with mock server URL and remote Kafka
+    # ETHERSCAN_BASE_URL overrides the config file's baseUrl
+    # Note: URL must end with '?' because code appends '&module=...'
     ETHERSCAN_BASE_URL="http://localhost:$MOCK_SERVER_PORT/api?" \
     ETHERSCAN_API_KEY="test-api-key" \
     KAFKA_BROKERS=$KAFKA_BROKER \
-    KAFKA_TOPIC=$KAFKA_TOPIC \
     START_BLOCK=$START_BLOCK \
-    POLL_INTERVAL=1s \
-    ./ingestion &
+    POLL_INTERVAL_SECONDS=1 \
+    ./bin/ingestion &
     INGESTION_PID=$!
     
     log_info "Data-ingestion started (PID: $INGESTION_PID)"
@@ -195,13 +196,13 @@ run_stream_processor() {
     cd "$PROJECT_ROOT/processing/stream-processor"
     
     # Check if jar exists, build if not
-    if [ ! -f "target/stream-processor-1.0-SNAPSHOT.jar" ]; then
+    if [ ! -f "target/stream-processor-1.0.0-SNAPSHOT.jar" ]; then
         log_info "Building stream-processor..."
         mvn clean package -DskipTests -q
     fi
     
     # Run the job with remote connections
-    java -jar target/stream-processor-1.0-SNAPSHOT.jar \
+    java -jar target/stream-processor-1.0.0-SNAPSHOT.jar \
         --kafka.brokers $KAFKA_BROKER \
         --kafka.topic $KAFKA_TOPIC \
         --jdbc.url "jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB" \
