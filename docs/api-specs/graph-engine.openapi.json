@@ -928,6 +928,9 @@
                         "type": "integer",
                         "format": "int32"
                     },
+                    "message": {
+                        "type": "string"
+                    },
                     "path": {
                         "type": "array",
                         "items": {
