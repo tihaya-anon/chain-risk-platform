@@ -9,11 +9,20 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Change to project root for consistent path resolution
+cd "$PROJECT_ROOT"
+
 # Source environment configuration
 if [ -f "$PROJECT_ROOT/.env.local" ]; then
+    set -a  # automatically export all variables
     source "$PROJECT_ROOT/.env.local"
+    set +a
 fi
-source "$PROJECT_ROOT/scripts/env-remote.sh" 2>/dev/null || true
+
+# Source env-remote.sh (it will use DOCKER_HOST_IP from .env.local)
+if [ -f "$PROJECT_ROOT/scripts/env-remote.sh" ]; then
+    source "$PROJECT_ROOT/scripts/env-remote.sh" 2>/dev/null || true
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -122,6 +131,17 @@ check_prerequisites() {
     log_info "Prerequisites check passed"
 }
 
+# Ensure Kafka topic exists by producing a test message
+ensure_kafka_topic() {
+    log_info "Ensuring Kafka topic '$KAFKA_TOPIC' exists..."
+    
+    # Try to create topic using kafka-topics.sh via docker exec if available
+    # Or just let data-ingestion create it automatically
+    # For now, we'll rely on auto-create and wait for data-ingestion to write
+    
+    log_info "Topic will be auto-created when data-ingestion writes first message"
+}
+
 # Clear test data from database
 clear_test_data() {
     log_info "Clearing test data from database..."
@@ -186,6 +206,9 @@ build_data_ingestion() {
 # Run data-ingestion with mock server
 run_data_ingestion() {
     log_info "Running data-ingestion service..."
+    log_info "  ETHERSCAN_BASE_URL=http://localhost:$MOCK_SERVER_PORT/api?"
+    log_info "  KAFKA_BROKERS=$KAFKA_BROKER"
+    log_info "  START_BLOCK=$START_BLOCK"
     
     cd "$PROJECT_ROOT/data-ingestion"
     
@@ -194,21 +217,21 @@ run_data_ingestion() {
         build_data_ingestion
     fi
     
-    # Run with mock server URL and remote Kafka
-    # ETHERSCAN_BASE_URL overrides the config file's baseUrl
-    # Note: URL must end with '?' because code appends '&module=...'
-    ETHERSCAN_BASE_URL="http://localhost:$MOCK_SERVER_PORT/api?" \
-    ETHERSCAN_API_KEY="test-api-key" \
-    KAFKA_BROKERS=$KAFKA_BROKER \
-    START_BLOCK=$START_BLOCK \
-    POLL_INTERVAL_SECONDS=1 \
+    # Export environment variables for the subprocess
+    export ETHERSCAN_BASE_URL="http://localhost:$MOCK_SERVER_PORT/api?"
+    export ETHERSCAN_API_KEY="test-api-key"
+    export KAFKA_BROKERS="$KAFKA_BROKER"
+    export START_BLOCK="$START_BLOCK"
+    export POLL_INTERVAL_SECONDS=1
+    
+    # Run data-ingestion
     ./bin/ingestion &
     INGESTION_PID=$!
     
     log_info "Data-ingestion started (PID: $INGESTION_PID)"
     
     # Wait for data to be ingested
-    log_info "Waiting for data ingestion to complete..."
+    log_info "Waiting for data ingestion to complete (~$((NUM_BLOCKS * 2 + 5)) seconds)..."
     sleep $((NUM_BLOCKS * 2 + 5))
     
     # Stop ingestion
