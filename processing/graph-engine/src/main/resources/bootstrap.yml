@@ -7,14 +7,15 @@
 
 spring:
   application:
-    name: orchestrator
+    name: graph-engine
   cloud:
     nacos:
       # Nacos Server address
       server-addr: ${NACOS_SERVER:localhost:18848}
-      # Authentication (required if Nacos auth is enabled)
-      username: ${NACOS_USERNAME:nacos}
-      password: ${NACOS_PASSWORD:nacos}
+      # Note: Authentication disabled on server (auth_enabled=false)
+      # If auth is enabled later, uncomment these lines:
+      # username: ${NACOS_USERNAME:nacos}
+      # password: ${NACOS_PASSWORD:nacos}
       # Configuration Center
       config:
         enabled: true
@@ -33,4 +34,4 @@ spring:
         group: DEFAULT_GROUP
         metadata:
           version: 1.0.0
-          type: gateway
+          type: backend
