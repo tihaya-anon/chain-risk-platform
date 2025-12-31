@@ -300,7 +300,7 @@ orchestrator-build: ## Build orchestrator
 	@echo "✅ orchestrator built"
 
 orchestrator-run: ## Run orchestrator
-	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn spring-boot:run
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn spring-boot:run'
 
 orchestrator-test: ## Test orchestrator
 	@echo "🧪 Testing orchestrator..."
@@ -326,10 +326,7 @@ graph-build: ## Build graph-engine
 	@echo "✅ graph-engine built"
 
 graph-run: ## Run graph-engine
-	@./scripts/run-graph-engine.sh
-
-graph-run-build: ## Build and run graph-engine
-	@./scripts/run-graph-engine.sh --build
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn spring-boot:run'
 
 graph-test: ## Test graph-engine
 	@echo "🧪 Testing graph-engine..."
