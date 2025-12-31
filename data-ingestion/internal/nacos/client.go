@@ -92,7 +92,8 @@ func NewClient(cfg *Config, logger *zap.Logger) (*Client, error) {
 		},
 	}
 
-	// Client config with authentication
+	// Note: Only set Username/Password if Nacos server has auth enabled
+	// When auth is disabled, setting these causes login errors
 	cc := constant.ClientConfig{
 		NamespaceId:         cfg.NamespaceID,
 		TimeoutMs:           5000,
@@ -100,9 +101,12 @@ func NewClient(cfg *Config, logger *zap.Logger) (*Client, error) {
 		LogDir:              "/tmp/nacos/log",
 		CacheDir:            "/tmp/nacos/cache",
 		LogLevel:            "warn",
-		// Authentication credentials
-		Username: cfg.Username,
-		Password: cfg.Password,
+	}
+
+	// Only set auth credentials if both username and password are provided
+	if cfg.Username != "" && cfg.Password != "" {
+		cc.Username = cfg.Username
+		cc.Password = cfg.Password
 	}
 
 	// Create config client
