@@ -51,7 +51,6 @@ export function HighRiskNetworkPage() {
     const nodes = addresses.map((addr) => ({
       id: addr.address,
       label: `${addr.address.slice(0, 6)}...${addr.address.slice(-4)}`,
-      title: `Risk: ${addr.riskScore?.toFixed(2) || 'N/A'}\nTX: ${addr.txCount}\nTags: ${addr.tags?.join(', ') || 'None'}`,
       color: {
         background: getRiskColor(addr.riskScore),
         border: getRiskBorderColor(addr.riskScore),
@@ -123,7 +122,7 @@ export function HighRiskNetworkPage() {
       },
       interaction: {
         hover: true,
-        tooltipDelay: 200,
+        tooltipDelay: 0,
       },
     }
 
@@ -132,6 +131,13 @@ export function HighRiskNetworkPage() {
       { nodes: nodesDataSet, edges: edgesDataSet },
       options
     )
+
+    // Hover event - update selected address panel
+    network.on('hoverNode', (params) => {
+      const nodeId = params.node as string
+      const addr = addresses.find((a) => a.address === nodeId)
+      if (addr) setSelectedAddress(addr)
+    })
 
     network.on('click', (params) => {
       if (params.nodes.length > 0) {

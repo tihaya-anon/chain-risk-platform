@@ -1,11 +1,10 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { Network, DataSet, Options } from 'vis-network/standalone'
 import type { NeighborInfo } from '@/types'
 
 export interface GraphNode {
   id: string
   label: string
-  title?: string
   color?: string | { background: string; border: string; highlight?: { background: string; border: string } }
   size?: number
   font?: { color: string }
@@ -17,11 +16,20 @@ export interface GraphEdge {
   from: string
   to: string
   label?: string
-  title?: string
   arrows?: string
   color?: string | { color: string; highlight?: string }
   width?: number
   dashes?: boolean
+}
+
+// Export neighbor info for hover panel
+export interface HoveredNodeInfo {
+  address: string
+  riskScore?: number
+  tags?: string[]
+  transferCount?: number
+  direction?: string
+  isCenter?: boolean
 }
 
 interface AddressGraphProps {
@@ -29,6 +37,7 @@ interface AddressGraphProps {
   neighbors: NeighborInfo[]
   onNodeClick?: (address: string) => void
   onNodeDoubleClick?: (address: string) => void
+  onNodeHover?: (info: HoveredNodeInfo | null) => void
   height?: string
   className?: string
 }
@@ -86,48 +95,30 @@ function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-// Create tooltip content - plain text for vis-network
-function createTooltip(
-  address: string,
-  riskScore?: number,
-  tags?: string[],
-  transferCount?: number,
-  direction?: string
-): string {
-  const lines = [
-    `Address: ${address.slice(0, 10)}...${address.slice(-8)}`,
-    riskScore !== undefined ? `Risk Score: ${riskScore.toFixed(2)}` : null,
-    tags && tags.length > 0 ? `Tags: ${tags.join(', ')}` : null,
-    transferCount !== undefined ? `Transfers: ${transferCount}` : null,
-    direction ? `Direction: ${direction}` : null,
-  ].filter(Boolean)
-
-  return lines.join('\n')
-}
-
 export function AddressGraph({
   centerAddress,
   neighbors,
   onNodeClick,
   onNodeDoubleClick,
+  onNodeHover,
   height = '500px',
   className = '',
 }: AddressGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
-  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const neighborsMapRef = useRef<Map<string, NeighborInfo>>(new Map())
 
   // Build graph data
   const buildGraphData = useCallback(() => {
     const nodes: GraphNode[] = []
     const edges: GraphEdge[] = []
     const nodeSet = new Set<string>()
+    const neighborsMap = new Map<string, NeighborInfo>()
 
     // Add center node
     nodes.push({
       id: centerAddress,
       label: formatAddress(centerAddress),
-      title: `Center Address\n${centerAddress}`,
       color: COLORS.center,
       size: 35,
       font: { color: '#FFFFFF' },
@@ -137,18 +128,13 @@ export function AddressGraph({
 
     // Add neighbor nodes and edges
     neighbors.forEach((neighbor, index) => {
+      neighborsMap.set(neighbor.address, neighbor)
+
       if (!nodeSet.has(neighbor.address)) {
         const colors = getRiskColors(neighbor.riskScore)
         nodes.push({
           id: neighbor.address,
           label: formatAddress(neighbor.address),
-          title: createTooltip(
-            neighbor.address,
-            neighbor.riskScore,
-            neighbor.tags,
-            neighbor.transferCount,
-            neighbor.direction
-          ),
           color: colors,
           size: Math.min(28, 18 + neighbor.transferCount * 0.3),
           borderWidth: 2,
@@ -166,7 +152,6 @@ export function AddressGraph({
           from: neighbor.address,
           to: centerAddress,
           arrows: 'to',
-          title: `${neighbor.transferCount} transfers (incoming)`,
           width: edgeWidth,
           color: { color: COLORS.edge.incoming, highlight: '#34D399' },
         })
@@ -176,7 +161,6 @@ export function AddressGraph({
           from: centerAddress,
           to: neighbor.address,
           arrows: 'to',
-          title: `${neighbor.transferCount} transfers (outgoing)`,
           width: edgeWidth,
           color: { color: COLORS.edge.outgoing, highlight: '#FB923C' },
         })
@@ -187,13 +171,13 @@ export function AddressGraph({
           from: centerAddress,
           to: neighbor.address,
           arrows: 'to;from',
-          title: `${neighbor.transferCount} transfers (bidirectional)`,
           width: edgeWidth,
           color: { color: COLORS.edge.both, highlight: '#9CA3AF' },
         })
       }
     })
 
+    neighborsMapRef.current = neighborsMap
     return { nodes, edges }
   }, [centerAddress, neighbors])
 
@@ -253,7 +237,7 @@ export function AddressGraph({
       },
       interaction: {
         hover: true,
-        tooltipDelay: 100,
+        tooltipDelay: 0,
         hideEdgesOnDrag: true,
         hideEdgesOnZoom: true,
       },
@@ -268,14 +252,38 @@ export function AddressGraph({
       options
     )
 
-    // Event handlers
+    // Hover event - update info panel
+    network.on('hoverNode', (params) => {
+      const nodeId = params.node as string
+      if (nodeId === centerAddress) {
+        onNodeHover?.({
+          address: centerAddress,
+          isCenter: true,
+        })
+      } else {
+        const neighbor = neighborsMapRef.current.get(nodeId)
+        if (neighbor) {
+          onNodeHover?.({
+            address: neighbor.address,
+            riskScore: neighbor.riskScore,
+            tags: neighbor.tags,
+            transferCount: neighbor.transferCount,
+            direction: neighbor.direction,
+          })
+        }
+      }
+    })
+
+    network.on('blurNode', () => {
+      // Optionally clear hover info when mouse leaves node
+      // onNodeHover?.(null)
+    })
+
+    // Click event
     network.on('click', (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
-        setSelectedNode(nodeId)
         onNodeClick?.(nodeId)
-      } else {
-        setSelectedNode(null)
       }
     })
 
@@ -297,7 +305,7 @@ export function AddressGraph({
       network.destroy()
       networkRef.current = null
     }
-  }, [buildGraphData, onNodeClick, onNodeDoubleClick])
+  }, [buildGraphData, centerAddress, onNodeClick, onNodeDoubleClick, onNodeHover])
 
   return (
     <div className={className}>
@@ -306,11 +314,6 @@ export function AddressGraph({
         style={{ height, width: '100%' }}
         className="border border-gray-200 rounded-lg bg-slate-50"
       />
-      {selectedNode && (
-        <div className="mt-2 text-sm text-gray-600">
-          Selected: <span className="font-mono">{selectedNode}</span>
-        </div>
-      )}
     </div>
   )
 }

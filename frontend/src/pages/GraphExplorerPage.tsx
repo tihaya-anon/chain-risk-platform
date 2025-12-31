@@ -12,9 +12,11 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeftRight,
+  MousePointer,
 } from 'lucide-react'
 import { Button, Input, Card, LoadingSpinner } from '@/components/common'
 import { AddressGraph, GraphLegend } from '@/components/graph'
+import type { HoveredNodeInfo } from '@/components/graph/AddressGraph'
 import { graphService } from '@/services'
 
 export function GraphExplorerPage() {
@@ -28,6 +30,7 @@ export function GraphExplorerPage() {
   const [currentAddress, setCurrentAddress] = useState(urlAddress)
   const [depth, setDepth] = useState(1)
   const [limit, setLimit] = useState(30)
+  const [hoveredNode, setHoveredNode] = useState<HoveredNodeInfo | null>(null)
 
   // Sync with URL changes (fixes the navigation issue)
   useEffect(() => {
@@ -88,6 +91,10 @@ export function GraphExplorerPage() {
     setSearchAddress(address)
     setCurrentAddress(address)
     updateUrl(address)
+  }
+
+  const handleNodeHover = (info: HoveredNodeInfo | null) => {
+    setHoveredNode(info)
   }
 
   const handleAddTag = () => {
@@ -195,7 +202,7 @@ export function GraphExplorerPage() {
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
               {/* Graph */}
               <div className="xl:col-span-3">
-                <Card title="Address Graph" subtitle="Double-click a node to explore it">
+                <Card title="Address Graph" subtitle="Hover to see info, double-click to explore">
                   <div className="mb-4">
                     <GraphLegend />
                   </div>
@@ -204,6 +211,7 @@ export function GraphExplorerPage() {
                     neighbors={neighbors.neighbors}
                     onNodeClick={handleNodeClick}
                     onNodeDoubleClick={handleNodeDoubleClick}
+                    onNodeHover={handleNodeHover}
                     height="600px"
                   />
                   <div className="mt-4 text-sm text-gray-500">
@@ -215,8 +223,94 @@ export function GraphExplorerPage() {
 
               {/* Sidebar */}
               <div className="space-y-6">
-                {/* Address Info */}
-                <Card title="Address Info">
+                {/* Hovered Node Info */}
+                <Card title="Hovered Node">
+                  {hoveredNode ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-gray-500">Address</label>
+                        <p className="font-mono text-xs break-all">
+                          {hoveredNode.address}
+                        </p>
+                      </div>
+                      {hoveredNode.isCenter ? (
+                        <div className="py-2 px-3 bg-blue-50 rounded-lg text-center">
+                          <span className="text-sm text-blue-700 font-medium">
+                            Center Address
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs text-gray-500">Risk Score</label>
+                              <p className={`font-medium ${
+                                (hoveredNode.riskScore ?? 0) >= 0.6
+                                  ? 'text-red-600'
+                                  : 'text-green-600'
+                              }`}>
+                                {hoveredNode.riskScore?.toFixed(2) || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500">Transfers</label>
+                              <p className="font-medium">{hoveredNode.transferCount || 0}</p>
+                            </div>
+                          </div>
+                          {hoveredNode.direction && (
+                            <div>
+                              <label className="text-xs text-gray-500">Direction</label>
+                              <div className="flex items-center gap-2 mt-1">
+                                {hoveredNode.direction === 'incoming' && (
+                                  <>
+                                    <ArrowDownLeft className="w-4 h-4 text-green-600" />
+                                    <span className="text-sm text-green-600">Incoming</span>
+                                  </>
+                                )}
+                                {hoveredNode.direction === 'outgoing' && (
+                                  <>
+                                    <ArrowUpRight className="w-4 h-4 text-red-600" />
+                                    <span className="text-sm text-red-600">Outgoing</span>
+                                  </>
+                                )}
+                                {hoveredNode.direction === 'both' && (
+                                  <>
+                                    <ArrowLeftRight className="w-4 h-4 text-gray-600" />
+                                    <span className="text-sm text-gray-600">Bidirectional</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {hoveredNode.tags && hoveredNode.tags.length > 0 && (
+                            <div>
+                              <label className="text-xs text-gray-500">Tags</label>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {hoveredNode.tags.map((tag, i) => (
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded"
+                                  >
+                                    <Tag className="w-3 h-3" />
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-gray-400">
+                      <MousePointer className="w-8 h-8 mx-auto mb-2" />
+                      <p className="text-sm">Hover over a node to see details</p>
+                    </div>
+                  )}
+                </Card>
+
+                {/* Center Address Info */}
+                <Card title="Center Address">
                   {addressInfo ? (
                     <div className="space-y-3">
                       <div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
   Search,
@@ -8,6 +9,7 @@ import {
   XCircle,
   Scale,
   Tag,
+  ExternalLink,
 } from 'lucide-react'
 import { Button, Card, LoadingSpinner, RiskBadge } from '@/components/common'
 import { riskService } from '@/services'
@@ -88,14 +90,14 @@ export function RiskPage() {
               {rulesQuery.isLoading ? (
                 <LoadingSpinner />
               ) : rulesQuery.data ? (
-                <div className="space-y-2 max-h-40 overflow-y-auto">
+                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-2">
                   {rulesQuery.data.map((rule: RiskRule, i: number) => (
                     <div
                       key={i}
                       className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
                     >
                       <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-gray-400" />
+                        <Shield className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-gray-900">
                             {rule.name}
@@ -103,7 +105,7 @@ export function RiskPage() {
                           <p className="text-xs text-gray-500">{rule.description}</p>
                         </div>
                       </div>
-                      <span className="text-sm text-gray-600 flex items-center gap-1">
+                      <span className="text-sm text-gray-600 flex items-center gap-1 flex-shrink-0 ml-2">
                         <Scale className="w-3 h-3" />
                         {rule.weight.toFixed(1)}
                       </span>
@@ -162,10 +164,14 @@ export function RiskPage() {
                     {results.map((result, i) => (
                       <tr key={i} className="hover:bg-gray-50">
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <span className="font-mono text-sm">
+                          <Link
+                            to={`/address?q=${result.address}`}
+                            className="inline-flex items-center gap-1 font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                          >
                             {result.address.slice(0, 10)}...
                             {result.address.slice(-8)}
-                          </span>
+                            <ExternalLink className="w-3 h-3" />
+                          </Link>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span className="font-medium">
@@ -190,11 +196,11 @@ export function RiskPage() {
                               ))}
                             {result.factors?.filter((f) => f.triggered).length ===
                               0 && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 text-xs rounded">
-                                <XCircle className="w-3 h-3" />
-                                None
-                              </span>
-                            )}
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 text-xs rounded">
+                                  <XCircle className="w-3 h-3" />
+                                  None
+                                </span>
+                              )}
                           </div>
                         </td>
                         <td className="px-4 py-4">
