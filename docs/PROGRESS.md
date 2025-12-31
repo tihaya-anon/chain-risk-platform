@@ -1,15 +1,15 @@
 # 开发进度追踪
 
-> 最后更新: 2025-12-30
+> 最后更新: 2025-12-31
 
 ## 📊 总体进度
 
-| Phase                   | 状态     | 进度 | 说明                             |
-| ----------------------- | -------- | ---- | -------------------------------- |
-| Phase 1: 核心数据流     | ✅ 已完成 | 100% | 端到端数据流验证通过，监控已配置 |
-| Phase 2: 查询与风险服务 | 🔶 进行中 | 70%  | 基础功能已完成，待完善           |
-| Phase 3: BFF与前端      | 🔶 进行中 | 60%  | 基础功能已完成，待完善           |
-| Phase 4: 高级功能       | 🔲 未开始 | 0%   | -                                |
+| Phase                   | 状态     | 进度 | 说明                                      |
+| ----------------------- | -------- | ---- | ----------------------------------------- |
+| Phase 1: 核心数据流     | ✅ 已完成 | 100% | 端到端数据流验证通过，监控已配置          |
+| Phase 2: 查询与风险服务 | 🔶 进行中 | 85%  | 核心功能已完成，缺少缓存和测试            |
+| Phase 3: BFF与前端      | 🔶 进行中 | 80%  | 基础功能已完成，待完善图表和响应式        |
+| Phase 4: 高级功能       | 🔶 进行中 | 40%  | Graph Engine 已完成，ML/批处理/告警待开发 |
 
 状态图例: 🔲 未开始 | 🔶 进行中 | ✅ 已完成 | ⏸️ 暂停
 
@@ -177,12 +177,27 @@
 
 ## Phase 4: 高级功能
 
-### 4.1 Graph Engine
-| 任务            | 状态 | 备注 |
-| --------------- | ---- | ---- |
-| Neo4j 集成      | 🔲    |      |
-| 地址聚类        | 🔲    |      |
-| Tag Propagation | 🔲    |      |
+### 4.1 Graph Engine (Java/Spring Boot + Neo4j)
+| 任务                | 状态 | 备注                                              |
+| ------------------- | ---- | ------------------------------------------------- |
+| Neo4j 集成          | ✅    | Neo4jConfig, Neo4jConverters 已配置               |
+| 地址聚类算法        | ✅    | CommonInputClusteringService (Union-Find)         |
+| Tag Propagation     | ✅    | BfsTagPropagationService (BFS + 置信度衰减)       |
+| 图查询服务          | ✅    | GraphQueryServiceImpl 已实现                      |
+| PostgreSQL 数据同步 | ✅    | GraphSyncServiceImpl 已实现                       |
+| REST API            | ✅    | GraphController 完整API                           |
+| - 地址信息查询      | ✅    | GET /api/graph/address/{address}                  |
+| - 邻居查询          | ✅    | GET /api/graph/address/{address}/neighbors        |
+| - 集群查询          | ✅    | GET /api/graph/address/{address}/cluster          |
+| - 最短路径查询      | ✅    | GET /api/graph/path/{from}/{to}                   |
+| - Tag 管理          | ✅    | GET/POST/DELETE /api/graph/address/{address}/tags |
+| - 高风险地址搜索    | ✅    | GET /api/graph/search/high-risk                   |
+| - Tag 搜索          | ✅    | GET /api/graph/search/tag/{tag}                   |
+| - 聚类触发          | ✅    | POST /api/graph/cluster/run                       |
+| - 传播触发          | ✅    | POST /api/graph/propagate                         |
+| - 同步状态/触发     | ✅    | GET/POST /api/graph/sync                          |
+| OpenAPI 文档        | ✅    | Swagger 注解已添加                                |
+| 单元测试            | 🔲    | 待补充                                            |
 
 ### 4.2 ML 风险模型
 | 任务         | 状态 | 备注 |
@@ -191,21 +206,28 @@
 | XGBoost 模型 | 🔲    |      |
 | 模型服务化   | 🔲    |      |
 
-### 4.3 批处理
-| 任务       | 状态 | 备注 |
-| ---------- | ---- | ---- |
-| 每日批处理 | 🔲    |      |
-| 流批合并   | 🔲    |      |
+### 4.3 批处理 (Java/Flink SQL)
+| 任务       | 状态 | 备注           |
+| ---------- | ---- | -------------- |
+| 项目骨架   | ✅    | pom.xml 已创建 |
+| 每日批处理 | 🔲    |                |
+| 流批合并   | 🔲    |                |
 
-### 4.4 Alert Service
-| 任务     | 状态 | 备注 |
-| -------- | ---- | ---- |
-| 规则引擎 | 🔲    |      |
-| 通知推送 | 🔲    |      |
+### 4.4 Alert Service (Go/Gin)
+| 任务     | 状态 | 备注             |
+| -------- | ---- | ---------------- |
+| 项目骨架 | ✅    | 目录结构已创建   |
+| 规则引擎 | 🔲    | internal/ 待实现 |
+| 通知推送 | 🔲    | notifier/ 待实现 |
 
 ---
 
 ## 📝 开发日志
+
+### 2025-12-31
+- 📝 全面更新开发进度文档，反映各微服务实际完成状态
+- ✅ 确认 Graph Engine 已完成（聚类、传播、查询、同步）
+- 📊 更新总体进度：Phase 2 (85%), Phase 3 (80%), Phase 4 (40%)
 
 ### 2025-12-30
 - 📝 更新开发进度文档，反映 Phase 2/3 实际完成状态
