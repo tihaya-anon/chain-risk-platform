@@ -270,7 +270,7 @@ bff-build: ## Build bff
 	@echo "✅ bff built"
 
 bff-run: ## Run bff
-	@cd services/bff && npm run start:dev
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/bff && npm run start:dev'
 
 bff-test: ## Test bff
 	@echo "🧪 Testing bff..."
