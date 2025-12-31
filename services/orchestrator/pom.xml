@@ -190,6 +190,13 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                    <!-- Pass environment variables to Spring Boot -->
+                    <environmentVariables>
+                        <NACOS_SERVER>${env.NACOS_SERVER}</NACOS_SERVER>
+                        <NACOS_USERNAME>${env.NACOS_USERNAME}</NACOS_USERNAME>
+                        <NACOS_PASSWORD>${env.NACOS_PASSWORD}</NACOS_PASSWORD>
+                        <NACOS_NAMESPACE>${env.NACOS_NAMESPACE}</NACOS_NAMESPACE>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>
