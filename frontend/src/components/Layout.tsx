@@ -10,8 +10,11 @@ interface LayoutProps {
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: '📊' },
-  { path: '/address', label: 'Address Lookup', icon: '🔍' },
+  { path: '/address', label: 'Address', icon: '🔍' },
+  { path: '/graph', label: 'Graph', icon: '🔗' },
+  { path: '/path-finder', label: 'Path Finder', icon: '🛤️' },
   { path: '/risk', label: 'Risk Analysis', icon: '⚠️' },
+  { path: '/high-risk', label: 'High Risk', icon: '🚨' },
 ]
 
 export function Layout({ children }: LayoutProps) {
@@ -47,13 +50,13 @@ export function Layout({ children }: LayoutProps) {
                   key={item.path}
                   to={item.path}
                   className={clsx(
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                     location.pathname === item.path
                       ? 'bg-blue-50 text-blue-700'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   )}
                 >
-                  <span className="mr-2">{item.icon}</span>
+                  <span className="mr-1.5">{item.icon}</span>
                   {item.label}
                 </Link>
               ))}
@@ -72,6 +75,27 @@ export function Layout({ children }: LayoutProps) {
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden border-t border-gray-200 px-4 py-2 overflow-x-auto">
+          <nav className="flex space-x-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={clsx(
+                  'flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
+                  location.pathname === item.path
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-100'
+                )}
+              >
+                <span className="mr-1">{item.icon}</span>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </header>
 

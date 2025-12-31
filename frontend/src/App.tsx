@@ -1,7 +1,15 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
 import { Layout } from '@/components/Layout'
-import { LoginPage, DashboardPage, AddressPage, RiskPage } from '@/pages'
+import {
+  LoginPage,
+  DashboardPage,
+  AddressPage,
+  RiskPage,
+  GraphExplorerPage,
+  PathFinderPage,
+  HighRiskNetworkPage,
+} from '@/pages'
 import type { ReactNode } from 'react'
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -56,6 +64,30 @@ export default function App() {
         element={
           <ProtectedRoute>
             <RiskPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/graph"
+        element={
+          <ProtectedRoute>
+            <GraphExplorerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/path-finder"
+        element={
+          <ProtectedRoute>
+            <PathFinderPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/high-risk"
+        element={
+          <ProtectedRoute>
+            <HighRiskNetworkPage />
           </ProtectedRoute>
         }
       />

@@ -1,47 +1,46 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Input, Card, LoadingSpinner, RiskBadge } from '@/components/common'
-import { addressService, riskService } from '@/services'
-import type { AddressInfo, AddressStats, RiskScore } from '@/types'
+import { Link } from 'react-router-dom'
+import {
+  Button,
+  Input,
+  Card,
+  LoadingSpinner,
+  RiskBadge,
+} from '@/components/common'
+import { orchestrationService } from '@/services'
+import type { AddressAnalysis } from '@/types'
 
 export function AddressPage() {
   const [searchAddress, setSearchAddress] = useState('')
   const [queryAddress, setQueryAddress] = useState('')
 
-  const addressQuery = useQuery({
-    queryKey: ['address', queryAddress],
-    queryFn: () => addressService.getAddressInfo(queryAddress),
-    enabled: !!queryAddress,
-  })
-
-  const statsQuery = useQuery({
-    queryKey: ['addressStats', queryAddress],
-    queryFn: () => addressService.getAddressStats(queryAddress),
-    enabled: !!queryAddress,
-  })
-
-  const riskQuery = useQuery({
-    queryKey: ['addressRisk', queryAddress],
-    queryFn: () => riskService.scoreAddress({ address: queryAddress }),
+  // Use orchestration API for comprehensive data
+  const analysisQuery = useQuery({
+    queryKey: ['addressAnalysis', queryAddress],
+    queryFn: () =>
+      orchestrationService.getAddressAnalysis(queryAddress, {
+        neighborDepth: 1,
+        neighborLimit: 10,
+      }),
     enabled: !!queryAddress,
   })
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchAddress.trim()) {
-      setQueryAddress(searchAddress.trim())
+      setQueryAddress(searchAddress.trim().toLowerCase())
     }
   }
 
-  const isLoading = addressQuery.isLoading || statsQuery.isLoading || riskQuery.isLoading
-  const hasData = addressQuery.data || statsQuery.data || riskQuery.data
+  const data = analysisQuery.data
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Address Lookup</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Address Analysis</h1>
         <p className="text-gray-600 mt-1">
-          Search and analyze blockchain addresses
+          Comprehensive blockchain address analysis with graph data
         </p>
       </div>
 
@@ -55,119 +54,191 @@ export function AddressPage() {
               onChange={(e) => setSearchAddress(e.target.value)}
             />
           </div>
-          <Button type="submit" loading={isLoading}>
-            Search
+          <Button type="submit" loading={analysisQuery.isLoading}>
+            Analyze
           </Button>
         </form>
       </Card>
 
-      {/* Loading State */}
-      {isLoading && (
+      {/* Loading */}
+      {analysisQuery.isLoading && (
         <div className="py-12">
           <LoadingSpinner size="lg" />
-          <p className="text-center text-gray-500 mt-4">Loading address data...</p>
+          <p className="text-center text-gray-500 mt-4">
+            Loading comprehensive analysis...
+          </p>
         </div>
       )}
 
+      {/* Error */}
+      {analysisQuery.error && (
+        <Card>
+          <div className="text-center py-8 text-red-500">
+            <span className="text-4xl">❌</span>
+            <p className="mt-4">Failed to load address analysis</p>
+            <p className="text-sm text-gray-500 mt-2">
+              {(analysisQuery.error as Error).message}
+            </p>
+          </div>
+        </Card>
+      )}
+
       {/* Results */}
-      {!isLoading && hasData && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Address Info */}
-          <Card title="Address Info" className="lg:col-span-2">
-            {addressQuery.data ? (
-              <AddressInfoDisplay data={addressQuery.data} />
-            ) : addressQuery.error ? (
-              <ErrorDisplay message="Failed to load address info" />
-            ) : null}
-          </Card>
+      {data && !analysisQuery.isLoading && (
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <div className="flex gap-4">
+            <Link
+              to={`/graph?address=${data.address}`}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              🔗 View in Graph Explorer
+            </Link>
+            <Link
+              to={`/path-finder?from=${data.address}`}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              🔍 Find Connections
+            </Link>
+          </div>
 
-          {/* Risk Score */}
-          <Card title="Risk Assessment">
-            {riskQuery.data ? (
-              <RiskScoreDisplay data={riskQuery.data} />
-            ) : riskQuery.error ? (
-              <ErrorDisplay message="Failed to load risk score" />
-            ) : null}
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Basic Info */}
+            <Card title="Basic Information" className="lg:col-span-2">
+              <BasicInfoSection data={data} />
+            </Card>
 
-          {/* Stats */}
-          <Card title="Transaction Statistics" className="lg:col-span-3">
-            {statsQuery.data ? (
-              <StatsDisplay data={statsQuery.data} />
-            ) : statsQuery.error ? (
-              <ErrorDisplay message="Failed to load statistics" />
-            ) : null}
-          </Card>
+            {/* Risk Score */}
+            <Card title="Risk Assessment">
+              <RiskSection data={data} />
+            </Card>
+
+            {/* Graph Info */}
+            <Card title="Graph Analysis" className="lg:col-span-2">
+              <GraphInfoSection data={data} />
+            </Card>
+
+            {/* Cluster Info */}
+            <Card title="Cluster">
+              <ClusterSection data={data} />
+            </Card>
+
+            {/* Neighbors */}
+            <Card
+              title="Connected Addresses"
+              subtitle={`Top neighbors by transfer count`}
+              className="lg:col-span-3"
+            >
+              <NeighborsSection data={data} />
+            </Card>
+          </div>
         </div>
       )}
 
       {/* Empty State */}
-      {!isLoading && !hasData && !queryAddress && (
-        <div className="text-center py-12">
-          <span className="text-6xl">🔍</span>
-          <p className="text-gray-500 mt-4">
-            Enter an address above to start analyzing
-          </p>
-        </div>
-      )}
+      {!analysisQuery.isLoading &&
+        !analysisQuery.error &&
+        !data &&
+        !queryAddress && (
+          <div className="text-center py-12">
+            <span className="text-6xl">🔍</span>
+            <p className="text-gray-500 mt-4">
+              Enter an address to start comprehensive analysis
+            </p>
+          </div>
+        )}
     </div>
   )
 }
 
-function AddressInfoDisplay({ data }: { data: AddressInfo }) {
+// Helper to check if response is an error
+function isError(obj: unknown): obj is { error: string } {
+  return typeof obj === 'object' && obj !== null && 'error' in obj
+}
+
+// Sub-components
+function BasicInfoSection({ data }: { data: AddressAnalysis }) {
+  const info = isError(data.basic.addressInfo) ? null : data.basic.addressInfo
+
+  if (!info) {
+    return (
+      <div className="text-center py-4 text-gray-500">
+        <p>Address info unavailable</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div>
         <label className="text-sm text-gray-500">Address</label>
-        <p className="font-mono text-sm break-all">{data.address}</p>
+        <p className="font-mono text-sm break-all">{info.address}</p>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div>
           <label className="text-sm text-gray-500">Network</label>
-          <p className="font-medium">{data.network}</p>
+          <p className="font-medium">{info.network}</p>
         </div>
         <div>
           <label className="text-sm text-gray-500">Total Transactions</label>
-          <p className="font-medium">{data.totalTxCount.toLocaleString()}</p>
+          <p className="font-medium">{info.totalTxCount?.toLocaleString()}</p>
+        </div>
+        <div>
+          <label className="text-sm text-gray-500">Unique Counterparties</label>
+          <p className="font-medium">{info.uniqueInteracted?.toLocaleString()}</p>
         </div>
         <div>
           <label className="text-sm text-gray-500">Sent</label>
-          <p className="font-medium">{data.sentTxCount.toLocaleString()}</p>
+          <p className="font-medium text-red-600">
+            {info.sentTxCount?.toLocaleString()}
+          </p>
         </div>
         <div>
           <label className="text-sm text-gray-500">Received</label>
-          <p className="font-medium">{data.receivedTxCount.toLocaleString()}</p>
+          <p className="font-medium text-green-600">
+            {info.receivedTxCount?.toLocaleString()}
+          </p>
         </div>
         <div>
           <label className="text-sm text-gray-500">First Seen</label>
-          <p className="font-medium">{new Date(data.firstSeen).toLocaleDateString()}</p>
-        </div>
-        <div>
-          <label className="text-sm text-gray-500">Last Seen</label>
-          <p className="font-medium">{new Date(data.lastSeen).toLocaleDateString()}</p>
+          <p className="font-medium">
+            {info.firstSeen
+              ? new Date(info.firstSeen).toLocaleDateString()
+              : 'N/A'}
+          </p>
         </div>
       </div>
     </div>
   )
 }
 
-function RiskScoreDisplay({ data }: { data: RiskScore }) {
+function RiskSection({ data }: { data: AddressAnalysis }) {
+  const risk = isError(data.basic.riskScore) ? null : data.basic.riskScore
+
+  if (!risk) {
+    return (
+      <div className="text-center py-4 text-gray-500">
+        <p>Risk score unavailable</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <div className="text-4xl font-bold text-gray-900">
-          {data.riskScore.toFixed(1)}
-        </div>
+        <div className="text-4xl font-bold">{risk.riskScore.toFixed(2)}</div>
         <div className="mt-2">
-          <RiskBadge level={data.riskLevel} size="lg" />
+          <RiskBadge level={risk.riskLevel} size="lg" />
         </div>
       </div>
 
-      {data.factors && data.factors.length > 0 && (
+      {risk.factors && risk.factors.filter((f) => f.triggered).length > 0 && (
         <div className="pt-4 border-t">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Risk Factors</h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-2">
+            Triggered Factors
+          </h4>
           <div className="space-y-2">
-            {data.factors
+            {risk.factors
               .filter((f) => f.triggered)
               .map((factor, i) => (
                 <div
@@ -175,21 +246,21 @@ function RiskScoreDisplay({ data }: { data: RiskScore }) {
                   className="flex items-center justify-between text-sm"
                 >
                   <span className="text-gray-600">{factor.name}</span>
-                  <span className="font-medium">{factor.score.toFixed(1)}</span>
+                  <span className="font-medium">{factor.score.toFixed(2)}</span>
                 </div>
               ))}
           </div>
         </div>
       )}
 
-      {data.tags && data.tags.length > 0 && (
+      {risk.tags && risk.tags.length > 0 && (
         <div className="pt-4 border-t">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Tags</h4>
-          <div className="flex flex-wrap gap-2">
-            {data.tags.map((tag, i) => (
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Risk Tags</h4>
+          <div className="flex flex-wrap gap-1">
+            {risk.tags.map((tag, i) => (
               <span
                 key={i}
-                className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded"
               >
                 {tag}
               </span>
@@ -201,44 +272,266 @@ function RiskScoreDisplay({ data }: { data: RiskScore }) {
   )
 }
 
-function StatsDisplay({ data }: { data: AddressStats }) {
-  const formatValue = (value: string) => {
-    const num = parseFloat(value)
-    if (num >= 1e18) return `${(num / 1e18).toFixed(4)} ETH`
-    return value
+function GraphInfoSection({ data }: { data: AddressAnalysis }) {
+  const graphInfo = isError(data.graph.graphInfo) ? null : data.graph.graphInfo
+  const tags = data.graph.tags || []
+
+  return (
+    <div className="space-y-4">
+      {graphInfo ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="text-sm text-gray-500">Incoming Transfers</label>
+            <p className="font-medium text-green-600 text-xl">
+              {graphInfo.incomingCount}
+            </p>
+          </div>
+          <div>
+            <label className="text-sm text-gray-500">Outgoing Transfers</label>
+            <p className="font-medium text-red-600 text-xl">
+              {graphInfo.outgoingCount}
+            </p>
+          </div>
+          <div>
+            <label className="text-sm text-gray-500">Graph Risk Score</label>
+            <p className="font-medium text-xl">
+              {graphInfo.riskScore?.toFixed(2) || 'N/A'}
+            </p>
+          </div>
+          <div>
+            <label className="text-sm text-gray-500">Total TX Count</label>
+            <p className="font-medium text-xl">{graphInfo.txCount}</p>
+          </div>
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm">Graph info unavailable</p>
+      )}
+
+      {tags.length > 0 && (
+        <div className="pt-4 border-t">
+          <label className="text-sm text-gray-500 block mb-2">
+            Address Tags
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag, i) => (
+              <span
+                key={i}
+                className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tags.length === 0 && graphInfo && (
+        <div className="pt-4 border-t">
+          <p className="text-gray-500 text-sm">No tags associated</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ClusterSection({ data }: { data: AddressAnalysis }) {
+  const cluster = isError(data.graph.cluster) ? null : data.graph.cluster
+
+  if (!cluster) {
+    return (
+      <div className="text-center py-4">
+        <span className="text-3xl">📦</span>
+        <p className="text-gray-500 text-sm mt-2">Not in any cluster</p>
+      </div>
+    )
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div className="space-y-3">
       <div>
-        <label className="text-sm text-gray-500">Total Sent</label>
-        <p className="font-medium">{formatValue(data.totalValueSent)}</p>
+        <label className="text-sm text-gray-500">Cluster ID</label>
+        <p className="font-mono text-sm truncate" title={cluster.clusterId}>
+          {cluster.clusterId}
+        </p>
       </div>
-      <div>
-        <label className="text-sm text-gray-500">Total Received</label>
-        <p className="font-medium">{formatValue(data.totalValueReceived)}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-sm text-gray-500">Size</label>
+          <p className="font-medium">{cluster.size} addresses</p>
+        </div>
+        <div>
+          <label className="text-sm text-gray-500">Risk Score</label>
+          <p className="font-medium">{cluster.riskScore?.toFixed(2) || 'N/A'}</p>
+        </div>
       </div>
-      <div>
-        <label className="text-sm text-gray-500">Avg Transaction</label>
-        <p className="font-medium">{formatValue(data.avgTxValue)}</p>
+      {cluster.label && (
+        <div>
+          <label className="text-sm text-gray-500">Label</label>
+          <p className="font-medium">{cluster.label}</p>
+        </div>
+      )}
+      {cluster.category && (
+        <div>
+          <label className="text-sm text-gray-500">Category</label>
+          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+            {cluster.category}
+          </span>
+        </div>
+      )}
+      {cluster.tags && cluster.tags.length > 0 && (
+        <div>
+          <label className="text-sm text-gray-500 block mb-1">Cluster Tags</label>
+          <div className="flex flex-wrap gap-1">
+            {cluster.tags.map((tag, i) => (
+              <span
+                key={i}
+                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NeighborsSection({ data }: { data: AddressAnalysis }) {
+  const neighbors = isError(data.graph.neighbors) ? null : data.graph.neighbors
+
+  if (!neighbors || neighbors.neighbors.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <span className="text-4xl">🔗</span>
+        <p className="text-gray-500 mt-2">No connected addresses found</p>
       </div>
-      <div>
-        <label className="text-sm text-gray-500">Max Transaction</label>
-        <p className="font-medium">{formatValue(data.maxTxValue)}</p>
+    )
+  }
+
+  return (
+    <div>
+      <div className="mb-4 text-sm text-gray-500">
+        Showing {neighbors.neighbors.length} of {neighbors.totalCount} connected
+        addresses (depth: {neighbors.depth})
       </div>
-      <div>
-        <label className="text-sm text-gray-500">Min Transaction</label>
-        <p className="font-medium">{formatValue(data.minTxValue)}</p>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Address
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Direction
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Transfers
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Value
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Risk
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tags
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {neighbors.neighbors.map((neighbor, i) => (
+              <tr key={i} className="hover:bg-gray-50">
+                <td className="px-4 py-3">
+                  <Link
+                    to={`/address?q=${neighbor.address}`}
+                    className="font-mono text-sm text-blue-600 hover:underline"
+                    onClick={() => {
+                      // This will trigger a new search
+                      window.location.href = `/address?q=${neighbor.address}`
+                    }}
+                  >
+                    {neighbor.address.slice(0, 10)}...
+                    {neighbor.address.slice(-8)}
+                  </Link>
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${neighbor.direction === 'incoming'
+                      ? 'bg-green-100 text-green-700'
+                      : neighbor.direction === 'outgoing'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-100 text-gray-700'
+                      }`}
+                  >
+                    {neighbor.direction === 'incoming' && '← '}
+                    {neighbor.direction === 'outgoing' && '→ '}
+                    {neighbor.direction}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm font-medium">
+                  {neighbor.transferCount}
+                </td>
+                <td className="px-4 py-3 text-sm">
+                  {formatValue(neighbor.totalValue)}
+                </td>
+                <td className="px-4 py-3">
+                  <RiskScoreIndicator score={neighbor.riskScore} />
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {neighbor.tags?.slice(0, 3).map((tag, j) => (
+                      <span
+                        key={j}
+                        className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {neighbor.tags && neighbor.tags.length > 3 && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-xs rounded">
+                        +{neighbor.tags.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )
 }
 
-function ErrorDisplay({ message }: { message: string }) {
+
+function RiskScoreIndicator({ score }: { score: number | undefined }) {
+  if (score === undefined || score === null) {
+    return <span className="text-gray-400 text-sm">N/A</span>
+  }
+
+  const getColor = (s: number) => {
+    if (s >= 0.8) return 'text-red-600 bg-red-100'
+    if (s >= 0.6) return 'text-orange-600 bg-orange-100'
+    if (s >= 0.4) return 'text-yellow-600 bg-yellow-100'
+    return 'text-green-600 bg-green-100'
+  }
+
   return (
-    <div className="text-center py-4 text-red-500">
-      <span className="text-2xl">❌</span>
-      <p className="mt-2">{message}</p>
-    </div>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${getColor(score)}`}
+    >
+      {score.toFixed(2)}
+    </span>
   )
+}
+
+function formatValue(value: string | undefined): string {
+  if (!value) return 'N/A'
+  const num = parseFloat(value)
+  if (isNaN(num)) return value
+  if (num >= 1e18) return `${(num / 1e18).toFixed(4)} ETH`
+  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`
+  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`
+  return num.toLocaleString()
 }

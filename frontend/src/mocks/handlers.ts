@@ -13,6 +13,18 @@ import {
   generateRiskScore,
   generateBatchRiskScores,
   riskRules,
+  generateGraphAddressInfo,
+  generateNeighborsResponse,
+  generatePathResponse,
+  generateClusterResponse,
+  generateSyncStatus,
+  generatePropagationResult,
+  generateClusteringResult,
+  generateHighRiskAddresses,
+  generateAddressAnalysis,
+  generateConnectionResponse,
+  generateHighRiskNetworkResponse,
+  randomTags,
 } from './data'
 
 const API_BASE = '/api/v1'
@@ -204,5 +216,216 @@ export const handlers = [
     }
 
     return HttpResponse.json({ message: 'Rule deleted successfully' })
+  }),
+
+  // ============ Graph Handlers ============
+
+  http.get(`${API_BASE}/graph/address/:address`, async ({ params }) => {
+    await delay(400)
+    const { address } = params
+
+    if (!address || typeof address !== 'string') {
+      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    }
+
+    return HttpResponse.json(generateGraphAddressInfo(address))
+  }),
+
+  http.get(`${API_BASE}/graph/address/:address/neighbors`, async ({ params, request }) => {
+    await delay(500)
+    const { address } = params
+    const url = new URL(request.url)
+    const depth = parseInt(url.searchParams.get('depth') || '1')
+    const limit = parseInt(url.searchParams.get('limit') || '50')
+
+    if (!address || typeof address !== 'string') {
+      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    }
+
+    return HttpResponse.json(generateNeighborsResponse(address, depth, limit))
+  }),
+
+  http.get(`${API_BASE}/graph/address/:address/tags`, async ({ params }) => {
+    await delay(300)
+    const { address } = params
+
+    if (!address || typeof address !== 'string') {
+      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    }
+
+    return HttpResponse.json(randomTags())
+  }),
+
+  http.post(`${API_BASE}/graph/address/:address/tags`, async ({ params }) => {
+    await delay(400)
+    const { address } = params
+
+    if (!address || typeof address !== 'string') {
+      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    }
+
+    return HttpResponse.json(generateGraphAddressInfo(address))
+  }),
+
+  http.delete(`${API_BASE}/graph/address/:address/tags/:tag`, async () => {
+    await delay(300)
+    return new HttpResponse(null, { status: 200 })
+  }),
+
+  http.get(`${API_BASE}/graph/address/:address/cluster`, async ({ params }) => {
+    await delay(400)
+    const { address } = params
+
+    if (!address || typeof address !== 'string') {
+      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    }
+
+    // 60% chance of being in a cluster
+    if (Math.random() > 0.4) {
+      return HttpResponse.json(generateClusterResponse())
+    }
+    return HttpResponse.json({ message: 'Address not in any cluster' }, { status: 404 })
+  }),
+
+  http.get(`${API_BASE}/graph/path/:fromAddress/:toAddress`, async ({ params, request }) => {
+    await delay(600)
+    const { fromAddress, toAddress } = params
+    const url = new URL(request.url)
+    const maxDepth = parseInt(url.searchParams.get('maxDepth') || '5')
+
+    if (!fromAddress || !toAddress || typeof fromAddress !== 'string' || typeof toAddress !== 'string') {
+      return HttpResponse.json({ message: 'Invalid addresses' }, { status: 400 })
+    }
+
+    return HttpResponse.json(generatePathResponse(fromAddress, toAddress, maxDepth))
+  }),
+
+  http.get(`${API_BASE}/graph/cluster/:clusterId`, async ({ params }) => {
+    await delay(400)
+    const { clusterId } = params
+
+    if (!clusterId || typeof clusterId !== 'string') {
+      return HttpResponse.json({ message: 'Invalid cluster ID' }, { status: 400 })
+    }
+
+    return HttpResponse.json(generateClusterResponse(clusterId))
+  }),
+
+  http.post(`${API_BASE}/graph/cluster/run`, async () => {
+    await delay(1000)
+    return HttpResponse.json(generateClusteringResult())
+  }),
+
+  http.post(`${API_BASE}/graph/cluster/manual`, async () => {
+    await delay(500)
+    return HttpResponse.json(generateClusteringResult())
+  }),
+
+  http.get(`${API_BASE}/graph/search/tag/:tag`, async ({ request }) => {
+    await delay(500)
+    const url = new URL(request.url)
+    const limit = parseInt(url.searchParams.get('limit') || '50')
+
+    return HttpResponse.json(generateHighRiskAddresses(0, Math.min(limit, 20)))
+  }),
+
+  http.get(`${API_BASE}/graph/search/high-risk`, async ({ request }) => {
+    await delay(500)
+    const url = new URL(request.url)
+    const threshold = parseFloat(url.searchParams.get('threshold') || '0.6')
+    const limit = parseInt(url.searchParams.get('limit') || '50')
+
+    return HttpResponse.json(generateHighRiskAddresses(threshold, Math.min(limit, 30)))
+  }),
+
+  http.get(`${API_BASE}/graph/sync/status`, async () => {
+    await delay(300)
+    return HttpResponse.json(generateSyncStatus())
+  }),
+
+  http.post(`${API_BASE}/graph/sync`, async () => {
+    await delay(500)
+    return HttpResponse.json(generateSyncStatus())
+  }),
+
+  http.post(`${API_BASE}/graph/propagate`, async () => {
+    await delay(800)
+    return HttpResponse.json(generatePropagationResult())
+  }),
+
+  http.post(`${API_BASE}/graph/propagate/:address`, async () => {
+    await delay(600)
+    return HttpResponse.json(generatePropagationResult())
+  }),
+
+  // ============ Orchestration Handlers ============
+
+  http.get(`${API_BASE}/orchestration/address-profile/:address`, async ({ params }) => {
+    await delay(800)
+    const { address } = params
+
+    if (!address || typeof address !== 'string') {
+      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    }
+
+    const analysis = generateAddressAnalysis(address)
+    return HttpResponse.json({
+      address: analysis.address,
+      network: analysis.network,
+      addressInfo: analysis.basic.addressInfo,
+      riskScore: analysis.basic.riskScore,
+      recentTransfers: generateTransfers(address, 10),
+      orchestratedAt: Date.now(),
+    })
+  }),
+
+  http.get(`${API_BASE}/orchestration/address-analysis/:address`, async ({ params, request }) => {
+    await delay(1000)
+    const { address } = params
+    const url = new URL(request.url)
+    const neighborDepth = parseInt(url.searchParams.get('neighborDepth') || '1')
+    const neighborLimit = parseInt(url.searchParams.get('neighborLimit') || '20')
+
+    if (!address || typeof address !== 'string') {
+      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    }
+
+    const analysis = generateAddressAnalysis(address)
+    // Update neighbors with requested params
+    analysis.graph.neighbors = generateNeighborsResponse(address, neighborDepth, neighborLimit)
+    return HttpResponse.json(analysis)
+  }),
+
+  http.get(`${API_BASE}/orchestration/connection/:fromAddress/:toAddress`, async ({ params, request }) => {
+    await delay(1200)
+    const { fromAddress, toAddress } = params
+    const url = new URL(request.url)
+    const maxDepth = parseInt(url.searchParams.get('maxDepth') || '5')
+
+    if (!fromAddress || !toAddress || typeof fromAddress !== 'string' || typeof toAddress !== 'string') {
+      return HttpResponse.json({ message: 'Invalid addresses' }, { status: 400 })
+    }
+
+    return HttpResponse.json(generateConnectionResponse(fromAddress, toAddress, maxDepth))
+  }),
+
+  http.get(`${API_BASE}/orchestration/high-risk-network`, async ({ request }) => {
+    await delay(800)
+    const url = new URL(request.url)
+    const threshold = parseFloat(url.searchParams.get('threshold') || '0.7')
+    const limit = parseInt(url.searchParams.get('limit') || '20')
+
+    return HttpResponse.json(generateHighRiskNetworkResponse(threshold, limit))
+  }),
+
+  http.post(`${API_BASE}/orchestration/batch-risk-analysis`, async ({ request }) => {
+    await delay(1000)
+    const body = (await request.json()) as { addresses: string[]; network?: string }
+
+    if (!body.addresses || !Array.isArray(body.addresses)) {
+      return HttpResponse.json({ message: 'Addresses array is required' }, { status: 400 })
+    }
+
+    return HttpResponse.json(generateBatchRiskScores(body.addresses))
   }),
 ]

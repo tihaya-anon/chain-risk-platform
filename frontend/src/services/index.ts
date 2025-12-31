@@ -1,4 +1,6 @@
 export { authService } from './auth'
 export { addressService } from './address'
 export { riskService } from './risk'
+export { graphService } from './graph'
+export { orchestrationService } from './orchestration'
 export { default as api } from './api'
