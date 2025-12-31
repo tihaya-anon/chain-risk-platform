@@ -30,32 +30,61 @@ Chain Risk Platform 使用 Nacos 作为：
     ┌───────────┼───────────────────────────────┼───────────────┐
     │           │                               │               │
     ▼           ▼                               ▼               ▼
-   ┌────────┐ ┌────────────┐ ┌─────────┐ ┌──────────┐ ┌─────────┐
-   │Orchestr│ │Graph Engine│ │Query Svc│ │Risk ML   │ │  BFF    │
-   │  Java  │ │   Java     │ │   Go    │ │ Python   │ │ Node.js │
-   └────────┘ └────────────┘ └─────────┘ └──────────┘ └─────────┘
+┌────────┐ ┌────────────┐ ┌─────────┐ ┌──────────┐ ┌─────────┐
+│Orchestr│ │Graph Engine│ │Query Svc│ │Risk ML   │ │  BFF    │
+│  Java  │ │   Java     │ │   Go    │ │ Python   │ │ Node.js │
+└────────┘ └────────────┘ └─────────┘ └──────────┘ └─────────┘
 ```
 
 ## 快速开始
 
-### 1. 初始化 Nacos 配置
+### 1. 配置 Nacos 鉴权
+
+从 Nacos 3.0 开始，默认开启鉴权。需要配置用户名密码：
 
 ```bash
-# 本地 Nacos
-./infra/nacos/init-nacos-config.sh
-
-# 远程 Nacos
-./infra/nacos/init-nacos-config.sh 192.168.1.100
-
-# 或使用环境变量
-NACOS_SERVER=192.168.1.100:18848 ./infra/nacos/init-nacos-config.sh
+# 设置环境变量
+export NACOS_USERNAME=nacos
+export NACOS_PASSWORD=nacos  # 请修改为你的实际密码
 ```
 
-### 2. 启动服务
+**首次登录设置密码：**
+
+如果是新安装的 Nacos，需要先初始化管理员密码：
+
+```bash
+# 通过 API 设置密码
+curl -X POST 'http://<NACOS_HOST>:18848/nacos/v1/auth/users/admin' \
+    -d 'password=your_secure_password'
+```
+
+或者访问 Nacos 控制台 `http://<NACOS_HOST>:18848/nacos`，首次访问会提示设置密码。
+
+### 2. 初始化 Nacos 配置
+
+```bash
+# 本地 Nacos (使用默认用户名密码)
+./infra/nacos/init-nacos-config.sh localhost
+
+# 远程 Nacos (指定用户名密码)
+./infra/nacos/init-nacos-config.sh 192.168.1.100:18848 nacos your_password
+
+# 或使用环境变量
+export NACOS_SERVER=192.168.1.100:18848
+export NACOS_USERNAME=nacos
+export NACOS_PASSWORD=your_password
+./infra/nacos/init-nacos-config.sh
+```
+
+### 3. 启动服务
 
 ```bash
 # 设置远程环境变量
 source scripts/env-remote.sh 192.168.1.100
+
+# 设置 Nacos 鉴权信息
+export NACOS_USERNAME=nacos
+export NACOS_PASSWORD=your_password
 
 # 启动 Java 服务
 cd services/orchestrator && mvn spring-boot:run
@@ -66,12 +95,56 @@ cd data-ingestion && go run ./cmd/ingestion
 cd services/query-service && go run ./cmd/main.go
 ```
 
-### 3. 查看 Nacos 控制台
+### 4. 查看 Nacos 控制台
 
 访问 `http://<NACOS_HOST>:18848/nacos`
 
-- 用户名: `nacos`
-- 密码: `nacos`
+- 用户名: `nacos` (或你设置的用户名)
+- 密码: 你设置的密码
+
+## 鉴权配置
+
+### 环境变量
+
+| 变量              | 说明             | 默认值            |
+| ----------------- | ---------------- | ----------------- |
+| `NACOS_SERVER`    | Nacos 服务器地址 | `localhost:18848` |
+| `NACOS_NAMESPACE` | 命名空间         | `public`          |
+| `NACOS_USERNAME`  | 用户名           | `nacos`           |
+| `NACOS_PASSWORD`  | 密码             | `nacos`           |
+
+### Java 服务配置 (bootstrap.yml)
+
+```yaml
+spring:
+  cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER:localhost:18848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+```
+
+### Go 服务配置
+
+```go
+cc := constant.ClientConfig{
+    NamespaceId: "public",
+    Username:    os.Getenv("NACOS_USERNAME"),
+    Password:    os.Getenv("NACOS_PASSWORD"),
+}
+```
+
+### 关闭鉴权（仅限开发环境）
+
+如果是本地开发环境，可以在 Nacos 服务端关闭鉴权：
+
+修改 `application.properties`:
+```properties
+# 关闭控制台鉴权
+nacos.core.auth.console.enabled=false
+# 关闭客户端鉴权
+nacos.core.auth.enabled=false
+```
 
 ## 配置管理
 
@@ -109,14 +182,14 @@ pipeline:
 
 ### 服务列表
 
-| 服务名 | 端口 | 语言 | 状态 |
-|--------|------|------|------|
-| orchestrator | 8080 | Java | ✅ |
-| graph-engine | 8084 | Java | ✅ |
-| data-ingestion | 9091 | Go | ✅ |
-| query-service | 8081 | Go | 🔶 |
-| risk-ml-service | 8082 | Python | 🔶 |
-| bff | 3001 | Node.js | 🔶 |
+| 服务名          | 端口 | 语言    | 状态 |
+| --------------- | ---- | ------- | ---- |
+| orchestrator    | 8080 | Java    | ✅    |
+| graph-engine    | 8084 | Java    | ✅    |
+| data-ingestion  | 9091 | Go      | ✅    |
+| query-service   | 8081 | Go      | 🔶    |
+| risk-ml-service | 8082 | Python  | 🔶    |
+| bff             | 3001 | Node.js | 🔶    |
 
 ### 服务发现使用
 
@@ -179,21 +252,20 @@ curl -X POST http://localhost:8084/admin/sync/trigger
 └────────────────────────────────────────────────────────────────┘
 ```
 
-## 环境变量
-
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `NACOS_SERVER` | Nacos 服务器地址 | `localhost:18848` |
-| `NACOS_NAMESPACE` | 命名空间 | `public` |
-
 ## 故障排除
 
-### 1. 无法连接 Nacos
+### 1. 无法连接 Nacos / 鉴权失败
 
 ```bash
 # 检查 Nacos 健康状态
 curl http://<NACOS_HOST>:18848/nacos/v1/console/health/readiness
+
+# 测试登录
+curl -X POST 'http://<NACOS_HOST>:18848/nacos/v1/auth/login' \
+    -d 'username=nacos&password=your_password'
 ```
+
+如果返回 `{"accessToken":"..."}` 则鉴权成功。
 
 ### 2. 配置不生效
 
@@ -205,10 +277,12 @@ curl http://<NACOS_HOST>:18848/nacos/v1/console/health/readiness
 
 1. 检查服务是否正常启动
 2. 检查网络连接
-3. 查看 Nacos 控制台服务列表
+3. 检查用户名密码是否正确
+4. 查看 Nacos 控制台服务列表
 
 ## 参考文档
 
 - [Nacos 官方文档](https://nacos.io/zh-cn/docs/what-is-nacos.html)
+- [Nacos 鉴权配置](https://nacos.io/docs/next/manual/admin/auth/)
 - [Spring Cloud Alibaba](https://spring-cloud-alibaba-group.github.io/github-pages/hoxton/en-us/index.html)
 - [Nacos Go SDK](https://github.com/nacos-group/nacos-sdk-go)

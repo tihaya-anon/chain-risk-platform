@@ -1,96 +1,92 @@
 #!/bin/bash
-# ============================================================
-# Initialize Nacos Configuration
-# ============================================================
-# Usage:
-#   ./scripts/init-nacos-config.sh              # Use localhost
-#   ./scripts/init-nacos-config.sh 192.168.1.x  # Use remote host
-#   NACOS_SERVER=192.168.1.x:18848 ./scripts/init-nacos-config.sh
-# ============================================================
+# Initialize Nacos configuration for Chain Risk Platform
+# Usage: ./init-nacos-config.sh [NACOS_HOST] [USERNAME] [PASSWORD]
 
-set -e
+NACOS_HOST=${1:-${NACOS_SERVER:-localhost}}
+NACOS_PORT=${NACOS_HOST##*:}
+NACOS_HOST=${NACOS_HOST%%:*}
+NACOS_PORT=${NACOS_PORT:-18848}
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+# Authentication credentials (default: nacos/nacos)
+USERNAME=${2:-${NACOS_USERNAME:-nacos}}
+PASSWORD=${3:-${NACOS_PASSWORD:-nacos}}
 
-# Get Nacos server address
-if [ -n "$1" ]; then
-    NACOS_SERVER="$1:18848"
-elif [ -z "$NACOS_SERVER" ]; then
-    # Try to read from .env.local
-    if [ -f ".env.local" ]; then
-        source .env.local 2>/dev/null
-    fi
-    NACOS_SERVER="${NACOS_SERVER:-localhost:18848}"
-fi
-
-NACOS_URL="http://${NACOS_SERVER}/nacos/v1/cs/configs"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR="${SCRIPT_DIR}"
+CONFIG_FILE="${SCRIPT_DIR}/chain-risk-pipeline.yaml"
 
 echo "============================================"
-echo "  Nacos Configuration Initializer"
-echo "  Server: $NACOS_SERVER"
+echo "Nacos Configuration Initializer"
 echo "============================================"
+echo "Nacos Server: ${NACOS_HOST}:${NACOS_PORT}"
+echo "Username: ${USERNAME}"
+echo "Config File: ${CONFIG_FILE}"
 echo ""
 
-# Function to publish config
-publish_config() {
-    local data_id=$1
-    local group=$2
-    local config_file=$3
-    local config_type=$4
-
-    if [ ! -f "$config_file" ]; then
-        echo -e "${RED}✗ File not found: $config_file${NC}"
-        return 1
-    fi
-
-    local content=$(cat "$config_file")
-    
-    printf "Publishing %-35s " "$data_id"
-    
-    response=$(curl -s -X POST "$NACOS_URL" \
-        -d "dataId=$data_id" \
-        -d "group=$group" \
-        -d "type=$config_type" \
-        --data-urlencode "content=$content")
-    
-    if [ "$response" = "true" ]; then
-        echo -e "${GREEN}✓ OK${NC}"
-        return 0
-    else
-        echo -e "${RED}✗ FAILED${NC} ($response)"
-        return 1
-    fi
-}
-
-# Check Nacos health
-echo "Checking Nacos server..."
-if ! curl -s "http://${NACOS_SERVER}/nacos/v1/console/health/readiness" > /dev/null; then
-    echo -e "${RED}✗ Cannot connect to Nacos at $NACOS_SERVER${NC}"
+# Check if config file exists
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: Configuration file not found: $CONFIG_FILE"
     exit 1
 fi
-echo -e "${GREEN}✓ Nacos server is healthy${NC}"
-echo ""
 
-# Publish configurations
-echo "Publishing configurations..."
-echo ""
+# Read config content
+CONFIG_CONTENT=$(cat "$CONFIG_FILE")
 
-# Shared pipeline config
-publish_config "chain-risk-pipeline.yaml" "DEFAULT_GROUP" \
-    "${CONFIG_DIR}/chain-risk-pipeline.yaml" "yaml"
+echo "Step 1: Login to get access token..."
+# Login to get access token
+LOGIN_RESPONSE=$(curl -s -X POST "http://${NACOS_HOST}:${NACOS_PORT}/nacos/v1/auth/login" \
+    -d "username=${USERNAME}&password=${PASSWORD}")
+
+# Extract access token
+ACCESS_TOKEN=$(echo "$LOGIN_RESPONSE" | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4)
+
+if [ -z "$ACCESS_TOKEN" ]; then
+    echo "Warning: Failed to get access token. Nacos auth may be disabled."
+    echo "Response: $LOGIN_RESPONSE"
+    echo "Proceeding without authentication..."
+    AUTH_PARAM=""
+else
+    echo "Access token obtained successfully."
+    AUTH_PARAM="&accessToken=${ACCESS_TOKEN}"
+fi
+
+echo ""
+echo "Step 2: Publishing configuration to Nacos..."
+
+# Publish configuration
+RESPONSE=$(curl -s -X POST "http://${NACOS_HOST}:${NACOS_PORT}/nacos/v1/cs/configs?${AUTH_PARAM}" \
+    -d "dataId=chain-risk-pipeline.yaml" \
+    -d "group=DEFAULT_GROUP" \
+    -d "type=yaml" \
+    --data-urlencode "content=${CONFIG_CONTENT}")
+
+if [ "$RESPONSE" == "true" ]; then
+    echo "✅ Configuration published successfully!"
+else
+    echo "❌ Failed to publish configuration"
+    echo "Response: $RESPONSE"
+    exit 1
+fi
+
+echo ""
+echo "Step 3: Verifying configuration..."
+
+# Verify configuration
+VERIFY_RESPONSE=$(curl -s -X GET "http://${NACOS_HOST}:${NACOS_PORT}/nacos/v1/cs/configs?dataId=chain-risk-pipeline.yaml&group=DEFAULT_GROUP${AUTH_PARAM}")
+
+if [ -n "$VERIFY_RESPONSE" ] && [ "$VERIFY_RESPONSE" != "config data not exist" ]; then
+    echo "✅ Configuration verified!"
+    echo ""
+    echo "============================================"
+    echo "Configuration Content:"
+    echo "============================================"
+    echo "$VERIFY_RESPONSE"
+else
+    echo "❌ Failed to verify configuration"
+    echo "Response: $VERIFY_RESPONSE"
+fi
 
 echo ""
 echo "============================================"
-echo -e "${GREEN}Configuration initialization complete!${NC}"
+echo "Nacos Console: http://${NACOS_HOST}:${NACOS_PORT}/nacos"
+echo "Username: ${USERNAME}"
 echo "============================================"
-echo ""
-echo "View configurations at:"
-echo "  http://${NACOS_SERVER}/nacos/#/configurationManagement"
-echo ""
-echo "Default credentials: nacos / nacos"

@@ -72,6 +72,10 @@ type Config struct {
 	ServerAddr  string
 	ServerPort  uint64
 	NamespaceID string
+	// Authentication (required if Nacos auth is enabled)
+	Username string
+	Password string
+	// Service registration info
 	ServiceName string
 	ServiceIP   string
 	ServicePort uint64
@@ -88,7 +92,7 @@ func NewClient(cfg *Config, logger *zap.Logger) (*Client, error) {
 		},
 	}
 
-	// Client config
+	// Client config with authentication
 	cc := constant.ClientConfig{
 		NamespaceId:         cfg.NamespaceID,
 		TimeoutMs:           5000,
@@ -96,6 +100,9 @@ func NewClient(cfg *Config, logger *zap.Logger) (*Client, error) {
 		LogDir:              "/tmp/nacos/log",
 		CacheDir:            "/tmp/nacos/cache",
 		LogLevel:            "warn",
+		// Authentication credentials
+		Username: cfg.Username,
+		Password: cfg.Password,
 	}
 
 	// Create config client

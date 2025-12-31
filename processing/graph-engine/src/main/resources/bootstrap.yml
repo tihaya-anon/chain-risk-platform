@@ -7,33 +7,30 @@
 
 spring:
   application:
-    name: graph-engine
-
+    name: orchestrator
   cloud:
     nacos:
-      # Nacos Server Address
+      # Nacos Server address
       server-addr: ${NACOS_SERVER:localhost:18848}
-
+      # Authentication (required if Nacos auth is enabled)
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
       # Configuration Center
       config:
         enabled: true
+        namespace: ${NACOS_NAMESPACE:public}
+        group: DEFAULT_GROUP
         file-extension: yaml
-        # Shared configuration for all services
+        # Shared configuration for pipeline control
         shared-configs:
           - data-id: chain-risk-pipeline.yaml
             group: DEFAULT_GROUP
             refresh: true
-        # Refresh configuration dynamically
-        refresh-enabled: true
-
       # Service Discovery
       discovery:
         enabled: true
-        # Service registration
-        register-enabled: true
-        # Service group
+        namespace: ${NACOS_NAMESPACE:public}
         group: DEFAULT_GROUP
-        # Service metadata
         metadata:
           version: 1.0.0
-          env: ${SPRING_PROFILES_ACTIVE:dev}
+          type: gateway
