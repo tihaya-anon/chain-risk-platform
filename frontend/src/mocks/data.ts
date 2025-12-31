@@ -25,15 +25,17 @@ import type {
   AddressAnalysis,
   ConnectionResponse,
   HighRiskNetworkResponse,
-} from '@/types'
+} from "@/types"
 
 // ============ Helpers ============
 
 export const randomAddress = (): string =>
-  '0x' + Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
+  "0x" +
+  Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join("")
 
 export const randomTxHash = (): string =>
-  '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
+  "0x" +
+  Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("")
 
 export const randomAmount = (min = 0.01, max = 100): string =>
   (Math.random() * (max - min) + min).toFixed(6)
@@ -47,7 +49,18 @@ export const randomDate = (daysAgo = 30): string => {
 export const randomRiskScore = (): number => Math.random()
 
 export const randomTags = (): string[] => {
-  const allTags = ['exchange', 'defi', 'mixer', 'scam', 'whale', 'miner', 'contract', 'nft', 'dao', 'bridge']
+  const allTags = [
+    "exchange",
+    "defi",
+    "mixer",
+    "scam",
+    "whale",
+    "miner",
+    "contract",
+    "nft",
+    "dao",
+    "bridge",
+  ]
   const count = Math.floor(Math.random() * 3)
   return allTags.sort(() => Math.random() - 0.5).slice(0, count)
 }
@@ -55,28 +68,28 @@ export const randomTags = (): string[] => {
 // ============ Auth Data Generators ============
 
 export const generateJWT = (username: string, role: string): string => {
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }))
   const payload = btoa(
     JSON.stringify({
-      sub: username === 'admin' ? '1' : '2',
+      sub: username === "admin" ? "1" : "2",
       username,
       role,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 86400,
     })
   )
-  const signature = btoa('mock-signature')
+  const signature = btoa("mock-signature")
   return `${header}.${payload}.${signature}`
 }
 
 export const generateLoginResponse = (username: string, role: string): LoginResponse => ({
   accessToken: generateJWT(username, role),
-  tokenType: 'Bearer',
-  expiresIn: '1d',
+  tokenType: "Bearer",
+  expiresIn: "1d",
 })
 
 export const generateUser = (username: string, role: string): User => ({
-  sub: username === 'admin' ? '1' : '2',
+  sub: username === "admin" ? "1" : "2",
   username,
   role,
 })
@@ -85,7 +98,7 @@ export const generateUser = (username: string, role: string): User => ({
 
 export const generateAddressInfo = (address: string): AddressInfo => ({
   address,
-  network: 'ethereum',
+  network: "ethereum",
   firstSeen: randomDate(365),
   lastSeen: randomDate(7),
   totalTxCount: Math.floor(Math.random() * 1000) + 10,
@@ -104,8 +117,8 @@ export const generateTransfer = (address: string, index: number): Transfer => {
     toAddress: isIncoming ? address : randomAddress(),
     value: randomAmount(0.01, 50),
     timestamp: randomDate(30),
-    transferType: Math.random() > 0.7 ? 'token' : 'native',
-    network: 'ethereum',
+    transferType: Math.random() > 0.7 ? "token" : "native",
+    network: "ethereum",
   }
 }
 
@@ -132,7 +145,7 @@ export const generateAddressStats = (): AddressStats => ({
 
 // ============ Risk Data Generators ============
 
-const riskLevels = ['low', 'medium', 'high', 'critical'] as const
+const riskLevels = ["low", "medium", "high", "critical"] as const
 
 export const generateRiskScore = (address: string): RiskScore => {
   const score = Math.random()
@@ -140,43 +153,43 @@ export const generateRiskScore = (address: string): RiskScore => {
 
   return {
     address,
-    network: 'ethereum',
+    network: "ethereum",
     riskScore: parseFloat(score.toFixed(2)),
     riskLevel: riskLevels[levelIndex],
     factors: [
       {
-        name: 'blacklist_check',
+        name: "blacklist_check",
         score: Math.random() > 0.8 ? 0.8 : 0,
         weight: 2.0,
-        description: 'Address found in blacklist',
+        description: "Address found in blacklist",
         triggered: Math.random() > 0.8,
       },
       {
-        name: 'high_frequency',
+        name: "high_frequency",
         score: parseFloat((Math.random() * 0.5).toFixed(2)),
         weight: 1.0,
-        description: 'High transaction frequency detected',
+        description: "High transaction frequency detected",
         triggered: Math.random() > 0.5,
       },
       {
-        name: 'large_transaction',
+        name: "large_transaction",
         score: parseFloat((Math.random() * 0.4).toFixed(2)),
         weight: 1.2,
-        description: 'Large value transactions',
+        description: "Large value transactions",
         triggered: Math.random() > 0.6,
       },
       {
-        name: 'new_address',
+        name: "new_address",
         score: parseFloat((Math.random() * 0.3).toFixed(2)),
         weight: 0.8,
-        description: 'Recently created address',
+        description: "Recently created address",
         triggered: Math.random() > 0.7,
       },
       {
-        name: 'round_amounts',
+        name: "round_amounts",
         score: parseFloat((Math.random() * 0.2).toFixed(2)),
         weight: 0.6,
-        description: 'Suspicious round amount patterns',
+        description: "Suspicious round amount patterns",
         triggered: Math.random() > 0.6,
       },
     ],
@@ -196,32 +209,32 @@ export const generateBatchRiskScores = (addresses: string[]): BatchRiskScoreResp
 
 export const riskRules: RiskRule[] = [
   {
-    name: 'blacklist_check',
-    description: 'Check if address is in known blacklists',
+    name: "blacklist_check",
+    description: "Check if address is in known blacklists",
     weight: 2.0,
     enabled: true,
   },
   {
-    name: 'high_frequency',
-    description: 'Detect high transaction frequency patterns',
+    name: "high_frequency",
+    description: "Detect high transaction frequency patterns",
     weight: 1.0,
     enabled: true,
   },
   {
-    name: 'large_transaction',
-    description: 'Flag large value transactions',
+    name: "large_transaction",
+    description: "Flag large value transactions",
     weight: 1.2,
     enabled: true,
   },
   {
-    name: 'new_address',
-    description: 'Identify recently created addresses',
+    name: "new_address",
+    description: "Identify recently created addresses",
     weight: 0.8,
     enabled: true,
   },
   {
-    name: 'round_amounts',
-    description: 'Detect suspicious round amount patterns',
+    name: "round_amounts",
+    description: "Detect suspicious round amount patterns",
     weight: 0.6,
     enabled: false,
   },
@@ -236,14 +249,15 @@ export const generateGraphAddressInfo = (address: string): GraphAddressInfo => (
   txCount: Math.floor(Math.random() * 1000) + 10,
   riskScore: parseFloat(randomRiskScore().toFixed(2)),
   tags: randomTags(),
-  clusterId: Math.random() > 0.5 ? `cluster-${Math.floor(Math.random() * 100)}` : undefined,
-  network: 'ethereum',
+  clusterId:
+    Math.random() > 0.5 ? `cluster-${Math.floor(Math.random() * 100)}` : undefined,
+  network: "ethereum",
   incomingCount: Math.floor(Math.random() * 500) + 5,
   outgoingCount: Math.floor(Math.random() * 500) + 5,
 })
 
 export const generateNeighborInfo = (): NeighborInfo => {
-  const directions = ['incoming', 'outgoing', 'both'] as const
+  const directions = ["incoming", "outgoing", "both"] as const
   return {
     address: randomAddress(),
     direction: directions[Math.floor(Math.random() * 3)],
@@ -261,7 +275,10 @@ export const generateNeighborsResponse = (
   limit: number
 ): AddressNeighborsResponse => ({
   address,
-  neighbors: Array.from({ length: Math.min(limit, 20 + Math.floor(Math.random() * 30)) }, generateNeighborInfo),
+  neighbors: Array.from(
+    { length: Math.min(limit, 20 + Math.floor(Math.random() * 30)) },
+    generateNeighborInfo
+  ),
   totalCount: Math.floor(Math.random() * 200) + limit,
   depth,
 })
@@ -285,10 +302,12 @@ export const generatePathResponse = (
 
   const path: PathNode[] = found
     ? [
-      generatePathNode(fromAddress),
-      ...Array.from({ length: pathLength - 2 }, () => generatePathNode(randomAddress())),
-      generatePathNode(toAddress),
-    ]
+        generatePathNode(fromAddress),
+        ...Array.from({ length: pathLength - 2 }, () =>
+          generatePathNode(randomAddress())
+        ),
+        generatePathNode(toAddress),
+      ]
     : []
 
   return {
@@ -297,7 +316,9 @@ export const generatePathResponse = (
     toAddress,
     pathLength: found ? pathLength : 0,
     maxDepth,
-    message: found ? `Found path with ${pathLength} hops` : 'No path found within max depth',
+    message: found
+      ? `Found path with ${pathLength} hops`
+      : "No path found within max depth",
     path,
   }
 }
@@ -306,28 +327,36 @@ export const generateClusterResponse = (clusterId?: string): ClusterResponse => 
   clusterId: clusterId || `cluster-${Math.floor(Math.random() * 1000)}`,
   size: Math.floor(Math.random() * 50) + 2,
   riskScore: parseFloat(randomRiskScore().toFixed(2)),
-  label: Math.random() > 0.5 ? ['Exchange', 'DeFi Protocol', 'Mining Pool', 'Unknown Entity'][Math.floor(Math.random() * 4)] : undefined,
-  category: Math.random() > 0.5 ? ['exchange', 'defi', 'mixer', 'unknown'][Math.floor(Math.random() * 4)] : undefined,
+  label:
+    Math.random() > 0.5
+      ? ["Exchange", "DeFi Protocol", "Mining Pool", "Unknown Entity"][
+          Math.floor(Math.random() * 4)
+        ]
+      : undefined,
+  category:
+    Math.random() > 0.5
+      ? ["exchange", "defi", "mixer", "unknown"][Math.floor(Math.random() * 4)]
+      : undefined,
   tags: randomTags(),
   addresses: Array.from({ length: Math.floor(Math.random() * 10) + 2 }, randomAddress),
   createdAt: randomDate(180),
   updatedAt: randomDate(7),
-  network: 'ethereum',
+  network: "ethereum",
 })
 
 export const generateSyncStatus = (): SyncStatusResponse => ({
-  status: ['synced', 'syncing', 'error'][Math.floor(Math.random() * 3)],
+  status: ["synced", "syncing", "error"][Math.floor(Math.random() * 3)],
   lastSyncedBlock: Math.floor(Math.random() * 1000000) + 18000000,
   totalAddresses: Math.floor(Math.random() * 100000) + 10000,
   totalTransfers: Math.floor(Math.random() * 1000000) + 100000,
   lastSyncTime: randomDate(1),
   nextSyncTime: new Date(Date.now() + 300000).toISOString(),
-  network: 'ethereum',
+  network: "ethereum",
   errorMessage: undefined,
 })
 
 export const generatePropagationResult = (): PropagationResultResponse => ({
-  status: 'completed',
+  status: "completed",
   addressesAffected: Math.floor(Math.random() * 1000) + 100,
   tagsPropagated: Math.floor(Math.random() * 500) + 50,
   maxHops: 3,
@@ -339,7 +368,7 @@ export const generatePropagationResult = (): PropagationResultResponse => ({
 })
 
 export const generateClusteringResult = (): ClusteringResultResponse => ({
-  status: 'completed',
+  status: "completed",
   clustersCreated: Math.floor(Math.random() * 100) + 10,
   addressesClustered: Math.floor(Math.random() * 1000) + 100,
   durationMs: Math.floor(Math.random() * 10000) + 2000,
@@ -357,7 +386,10 @@ export const generateHighRiskAddresses = (
     // Ensure risk score is above threshold
     info.riskScore = parseFloat((threshold + Math.random() * (1 - threshold)).toFixed(2))
     // High risk addresses more likely to have tags
-    info.tags = ['mixer', 'scam', 'blacklist', 'suspicious'].slice(0, Math.floor(Math.random() * 3) + 1)
+    info.tags = ["mixer", "scam", "blacklist", "suspicious"].slice(
+      0,
+      Math.floor(Math.random() * 3) + 1
+    )
     return info
   })
 }
@@ -366,7 +398,7 @@ export const generateHighRiskAddresses = (
 
 export const generateAddressAnalysis = (address: string): AddressAnalysis => ({
   address,
-  network: 'ethereum',
+  network: "ethereum",
   basic: {
     addressInfo: generateAddressInfo(address),
     riskScore: generateRiskScore(address),
@@ -375,7 +407,8 @@ export const generateAddressAnalysis = (address: string): AddressAnalysis => ({
     graphInfo: generateGraphAddressInfo(address),
     neighbors: generateNeighborsResponse(address, 1, 10),
     tags: randomTags(),
-    cluster: Math.random() > 0.4 ? generateClusterResponse() : { error: 'Not in any cluster' },
+    cluster:
+      Math.random() > 0.4 ? generateClusterResponse() : { error: "Not in any cluster" },
   },
   orchestratedAt: Date.now(),
 })

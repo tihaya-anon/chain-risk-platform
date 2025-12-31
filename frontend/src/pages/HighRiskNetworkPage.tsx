@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { Network, DataSet, Options } from 'vis-network/standalone'
+import { useState, useEffect, useRef } from "react"
+import { useNavigate } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
+import { Network, DataSet, Options } from "vis-network/standalone"
 import {
   ShieldAlert,
   RefreshCw,
@@ -14,10 +14,10 @@ import {
   ExternalLink,
   Tag,
   Circle,
-} from 'lucide-react'
-import { Button, Card, LoadingSpinner } from '@/components/common'
-import { orchestrationService } from '@/services'
-import type { GraphAddressInfo } from '@/types'
+} from "lucide-react"
+import { Button, Card, LoadingSpinner } from "@/components/common"
+import { orchestrationService } from "@/services"
+import type { GraphAddressInfo } from "@/types"
 
 export function HighRiskNetworkPage() {
   const navigate = useNavigate()
@@ -26,21 +26,19 @@ export function HighRiskNetworkPage() {
 
   const [threshold, setThreshold] = useState(0.6)
   const [limit, setLimit] = useState(30)
-  const [selectedAddress, setSelectedAddress] = useState<GraphAddressInfo | null>(
-    null
-  )
-  const [viewMode, setViewMode] = useState<'list' | 'graph'>('list')
+  const [selectedAddress, setSelectedAddress] = useState<GraphAddressInfo | null>(null)
+  const [viewMode, setViewMode] = useState<"list" | "graph">("list")
 
   // Fetch high risk network
   const highRiskQuery = useQuery({
-    queryKey: ['highRiskNetwork', threshold, limit],
+    queryKey: ["highRiskNetwork", threshold, limit],
     queryFn: () => orchestrationService.getHighRiskNetwork(threshold, limit),
   })
 
   // Render network graph
   useEffect(() => {
     if (
-      viewMode !== 'graph' ||
+      viewMode !== "graph" ||
       !containerRef.current ||
       !highRiskQuery.data?.highRiskAddresses?.length
     )
@@ -77,7 +75,7 @@ export function HighRiskNetworkPage() {
             id: `edge-${i}-${j}`,
             from: addr1.address,
             to: addr2.address,
-            color: { color: '#9CA3AF', opacity: 0.5 },
+            color: { color: "#9CA3AF", opacity: 0.5 },
             width: 1,
           })
         } else if (addr1.tags && addr2.tags) {
@@ -87,7 +85,7 @@ export function HighRiskNetworkPage() {
               id: `edge-${i}-${j}`,
               from: addr1.address,
               to: addr2.address,
-              color: { color: '#6B7280', opacity: 0.3 },
+              color: { color: "#6B7280", opacity: 0.3 },
               width: 1,
             })
           }
@@ -100,18 +98,18 @@ export function HighRiskNetworkPage() {
 
     const options: Options = {
       nodes: {
-        shape: 'dot',
-        font: { size: 10, color: '#374151' },
+        shape: "dot",
+        font: { size: 10, color: "#374151" },
         borderWidth: 2,
         shadow: true,
       },
       edges: {
-        smooth: { enabled: true, type: 'continuous', roundness: 0.5 },
+        smooth: { enabled: true, type: "continuous", roundness: 0.5 },
         shadow: false,
       },
       physics: {
         enabled: true,
-        solver: 'forceAtlas2Based',
+        solver: "forceAtlas2Based",
         forceAtlas2Based: {
           gravitationalConstant: -100,
           centralGravity: 0.01,
@@ -133,13 +131,13 @@ export function HighRiskNetworkPage() {
     )
 
     // Hover event - update selected address panel
-    network.on('hoverNode', (params) => {
+    network.on("hoverNode", (params) => {
       const nodeId = params.node as string
       const addr = addresses.find((a) => a.address === nodeId)
       if (addr) setSelectedAddress(addr)
     })
 
-    network.on('click', (params) => {
+    network.on("click", (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
         const addr = addresses.find((a) => a.address === nodeId)
@@ -147,14 +145,14 @@ export function HighRiskNetworkPage() {
       }
     })
 
-    network.on('doubleClick', (params) => {
+    network.on("doubleClick", (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
         navigate(`/graph?address=${nodeId}`)
       }
     })
 
-    network.on('stabilizationIterationsDone', () => {
+    network.on("stabilizationIterationsDone", () => {
       network.setOptions({ physics: { enabled: false } })
     })
 
@@ -217,21 +215,23 @@ export function HighRiskNetworkPage() {
                 <label className="text-sm text-gray-600">View:</label>
                 <div className="flex rounded-md overflow-hidden border border-gray-300">
                   <button
-                    onClick={() => setViewMode('list')}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === 'list'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
+                    onClick={() => setViewMode("list")}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
+                      viewMode === "list"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
                   >
                     <List className="w-4 h-4" />
                     List
                   </button>
                   <button
-                    onClick={() => setViewMode('graph')}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === 'graph'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
+                    onClick={() => setViewMode("graph")}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
+                      viewMode === "graph"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
                   >
                     <NetworkIcon className="w-4 h-4" />
                     Graph
@@ -255,17 +255,6 @@ export function HighRiskNetworkPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               <Card>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-red-600">
-                    {highRiskQuery.data.count}
-                  </p>
-                  <p className="text-sm text-gray-500 flex items-center justify-center gap-1">
-                    <ShieldAlert className="w-4 h-4" />
-                    High Risk Addresses
-                  </p>
-                </div>
-              </Card>
-              <Card>
-                <div className="text-center">
                   <p className="text-3xl font-bold text-gray-900">
                     {highRiskQuery.data.threshold}
                   </p>
@@ -275,6 +264,18 @@ export function HighRiskNetworkPage() {
                   </p>
                 </div>
               </Card>
+              <Card>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-red-600">
+                    {highRiskQuery.data.count}
+                  </p>
+                  <p className="text-sm text-gray-500 flex items-center justify-center gap-1">
+                    <ShieldAlert className="w-4 h-4" />
+                    High Risk Addresses
+                  </p>
+                </div>
+              </Card>
+
               <Card>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-orange-600">
@@ -318,7 +319,7 @@ export function HighRiskNetworkPage() {
           {/* Content */}
           {!highRiskQuery.isLoading && addresses.length > 0 && (
             <>
-              {viewMode === 'list' ? (
+              {viewMode === "list" ? (
                 <Card title="High Risk Addresses">
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -355,25 +356,22 @@ export function HighRiskNetworkPage() {
                             </td>
                             <td className="px-4 py-3">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded text-sm font-medium ${addr.riskScore >= 0.8
-                                  ? 'bg-red-100 text-red-800'
-                                  : addr.riskScore >= 0.6
-                                    ? 'bg-orange-100 text-orange-800'
-                                    : 'bg-yellow-100 text-yellow-800'
-                                  }`}
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-sm font-medium ${
+                                  addr.riskScore >= 0.8
+                                    ? "bg-red-100 text-red-800"
+                                    : addr.riskScore >= 0.6
+                                      ? "bg-orange-100 text-orange-800"
+                                      : "bg-yellow-100 text-yellow-800"
+                                }`}
                               >
-                                {addr.riskScore?.toFixed(2) || 'N/A'}
+                                {addr.riskScore?.toFixed(2) || "N/A"}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-sm">{addr.txCount}</td>
                             <td className="px-4 py-3 text-sm">
-                              <span className="text-green-600">
-                                {addr.incomingCount}
-                              </span>
-                              {' / '}
-                              <span className="text-red-600">
-                                {addr.outgoingCount}
-                              </span>
+                              <span className="text-green-600">{addr.incomingCount}</span>
+                              {" / "}
+                              <span className="text-red-600">{addr.outgoingCount}</span>
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-1">
@@ -396,9 +394,7 @@ export function HighRiskNetworkPage() {
                             <td className="px-4 py-3">
                               <div className="flex gap-2">
                                 <button
-                                  onClick={() =>
-                                    navigate(`/address?q=${addr.address}`)
-                                  }
+                                  onClick={() => navigate(`/address?q=${addr.address}`)}
                                   className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-sm cursor-pointer"
                                 >
                                   <Search className="w-3 h-3" />
@@ -445,7 +441,7 @@ export function HighRiskNetworkPage() {
                       </div>
                       <div
                         ref={containerRef}
-                        style={{ height: '500px', width: '100%' }}
+                        style={{ height: "500px", width: "100%" }}
                         className="border border-gray-200 rounded-lg bg-gray-50"
                       />
                     </Card>
@@ -471,28 +467,25 @@ export function HighRiskNetworkPage() {
                             </div>
                             <div>
                               <label className="text-xs text-gray-500">TX</label>
-                              <p className="font-medium">
-                                {selectedAddress.txCount}
-                              </p>
+                              <p className="font-medium">{selectedAddress.txCount}</p>
                             </div>
                           </div>
-                          {selectedAddress.tags &&
-                            selectedAddress.tags.length > 0 && (
-                              <div>
-                                <label className="text-xs text-gray-500">Tags</label>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {selectedAddress.tags.map((tag, i) => (
-                                    <span
-                                      key={i}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded"
-                                    >
-                                      <Tag className="w-3 h-3" />
-                                      {tag}
-                                    </span>
-                                  ))}
-                                </div>
+                          {selectedAddress.tags && selectedAddress.tags.length > 0 && (
+                            <div>
+                              <label className="text-xs text-gray-500">Tags</label>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {selectedAddress.tags.map((tag, i) => (
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded"
+                                  >
+                                    <Tag className="w-3 h-3" />
+                                    {tag}
+                                  </span>
+                                ))}
                               </div>
-                            )}
+                            </div>
+                          )}
                           <div className="pt-3 border-t space-y-2">
                             <Button
                               size="sm"
@@ -546,17 +539,17 @@ export function HighRiskNetworkPage() {
 
 // Helper functions - softer color palette
 function getRiskColor(riskScore: number | undefined): string {
-  if (riskScore === undefined) return '#9CA3AF'
-  if (riskScore >= 0.8) return '#F87171'
-  if (riskScore >= 0.6) return '#FB923C'
-  if (riskScore >= 0.4) return '#FBBF24'
-  return '#34D399'
+  if (riskScore === undefined) return "#9CA3AF"
+  if (riskScore >= 0.8) return "#F87171"
+  if (riskScore >= 0.6) return "#FB923C"
+  if (riskScore >= 0.4) return "#FBBF24"
+  return "#34D399"
 }
 
 function getRiskBorderColor(riskScore: number | undefined): string {
-  if (riskScore === undefined) return '#6B7280'
-  if (riskScore >= 0.8) return '#EF4444'
-  if (riskScore >= 0.6) return '#F97316'
-  if (riskScore >= 0.4) return '#F59E0B'
-  return '#10B981'
+  if (riskScore === undefined) return "#6B7280"
+  if (riskScore >= 0.8) return "#EF4444"
+  if (riskScore >= 0.6) return "#F97316"
+  if (riskScore >= 0.4) return "#F59E0B"
+  return "#10B981"
 }

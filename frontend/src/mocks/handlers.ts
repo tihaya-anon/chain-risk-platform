@@ -3,7 +3,7 @@
  * Define all API endpoint mocks using MSW
  */
 
-import { http, HttpResponse, delay } from 'msw'
+import { http, HttpResponse, delay } from "msw"
 import {
   generateLoginResponse,
   generateUser,
@@ -25,44 +25,44 @@ import {
   generateConnectionResponse,
   generateHighRiskNetworkResponse,
   randomTags,
-} from './data'
+} from "./data"
 
-const API_BASE = '/api/v1'
+const API_BASE = "/api/v1"
 
 export const handlers = [
   // ============ Auth Handlers ============
-  
+
   http.post(`${API_BASE}/auth/login`, async ({ request }) => {
     await delay(300)
     const body = (await request.json()) as { username: string; password: string }
 
     // Validate credentials
     if (
-      (body.username === 'admin' && body.password === 'admin123') ||
-      (body.username === 'user' && body.password === 'user123')
+      (body.username === "admin" && body.password === "admin123") ||
+      (body.username === "user" && body.password === "user123")
     ) {
-      const role = body.username === 'admin' ? 'admin' : 'user'
+      const role = body.username === "admin" ? "admin" : "user"
       return HttpResponse.json(generateLoginResponse(body.username, role))
     }
 
-    return HttpResponse.json({ message: 'Invalid credentials' }, { status: 401 })
+    return HttpResponse.json({ message: "Invalid credentials" }, { status: 401 })
   }),
 
   http.get(`${API_BASE}/auth/profile`, async ({ request }) => {
     await delay(200)
-    const authHeader = request.headers.get('Authorization')
+    const authHeader = request.headers.get("Authorization")
 
-    if (!authHeader?.startsWith('Bearer ')) {
-      return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    if (!authHeader?.startsWith("Bearer ")) {
+      return HttpResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     // Decode token to get user info
     try {
-      const token = authHeader.split(' ')[1]
-      const payload = JSON.parse(atob(token.split('.')[1]))
+      const token = authHeader.split(" ")[1]
+      const payload = JSON.parse(atob(token.split(".")[1]))
       return HttpResponse.json(generateUser(payload.username, payload.role))
     } catch {
-      return HttpResponse.json({ message: 'Invalid token' }, { status: 401 })
+      return HttpResponse.json({ message: "Invalid token" }, { status: 401 })
     }
   }),
 
@@ -72,8 +72,8 @@ export const handlers = [
     await delay(400)
     const { address } = params
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    if (!address || typeof address !== "string") {
+      return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
     }
 
     return HttpResponse.json(generateAddressInfo(address))
@@ -83,11 +83,11 @@ export const handlers = [
     await delay(500)
     const { address } = params
     const url = new URL(request.url)
-    const page = parseInt(url.searchParams.get('page') || '1')
-    const pageSize = parseInt(url.searchParams.get('pageSize') || '20')
+    const page = parseInt(url.searchParams.get("page") || "1")
+    const pageSize = parseInt(url.searchParams.get("pageSize") || "20")
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    if (!address || typeof address !== "string") {
+      return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
     }
 
     const transfers = generateTransfers(address, pageSize)
@@ -105,8 +105,8 @@ export const handlers = [
     await delay(350)
     const { address } = params
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    if (!address || typeof address !== "string") {
+      return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
     }
 
     return HttpResponse.json(generateAddressStats())
@@ -119,7 +119,7 @@ export const handlers = [
     const body = (await request.json()) as { address: string; network?: string }
 
     if (!body.address) {
-      return HttpResponse.json({ message: 'Address is required' }, { status: 400 })
+      return HttpResponse.json({ message: "Address is required" }, { status: 400 })
     }
 
     return HttpResponse.json(generateRiskScore(body.address))
@@ -130,12 +130,15 @@ export const handlers = [
     const body = (await request.json()) as { addresses: string[]; network?: string }
 
     if (!body.addresses || !Array.isArray(body.addresses)) {
-      return HttpResponse.json({ message: 'Addresses array is required' }, { status: 400 })
+      return HttpResponse.json(
+        { message: "Addresses array is required" },
+        { status: 400 }
+      )
     }
 
     if (body.addresses.length > 100) {
       return HttpResponse.json(
-        { message: 'Maximum 100 addresses per batch' },
+        { message: "Maximum 100 addresses per batch" },
         { status: 400 }
       )
     }
@@ -154,7 +157,7 @@ export const handlers = [
     const rule = riskRules.find((r) => r.name === name)
 
     if (!rule) {
-      return HttpResponse.json({ message: 'Rule not found' }, { status: 404 })
+      return HttpResponse.json({ message: "Rule not found" }, { status: 404 })
     }
 
     return HttpResponse.json(rule)
@@ -171,7 +174,7 @@ export const handlers = [
 
     const rule = riskRules.find((r) => r.name === name)
     if (!rule) {
-      return HttpResponse.json({ message: 'Rule not found' }, { status: 404 })
+      return HttpResponse.json({ message: "Rule not found" }, { status: 404 })
     }
 
     // Simulate update
@@ -193,7 +196,7 @@ export const handlers = [
     }
 
     if (!body.name || !body.description || body.weight === undefined) {
-      return HttpResponse.json({ message: 'Missing required fields' }, { status: 400 })
+      return HttpResponse.json({ message: "Missing required fields" }, { status: 400 })
     }
 
     const newRule = {
@@ -212,10 +215,10 @@ export const handlers = [
     const rule = riskRules.find((r) => r.name === name)
 
     if (!rule) {
-      return HttpResponse.json({ message: 'Rule not found' }, { status: 404 })
+      return HttpResponse.json({ message: "Rule not found" }, { status: 404 })
     }
 
-    return HttpResponse.json({ message: 'Rule deleted successfully' })
+    return HttpResponse.json({ message: "Rule deleted successfully" })
   }),
 
   // ============ Graph Handlers ============
@@ -224,33 +227,36 @@ export const handlers = [
     await delay(400)
     const { address } = params
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    if (!address || typeof address !== "string") {
+      return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
     }
 
     return HttpResponse.json(generateGraphAddressInfo(address))
   }),
 
-  http.get(`${API_BASE}/graph/address/:address/neighbors`, async ({ params, request }) => {
-    await delay(500)
-    const { address } = params
-    const url = new URL(request.url)
-    const depth = parseInt(url.searchParams.get('depth') || '1')
-    const limit = parseInt(url.searchParams.get('limit') || '50')
+  http.get(
+    `${API_BASE}/graph/address/:address/neighbors`,
+    async ({ params, request }) => {
+      await delay(500)
+      const { address } = params
+      const url = new URL(request.url)
+      const depth = parseInt(url.searchParams.get("depth") || "1")
+      const limit = parseInt(url.searchParams.get("limit") || "50")
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+      if (!address || typeof address !== "string") {
+        return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
+      }
+
+      return HttpResponse.json(generateNeighborsResponse(address, depth, limit))
     }
-
-    return HttpResponse.json(generateNeighborsResponse(address, depth, limit))
-  }),
+  ),
 
   http.get(`${API_BASE}/graph/address/:address/tags`, async ({ params }) => {
     await delay(300)
     const { address } = params
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    if (!address || typeof address !== "string") {
+      return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
     }
 
     return HttpResponse.json(randomTags())
@@ -260,8 +266,8 @@ export const handlers = [
     await delay(400)
     const { address } = params
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    if (!address || typeof address !== "string") {
+      return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
     }
 
     return HttpResponse.json(generateGraphAddressInfo(address))
@@ -276,36 +282,44 @@ export const handlers = [
     await delay(400)
     const { address } = params
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    if (!address || typeof address !== "string") {
+      return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
     }
 
     // 60% chance of being in a cluster
     if (Math.random() > 0.4) {
       return HttpResponse.json(generateClusterResponse())
     }
-    return HttpResponse.json({ message: 'Address not in any cluster' }, { status: 404 })
+    return HttpResponse.json({ message: "Address not in any cluster" }, { status: 404 })
   }),
 
-  http.get(`${API_BASE}/graph/path/:fromAddress/:toAddress`, async ({ params, request }) => {
-    await delay(600)
-    const { fromAddress, toAddress } = params
-    const url = new URL(request.url)
-    const maxDepth = parseInt(url.searchParams.get('maxDepth') || '5')
+  http.get(
+    `${API_BASE}/graph/path/:fromAddress/:toAddress`,
+    async ({ params, request }) => {
+      await delay(600)
+      const { fromAddress, toAddress } = params
+      const url = new URL(request.url)
+      const maxDepth = parseInt(url.searchParams.get("maxDepth") || "5")
 
-    if (!fromAddress || !toAddress || typeof fromAddress !== 'string' || typeof toAddress !== 'string') {
-      return HttpResponse.json({ message: 'Invalid addresses' }, { status: 400 })
+      if (
+        !fromAddress ||
+        !toAddress ||
+        typeof fromAddress !== "string" ||
+        typeof toAddress !== "string"
+      ) {
+        return HttpResponse.json({ message: "Invalid addresses" }, { status: 400 })
+      }
+
+      return HttpResponse.json(generatePathResponse(fromAddress, toAddress, maxDepth))
     }
-
-    return HttpResponse.json(generatePathResponse(fromAddress, toAddress, maxDepth))
-  }),
+  ),
 
   http.get(`${API_BASE}/graph/cluster/:clusterId`, async ({ params }) => {
     await delay(400)
     const { clusterId } = params
 
-    if (!clusterId || typeof clusterId !== 'string') {
-      return HttpResponse.json({ message: 'Invalid cluster ID' }, { status: 400 })
+    if (!clusterId || typeof clusterId !== "string") {
+      return HttpResponse.json({ message: "Invalid cluster ID" }, { status: 400 })
     }
 
     return HttpResponse.json(generateClusterResponse(clusterId))
@@ -324,7 +338,7 @@ export const handlers = [
   http.get(`${API_BASE}/graph/search/tag/:tag`, async ({ request }) => {
     await delay(500)
     const url = new URL(request.url)
-    const limit = parseInt(url.searchParams.get('limit') || '50')
+    const limit = parseInt(url.searchParams.get("limit") || "50")
 
     return HttpResponse.json(generateHighRiskAddresses(0, Math.min(limit, 20)))
   }),
@@ -332,8 +346,8 @@ export const handlers = [
   http.get(`${API_BASE}/graph/search/high-risk`, async ({ request }) => {
     await delay(500)
     const url = new URL(request.url)
-    const threshold = parseFloat(url.searchParams.get('threshold') || '0.6')
-    const limit = parseInt(url.searchParams.get('limit') || '50')
+    const threshold = parseFloat(url.searchParams.get("threshold") || "0.6")
+    const limit = parseInt(url.searchParams.get("limit") || "50")
 
     return HttpResponse.json(generateHighRiskAddresses(threshold, Math.min(limit, 30)))
   }),
@@ -364,8 +378,8 @@ export const handlers = [
     await delay(800)
     const { address } = params
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+    if (!address || typeof address !== "string") {
+      return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
     }
 
     const analysis = generateAddressAnalysis(address)
@@ -379,41 +393,58 @@ export const handlers = [
     })
   }),
 
-  http.get(`${API_BASE}/orchestration/address-analysis/:address`, async ({ params, request }) => {
-    await delay(1000)
-    const { address } = params
-    const url = new URL(request.url)
-    const neighborDepth = parseInt(url.searchParams.get('neighborDepth') || '1')
-    const neighborLimit = parseInt(url.searchParams.get('neighborLimit') || '20')
+  http.get(
+    `${API_BASE}/orchestration/address-analysis/:address`,
+    async ({ params, request }) => {
+      await delay(1000)
+      const { address } = params
+      const url = new URL(request.url)
+      const neighborDepth = parseInt(url.searchParams.get("neighborDepth") || "1")
+      const neighborLimit = parseInt(url.searchParams.get("neighborLimit") || "20")
 
-    if (!address || typeof address !== 'string') {
-      return HttpResponse.json({ message: 'Invalid address' }, { status: 400 })
+      if (!address || typeof address !== "string") {
+        return HttpResponse.json({ message: "Invalid address" }, { status: 400 })
+      }
+
+      const analysis = generateAddressAnalysis(address)
+      // Update neighbors with requested params
+      analysis.graph.neighbors = generateNeighborsResponse(
+        address,
+        neighborDepth,
+        neighborLimit
+      )
+      return HttpResponse.json(analysis)
     }
+  ),
 
-    const analysis = generateAddressAnalysis(address)
-    // Update neighbors with requested params
-    analysis.graph.neighbors = generateNeighborsResponse(address, neighborDepth, neighborLimit)
-    return HttpResponse.json(analysis)
-  }),
+  http.get(
+    `${API_BASE}/orchestration/connection/:fromAddress/:toAddress`,
+    async ({ params, request }) => {
+      await delay(1200)
+      const { fromAddress, toAddress } = params
+      const url = new URL(request.url)
+      const maxDepth = parseInt(url.searchParams.get("maxDepth") || "5")
 
-  http.get(`${API_BASE}/orchestration/connection/:fromAddress/:toAddress`, async ({ params, request }) => {
-    await delay(1200)
-    const { fromAddress, toAddress } = params
-    const url = new URL(request.url)
-    const maxDepth = parseInt(url.searchParams.get('maxDepth') || '5')
+      if (
+        !fromAddress ||
+        !toAddress ||
+        typeof fromAddress !== "string" ||
+        typeof toAddress !== "string"
+      ) {
+        return HttpResponse.json({ message: "Invalid addresses" }, { status: 400 })
+      }
 
-    if (!fromAddress || !toAddress || typeof fromAddress !== 'string' || typeof toAddress !== 'string') {
-      return HttpResponse.json({ message: 'Invalid addresses' }, { status: 400 })
+      return HttpResponse.json(
+        generateConnectionResponse(fromAddress, toAddress, maxDepth)
+      )
     }
-
-    return HttpResponse.json(generateConnectionResponse(fromAddress, toAddress, maxDepth))
-  }),
+  ),
 
   http.get(`${API_BASE}/orchestration/high-risk-network`, async ({ request }) => {
     await delay(800)
     const url = new URL(request.url)
-    const threshold = parseFloat(url.searchParams.get('threshold') || '0.7')
-    const limit = parseInt(url.searchParams.get('limit') || '20')
+    const threshold = parseFloat(url.searchParams.get("threshold") || "0.7")
+    const limit = parseInt(url.searchParams.get("limit") || "20")
 
     return HttpResponse.json(generateHighRiskNetworkResponse(threshold, limit))
   }),
@@ -423,7 +454,10 @@ export const handlers = [
     const body = (await request.json()) as { addresses: string[]; network?: string }
 
     if (!body.addresses || !Array.isArray(body.addresses)) {
-      return HttpResponse.json({ message: 'Addresses array is required' }, { status: 400 })
+      return HttpResponse.json(
+        { message: "Addresses array is required" },
+        { status: 400 }
+      )
     }
 
     return HttpResponse.json(generateBatchRiskScores(body.addresses))

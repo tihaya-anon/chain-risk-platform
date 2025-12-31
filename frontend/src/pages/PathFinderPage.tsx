@@ -1,17 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { Network, DataSet, Options } from 'vis-network/standalone'
-import {
-  Route,
-  Search,
-  ArrowLeftRight,
-  Circle,
-  Tag,
-  AlertCircle,
-} from 'lucide-react'
-import { Button, Input, Card, LoadingSpinner, RiskBadge } from '@/components/common'
-import { orchestrationService } from '@/services'
+import { useState, useEffect, useRef } from "react"
+import { useSearchParams } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
+import { Network, DataSet, Options } from "vis-network/standalone"
+import { Route, Search, ArrowLeftRight, Circle, Tag, AlertCircle } from "lucide-react"
+import { Button, Input, Card, LoadingSpinner, RiskBadge } from "@/components/common"
+import { orchestrationService } from "@/services"
 
 export function PathFinderPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -19,8 +12,8 @@ export function PathFinderPage() {
   const networkRef = useRef<Network | null>(null)
 
   // Sync with URL
-  const urlFrom = searchParams.get('from') || ''
-  const urlTo = searchParams.get('to') || ''
+  const urlFrom = searchParams.get("from") || ""
+  const urlTo = searchParams.get("to") || ""
 
   const [fromAddress, setFromAddress] = useState(urlFrom)
   const [toAddress, setToAddress] = useState(urlTo)
@@ -33,21 +26,19 @@ export function PathFinderPage() {
 
   // Sync with URL changes
   useEffect(() => {
-    const from = searchParams.get('from') || ''
-    const to = searchParams.get('to') || ''
+    const from = searchParams.get("from") || ""
+    const to = searchParams.get("to") || ""
     if (from !== fromAddress) setFromAddress(from)
     if (to !== toAddress) setToAddress(to)
   }, [searchParams])
 
   // Fetch connection data
   const connectionQuery = useQuery({
-    queryKey: ['connection', queryParams?.from, queryParams?.to, queryParams?.maxDepth],
+    queryKey: ["connection", queryParams?.from, queryParams?.to, queryParams?.maxDepth],
     queryFn: () =>
-      orchestrationService.findConnection(
-        queryParams!.from,
-        queryParams!.to,
-        { maxDepth: queryParams!.maxDepth }
-      ),
+      orchestrationService.findConnection(queryParams!.from, queryParams!.to, {
+        maxDepth: queryParams!.maxDepth,
+      }),
     enabled: !!queryParams,
   })
 
@@ -96,38 +87,39 @@ export function PathFinderPage() {
       const isStart = index === 0
       const isEnd = index === pathData.path.length - 1
 
-      let bgColor = '#9CA3AF'
-      let borderColor = '#6B7280'
+      let bgColor = "#9CA3AF"
+      let borderColor = "#6B7280"
 
       if (isStart) {
-        bgColor = '#3B82F6'
-        borderColor = '#2563EB'
+        bgColor = "#3B82F6"
+        borderColor = "#2563EB"
       } else if (isEnd) {
-        bgColor = '#8B5CF6'
-        borderColor = '#7C3AED'
+        bgColor = "#8B5CF6"
+        borderColor = "#7C3AED"
       } else if (node.riskScore !== undefined) {
         if (node.riskScore >= 0.8) {
-          bgColor = '#F87171'
-          borderColor = '#EF4444'
+          bgColor = "#F87171"
+          borderColor = "#EF4444"
         } else if (node.riskScore >= 0.6) {
-          bgColor = '#FB923C'
-          borderColor = '#F97316'
+          bgColor = "#FB923C"
+          borderColor = "#F97316"
         } else if (node.riskScore >= 0.4) {
-          bgColor = '#FBBF24'
-          borderColor = '#F59E0B'
+          bgColor = "#FBBF24"
+          borderColor = "#F59E0B"
         } else {
-          bgColor = '#34D399'
-          borderColor = '#10B981'
+          bgColor = "#34D399"
+          borderColor = "#10B981"
         }
       }
 
       nodes.push({
         id: node.address,
-        label: `${node.address.slice(0, 6)}...${node.address.slice(-4)}${isStart ? '\n(Source)' : isEnd ? '\n(Target)' : ''
-          }`,
+        label: `${node.address.slice(0, 6)}...${node.address.slice(-4)}${
+          isStart ? "\n(Source)" : isEnd ? "\n(Target)" : ""
+        }`,
         color: { background: bgColor, border: borderColor },
         size: isStart || isEnd ? 30 : 20,
-        font: isStart || isEnd ? { color: '#FFFFFF' } : undefined,
+        font: isStart || isEnd ? { color: "#FFFFFF" } : undefined,
         borderWidth: isStart || isEnd ? 3 : 2,
       })
 
@@ -137,9 +129,9 @@ export function PathFinderPage() {
           id: `edge-${index}`,
           from: node.address,
           to: nextNode.address,
-          arrows: 'to',
+          arrows: "to",
           label: node.value ? formatValue(node.value) : undefined,
-          color: { color: '#6B7280' },
+          color: { color: "#6B7280" },
           width: 2,
         })
       }
@@ -150,19 +142,19 @@ export function PathFinderPage() {
 
     const options: Options = {
       nodes: {
-        shape: 'dot',
-        font: { size: 12, color: '#374151' },
+        shape: "dot",
+        font: { size: 12, color: "#374151" },
         borderWidth: 2,
         shadow: true,
       },
       edges: {
-        smooth: { enabled: true, type: 'curvedCW', roundness: 0.2 },
+        smooth: { enabled: true, type: "curvedCW", roundness: 0.2 },
         shadow: true,
-        font: { size: 10, align: 'middle' },
+        font: { size: 10, align: "middle" },
       },
       physics: {
         enabled: true,
-        solver: 'hierarchicalRepulsion',
+        solver: "hierarchicalRepulsion",
         hierarchicalRepulsion: {
           nodeDistance: 150,
           springLength: 150,
@@ -172,8 +164,8 @@ export function PathFinderPage() {
       layout: {
         hierarchical: {
           enabled: true,
-          direction: 'LR',
-          sortMethod: 'directed',
+          direction: "LR",
+          sortMethod: "directed",
           levelSeparation: 200,
           nodeSpacing: 100,
         },
@@ -190,7 +182,7 @@ export function PathFinderPage() {
       options
     )
 
-    network.on('stabilizationIterationsDone', () => {
+    network.on("stabilizationIterationsDone", () => {
       network.setOptions({ physics: { enabled: false } })
     })
 
@@ -261,12 +253,7 @@ export function PathFinderPage() {
                     <option value={10}>10 hops</option>
                   </select>
                 </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleSwap}
-                >
+                <Button type="button" variant="secondary" size="sm" onClick={handleSwap}>
                   <ArrowLeftRight className="w-4 h-4 mr-1" />
                   Swap
                 </Button>
@@ -299,7 +286,7 @@ export function PathFinderPage() {
               {/* Path Visualization */}
               <div className="lg:col-span-2">
                 <Card
-                  title={pathFound ? 'Connection Path' : 'No Path Found'}
+                  title={pathFound ? "Connection Path" : "No Path Found"}
                   subtitle={
                     pathFound
                       ? `${connection.path.pathLength} hops between addresses`
@@ -310,7 +297,7 @@ export function PathFinderPage() {
                     <>
                       <div
                         ref={containerRef}
-                        style={{ height: '400px', width: '100%' }}
+                        style={{ height: "400px", width: "100%" }}
                         className="border border-gray-200 rounded-lg bg-gray-50"
                       />
                       <div className="mt-4 flex flex-wrap gap-4 text-sm">
@@ -337,11 +324,10 @@ export function PathFinderPage() {
                       <AlertCircle className="w-16 h-16 text-gray-300 mx-auto" />
                       <p className="text-gray-500 mt-4">
                         {connection.path.message ||
-                          'No direct or indirect connection found'}
+                          "No direct or indirect connection found"}
                       </p>
                       <p className="text-sm text-gray-400 mt-2">
-                        Try increasing the max depth or check if the addresses are
-                        correct
+                        Try increasing the max depth or check if the addresses are correct
                       </p>
                     </div>
                   )}
@@ -352,7 +338,7 @@ export function PathFinderPage() {
               <div className="space-y-6">
                 {/* Source Risk */}
                 <Card title="Source Address Risk">
-                  {'error' in connection.fromAddressRisk ? (
+                  {"error" in connection.fromAddressRisk ? (
                     <p className="text-gray-500 text-sm">Risk data unavailable</p>
                   ) : (
                     <RiskInfoCard risk={connection.fromAddressRisk} />
@@ -361,7 +347,7 @@ export function PathFinderPage() {
 
                 {/* Target Risk */}
                 <Card title="Target Address Risk">
-                  {'error' in connection.toAddressRisk ? (
+                  {"error" in connection.toAddressRisk ? (
                     <p className="text-gray-500 text-sm">Risk data unavailable</p>
                   ) : (
                     <RiskInfoCard risk={connection.toAddressRisk} />
@@ -381,9 +367,7 @@ export function PathFinderPage() {
                             {index + 1}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <p className="font-mono text-xs truncate">
-                              {node.address}
-                            </p>
+                            <p className="font-mono text-xs truncate">{node.address}</p>
                             {node.tags && node.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {node.tags.slice(0, 2).map((tag, i) => (
@@ -400,10 +384,11 @@ export function PathFinderPage() {
                           </div>
                           {node.riskScore !== undefined && (
                             <span
-                              className={`px-2 py-0.5 text-xs rounded ${node.riskScore >= 0.6
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-green-100 text-green-700'
-                                }`}
+                              className={`px-2 py-0.5 text-xs rounded ${
+                                node.riskScore >= 0.6
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-green-100 text-green-700"
+                              }`}
                             >
                               {node.riskScore.toFixed(2)}
                             </span>
@@ -442,7 +427,7 @@ function RiskInfoCard({
     <div className="space-y-3">
       <div className="text-center">
         <div className="text-3xl font-bold">{risk.riskScore.toFixed(2)}</div>
-        <RiskBadge level={risk.riskLevel as 'low' | 'medium' | 'high' | 'critical'} />
+        <RiskBadge level={risk.riskLevel as "low" | "medium" | "high" | "critical"} />
       </div>
       {risk.tags && risk.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 justify-center">

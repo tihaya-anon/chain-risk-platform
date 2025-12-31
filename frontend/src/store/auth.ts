@@ -1,6 +1,6 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import type { User } from '@/types'
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
+import type { User } from "@/types"
 
 interface AuthState {
   token: string | null
@@ -30,7 +30,7 @@ export const useAuthStore = create<AuthState>()(
         }),
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       partialize: (state) => ({ token: state.token }),
     }
   )

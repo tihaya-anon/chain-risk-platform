@@ -1,11 +1,11 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
-import { useAuthStore } from '@/store/auth'
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios"
+import { useAuthStore } from "@/store/auth"
 
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: "/api/v1",
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 })
 

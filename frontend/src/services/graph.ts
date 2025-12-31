@@ -1,4 +1,4 @@
-import api from './api'
+import api from "./api"
 import type {
   GraphAddressInfo,
   AddressNeighborsResponse,
@@ -8,7 +8,7 @@ import type {
   SyncStatusResponse,
   PropagationResultResponse,
   ClusteringResultResponse,
-} from '@/types'
+} from "@/types"
 
 export const graphService = {
   // ============== Address Queries ==============
@@ -51,9 +51,7 @@ export const graphService = {
   },
 
   getAddressCluster: async (address: string): Promise<ClusterResponse> => {
-    const response = await api.get<ClusterResponse>(
-      `/graph/address/${address}/cluster`
-    )
+    const response = await api.get<ClusterResponse>(`/graph/address/${address}/cluster`)
     return response.data
   },
 
@@ -74,24 +72,18 @@ export const graphService = {
   // ============== Cluster Operations ==============
 
   getCluster: async (clusterId: string): Promise<ClusterResponse> => {
-    const response = await api.get<ClusterResponse>(
-      `/graph/cluster/${clusterId}`
-    )
+    const response = await api.get<ClusterResponse>(`/graph/cluster/${clusterId}`)
     return response.data
   },
 
   runClustering: async (): Promise<ClusteringResultResponse> => {
-    const response = await api.post<ClusteringResultResponse>(
-      '/graph/cluster/run'
-    )
+    const response = await api.post<ClusteringResultResponse>("/graph/cluster/run")
     return response.data
   },
 
-  manualCluster: async (
-    addresses: string[]
-  ): Promise<ClusteringResultResponse> => {
+  manualCluster: async (addresses: string[]): Promise<ClusteringResultResponse> => {
     const response = await api.post<ClusteringResultResponse>(
-      '/graph/cluster/manual',
+      "/graph/cluster/manual",
       addresses
     )
     return response.data
@@ -99,14 +91,10 @@ export const graphService = {
 
   // ============== Search ==============
 
-  searchByTag: async (
-    tag: string,
-    limit: number = 50
-  ): Promise<GraphAddressInfo[]> => {
-    const response = await api.get<GraphAddressInfo[]>(
-      `/graph/search/tag/${tag}`,
-      { params: { limit } }
-    )
+  searchByTag: async (tag: string, limit: number = 50): Promise<GraphAddressInfo[]> => {
+    const response = await api.get<GraphAddressInfo[]>(`/graph/search/tag/${tag}`, {
+      params: { limit },
+    })
     return response.data
   },
 
@@ -114,35 +102,30 @@ export const graphService = {
     threshold: number = 0.6,
     limit: number = 50
   ): Promise<GraphAddressInfo[]> => {
-    const response = await api.get<GraphAddressInfo[]>(
-      '/graph/search/high-risk',
-      { params: { threshold, limit } }
-    )
+    const response = await api.get<GraphAddressInfo[]>("/graph/search/high-risk", {
+      params: { threshold, limit },
+    })
     return response.data
   },
 
   // ============== Sync & Propagation ==============
 
   getSyncStatus: async (): Promise<SyncStatusResponse> => {
-    const response = await api.get<SyncStatusResponse>('/graph/sync/status')
+    const response = await api.get<SyncStatusResponse>("/graph/sync/status")
     return response.data
   },
 
   triggerSync: async (): Promise<SyncStatusResponse> => {
-    const response = await api.post<SyncStatusResponse>('/graph/sync')
+    const response = await api.post<SyncStatusResponse>("/graph/sync")
     return response.data
   },
 
   propagateTags: async (): Promise<PropagationResultResponse> => {
-    const response = await api.post<PropagationResultResponse>(
-      '/graph/propagate'
-    )
+    const response = await api.post<PropagationResultResponse>("/graph/propagate")
     return response.data
   },
 
-  propagateFromAddress: async (
-    address: string
-  ): Promise<PropagationResultResponse> => {
+  propagateFromAddress: async (address: string): Promise<PropagationResultResponse> => {
     const response = await api.post<PropagationResultResponse>(
       `/graph/propagate/${address}`
     )

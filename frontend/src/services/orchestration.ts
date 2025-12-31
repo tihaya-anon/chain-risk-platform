@@ -1,10 +1,10 @@
-import api from './api'
+import api from "./api"
 import type {
   AddressProfile,
   AddressAnalysis,
   ConnectionResponse,
   HighRiskNetworkResponse,
-} from '@/types'
+} from "@/types"
 
 export const orchestrationService = {
   /**
@@ -12,7 +12,7 @@ export const orchestrationService = {
    */
   getAddressProfile: async (
     address: string,
-    network: string = 'ethereum'
+    network: string = "ethereum"
   ): Promise<AddressProfile> => {
     const response = await api.get<AddressProfile>(
       `/orchestration/address-profile/${address}`,
@@ -32,11 +32,7 @@ export const orchestrationService = {
       neighborLimit?: number
     } = {}
   ): Promise<AddressAnalysis> => {
-    const {
-      network = 'ethereum',
-      neighborDepth = 1,
-      neighborLimit = 20,
-    } = options
+    const { network = "ethereum", neighborDepth = 1, neighborLimit = 20 } = options
     const response = await api.get<AddressAnalysis>(
       `/orchestration/address-analysis/${address}`,
       { params: { network, neighborDepth, neighborLimit } }
@@ -55,7 +51,7 @@ export const orchestrationService = {
       network?: string
     } = {}
   ): Promise<ConnectionResponse> => {
-    const { maxDepth = 5, network = 'ethereum' } = options
+    const { maxDepth = 5, network = "ethereum" } = options
     const response = await api.get<ConnectionResponse>(
       `/orchestration/connection/${fromAddress}/${toAddress}`,
       { params: { maxDepth, network } }
@@ -71,7 +67,7 @@ export const orchestrationService = {
     limit: number = 20
   ): Promise<HighRiskNetworkResponse> => {
     const response = await api.get<HighRiskNetworkResponse>(
-      '/orchestration/high-risk-network',
+      "/orchestration/high-risk-network",
       { params: { threshold, limit } }
     )
     return response.data
@@ -82,9 +78,9 @@ export const orchestrationService = {
    */
   batchRiskAnalysis: async (
     addresses: string[],
-    network: string = 'ethereum'
+    network: string = "ethereum"
   ): Promise<{ results: unknown[]; total: number; failed: number }> => {
-    const response = await api.post('/orchestration/batch-risk-analysis', {
+    const response = await api.post("/orchestration/batch-risk-analysis", {
       addresses,
       network,
     })

@@ -1,11 +1,17 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { Network, DataSet, Options } from 'vis-network/standalone'
-import type { NeighborInfo } from '@/types'
+import { useEffect, useRef, useCallback } from "react"
+import { Network, DataSet, Options } from "vis-network/standalone"
+import type { NeighborInfo } from "@/types"
 
 export interface GraphNode {
   id: string
   label: string
-  color?: string | { background: string; border: string; highlight?: { background: string; border: string } }
+  color?:
+    | string
+    | {
+        background: string
+        border: string
+        highlight?: { background: string; border: string }
+      }
   size?: number
   font?: { color: string }
   borderWidth?: number
@@ -47,39 +53,39 @@ interface AddressGraphProps {
 // Improved color palette - softer, more professional colors
 const COLORS = {
   center: {
-    background: '#3B82F6',
-    border: '#2563EB',
-    highlight: { background: '#60A5FA', border: '#3B82F6' },
+    background: "#3B82F6",
+    border: "#2563EB",
+    highlight: { background: "#60A5FA", border: "#3B82F6" },
   },
   low: {
-    background: '#34D399',
-    border: '#10B981',
-    highlight: { background: '#6EE7B7', border: '#34D399' },
+    background: "#34D399",
+    border: "#10B981",
+    highlight: { background: "#6EE7B7", border: "#34D399" },
   },
   medium: {
-    background: '#FBBF24',
-    border: '#F59E0B',
-    highlight: { background: '#FCD34D', border: '#FBBF24' },
+    background: "#FBBF24",
+    border: "#F59E0B",
+    highlight: { background: "#FCD34D", border: "#FBBF24" },
   },
   high: {
-    background: '#FB923C',
-    border: '#F97316',
-    highlight: { background: '#FDBA74', border: '#FB923C' },
+    background: "#FB923C",
+    border: "#F97316",
+    highlight: { background: "#FDBA74", border: "#FB923C" },
   },
   critical: {
-    background: '#F87171',
-    border: '#EF4444',
-    highlight: { background: '#FCA5A5', border: '#F87171' },
+    background: "#F87171",
+    border: "#EF4444",
+    highlight: { background: "#FCA5A5", border: "#F87171" },
   },
   unknown: {
-    background: '#9CA3AF',
-    border: '#6B7280',
-    highlight: { background: '#D1D5DB', border: '#9CA3AF' },
+    background: "#9CA3AF",
+    border: "#6B7280",
+    highlight: { background: "#D1D5DB", border: "#9CA3AF" },
   },
   edge: {
-    incoming: '#10B981',
-    outgoing: '#F97316',
-    both: '#6B7280',
+    incoming: "#10B981",
+    outgoing: "#F97316",
+    both: "#6B7280",
   },
 }
 
@@ -104,8 +110,8 @@ export function AddressGraph({
   onNodeSelect,
   onNodeHover,
   onNodeDoubleClick,
-  height = '500px',
-  className = '',
+  height = "500px",
+  className = "",
 }: AddressGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
@@ -126,22 +132,25 @@ export function AddressGraph({
   }, [onNodeHover, onNodeSelect, onNodeDoubleClick, selectedNode])
 
   // Helper to get node info
-  const getNodeInfo = useCallback((nodeId: string): HoveredNodeInfo | null => {
-    if (nodeId === centerAddress) {
-      return { address: centerAddress, isCenter: true }
-    }
-    const neighbor = neighborsMapRef.current.get(nodeId)
-    if (neighbor) {
-      return {
-        address: neighbor.address,
-        riskScore: neighbor.riskScore,
-        tags: neighbor.tags,
-        transferCount: neighbor.transferCount,
-        direction: neighbor.direction,
+  const getNodeInfo = useCallback(
+    (nodeId: string): HoveredNodeInfo | null => {
+      if (nodeId === centerAddress) {
+        return { address: centerAddress, isCenter: true }
       }
-    }
-    return null
-  }, [centerAddress])
+      const neighbor = neighborsMapRef.current.get(nodeId)
+      if (neighbor) {
+        return {
+          address: neighbor.address,
+          riskScore: neighbor.riskScore,
+          tags: neighbor.tags,
+          transferCount: neighbor.transferCount,
+          direction: neighbor.direction,
+        }
+      }
+      return null
+    },
+    [centerAddress]
+  )
 
   // Build graph data
   const buildGraphData = useCallback(() => {
@@ -156,7 +165,7 @@ export function AddressGraph({
       label: formatAddress(centerAddress),
       color: COLORS.center,
       size: 35,
-      font: { color: '#FFFFFF' },
+      font: { color: "#FFFFFF" },
       borderWidth: 3,
     })
     nodeSet.add(centerAddress)
@@ -188,21 +197,21 @@ export function AddressGraph({
         hover: baseColor,
       })
 
-      if (neighbor.direction === 'incoming') {
+      if (neighbor.direction === "incoming") {
         edges.push({
           id: edgeId,
           from: neighbor.address,
           to: centerAddress,
-          arrows: 'to',
+          arrows: "to",
           width: edgeWidth,
           color: getEdgeColor(COLORS.edge.incoming),
         })
-      } else if (neighbor.direction === 'outgoing') {
+      } else if (neighbor.direction === "outgoing") {
         edges.push({
           id: edgeId,
           from: centerAddress,
           to: neighbor.address,
-          arrows: 'to',
+          arrows: "to",
           width: edgeWidth,
           color: getEdgeColor(COLORS.edge.outgoing),
         })
@@ -212,7 +221,7 @@ export function AddressGraph({
           id: edgeId,
           from: centerAddress,
           to: neighbor.address,
-          arrows: 'to;from',
+          arrows: "to;from",
           width: edgeWidth,
           color: getEdgeColor(COLORS.edge.both),
         })
@@ -234,16 +243,16 @@ export function AddressGraph({
 
     const options: Options = {
       nodes: {
-        shape: 'dot',
+        shape: "dot",
         font: {
           size: 11,
-          color: '#374151',
-          face: 'system-ui, -apple-system, sans-serif',
+          color: "#374151",
+          face: "system-ui, -apple-system, sans-serif",
         },
         borderWidth: 2,
         shadow: {
           enabled: true,
-          color: 'rgba(0,0,0,0.1)',
+          color: "rgba(0,0,0,0.1)",
           size: 8,
           x: 2,
           y: 2,
@@ -252,12 +261,12 @@ export function AddressGraph({
       edges: {
         smooth: {
           enabled: true,
-          type: 'continuous',
+          type: "continuous",
           roundness: 0.5,
         },
         shadow: {
           enabled: true,
-          color: 'rgba(0,0,0,0.05)',
+          color: "rgba(0,0,0,0.05)",
           size: 4,
         },
         hoverWidth: 1.5, // Multiplier for edge width on hover
@@ -265,7 +274,7 @@ export function AddressGraph({
       },
       physics: {
         enabled: true,
-        solver: 'forceAtlas2Based',
+        solver: "forceAtlas2Based",
         forceAtlas2Based: {
           gravitationalConstant: -60,
           centralGravity: 0.01,
@@ -298,7 +307,7 @@ export function AddressGraph({
     )
 
     // Hover event - only trigger if no node is selected
-    network.on('hoverNode', (params) => {
+    network.on("hoverNode", (params) => {
       // Skip hover if a node is selected
       if (selectedNodeRef.current) return
 
@@ -309,7 +318,7 @@ export function AddressGraph({
       }
     })
 
-    network.on('blurNode', () => {
+    network.on("blurNode", () => {
       // Clear hover info only if no node is selected
       if (!selectedNodeRef.current) {
         onNodeHoverRef.current?.(null)
@@ -317,7 +326,7 @@ export function AddressGraph({
     })
 
     // Click event - toggle selection
-    network.on('click', (params) => {
+    network.on("click", (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
 
@@ -337,7 +346,7 @@ export function AddressGraph({
       }
     })
 
-    network.on('doubleClick', (params) => {
+    network.on("doubleClick", (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
         onNodeDoubleClickRef.current?.(nodeId)
@@ -345,7 +354,7 @@ export function AddressGraph({
     })
 
     // Stabilization complete
-    network.on('stabilizationIterationsDone', () => {
+    network.on("stabilizationIterationsDone", () => {
       network.setOptions({ physics: { enabled: false } })
     })
 
@@ -361,7 +370,7 @@ export function AddressGraph({
     <div className={className}>
       <div
         ref={containerRef}
-        style={{ height, width: '100%' }}
+        style={{ height, width: "100%" }}
         className="border border-gray-200 rounded-lg bg-slate-50"
       />
     </div>
@@ -375,35 +384,50 @@ export function GraphLegend() {
       <div className="flex items-center gap-2">
         <div
           className="w-4 h-4 rounded-full"
-          style={{ backgroundColor: COLORS.center.background, border: `2px solid ${COLORS.center.border}` }}
+          style={{
+            backgroundColor: COLORS.center.background,
+            border: `2px solid ${COLORS.center.border}`,
+          }}
         />
         <span>Center Address</span>
       </div>
       <div className="flex items-center gap-2">
         <div
           className="w-4 h-4 rounded-full"
-          style={{ backgroundColor: COLORS.low.background, border: `2px solid ${COLORS.low.border}` }}
+          style={{
+            backgroundColor: COLORS.low.background,
+            border: `2px solid ${COLORS.low.border}`,
+          }}
         />
         <span>Low Risk (&lt;0.4)</span>
       </div>
       <div className="flex items-center gap-2">
         <div
           className="w-4 h-4 rounded-full"
-          style={{ backgroundColor: COLORS.medium.background, border: `2px solid ${COLORS.medium.border}` }}
+          style={{
+            backgroundColor: COLORS.medium.background,
+            border: `2px solid ${COLORS.medium.border}`,
+          }}
         />
         <span>Medium Risk (0.4-0.6)</span>
       </div>
       <div className="flex items-center gap-2">
         <div
           className="w-4 h-4 rounded-full"
-          style={{ backgroundColor: COLORS.high.background, border: `2px solid ${COLORS.high.border}` }}
+          style={{
+            backgroundColor: COLORS.high.background,
+            border: `2px solid ${COLORS.high.border}`,
+          }}
         />
         <span>High Risk (0.6-0.8)</span>
       </div>
       <div className="flex items-center gap-2">
         <div
           className="w-4 h-4 rounded-full"
-          style={{ backgroundColor: COLORS.critical.background, border: `2px solid ${COLORS.critical.border}` }}
+          style={{
+            backgroundColor: COLORS.critical.background,
+            border: `2px solid ${COLORS.critical.border}`,
+          }}
         />
         <span>Critical Risk (&gt;0.8)</span>
       </div>

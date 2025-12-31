@@ -7,8 +7,8 @@ import {
   Clock,
   Tag,
   Activity,
-} from 'lucide-react'
-import { Card } from '@/components/common'
+} from "lucide-react"
+import { Card } from "@/components/common"
 
 export function DashboardPage() {
   return (
@@ -20,9 +20,7 @@ export function DashboardPage() {
             <LayoutDashboard className="w-6 h-6 text-blue-600" />
             Dashboard
           </h1>
-          <p className="text-gray-600 mt-1">
-            Overview of on-chain risk analysis
-          </p>
+          <p className="text-gray-600 mt-1">Overview of on-chain risk analysis</p>
         </div>
 
         {/* Stats Grid */}
@@ -81,10 +79,10 @@ export function DashboardPage() {
           <Card title="Recent Risk Alerts" subtitle="Last 24 hours">
             <div className="space-y-4">
               {[
-                { address: '0x742d...f1b7', level: 'critical', time: '2 min ago' },
-                { address: '0x1234...5678', level: 'high', time: '15 min ago' },
-                { address: '0xabcd...ef01', level: 'medium', time: '1 hour ago' },
-                { address: '0x9876...5432', level: 'high', time: '3 hours ago' },
+                { address: "0x742d...f1b7", level: "critical", time: "2 min ago" },
+                { address: "0x1234...5678", level: "high", time: "15 min ago" },
+                { address: "0xabcd...ef01", level: "medium", time: "1 hour ago" },
+                { address: "0x9876...5432", level: "high", time: "3 hours ago" },
               ].map((alert, i) => (
                 <div
                   key={i}
@@ -93,11 +91,11 @@ export function DashboardPage() {
                   <div className="flex items-center space-x-3">
                     <span
                       className={`w-2 h-2 rounded-full ${
-                        alert.level === 'critical'
-                          ? 'bg-red-500'
-                          : alert.level === 'high'
-                            ? 'bg-orange-500'
-                            : 'bg-yellow-500'
+                        alert.level === "critical"
+                          ? "bg-red-500"
+                          : alert.level === "high"
+                            ? "bg-orange-500"
+                            : "bg-yellow-500"
                       }`}
                     />
                     <span className="font-mono text-sm">{alert.address}</span>
@@ -115,27 +113,27 @@ export function DashboardPage() {
             <div className="space-y-4">
               {[
                 {
-                  label: 'Blacklisted',
+                  label: "Blacklisted",
                   count: 234,
-                  color: 'bg-red-500',
+                  color: "bg-red-500",
                   icon: ShieldAlert,
                 },
                 {
-                  label: 'High Frequency',
+                  label: "High Frequency",
                   count: 567,
-                  color: 'bg-orange-500',
+                  color: "bg-orange-500",
                   icon: Activity,
                 },
                 {
-                  label: 'Large Transactions',
+                  label: "Large Transactions",
                   count: 890,
-                  color: 'bg-yellow-500',
+                  color: "bg-yellow-500",
                   icon: Database,
                 },
                 {
-                  label: 'New Addresses',
+                  label: "New Addresses",
                   count: 1234,
-                  color: 'bg-blue-500',
+                  color: "bg-blue-500",
                   icon: Tag,
                 },
               ].map((item, i) => {

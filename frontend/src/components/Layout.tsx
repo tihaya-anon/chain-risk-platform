@@ -1,5 +1,5 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { clsx } from 'clsx'
+import { Link, useLocation, useNavigate } from "react-router-dom"
+import { clsx } from "clsx"
 import {
   LayoutDashboard,
   Search,
@@ -10,10 +10,10 @@ import {
   Link2,
   LogOut,
   User,
-} from 'lucide-react'
-import { useAuthStore } from '@/store/auth'
-import { Button } from '@/components/common'
-import type { ReactNode, ElementType } from 'react'
+} from "lucide-react"
+import { useAuthStore } from "@/store/auth"
+import { Button } from "@/components/common"
+import type { ReactNode, ElementType } from "react"
 
 interface LayoutProps {
   children: ReactNode
@@ -26,12 +26,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/address', label: 'Address', icon: Search },
-  { path: '/graph', label: 'Graph', icon: Network },
-  { path: '/path-finder', label: 'Path Finder', icon: Route },
-  { path: '/risk', label: 'Risk Analysis', icon: AlertTriangle },
-  { path: '/high-risk', label: 'High Risk', icon: ShieldAlert },
+  { path: "/", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/address", label: "Address", icon: Search },
+  { path: "/graph", label: "Graph", icon: Network },
+  { path: "/path-finder", label: "Path Finder", icon: Route },
+  { path: "/risk", label: "Risk Analysis", icon: AlertTriangle },
+  { path: "/high-risk", label: "High Risk", icon: ShieldAlert },
 ]
 
 export function Layout({ children }: LayoutProps) {
@@ -41,7 +41,7 @@ export function Layout({ children }: LayoutProps) {
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate("/login")
   }
 
   return (
@@ -54,9 +54,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
                 <Link2 className="w-6 h-6 text-blue-600" />
-                <span className="font-bold text-xl text-gray-900">
-                  Chain Risk
-                </span>
+                <span className="font-bold text-xl text-gray-900">Chain Risk</span>
               </Link>
             </div>
 
@@ -69,10 +67,10 @@ export function Layout({ children }: LayoutProps) {
                     key={item.path}
                     to={item.path}
                     className={clsx(
-                      'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                      "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                       location.pathname === item.path
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     )}
                   >
                     <Icon className="w-4 h-4" />
@@ -107,10 +105,10 @@ export function Layout({ children }: LayoutProps) {
                   key={item.path}
                   to={item.path}
                   className={clsx(
-                    'flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
+                    "flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
                     location.pathname === item.path
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100"
                   )}
                 >
                   <Icon className="w-4 h-4" />
@@ -123,16 +121,12 @@ export function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main content - Scrollable */}
-      <main className="flex-1 overflow-hidden bg-gray-50">
-        {children}
-      </main>
+      <main className="flex-1 overflow-hidden bg-gray-50">{children}</main>
 
       {/* Footer - Fixed */}
       <footer className="flex-shrink-0 bg-white border-t border-gray-200 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <p className="text-center text-sm text-gray-500">
-            Chain Risk Platform © 2024
-          </p>
+          <p className="text-center text-sm text-gray-500">Chain Risk Platform © 2024</p>
         </div>
       </footer>
     </div>

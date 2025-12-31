@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { useState } from "react"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { Link } from "react-router-dom"
 import {
   AlertTriangle,
   Search,
@@ -10,17 +10,17 @@ import {
   Scale,
   Tag,
   ExternalLink,
-} from 'lucide-react'
-import { Button, Card, LoadingSpinner, RiskBadge } from '@/components/common'
-import { riskService } from '@/services'
-import type { RiskScore, RiskRule } from '@/types'
+} from "lucide-react"
+import { Button, Card, LoadingSpinner, RiskBadge } from "@/components/common"
+import { riskService } from "@/services"
+import type { RiskScore, RiskRule } from "@/types"
 
 export function RiskPage() {
-  const [addresses, setAddresses] = useState('')
+  const [addresses, setAddresses] = useState("")
   const [results, setResults] = useState<RiskScore[]>([])
 
   const rulesQuery = useQuery({
-    queryKey: ['riskRules'],
+    queryKey: ["riskRules"],
     queryFn: riskService.listRules,
   })
 
@@ -34,7 +34,7 @@ export function RiskPage() {
   const handleAnalyze = (e: React.FormEvent) => {
     e.preventDefault()
     const addressList = addresses
-      .split('\n')
+      .split("\n")
       .map((a) => a.trim())
       .filter((a) => a.length > 0)
 
@@ -99,9 +99,7 @@ export function RiskPage() {
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {rule.name}
-                          </p>
+                          <p className="text-sm font-medium text-gray-900">{rule.name}</p>
                           <p className="text-xs text-gray-500">{rule.description}</p>
                         </div>
                       </div>
@@ -127,9 +125,7 @@ export function RiskPage() {
           {batchMutation.isPending && (
             <div className="py-12">
               <LoadingSpinner size="lg" />
-              <p className="text-center text-gray-500 mt-4">
-                Analyzing addresses...
-              </p>
+              <p className="text-center text-gray-500 mt-4">Analyzing addresses...</p>
             </div>
           )}
 
@@ -194,13 +190,12 @@ export function RiskPage() {
                                   {f.name}
                                 </span>
                               ))}
-                            {result.factors?.filter((f) => f.triggered).length ===
-                              0 && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 text-xs rounded">
-                                  <XCircle className="w-3 h-3" />
-                                  None
-                                </span>
-                              )}
+                            {result.factors?.filter((f) => f.triggered).length === 0 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 text-xs rounded">
+                                <XCircle className="w-3 h-3" />
+                                None
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-4">

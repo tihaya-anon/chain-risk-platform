@@ -1,7 +1,7 @@
-export { LoginPage } from './LoginPage'
-export { DashboardPage } from './DashboardPage'
-export { AddressPage } from './AddressPage'
-export { RiskPage } from './RiskPage'
-export { GraphExplorerPage } from './GraphExplorerPage'
-export { PathFinderPage } from './PathFinderPage'
-export { HighRiskNetworkPage } from './HighRiskNetworkPage'
+export { LoginPage } from "./LoginPage"
+export { DashboardPage } from "./DashboardPage"
+export { AddressPage } from "./AddressPage"
+export { RiskPage } from "./RiskPage"
+export { GraphExplorerPage } from "./GraphExplorerPage"
+export { PathFinderPage } from "./PathFinderPage"
+export { HighRiskNetworkPage } from "./HighRiskNetworkPage"

@@ -1,6 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/auth'
-import { Layout } from '@/components/Layout'
+import { Routes, Route, Navigate } from "react-router-dom"
+import { useAuthStore } from "@/store/auth"
+import { Layout } from "@/components/Layout"
 import {
   LoginPage,
   DashboardPage,
@@ -9,8 +9,8 @@ import {
   GraphExplorerPage,
   PathFinderPage,
   HighRiskNetworkPage,
-} from '@/pages'
-import type { ReactNode } from 'react'
+} from "@/pages"
+import type { ReactNode } from "react"
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)

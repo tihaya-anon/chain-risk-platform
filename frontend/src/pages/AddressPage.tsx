@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { Link, useSearchParams } from "react-router-dom"
 import {
   Search,
   Network,
@@ -14,27 +14,21 @@ import {
   Users,
   Calendar,
   Hash,
-} from 'lucide-react'
-import {
-  Button,
-  Input,
-  Card,
-  LoadingSpinner,
-  RiskBadge,
-} from '@/components/common'
-import { orchestrationService } from '@/services'
-import type { AddressAnalysis } from '@/types'
+} from "lucide-react"
+import { Button, Input, Card, LoadingSpinner, RiskBadge } from "@/components/common"
+import { orchestrationService } from "@/services"
+import type { AddressAnalysis } from "@/types"
 
 export function AddressPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const urlQuery = searchParams.get('q') || ''
+  const urlQuery = searchParams.get("q") || ""
 
   const [searchAddress, setSearchAddress] = useState(urlQuery)
   const [queryAddress, setQueryAddress] = useState(urlQuery)
 
   // Sync with URL changes
   useEffect(() => {
-    const q = searchParams.get('q') || ''
+    const q = searchParams.get("q") || ""
     if (q && q !== queryAddress) {
       setSearchAddress(q)
       setQueryAddress(q)
@@ -43,7 +37,7 @@ export function AddressPage() {
 
   // Use orchestration API for comprehensive data
   const analysisQuery = useQuery({
-    queryKey: ['addressAnalysis', queryAddress],
+    queryKey: ["addressAnalysis", queryAddress],
     queryFn: () =>
       orchestrationService.getAddressAnalysis(queryAddress, {
         neighborDepth: 1,
@@ -179,17 +173,14 @@ export function AddressPage() {
           )}
 
           {/* Empty State */}
-          {!analysisQuery.isLoading &&
-            !analysisQuery.error &&
-            !data &&
-            !queryAddress && (
-              <div className="text-center py-12">
-                <Search className="w-16 h-16 text-gray-300 mx-auto" />
-                <p className="text-gray-500 mt-4">
-                  Enter an address to start comprehensive analysis
-                </p>
-              </div>
-            )}
+          {!analysisQuery.isLoading && !analysisQuery.error && !data && !queryAddress && (
+            <div className="text-center py-12">
+              <Search className="w-16 h-16 text-gray-300 mx-auto" />
+              <p className="text-gray-500 mt-4">
+                Enter an address to start comprehensive analysis
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -198,7 +189,7 @@ export function AddressPage() {
 
 // Helper to check if response is an error
 function isError(obj: unknown): obj is { error: string } {
-  return typeof obj === 'object' && obj !== null && 'error' in obj
+  return typeof obj === "object" && obj !== null && "error" in obj
 }
 
 // Sub-components
@@ -249,9 +240,7 @@ function BasicInfoSection({ data }: { data: AddressAnalysis }) {
             <ArrowUpRight className="w-3 h-3" />
             Sent
           </label>
-          <p className="font-medium text-red-600">
-            {info.sentTxCount?.toLocaleString()}
-          </p>
+          <p className="font-medium text-red-600">{info.sentTxCount?.toLocaleString()}</p>
         </div>
         <div>
           <label className="text-sm text-gray-500 flex items-center gap-1">
@@ -268,9 +257,7 @@ function BasicInfoSection({ data }: { data: AddressAnalysis }) {
             First Seen
           </label>
           <p className="font-medium">
-            {info.firstSeen
-              ? new Date(info.firstSeen).toLocaleDateString()
-              : 'N/A'}
+            {info.firstSeen ? new Date(info.firstSeen).toLocaleDateString() : "N/A"}
           </p>
         </div>
       </div>
@@ -300,17 +287,12 @@ function RiskSection({ data }: { data: AddressAnalysis }) {
 
       {risk.factors && risk.factors.filter((f) => f.triggered).length > 0 && (
         <div className="pt-4 border-t">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">
-            Triggered Factors
-          </h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Triggered Factors</h4>
           <div className="space-y-2">
             {risk.factors
               .filter((f) => f.triggered)
               .map((factor, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between text-sm"
-                >
+                <div key={i} className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">{factor.name}</span>
                   <span className="font-medium">{factor.score.toFixed(2)}</span>
                 </div>
@@ -361,14 +343,12 @@ function GraphInfoSection({ data }: { data: AddressAnalysis }) {
               <ArrowUpRight className="w-3 h-3" />
               Outgoing Transfers
             </label>
-            <p className="font-medium text-red-600 text-xl">
-              {graphInfo.outgoingCount}
-            </p>
+            <p className="font-medium text-red-600 text-xl">{graphInfo.outgoingCount}</p>
           </div>
           <div>
             <label className="text-sm text-gray-500">Graph Risk Score</label>
             <p className="font-medium text-xl">
-              {graphInfo.riskScore?.toFixed(2) || 'N/A'}
+              {graphInfo.riskScore?.toFixed(2) || "N/A"}
             </p>
           </div>
           <div>
@@ -385,9 +365,7 @@ function GraphInfoSection({ data }: { data: AddressAnalysis }) {
 
       {tags.length > 0 && (
         <div className="pt-4 border-t">
-          <label className="text-sm text-gray-500 block mb-2">
-            Address Tags
-          </label>
+          <label className="text-sm text-gray-500 block mb-2">Address Tags</label>
           <div className="flex flex-wrap gap-2">
             {tags.map((tag, i) => (
               <span
@@ -438,7 +416,7 @@ function ClusterSection({ data }: { data: AddressAnalysis }) {
         </div>
         <div>
           <label className="text-sm text-gray-500">Risk Score</label>
-          <p className="font-medium">{cluster.riskScore?.toFixed(2) || 'N/A'}</p>
+          <p className="font-medium">{cluster.riskScore?.toFixed(2) || "N/A"}</p>
         </div>
       </div>
       {cluster.label && (
@@ -490,8 +468,8 @@ function NeighborsSection({ data }: { data: AddressAnalysis }) {
   return (
     <div>
       <div className="mb-4 text-sm text-gray-500">
-        Showing {neighbors.neighbors.length} of {neighbors.totalCount} connected
-        addresses (depth: {neighbors.depth})
+        Showing {neighbors.neighbors.length} of {neighbors.totalCount} connected addresses
+        (depth: {neighbors.depth})
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -532,17 +510,17 @@ function NeighborsSection({ data }: { data: AddressAnalysis }) {
                 <td className="px-4 py-3">
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${
-                      neighbor.direction === 'incoming'
-                        ? 'bg-green-100 text-green-700'
-                        : neighbor.direction === 'outgoing'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-gray-100 text-gray-700'
+                      neighbor.direction === "incoming"
+                        ? "bg-green-100 text-green-700"
+                        : neighbor.direction === "outgoing"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-700"
                     }`}
                   >
-                    {neighbor.direction === 'incoming' && (
+                    {neighbor.direction === "incoming" && (
                       <ArrowDownLeft className="w-3 h-3" />
                     )}
-                    {neighbor.direction === 'outgoing' && (
+                    {neighbor.direction === "outgoing" && (
                       <ArrowUpRight className="w-3 h-3" />
                     )}
                     {neighbor.direction}
@@ -551,9 +529,7 @@ function NeighborsSection({ data }: { data: AddressAnalysis }) {
                 <td className="px-4 py-3 text-sm font-medium">
                   {neighbor.transferCount}
                 </td>
-                <td className="px-4 py-3 text-sm">
-                  {formatValue(neighbor.totalValue)}
-                </td>
+                <td className="px-4 py-3 text-sm">{formatValue(neighbor.totalValue)}</td>
                 <td className="px-4 py-3">
                   <RiskScoreIndicator score={neighbor.riskScore} />
                 </td>
@@ -590,10 +566,10 @@ function RiskScoreIndicator({ score }: { score: number | undefined }) {
   }
 
   const getColor = (s: number) => {
-    if (s >= 0.8) return 'text-red-600 bg-red-100'
-    if (s >= 0.6) return 'text-orange-600 bg-orange-100'
-    if (s >= 0.4) return 'text-yellow-600 bg-yellow-100'
-    return 'text-green-600 bg-green-100'
+    if (s >= 0.8) return "text-red-600 bg-red-100"
+    if (s >= 0.6) return "text-orange-600 bg-orange-100"
+    if (s >= 0.4) return "text-yellow-600 bg-yellow-100"
+    return "text-green-600 bg-green-100"
   }
 
   return (
@@ -606,7 +582,7 @@ function RiskScoreIndicator({ score }: { score: number | undefined }) {
 }
 
 function formatValue(value: string | undefined): string {
-  if (!value) return 'N/A'
+  if (!value) return "N/A"
   const num = parseFloat(value)
   if (isNaN(num)) return value
   if (num >= 1e18) return `${(num / 1e18).toFixed(4)} ETH`

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useState, useEffect, useCallback } from "react"
+import { useSearchParams, useNavigate } from "react-router-dom"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import {
   Network,
   Search,
@@ -14,18 +14,18 @@ import {
   ArrowLeftRight,
   MousePointer,
   MousePointerClick,
-} from 'lucide-react'
-import { Button, Input, Card, LoadingSpinner } from '@/components/common'
-import { AddressGraph, GraphLegend } from '@/components/graph'
-import type { HoveredNodeInfo } from '@/components/graph/AddressGraph'
-import { graphService } from '@/services'
+} from "lucide-react"
+import { Button, Input, Card, LoadingSpinner } from "@/components/common"
+import { AddressGraph, GraphLegend } from "@/components/graph"
+import type { HoveredNodeInfo } from "@/components/graph/AddressGraph"
+import { graphService } from "@/services"
 
 export function GraphExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
 
   // Get address from URL
-  const urlAddress = searchParams.get('address') || ''
+  const urlAddress = searchParams.get("address") || ""
 
   const [searchAddress, setSearchAddress] = useState(urlAddress)
   const [currentAddress, setCurrentAddress] = useState(urlAddress)
@@ -36,7 +36,7 @@ export function GraphExplorerPage() {
 
   // Sync with URL changes (fixes the navigation issue)
   useEffect(() => {
-    const addressFromUrl = searchParams.get('address') || ''
+    const addressFromUrl = searchParams.get("address") || ""
     if (addressFromUrl && addressFromUrl !== currentAddress) {
       setSearchAddress(addressFromUrl)
       setCurrentAddress(addressFromUrl)
@@ -58,14 +58,14 @@ export function GraphExplorerPage() {
 
   // Fetch address info
   const addressInfoQuery = useQuery({
-    queryKey: ['graphAddressInfo', currentAddress],
+    queryKey: ["graphAddressInfo", currentAddress],
     queryFn: () => graphService.getAddressInfo(currentAddress),
     enabled: !!currentAddress,
   })
 
   // Fetch neighbors
   const neighborsQuery = useQuery({
-    queryKey: ['graphNeighbors', currentAddress, depth, limit],
+    queryKey: ["graphNeighbors", currentAddress, depth, limit],
     queryFn: () => graphService.getAddressNeighbors(currentAddress, depth, limit),
     enabled: !!currentAddress,
   })
@@ -107,7 +107,7 @@ export function GraphExplorerPage() {
   }
 
   const handleAddTag = () => {
-    const tag = prompt('Enter tag to add:')
+    const tag = prompt("Enter tag to add:")
     if (tag && currentAddress) {
       addTagMutation.mutate({ address: currentAddress, tags: [tag] })
     }
@@ -204,9 +204,7 @@ export function GraphExplorerPage() {
           {isLoading && (
             <div className="py-12">
               <LoadingSpinner size="lg" />
-              <p className="text-center text-gray-500 mt-4">
-                Loading graph data...
-              </p>
+              <p className="text-center text-gray-500 mt-4">Loading graph data...</p>
             </div>
           )}
 
@@ -215,7 +213,10 @@ export function GraphExplorerPage() {
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
               {/* Graph */}
               <div className="xl:col-span-3">
-                <Card title="Address Graph" subtitle="Click to select, double-click to explore">
+                <Card
+                  title="Address Graph"
+                  subtitle="Click to select, double-click to explore"
+                >
                   <div className="mb-4">
                     <GraphLegend />
                   </div>
@@ -229,7 +230,7 @@ export function GraphExplorerPage() {
                     height="600px"
                   />
                   <div className="mt-4 text-sm text-gray-500">
-                    Showing {neighbors.neighbors.length} of {neighbors.totalCount}{' '}
+                    Showing {neighbors.neighbors.length} of {neighbors.totalCount}{" "}
                     connected addresses
                   </div>
                 </Card>
@@ -239,8 +240,8 @@ export function GraphExplorerPage() {
               <div className="space-y-6">
                 {/* Selected/Hovered Node Info */}
                 <Card
-                  title={isSelected ? 'Selected Node' : 'Hovered Node'}
-                  className={isSelected ? 'ring-2 ring-blue-500' : ''}
+                  title={isSelected ? "Selected Node" : "Hovered Node"}
+                  className={isSelected ? "ring-2 ring-blue-500" : ""}
                 >
                   {displayNode ? (
                     <div className="space-y-3">
@@ -274,11 +275,11 @@ export function GraphExplorerPage() {
                               <p
                                 className={`font-medium ${
                                   (displayNode.riskScore ?? 0) >= 0.6
-                                    ? 'text-red-600'
-                                    : 'text-green-600'
+                                    ? "text-red-600"
+                                    : "text-green-600"
                                 }`}
                               >
-                                {displayNode.riskScore?.toFixed(2) || 'N/A'}
+                                {displayNode.riskScore?.toFixed(2) || "N/A"}
                               </p>
                             </div>
                             <div>
@@ -292,22 +293,26 @@ export function GraphExplorerPage() {
                             <div>
                               <label className="text-xs text-gray-500">Direction</label>
                               <div className="flex items-center gap-2 mt-1">
-                                {displayNode.direction === 'incoming' && (
+                                {displayNode.direction === "incoming" && (
                                   <>
                                     <ArrowDownLeft className="w-4 h-4 text-green-600" />
-                                    <span className="text-sm text-green-600">Incoming</span>
+                                    <span className="text-sm text-green-600">
+                                      Incoming
+                                    </span>
                                   </>
                                 )}
-                                {displayNode.direction === 'outgoing' && (
+                                {displayNode.direction === "outgoing" && (
                                   <>
                                     <ArrowUpRight className="w-4 h-4 text-red-600" />
                                     <span className="text-sm text-red-600">Outgoing</span>
                                   </>
                                 )}
-                                {displayNode.direction === 'both' && (
+                                {displayNode.direction === "both" && (
                                   <>
                                     <ArrowLeftRight className="w-4 h-4 text-gray-600" />
-                                    <span className="text-sm text-gray-600">Bidirectional</span>
+                                    <span className="text-sm text-gray-600">
+                                      Bidirectional
+                                    </span>
                                   </>
                                 )}
                               </div>
@@ -363,7 +368,7 @@ export function GraphExplorerPage() {
                         <div>
                           <label className="text-xs text-gray-500">Risk Score</label>
                           <p className="font-medium">
-                            {addressInfo.riskScore?.toFixed(2) || 'N/A'}
+                            {addressInfo.riskScore?.toFixed(2) || "N/A"}
                           </p>
                         </div>
                         <div>
@@ -481,21 +486,21 @@ export function GraphExplorerPage() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            {neighbor.direction === 'incoming' && (
+                            {neighbor.direction === "incoming" && (
                               <ArrowDownLeft className="w-4 h-4 text-green-600" />
                             )}
-                            {neighbor.direction === 'outgoing' && (
+                            {neighbor.direction === "outgoing" && (
                               <ArrowUpRight className="w-4 h-4 text-red-600" />
                             )}
-                            {neighbor.direction === 'both' && (
+                            {neighbor.direction === "both" && (
                               <ArrowLeftRight className="w-4 h-4 text-gray-600" />
                             )}
                             {neighbor.riskScore !== undefined && (
                               <span
                                 className={`px-1.5 py-0.5 text-xs rounded ${
                                   neighbor.riskScore >= 0.6
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'bg-green-100 text-green-700'
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-green-100 text-green-700"
                                 }`}
                               >
                                 {neighbor.riskScore.toFixed(1)}

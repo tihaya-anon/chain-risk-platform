@@ -59,7 +59,7 @@ export interface PaginatedResponse<T> {
 }
 
 // Risk types
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
+export type RiskLevel = "low" | "medium" | "high" | "critical"
 
 export interface RiskFactor {
   name: string
@@ -124,7 +124,7 @@ export interface GraphAddressInfo {
 // Neighbor Info
 export interface NeighborInfo {
   address: string
-  direction: 'incoming' | 'outgoing' | 'both'
+  direction: "incoming" | "outgoing" | "both"
   transferCount: number
   totalValue: string
   lastTransfer: string
