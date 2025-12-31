@@ -1,7 +1,17 @@
 import { useState, useEffect, useCallback } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
-import { useQuery, useMutation } from "@tanstack/react-query"
-import { Network, Search, RefreshCw, ExternalLink, Route, Tag, Plus } from "lucide-react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  Network,
+  Search,
+  RefreshCw,
+  ExternalLink,
+  Route,
+  Tag,
+  Plus,
+  Zap,
+  Trash2,
+} from "lucide-react"
 import { Button, Input, Card, LoadingSpinner } from "@/components/common"
 import {
   AddressGraph,
@@ -16,6 +26,7 @@ import { graphService } from "@/services"
 export function GraphExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const urlAddress = searchParams.get("address") || ""
 
@@ -59,10 +70,31 @@ export function GraphExplorerPage() {
     enabled: !!currentAddress,
   })
 
+  // Mutations
   const addTagMutation = useMutation({
     mutationFn: ({ address, tags }: { address: string; tags: string[] }) =>
       graphService.addAddressTags(address, { tags }),
-    onSuccess: () => addressInfoQuery.refetch(),
+    onSuccess: () => {
+      addressInfoQuery.refetch()
+      queryClient.invalidateQueries({ queryKey: ["graphNeighbors"] })
+    },
+  })
+
+  const removeTagMutation = useMutation({
+    mutationFn: ({ address, tag }: { address: string; tag: string }) =>
+      graphService.removeAddressTag(address, tag),
+    onSuccess: () => {
+      addressInfoQuery.refetch()
+      queryClient.invalidateQueries({ queryKey: ["graphNeighbors"] })
+    },
+  })
+
+  const propagateFromAddressMutation = useMutation({
+    mutationFn: (address: string) => graphService.propagateFromAddress(address),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["graphNeighbors"] })
+      queryClient.invalidateQueries({ queryKey: ["graphAddressInfo"] })
+    },
   })
 
   // Handlers
@@ -89,7 +121,24 @@ export function GraphExplorerPage() {
   const handleAddTag = () => {
     const tag = prompt("Enter tag to add:")
     if (tag && currentAddress) {
-      addTagMutation.mutate({ address: currentAddress, tags: [tag] })
+      addTagMutation.mutate({ address: currentAddress, tags: [tag.trim().toLowerCase()] })
+    }
+  }
+
+  const handleRemoveTag = (tag: string) => {
+    if (currentAddress && confirm(`Remove tag "${tag}"?`)) {
+      removeTagMutation.mutate({ address: currentAddress, tag })
+    }
+  }
+
+  const handlePropagate = () => {
+    if (
+      currentAddress &&
+      confirm(
+        "Propagate risk tags from this address to its neighbors?\n\nThis will spread risk scores with decay to connected addresses."
+      )
+    ) {
+      propagateFromAddressMutation.mutate(currentAddress)
     }
   }
 
@@ -222,27 +271,46 @@ export function GraphExplorerPage() {
                 {/* Tags */}
                 <Card title="Tags">
                   {addressInfo?.tags && addressInfo.tags.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
                         {addressInfo.tags.map((tag, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full group"
                           >
                             <Tag className="w-3 h-3" />
                             {tag}
+                            <button
+                              onClick={() => handleRemoveTag(tag)}
+                              className="ml-1 p-0.5 rounded-full hover:bg-blue-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Remove tag"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
                           </span>
                         ))}
                       </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleAddTag}
-                        loading={addTagMutation.isPending}
-                      >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add Tag
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleAddTag}
+                          loading={addTagMutation.isPending}
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Add
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handlePropagate}
+                          loading={propagateFromAddressMutation.isPending}
+                          title="Propagate tags to neighbors"
+                        >
+                          <Zap className="w-4 h-4 mr-1" />
+                          Propagate
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -256,6 +324,17 @@ export function GraphExplorerPage() {
                         <Plus className="w-4 h-4 mr-1" />
                         Add Tag
                       </Button>
+                    </div>
+                  )}
+
+                  {/* Propagation Result */}
+                  {propagateFromAddressMutation.data && (
+                    <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+                      <p className="font-medium">Propagation complete</p>
+                      <p>
+                        {propagateFromAddressMutation.data.addressesAffected} addresses
+                        affected
+                      </p>
                     </div>
                   )}
                 </Card>
@@ -280,6 +359,15 @@ export function GraphExplorerPage() {
                     >
                       <Route className="w-4 h-4 mr-2" />
                       Find Paths
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => navigate(`/tags`)}
+                    >
+                      <Tag className="w-4 h-4 mr-2" />
+                      Search by Tag
                     </Button>
                   </div>
                 </Card>

@@ -10,6 +10,8 @@ import {
   Link2,
   LogOut,
   User,
+  Settings,
+  Tag,
 } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { Button } from "@/components/common"
@@ -23,6 +25,7 @@ interface NavItem {
   path: string
   label: string
   icon: ElementType
+  adminOnly?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -30,8 +33,10 @@ const navItems: NavItem[] = [
   { path: "/address", label: "Address", icon: Search },
   { path: "/graph", label: "Graph", icon: Network },
   { path: "/path-finder", label: "Path Finder", icon: Route },
-  { path: "/risk", label: "Risk Analysis", icon: AlertTriangle },
+  { path: "/tags", label: "Tags", icon: Tag },
+  { path: "/risk", label: "Risk", icon: AlertTriangle },
   { path: "/high-risk", label: "High Risk", icon: ShieldAlert },
+  { path: "/admin", label: "Admin", icon: Settings, adminOnly: true },
 ]
 
 export function Layout({ children }: LayoutProps) {
@@ -43,6 +48,11 @@ export function Layout({ children }: LayoutProps) {
     logout()
     navigate("/login")
   }
+
+  // Filter nav items based on user role
+  const visibleNavItems = navItems.filter(
+    (item) => !item.adminOnly || user?.role === "admin"
+  )
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -60,7 +70,7 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon
                 return (
                   <Link
@@ -85,7 +95,16 @@ export function Layout({ children }: LayoutProps) {
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <User className="w-4 h-4" />
                 <span>{user?.username}</span>
-                <span className="text-xs text-gray-400">({user?.role})</span>
+                <span
+                  className={clsx(
+                    "text-xs px-1.5 py-0.5 rounded",
+                    user?.role === "admin"
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-gray-100 text-gray-600"
+                  )}
+                >
+                  {user?.role}
+                </span>
               </div>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-1" />
@@ -98,7 +117,7 @@ export function Layout({ children }: LayoutProps) {
         {/* Mobile Navigation */}
         <div className="md:hidden border-t border-gray-200 px-4 py-2 overflow-x-auto">
           <nav className="flex space-x-2">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon
               return (
                 <Link

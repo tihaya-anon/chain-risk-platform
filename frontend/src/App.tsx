@@ -9,6 +9,8 @@ import {
   GraphExplorerPage,
   PathFinderPage,
   HighRiskNetworkPage,
+  AdminPage,
+  TagSearchPage,
 } from "@/pages"
 import type { ReactNode } from "react"
 
@@ -88,6 +90,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <HighRiskNetworkPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tags"
+        element={
+          <ProtectedRoute>
+            <TagSearchPage />
           </ProtectedRoute>
         }
       />
