@@ -27,6 +27,12 @@
     </properties>
 
     <dependencies>
+        <!-- Spring Cloud Bootstrap (required for bootstrap.yml in Spring Boot 3.x) -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
+
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
