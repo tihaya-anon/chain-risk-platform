@@ -8,6 +8,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -18,7 +19,7 @@ type PipelineConfig struct {
 	Pipeline struct {
 		Enabled   bool `yaml:"enabled"`
 		Ingestion struct {
-			Enabled bool `yaml:"enabled"`
+			Enabled bool   `yaml:"enabled"`
 			Network string `yaml:"network"`
 			Polling struct {
 				IntervalMs    int `yaml:"intervalMs"`
@@ -40,9 +41,9 @@ type PipelineConfig struct {
 		} `yaml:"graph-sync"`
 	} `yaml:"pipeline"`
 	Risk struct {
-		HighThreshold     float64 `yaml:"highThreshold"`
-		MediumThreshold   float64 `yaml:"mediumThreshold"`
-		CacheTtlSeconds   int     `yaml:"cacheTtlSeconds"`
+		HighThreshold   float64 `yaml:"highThreshold"`
+		MediumThreshold float64 `yaml:"mediumThreshold"`
+		CacheTtlSeconds int     `yaml:"cacheTtlSeconds"`
 	} `yaml:"risk"`
 }
 
@@ -53,9 +54,9 @@ type Client struct {
 	logger       *zap.Logger
 
 	// Current configuration
-	config     *PipelineConfig
-	configMu   sync.RWMutex
-	
+	config   *PipelineConfig
+	configMu sync.RWMutex
+
 	// Configuration change listeners
 	listeners  []func(*PipelineConfig)
 	listenerMu sync.Mutex
@@ -265,7 +266,7 @@ func (c *Client) DeregisterService() error {
 }
 
 // GetService gets instances of a service
-func (c *Client) GetService(serviceName string) ([]vo.Instance, error) {
+func (c *Client) GetService(serviceName string) ([]model.Instance, error) {
 	instances, err := c.namingClient.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: serviceName,
 		GroupName:   "DEFAULT_GROUP",
@@ -275,17 +276,7 @@ func (c *Client) GetService(serviceName string) ([]vo.Instance, error) {
 		return nil, fmt.Errorf("select instances: %w", err)
 	}
 
-	result := make([]vo.Instance, len(instances))
-	for i, inst := range instances {
-		result[i] = vo.Instance{
-			Ip:       inst.Ip,
-			Port:     inst.Port,
-			Metadata: inst.Metadata,
-			Weight:   inst.Weight,
-			Healthy:  inst.Healthy,
-		}
-	}
-	return result, nil
+	return instances, nil
 }
 
 // IsIngestionEnabled checks if ingestion is enabled via Nacos config
