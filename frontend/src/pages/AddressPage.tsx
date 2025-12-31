@@ -1,6 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import {
+  Search,
+  Network,
+  Route,
+  XCircle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Box,
+  Tag,
+  Activity,
+  Users,
+  Calendar,
+  Hash,
+} from 'lucide-react'
 import {
   Button,
   Input,
@@ -12,8 +26,20 @@ import { orchestrationService } from '@/services'
 import type { AddressAnalysis } from '@/types'
 
 export function AddressPage() {
-  const [searchAddress, setSearchAddress] = useState('')
-  const [queryAddress, setQueryAddress] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlQuery = searchParams.get('q') || ''
+
+  const [searchAddress, setSearchAddress] = useState(urlQuery)
+  const [queryAddress, setQueryAddress] = useState(urlQuery)
+
+  // Sync with URL changes
+  useEffect(() => {
+    const q = searchParams.get('q') || ''
+    if (q && q !== queryAddress) {
+      setSearchAddress(q)
+      setQueryAddress(q)
+    }
+  }, [searchParams, queryAddress])
 
   // Use orchestration API for comprehensive data
   const analysisQuery = useQuery({
@@ -29,124 +55,143 @@ export function AddressPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchAddress.trim()) {
-      setQueryAddress(searchAddress.trim().toLowerCase())
+      const normalized = searchAddress.trim().toLowerCase()
+      setQueryAddress(normalized)
+      setSearchParams({ q: normalized })
     }
   }
 
   const data = analysisQuery.data
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Address Analysis</h1>
-        <p className="text-gray-600 mt-1">
-          Comprehensive blockchain address analysis with graph data
-        </p>
+    <div className="h-full flex flex-col">
+      {/* Fixed Header with Search */}
+      <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {/* Title */}
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Search className="w-6 h-6 text-blue-600" />
+              Address Analysis
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Comprehensive blockchain address analysis with graph data
+            </p>
+          </div>
+
+          {/* Search Form */}
+          <Card>
+            <form onSubmit={handleSearch} className="flex gap-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="Enter Ethereum address (0x...)"
+                  value={searchAddress}
+                  onChange={(e) => setSearchAddress(e.target.value)}
+                />
+              </div>
+              <Button type="submit" loading={analysisQuery.isLoading}>
+                <Search className="w-4 h-4 mr-1" />
+                Analyze
+              </Button>
+            </form>
+          </Card>
+        </div>
       </div>
 
-      {/* Search Form */}
-      <Card>
-        <form onSubmit={handleSearch} className="flex gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Enter Ethereum address (0x...)"
-              value={searchAddress}
-              onChange={(e) => setSearchAddress(e.target.value)}
-            />
-          </div>
-          <Button type="submit" loading={analysisQuery.isLoading}>
-            Analyze
-          </Button>
-        </form>
-      </Card>
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Loading */}
+          {analysisQuery.isLoading && (
+            <div className="py-12">
+              <LoadingSpinner size="lg" />
+              <p className="text-center text-gray-500 mt-4">
+                Loading comprehensive analysis...
+              </p>
+            </div>
+          )}
 
-      {/* Loading */}
-      {analysisQuery.isLoading && (
-        <div className="py-12">
-          <LoadingSpinner size="lg" />
-          <p className="text-center text-gray-500 mt-4">
-            Loading comprehensive analysis...
-          </p>
+          {/* Error */}
+          {analysisQuery.error && (
+            <Card>
+              <div className="text-center py-8 text-red-500">
+                <XCircle className="w-12 h-12 mx-auto" />
+                <p className="mt-4">Failed to load address analysis</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  {(analysisQuery.error as Error).message}
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {/* Results */}
+          {data && !analysisQuery.isLoading && (
+            <div className="space-y-6">
+              {/* Quick Actions */}
+              <div className="flex gap-4">
+                <Link
+                  to={`/graph?address=${data.address}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Network className="w-4 h-4" />
+                  View in Graph Explorer
+                </Link>
+                <Link
+                  to={`/path-finder?from=${data.address}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  <Route className="w-4 h-4" />
+                  Find Connections
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Basic Info */}
+                <Card title="Basic Information" className="lg:col-span-2">
+                  <BasicInfoSection data={data} />
+                </Card>
+
+                {/* Risk Score */}
+                <Card title="Risk Assessment">
+                  <RiskSection data={data} />
+                </Card>
+
+                {/* Graph Info */}
+                <Card title="Graph Analysis" className="lg:col-span-2">
+                  <GraphInfoSection data={data} />
+                </Card>
+
+                {/* Cluster Info */}
+                <Card title="Cluster">
+                  <ClusterSection data={data} />
+                </Card>
+
+                {/* Neighbors */}
+                <Card
+                  title="Connected Addresses"
+                  subtitle={`Top neighbors by transfer count`}
+                  className="lg:col-span-3"
+                >
+                  <NeighborsSection data={data} />
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!analysisQuery.isLoading &&
+            !analysisQuery.error &&
+            !data &&
+            !queryAddress && (
+              <div className="text-center py-12">
+                <Search className="w-16 h-16 text-gray-300 mx-auto" />
+                <p className="text-gray-500 mt-4">
+                  Enter an address to start comprehensive analysis
+                </p>
+              </div>
+            )}
         </div>
-      )}
-
-      {/* Error */}
-      {analysisQuery.error && (
-        <Card>
-          <div className="text-center py-8 text-red-500">
-            <span className="text-4xl">❌</span>
-            <p className="mt-4">Failed to load address analysis</p>
-            <p className="text-sm text-gray-500 mt-2">
-              {(analysisQuery.error as Error).message}
-            </p>
-          </div>
-        </Card>
-      )}
-
-      {/* Results */}
-      {data && !analysisQuery.isLoading && (
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="flex gap-4">
-            <Link
-              to={`/graph?address=${data.address}`}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              🔗 View in Graph Explorer
-            </Link>
-            <Link
-              to={`/path-finder?from=${data.address}`}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              🔍 Find Connections
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Basic Info */}
-            <Card title="Basic Information" className="lg:col-span-2">
-              <BasicInfoSection data={data} />
-            </Card>
-
-            {/* Risk Score */}
-            <Card title="Risk Assessment">
-              <RiskSection data={data} />
-            </Card>
-
-            {/* Graph Info */}
-            <Card title="Graph Analysis" className="lg:col-span-2">
-              <GraphInfoSection data={data} />
-            </Card>
-
-            {/* Cluster Info */}
-            <Card title="Cluster">
-              <ClusterSection data={data} />
-            </Card>
-
-            {/* Neighbors */}
-            <Card
-              title="Connected Addresses"
-              subtitle={`Top neighbors by transfer count`}
-              className="lg:col-span-3"
-            >
-              <NeighborsSection data={data} />
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!analysisQuery.isLoading &&
-        !analysisQuery.error &&
-        !data &&
-        !queryAddress && (
-          <div className="text-center py-12">
-            <span className="text-6xl">🔍</span>
-            <p className="text-gray-500 mt-4">
-              Enter an address to start comprehensive analysis
-            </p>
-          </div>
-        )}
+      </div>
     </div>
   )
 }
@@ -171,36 +216,57 @@ function BasicInfoSection({ data }: { data: AddressAnalysis }) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm text-gray-500">Address</label>
+        <label className="text-sm text-gray-500 flex items-center gap-1">
+          <Hash className="w-3 h-3" />
+          Address
+        </label>
         <p className="font-mono text-sm break-all">{info.address}</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div>
-          <label className="text-sm text-gray-500">Network</label>
+          <label className="text-sm text-gray-500 flex items-center gap-1">
+            <Network className="w-3 h-3" />
+            Network
+          </label>
           <p className="font-medium">{info.network}</p>
         </div>
         <div>
-          <label className="text-sm text-gray-500">Total Transactions</label>
+          <label className="text-sm text-gray-500 flex items-center gap-1">
+            <Activity className="w-3 h-3" />
+            Total Transactions
+          </label>
           <p className="font-medium">{info.totalTxCount?.toLocaleString()}</p>
         </div>
         <div>
-          <label className="text-sm text-gray-500">Unique Counterparties</label>
+          <label className="text-sm text-gray-500 flex items-center gap-1">
+            <Users className="w-3 h-3" />
+            Unique Counterparties
+          </label>
           <p className="font-medium">{info.uniqueInteracted?.toLocaleString()}</p>
         </div>
         <div>
-          <label className="text-sm text-gray-500">Sent</label>
+          <label className="text-sm text-gray-500 flex items-center gap-1">
+            <ArrowUpRight className="w-3 h-3" />
+            Sent
+          </label>
           <p className="font-medium text-red-600">
             {info.sentTxCount?.toLocaleString()}
           </p>
         </div>
         <div>
-          <label className="text-sm text-gray-500">Received</label>
+          <label className="text-sm text-gray-500 flex items-center gap-1">
+            <ArrowDownLeft className="w-3 h-3" />
+            Received
+          </label>
           <p className="font-medium text-green-600">
             {info.receivedTxCount?.toLocaleString()}
           </p>
         </div>
         <div>
-          <label className="text-sm text-gray-500">First Seen</label>
+          <label className="text-sm text-gray-500 flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            First Seen
+          </label>
           <p className="font-medium">
             {info.firstSeen
               ? new Date(info.firstSeen).toLocaleDateString()
@@ -260,8 +326,9 @@ function RiskSection({ data }: { data: AddressAnalysis }) {
             {risk.tags.map((tag, i) => (
               <span
                 key={i}
-                className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded"
               >
+                <Tag className="w-3 h-3" />
                 {tag}
               </span>
             ))}
@@ -281,13 +348,19 @@ function GraphInfoSection({ data }: { data: AddressAnalysis }) {
       {graphInfo ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <label className="text-sm text-gray-500">Incoming Transfers</label>
+            <label className="text-sm text-gray-500 flex items-center gap-1">
+              <ArrowDownLeft className="w-3 h-3" />
+              Incoming Transfers
+            </label>
             <p className="font-medium text-green-600 text-xl">
               {graphInfo.incomingCount}
             </p>
           </div>
           <div>
-            <label className="text-sm text-gray-500">Outgoing Transfers</label>
+            <label className="text-sm text-gray-500 flex items-center gap-1">
+              <ArrowUpRight className="w-3 h-3" />
+              Outgoing Transfers
+            </label>
             <p className="font-medium text-red-600 text-xl">
               {graphInfo.outgoingCount}
             </p>
@@ -299,7 +372,10 @@ function GraphInfoSection({ data }: { data: AddressAnalysis }) {
             </p>
           </div>
           <div>
-            <label className="text-sm text-gray-500">Total TX Count</label>
+            <label className="text-sm text-gray-500 flex items-center gap-1">
+              <Activity className="w-3 h-3" />
+              Total TX Count
+            </label>
             <p className="font-medium text-xl">{graphInfo.txCount}</p>
           </div>
         </div>
@@ -316,8 +392,9 @@ function GraphInfoSection({ data }: { data: AddressAnalysis }) {
             {tags.map((tag, i) => (
               <span
                 key={i}
-                className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full"
+                className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full"
               >
+                <Tag className="w-3 h-3" />
                 {tag}
               </span>
             ))}
@@ -340,7 +417,7 @@ function ClusterSection({ data }: { data: AddressAnalysis }) {
   if (!cluster) {
     return (
       <div className="text-center py-4">
-        <span className="text-3xl">📦</span>
+        <Box className="w-8 h-8 text-gray-300 mx-auto" />
         <p className="text-gray-500 text-sm mt-2">Not in any cluster</p>
       </div>
     )
@@ -385,8 +462,9 @@ function ClusterSection({ data }: { data: AddressAnalysis }) {
             {cluster.tags.map((tag, i) => (
               <span
                 key={i}
-                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
               >
+                <Tag className="w-3 h-3" />
                 {tag}
               </span>
             ))}
@@ -403,7 +481,7 @@ function NeighborsSection({ data }: { data: AddressAnalysis }) {
   if (!neighbors || neighbors.neighbors.length === 0) {
     return (
       <div className="text-center py-8">
-        <span className="text-4xl">🔗</span>
+        <Network className="w-12 h-12 text-gray-300 mx-auto" />
         <p className="text-gray-500 mt-2">No connected addresses found</p>
       </div>
     )
@@ -446,10 +524,6 @@ function NeighborsSection({ data }: { data: AddressAnalysis }) {
                   <Link
                     to={`/address?q=${neighbor.address}`}
                     className="font-mono text-sm text-blue-600 hover:underline"
-                    onClick={() => {
-                      // This will trigger a new search
-                      window.location.href = `/address?q=${neighbor.address}`
-                    }}
                   >
                     {neighbor.address.slice(0, 10)}...
                     {neighbor.address.slice(-8)}
@@ -457,15 +531,20 @@ function NeighborsSection({ data }: { data: AddressAnalysis }) {
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${neighbor.direction === 'incoming'
-                      ? 'bg-green-100 text-green-700'
-                      : neighbor.direction === 'outgoing'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-gray-100 text-gray-700'
-                      }`}
+                    className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${
+                      neighbor.direction === 'incoming'
+                        ? 'bg-green-100 text-green-700'
+                        : neighbor.direction === 'outgoing'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-gray-100 text-gray-700'
+                    }`}
                   >
-                    {neighbor.direction === 'incoming' && '← '}
-                    {neighbor.direction === 'outgoing' && '→ '}
+                    {neighbor.direction === 'incoming' && (
+                      <ArrowDownLeft className="w-3 h-3" />
+                    )}
+                    {neighbor.direction === 'outgoing' && (
+                      <ArrowUpRight className="w-3 h-3" />
+                    )}
                     {neighbor.direction}
                   </span>
                 </td>
@@ -483,8 +562,9 @@ function NeighborsSection({ data }: { data: AddressAnalysis }) {
                     {neighbor.tags?.slice(0, 3).map((tag, j) => (
                       <span
                         key={j}
-                        className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
                       >
+                        <Tag className="w-3 h-3" />
                         {tag}
                       </span>
                     ))}
@@ -503,7 +583,6 @@ function NeighborsSection({ data }: { data: AddressAnalysis }) {
     </div>
   )
 }
-
 
 function RiskScoreIndicator({ score }: { score: number | undefined }) {
   if (score === undefined || score === null) {

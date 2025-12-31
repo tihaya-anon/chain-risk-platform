@@ -1,20 +1,37 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
+import {
+  LayoutDashboard,
+  Search,
+  Network,
+  Route,
+  AlertTriangle,
+  ShieldAlert,
+  Link2,
+  LogOut,
+  User,
+} from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/common'
-import type { ReactNode } from 'react'
+import type { ReactNode, ElementType } from 'react'
 
 interface LayoutProps {
   children: ReactNode
 }
 
-const navItems = [
-  { path: '/', label: 'Dashboard', icon: '📊' },
-  { path: '/address', label: 'Address', icon: '🔍' },
-  { path: '/graph', label: 'Graph', icon: '🔗' },
-  { path: '/path-finder', label: 'Path Finder', icon: '🛤️' },
-  { path: '/risk', label: 'Risk Analysis', icon: '⚠️' },
-  { path: '/high-risk', label: 'High Risk', icon: '🚨' },
+interface NavItem {
+  path: string
+  label: string
+  icon: ElementType
+}
+
+const navItems: NavItem[] = [
+  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/address', label: 'Address', icon: Search },
+  { path: '/graph', label: 'Graph', icon: Network },
+  { path: '/path-finder', label: 'Path Finder', icon: Route },
+  { path: '/risk', label: 'Risk Analysis', icon: AlertTriangle },
+  { path: '/high-risk', label: 'High Risk', icon: ShieldAlert },
 ]
 
 export function Layout({ children }: LayoutProps) {
@@ -36,7 +53,7 @@ export function Layout({ children }: LayoutProps) {
             {/* Logo */}
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2">
-                <span className="text-2xl">🔗</span>
+                <Link2 className="w-6 h-6 text-blue-600" />
                 <span className="font-bold text-xl text-gray-900">
                   Chain Risk
                 </span>
@@ -45,32 +62,35 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={clsx(
-                    'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                    location.pathname === item.path
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  )}
-                >
-                  <span className="mr-1.5">{item.icon}</span>
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={clsx(
+                      'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                      location.pathname === item.path
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                )
+              })}
             </nav>
 
             {/* User menu */}
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                {user?.username}
-                <span className="ml-1 text-xs text-gray-400">
-                  ({user?.role})
-                </span>
-              </span>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <User className="w-4 h-4" />
+                <span>{user?.username}</span>
+                <span className="text-xs text-gray-400">({user?.role})</span>
+              </div>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-1" />
                 Logout
               </Button>
             </div>
@@ -80,35 +100,36 @@ export function Layout({ children }: LayoutProps) {
         {/* Mobile Navigation */}
         <div className="md:hidden border-t border-gray-200 px-4 py-2 overflow-x-auto">
           <nav className="flex space-x-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={clsx(
-                  'flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
-                  location.pathname === item.path
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100'
-                )}
-              >
-                <span className="mr-1">{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={clsx(
+                    'flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
+                    location.pathname === item.path
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              )
+            })}
           </nav>
         </div>
       </header>
 
       {/* Main content - Scrollable */}
-      <main className="flex-1 overflow-y-auto bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </div>
+      <main className="flex-1 overflow-hidden bg-gray-50">
+        {children}
       </main>
 
       {/* Footer - Fixed */}
       <footer className="flex-shrink-0 bg-white border-t border-gray-200 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <p className="text-center text-sm text-gray-500">
             Chain Risk Platform © 2024
           </p>
