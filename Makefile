@@ -131,7 +131,7 @@ infra-down: ## Stop infrastructure
 	@echo "✅ Infrastructure stopped"
 
 infra-check: ## Check infrastructure status
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/check-infra.sh'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/check-infra.sh'
 
 # ============================================
 # Data Ingestion (Go)
@@ -148,7 +148,7 @@ ingestion-build: ## Build data-ingestion
 	@echo "✅ data-ingestion built"
 
 ingestion-run: ## Run data-ingestion
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd data-ingestion && go run ./cmd/...'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd data-ingestion && go run ./cmd/...'
 
 ingestion-test: ## Test data-ingestion
 	@echo "🧪 Testing data-ingestion..."
@@ -178,7 +178,7 @@ query-build: ## Build query-service
 	@echo "✅ query-service built"
 
 query-run: ## Run query-service
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/query-service && go run ./cmd/...'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/query-service && go run ./cmd/...'
 
 query-test: ## Test query-service
 	@echo "🧪 Testing query-service..."
@@ -238,7 +238,7 @@ risk-build: ## Build risk-ml-service
 	@echo "✅ risk-ml-service built"
 
 risk-run: ## Run risk-ml-service
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/risk-ml-service && uv run uvicorn app.main:app --reload --port 8082'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/risk-ml-service && uv run uvicorn app.main:app --reload --port 8082'
 
 risk-test: ## Test risk-ml-service
 	@echo "🧪 Testing risk-ml-service..."
@@ -355,7 +355,7 @@ flink-build: ## Build stream-processor
 	@echo "✅ stream-processor built"
 
 flink-run: ## Run stream-processor
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/run-flink.sh'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/run-flink.sh'
 
 flink-test: ## Test stream-processor
 	@echo "🧪 Testing stream-processor..."
@@ -470,10 +470,10 @@ run-svc: ## Run query, risk, bff, graph in background (logs in .logs/)
 	@mkdir -p $(LOGS_DIR)
 	@echo "🚀 Starting services in background..."
 	@echo "   Logs: $(LOGS_DIR)/"
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/query-service && go run ./cmd/... > ../../$(LOGS_DIR)/query.log 2>&1 &'
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && cd services/risk-ml-service && uv run uvicorn app.main:app --reload --port 8082 > ../../$(LOGS_DIR)/risk.log 2>&1 &'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/query-service && go run ./cmd/... > ../../$(LOGS_DIR)/query.log 2>&1 &'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/risk-ml-service && uv run uvicorn app.main:app --reload --port 8082 > ../../$(LOGS_DIR)/risk.log 2>&1 &'
 	@cd services/bff && npm run start:dev > ../../$(LOGS_DIR)/bff.log 2>&1 &
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/run-graph-engine.sh > $(LOGS_DIR)/graph.log 2>&1 &'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/run-graph-engine.sh > $(LOGS_DIR)/graph.log 2>&1 &'
 	@sleep 2
 	@echo "✅ Services started:"
 	@echo "   - Query Service:  http://localhost:8081 (log: $(LOGS_DIR)/query.log)"
@@ -590,7 +590,7 @@ logs-all: ## Tail all service logs
 # ============================================
 
 test-integration: ## Run integration test (mock server + data pipeline)
-	@bash -c 'set -a && source .env.local && source ./scripts/env-remote.sh > /dev/null && ./scripts/run-integration-test.sh'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/run-integration-test.sh'
 
 mock-server-build: ## Build mock Etherscan server
 	@echo "🔨 Building mock server..."
