@@ -141,9 +141,10 @@ func (s *Service) Start(ctx context.Context) error {
 			}
 			
 			// Poll blocks
-			if err := s.pollBlocks(ctx); err != nil {
-				s.logger.Error("Error polling blocks", zap.Error(err))
-			}
+			// if err := s.pollBlocks(ctx); err != nil {
+			// 	s.logger.Error("Error polling blocks", zap.Error(err))
+			// }
+			s.logger.Info("Poll block disabled")
 			
 			// Use dynamic interval from Nacos
 			interval := time.Duration(s.intervalMs.Load()) * time.Millisecond
