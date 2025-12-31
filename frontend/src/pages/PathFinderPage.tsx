@@ -101,31 +101,30 @@ export function PathFinderPage() {
 
       if (isStart) {
         bgColor = '#3B82F6'
-        borderColor = '#1D4ED8'
+        borderColor = '#2563EB'
       } else if (isEnd) {
         bgColor = '#8B5CF6'
-        borderColor = '#6D28D9'
+        borderColor = '#7C3AED'
       } else if (node.riskScore !== undefined) {
         if (node.riskScore >= 0.8) {
-          bgColor = '#DC2626'
-          borderColor = '#991B1B'
+          bgColor = '#F87171'
+          borderColor = '#EF4444'
         } else if (node.riskScore >= 0.6) {
-          bgColor = '#EA580C'
-          borderColor = '#9A3412'
+          bgColor = '#FB923C'
+          borderColor = '#F97316'
         } else if (node.riskScore >= 0.4) {
-          bgColor = '#CA8A04'
-          borderColor = '#854D0E'
+          bgColor = '#FBBF24'
+          borderColor = '#F59E0B'
         } else {
-          bgColor = '#16A34A'
-          borderColor = '#15803D'
+          bgColor = '#34D399'
+          borderColor = '#10B981'
         }
       }
 
       nodes.push({
         id: node.address,
-        label: `${node.address.slice(0, 6)}...${node.address.slice(-4)}${
-          isStart ? '\n(Source)' : isEnd ? '\n(Target)' : ''
-        }`,
+        label: `${node.address.slice(0, 6)}...${node.address.slice(-4)}${isStart ? '\n(Source)' : isEnd ? '\n(Target)' : ''
+          }`,
         color: { background: bgColor, border: borderColor },
         size: isStart || isEnd ? 30 : 20,
         font: isStart || isEnd ? { color: '#FFFFFF' } : undefined,
@@ -401,11 +400,10 @@ export function PathFinderPage() {
                           </div>
                           {node.riskScore !== undefined && (
                             <span
-                              className={`px-2 py-0.5 text-xs rounded ${
-                                node.riskScore >= 0.6
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-green-100 text-green-700'
-                              }`}
+                              className={`px-2 py-0.5 text-xs rounded ${node.riskScore >= 0.6
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-green-100 text-green-700'
+                                }`}
                             >
                               {node.riskScore.toFixed(2)}
                             </span>

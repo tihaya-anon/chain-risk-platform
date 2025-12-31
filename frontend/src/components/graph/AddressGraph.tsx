@@ -6,7 +6,7 @@ export interface GraphNode {
   id: string
   label: string
   title?: string
-  color?: string | { background: string; border: string }
+  color?: string | { background: string; border: string; highlight?: { background: string; border: string } }
   size?: number
   font?: { color: string }
   borderWidth?: number
@@ -19,7 +19,7 @@ export interface GraphEdge {
   label?: string
   title?: string
   arrows?: string
-  color?: string | { color: string }
+  color?: string | { color: string; highlight?: string }
   width?: number
   dashes?: boolean
 }
@@ -33,21 +33,52 @@ interface AddressGraphProps {
   className?: string
 }
 
-// Risk score to color mapping
-function getRiskColor(riskScore: number | undefined): string {
-  if (riskScore === undefined || riskScore === null) return '#9CA3AF' // gray
-  if (riskScore >= 0.8) return '#DC2626' // red
-  if (riskScore >= 0.6) return '#EA580C' // orange
-  if (riskScore >= 0.4) return '#CA8A04' // yellow
-  return '#16A34A' // green
+// Improved color palette - softer, more professional colors
+const COLORS = {
+  center: {
+    background: '#3B82F6',
+    border: '#2563EB',
+    highlight: { background: '#60A5FA', border: '#3B82F6' },
+  },
+  low: {
+    background: '#34D399',
+    border: '#10B981',
+    highlight: { background: '#6EE7B7', border: '#34D399' },
+  },
+  medium: {
+    background: '#FBBF24',
+    border: '#F59E0B',
+    highlight: { background: '#FCD34D', border: '#FBBF24' },
+  },
+  high: {
+    background: '#FB923C',
+    border: '#F97316',
+    highlight: { background: '#FDBA74', border: '#FB923C' },
+  },
+  critical: {
+    background: '#F87171',
+    border: '#EF4444',
+    highlight: { background: '#FCA5A5', border: '#F87171' },
+  },
+  unknown: {
+    background: '#9CA3AF',
+    border: '#6B7280',
+    highlight: { background: '#D1D5DB', border: '#9CA3AF' },
+  },
+  edge: {
+    incoming: '#10B981',
+    outgoing: '#F97316',
+    both: '#6B7280',
+  },
 }
 
-function getRiskBorderColor(riskScore: number | undefined): string {
-  if (riskScore === undefined || riskScore === null) return '#6B7280'
-  if (riskScore >= 0.8) return '#991B1B'
-  if (riskScore >= 0.6) return '#9A3412'
-  if (riskScore >= 0.4) return '#854D0E'
-  return '#15803D'
+// Risk score to color mapping
+function getRiskColors(riskScore: number | undefined) {
+  if (riskScore === undefined || riskScore === null) return COLORS.unknown
+  if (riskScore >= 0.8) return COLORS.critical
+  if (riskScore >= 0.6) return COLORS.high
+  if (riskScore >= 0.4) return COLORS.medium
+  return COLORS.low
 }
 
 // Format address for display
@@ -55,7 +86,7 @@ function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-// Create tooltip content
+// Create tooltip content - plain text for vis-network
 function createTooltip(
   address: string,
   riskScore?: number,
@@ -64,18 +95,14 @@ function createTooltip(
   direction?: string
 ): string {
   const lines = [
-    `<strong>Address:</strong> ${address}`,
-    riskScore !== undefined
-      ? `<strong>Risk Score:</strong> ${riskScore.toFixed(2)}`
-      : '',
-    tags && tags.length > 0 ? `<strong>Tags:</strong> ${tags.join(', ')}` : '',
-    transferCount !== undefined
-      ? `<strong>Transfers:</strong> ${transferCount}`
-      : '',
-    direction ? `<strong>Direction:</strong> ${direction}` : '',
+    `Address: ${address.slice(0, 10)}...${address.slice(-8)}`,
+    riskScore !== undefined ? `Risk Score: ${riskScore.toFixed(2)}` : null,
+    tags && tags.length > 0 ? `Tags: ${tags.join(', ')}` : null,
+    transferCount !== undefined ? `Transfers: ${transferCount}` : null,
+    direction ? `Direction: ${direction}` : null,
   ].filter(Boolean)
 
-  return `<div style="padding: 8px; max-width: 300px;">${lines.join('<br/>')}</div>`
+  return lines.join('\n')
 }
 
 export function AddressGraph({
@@ -100,12 +127,9 @@ export function AddressGraph({
     nodes.push({
       id: centerAddress,
       label: formatAddress(centerAddress),
-      title: createTooltip(centerAddress),
-      color: {
-        background: '#3B82F6',
-        border: '#1D4ED8',
-      },
-      size: 30,
+      title: `Center Address\n${centerAddress}`,
+      color: COLORS.center,
+      size: 35,
       font: { color: '#FFFFFF' },
       borderWidth: 3,
     })
@@ -114,6 +138,7 @@ export function AddressGraph({
     // Add neighbor nodes and edges
     neighbors.forEach((neighbor, index) => {
       if (!nodeSet.has(neighbor.address)) {
+        const colors = getRiskColors(neighbor.riskScore)
         nodes.push({
           id: neighbor.address,
           label: formatAddress(neighbor.address),
@@ -124,11 +149,8 @@ export function AddressGraph({
             neighbor.transferCount,
             neighbor.direction
           ),
-          color: {
-            background: getRiskColor(neighbor.riskScore),
-            border: getRiskBorderColor(neighbor.riskScore),
-          },
-          size: Math.min(25, 15 + neighbor.transferCount * 0.5),
+          color: colors,
+          size: Math.min(28, 18 + neighbor.transferCount * 0.3),
           borderWidth: 2,
         })
         nodeSet.add(neighbor.address)
@@ -136,15 +158,17 @@ export function AddressGraph({
 
       // Create edge based on direction
       const edgeId = `edge-${index}`
+      const edgeWidth = Math.min(4, 1.5 + neighbor.transferCount * 0.15)
+
       if (neighbor.direction === 'incoming') {
         edges.push({
           id: edgeId,
           from: neighbor.address,
           to: centerAddress,
           arrows: 'to',
-          title: `${neighbor.transferCount} transfers`,
-          width: Math.min(5, 1 + neighbor.transferCount * 0.2),
-          color: { color: '#10B981' },
+          title: `${neighbor.transferCount} transfers (incoming)`,
+          width: edgeWidth,
+          color: { color: COLORS.edge.incoming, highlight: '#34D399' },
         })
       } else if (neighbor.direction === 'outgoing') {
         edges.push({
@@ -152,9 +176,9 @@ export function AddressGraph({
           from: centerAddress,
           to: neighbor.address,
           arrows: 'to',
-          title: `${neighbor.transferCount} transfers`,
-          width: Math.min(5, 1 + neighbor.transferCount * 0.2),
-          color: { color: '#EF4444' },
+          title: `${neighbor.transferCount} transfers (outgoing)`,
+          width: edgeWidth,
+          color: { color: COLORS.edge.outgoing, highlight: '#FB923C' },
         })
       } else {
         // Both directions
@@ -163,9 +187,9 @@ export function AddressGraph({
           from: centerAddress,
           to: neighbor.address,
           arrows: 'to;from',
-          title: `${neighbor.transferCount} transfers`,
-          width: Math.min(5, 1 + neighbor.transferCount * 0.2),
-          color: { color: '#6B7280' },
+          title: `${neighbor.transferCount} transfers (bidirectional)`,
+          width: edgeWidth,
+          color: { color: COLORS.edge.both, highlight: '#9CA3AF' },
         })
       }
     })
@@ -186,11 +210,18 @@ export function AddressGraph({
       nodes: {
         shape: 'dot',
         font: {
-          size: 12,
+          size: 11,
           color: '#374151',
+          face: 'system-ui, -apple-system, sans-serif',
         },
         borderWidth: 2,
-        shadow: true,
+        shadow: {
+          enabled: true,
+          color: 'rgba(0,0,0,0.1)',
+          size: 8,
+          x: 2,
+          y: 2,
+        },
       },
       edges: {
         smooth: {
@@ -198,15 +229,19 @@ export function AddressGraph({
           type: 'continuous',
           roundness: 0.5,
         },
-        shadow: true,
+        shadow: {
+          enabled: true,
+          color: 'rgba(0,0,0,0.05)',
+          size: 4,
+        },
       },
       physics: {
         enabled: true,
         solver: 'forceAtlas2Based',
         forceAtlas2Based: {
-          gravitationalConstant: -50,
+          gravitationalConstant: -60,
           centralGravity: 0.01,
-          springLength: 150,
+          springLength: 120,
           springConstant: 0.08,
           damping: 0.4,
         },
@@ -218,7 +253,7 @@ export function AddressGraph({
       },
       interaction: {
         hover: true,
-        tooltipDelay: 200,
+        tooltipDelay: 100,
         hideEdgesOnDrag: true,
         hideEdgesOnZoom: true,
       },
@@ -269,7 +304,7 @@ export function AddressGraph({
       <div
         ref={containerRef}
         style={{ height, width: '100%' }}
-        className="border border-gray-200 rounded-lg bg-gray-50"
+        className="border border-gray-200 rounded-lg bg-slate-50"
       />
       {selectedNode && (
         <div className="mt-2 text-sm text-gray-600">
@@ -280,36 +315,51 @@ export function AddressGraph({
   )
 }
 
-// Legend component
+// Legend component with updated colors
 export function GraphLegend() {
   return (
     <div className="flex flex-wrap gap-4 text-sm">
       <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-blue-700" />
+        <div
+          className="w-4 h-4 rounded-full"
+          style={{ backgroundColor: COLORS.center.background, border: `2px solid ${COLORS.center.border}` }}
+        />
         <span>Center Address</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-green-700" />
+        <div
+          className="w-4 h-4 rounded-full"
+          style={{ backgroundColor: COLORS.low.background, border: `2px solid ${COLORS.low.border}` }}
+        />
         <span>Low Risk (&lt;0.4)</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded-full bg-yellow-500 border-2 border-yellow-700" />
+        <div
+          className="w-4 h-4 rounded-full"
+          style={{ backgroundColor: COLORS.medium.background, border: `2px solid ${COLORS.medium.border}` }}
+        />
         <span>Medium Risk (0.4-0.6)</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded-full bg-orange-500 border-2 border-orange-700" />
+        <div
+          className="w-4 h-4 rounded-full"
+          style={{ backgroundColor: COLORS.high.background, border: `2px solid ${COLORS.high.border}` }}
+        />
         <span>High Risk (0.6-0.8)</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-red-700" />
+        <div
+          className="w-4 h-4 rounded-full"
+          style={{ backgroundColor: COLORS.critical.background, border: `2px solid ${COLORS.critical.border}` }}
+        />
         <span>Critical Risk (&gt;0.8)</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="w-8 h-0.5 bg-green-500" />
+        <div className="w-6 h-0.5" style={{ backgroundColor: COLORS.edge.incoming }} />
         <span>Incoming</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="w-8 h-0.5 bg-red-500" />
+        <div className="w-6 h-0.5" style={{ backgroundColor: COLORS.edge.outgoing }} />
         <span>Outgoing</span>
       </div>
     </div>

@@ -212,22 +212,20 @@ export function HighRiskNetworkPage() {
                 <div className="flex rounded-md overflow-hidden border border-gray-300">
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
-                      viewMode === 'list'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === 'list'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     <List className="w-4 h-4" />
                     List
                   </button>
                   <button
                     onClick={() => setViewMode('graph')}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
-                      viewMode === 'graph'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === 'graph'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     <NetworkIcon className="w-4 h-4" />
                     Graph
@@ -351,13 +349,12 @@ export function HighRiskNetworkPage() {
                             </td>
                             <td className="px-4 py-3">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded text-sm font-medium ${
-                                  addr.riskScore >= 0.8
-                                    ? 'bg-red-100 text-red-800'
-                                    : addr.riskScore >= 0.6
-                                      ? 'bg-orange-100 text-orange-800'
-                                      : 'bg-yellow-100 text-yellow-800'
-                                }`}
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-sm font-medium ${addr.riskScore >= 0.8
+                                  ? 'bg-red-100 text-red-800'
+                                  : addr.riskScore >= 0.6
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                                  }`}
                               >
                                 {addr.riskScore?.toFixed(2) || 'N/A'}
                               </span>
@@ -541,19 +538,19 @@ export function HighRiskNetworkPage() {
   )
 }
 
-// Helper functions
+// Helper functions - softer color palette
 function getRiskColor(riskScore: number | undefined): string {
   if (riskScore === undefined) return '#9CA3AF'
-  if (riskScore >= 0.8) return '#DC2626'
-  if (riskScore >= 0.6) return '#EA580C'
-  if (riskScore >= 0.4) return '#CA8A04'
-  return '#16A34A'
+  if (riskScore >= 0.8) return '#F87171'
+  if (riskScore >= 0.6) return '#FB923C'
+  if (riskScore >= 0.4) return '#FBBF24'
+  return '#34D399'
 }
 
 function getRiskBorderColor(riskScore: number | undefined): string {
   if (riskScore === undefined) return '#6B7280'
-  if (riskScore >= 0.8) return '#991B1B'
-  if (riskScore >= 0.6) return '#9A3412'
-  if (riskScore >= 0.4) return '#854D0E'
-  return '#15803D'
+  if (riskScore >= 0.8) return '#EF4444'
+  if (riskScore >= 0.6) return '#F97316'
+  if (riskScore >= 0.4) return '#F59E0B'
+  return '#10B981'
 }
