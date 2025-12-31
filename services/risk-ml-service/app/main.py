@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_config
 from app.core.logging import setup_logging, get_logger
+from app.core.nacos import get_nacos_client
 from app.api.v1.risk import router as risk_router, get_risk_service
 
 # Setup logging first
@@ -20,9 +21,20 @@ async def lifespan(app: FastAPI):
         env=config.server.env,
         port=config.server.port,
     )
+    
+    # Initialize Nacos
+    nacos_client = get_nacos_client()
+    await nacos_client.init()
+    
     yield
+    
     # Cleanup
     logger.info("Shutting down Risk ML Service")
+    
+    # Close Nacos
+    await nacos_client.close()
+    
+    # Close risk service
     service = get_risk_service()
     await service.close()
 
@@ -50,6 +62,17 @@ app.add_middleware(
 async def health_check():
     """Health check endpoint."""
     return {"status": "ok", "service": config.server.name}
+
+
+@app.get("/admin/status")
+async def admin_status():
+    """Admin status endpoint with Nacos info."""
+    nacos_client = get_nacos_client()
+    return {
+        **nacos_client.get_status(),
+        "status": "healthy",
+        "timestamp": __import__("time").time() * 1000,
+    }
 
 
 @app.get("/")

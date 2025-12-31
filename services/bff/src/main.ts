@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { NacosService } from './common/nacos.service';
 import { getConfig } from './config/config';
 import { logger } from './common/logger';
 
@@ -29,6 +30,22 @@ async function bootstrap() {
     }),
   );
 
+  // Admin status endpoint
+  const httpAdapter = app.getHttpAdapter();
+  const nacosService = app.get(NacosService);
+  
+  httpAdapter.get('/admin/status', (req, res) => {
+    res.json({
+      ...nacosService.getStatus(),
+      status: 'healthy',
+      timestamp: Date.now(),
+    });
+  });
+
+  httpAdapter.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+  });
+
   // Swagger documentation (only in non-production)
   if (config.server.env !== 'production') {
     const swaggerConfig = new DocumentBuilder()
@@ -53,6 +70,7 @@ async function bootstrap() {
     name: config.server.name,
     port: config.server.port,
     env: config.server.env,
+    nacos: nacosService.isEnabled(),
   });
 }
 

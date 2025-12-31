@@ -8,11 +8,14 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/0ksks/chain-risk-platform/query-service/internal/config"
 	"github.com/0ksks/chain-risk-platform/query-service/internal/handler"
+	"github.com/0ksks/chain-risk-platform/query-service/internal/nacos"
 	"github.com/0ksks/chain-risk-platform/query-service/internal/repository"
 	"github.com/0ksks/chain-risk-platform/query-service/internal/service"
 	"github.com/gin-gonic/gin"
@@ -56,6 +59,27 @@ func main() {
 		zap.String("env", cfg.Server.Env),
 		zap.Int("port", cfg.Server.Port))
 
+	// Initialize Nacos client (optional)
+	var nacosClient *nacos.Client
+	if nacosServer := os.Getenv("NACOS_SERVER"); nacosServer != "" {
+		nacosClient, err = initNacosClient(cfg.Server.Port, zapLogger)
+		if err != nil {
+			zapLogger.Warn("Failed to initialize Nacos client, running without Nacos", zap.Error(err))
+		} else {
+			zapLogger.Info("Nacos client initialized", zap.String("server", nacosServer))
+
+			// Register service with Nacos
+			if err := nacosClient.RegisterService(map[string]string{
+				"version": version,
+				"env":     cfg.Server.Env,
+			}); err != nil {
+				zapLogger.Warn("Failed to register service with Nacos", zap.Error(err))
+			}
+		}
+	} else {
+		zapLogger.Info("NACOS_SERVER not set, running without Nacos integration")
+	}
+
 	// Initialize database
 	db, err := initDatabase(cfg.Database, zapLogger)
 	if err != nil {
@@ -83,7 +107,7 @@ func main() {
 	addressHandler := handler.NewAddressHandler(queryService, zapLogger)
 
 	// Setup router
-	router := setupRouter(cfg, transferHandler, addressHandler, zapLogger)
+	router := setupRouter(cfg, transferHandler, addressHandler, nacosClient, zapLogger)
 
 	// Start server
 	srv := &http.Server{
@@ -107,6 +131,11 @@ func main() {
 
 	zapLogger.Info("Shutting down server...")
 
+	// Cleanup Nacos
+	if nacosClient != nil {
+		nacosClient.Close()
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -122,6 +151,44 @@ func main() {
 	}
 
 	zapLogger.Info("Server stopped")
+}
+
+func initNacosClient(servicePort int, logger *zap.Logger) (*nacos.Client, error) {
+	nacosServer := os.Getenv("NACOS_SERVER")
+	if nacosServer == "" {
+		return nil, fmt.Errorf("NACOS_SERVER not set")
+	}
+
+	// Parse host:port
+	var serverAddr string
+	var serverPort uint64 = 18848
+
+	parts := strings.Split(nacosServer, ":")
+	serverAddr = parts[0]
+	if len(parts) > 1 {
+		if p, err := strconv.ParseUint(parts[1], 10, 64); err == nil {
+			serverPort = p
+		}
+	}
+
+	// Get service IP
+	serviceIP := os.Getenv("SERVICE_IP")
+	if serviceIP == "" {
+		serviceIP = "127.0.0.1"
+	}
+
+	nacosCfg := &nacos.Config{
+		ServerAddr:  serverAddr,
+		ServerPort:  serverPort,
+		NamespaceID: os.Getenv("NACOS_NAMESPACE"),
+		Username:    os.Getenv("NACOS_USERNAME"),
+		Password:    os.Getenv("NACOS_PASSWORD"),
+		ServiceName: "query-service",
+		ServiceIP:   serviceIP,
+		ServicePort: uint64(servicePort),
+	}
+
+	return nacos.NewClient(nacosCfg, logger)
 }
 
 func initLogger(cfg config.LoggingConfig) (*zap.Logger, error) {
@@ -216,7 +283,7 @@ func initRedis(cfg config.RedisConfig) (*redis.Client, error) {
 	return client, nil
 }
 
-func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, addressHandler *handler.AddressHandler, zapLogger *zap.Logger) *gin.Engine {
+func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, addressHandler *handler.AddressHandler, nacosClient *nacos.Client, zapLogger *zap.Logger) *gin.Engine {
 	if cfg.Server.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -232,6 +299,22 @@ func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, a
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// Admin status endpoint (if Nacos is enabled)
+	if nacosClient != nil {
+		router.GET("/admin/status", func(c *gin.Context) {
+			config := nacosClient.GetConfig()
+			c.JSON(http.StatusOK, gin.H{
+				"service": "query-service",
+				"status":  "healthy",
+				"nacos":   true,
+				"config": gin.H{
+					"pipelineEnabled": config.Pipeline.Enabled,
+					"cacheTtlSeconds": config.Risk.CacheTtlSeconds,
+				},
+			})
+		})
+	}
 
 	// Swagger docs (disabled in production)
 	if cfg.Server.Env != "production" {
