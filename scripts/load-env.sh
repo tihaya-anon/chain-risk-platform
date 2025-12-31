@@ -54,7 +54,9 @@ export KAFKA_GROUP_ID=chain-risk-platform
 
 # ==================== Nacos ====================
 export NACOS_SERVER="${DOCKER_HOST_IP}:18848"
-export NACOS_NAMESPACE=public
+# Note: Use empty string for default/public namespace
+# The "public" namespace in Nacos UI corresponds to empty namespace ID
+export NACOS_NAMESPACE=
 # Note: Leave NACOS_USERNAME and NACOS_PASSWORD empty when Nacos auth is disabled
 # If auth is enabled, set these to valid credentials
 export NACOS_USERNAME=
