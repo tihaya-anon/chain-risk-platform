@@ -192,11 +192,15 @@ export function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="flex justify-between p-3 bg-gray-50 rounded">
                   <span className="text-gray-500">Last Sync Time</span>
-                  <span className="font-medium">{formatTime(syncStatus?.lastSyncTime)}</span>
+                  <span className="font-medium">
+                    {formatTime(syncStatus?.lastSyncTime)}
+                  </span>
                 </div>
                 <div className="flex justify-between p-3 bg-gray-50 rounded">
                   <span className="text-gray-500">Next Scheduled Sync</span>
-                  <span className="font-medium">{formatTime(syncStatus?.nextSyncTime)}</span>
+                  <span className="font-medium">
+                    {formatTime(syncStatus?.nextSyncTime)}
+                  </span>
                 </div>
               </div>
 
@@ -372,7 +376,9 @@ export function AdminPage() {
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="font-medium text-green-800">Propagation Complete</p>
                 <div className="mt-2 text-sm text-green-700 space-y-1">
-                  <p>Addresses affected: {propagateTagsMutation.data.addressesAffected}</p>
+                  <p>
+                    Addresses affected: {propagateTagsMutation.data.addressesAffected}
+                  </p>
                   <p>Tags propagated: {propagateTagsMutation.data.tagsPropagated}</p>
                   <p>Duration: {propagateTagsMutation.data.durationMs}ms</p>
                 </div>

@@ -37,7 +37,8 @@ export function DashboardPage() {
   const riskDistribution = {
     critical: highRiskAddresses.filter((a) => a.riskScore >= 0.8).length,
     high: highRiskAddresses.filter((a) => a.riskScore >= 0.6 && a.riskScore < 0.8).length,
-    medium: highRiskAddresses.filter((a) => a.riskScore >= 0.4 && a.riskScore < 0.6).length,
+    medium: highRiskAddresses.filter((a) => a.riskScore >= 0.4 && a.riskScore < 0.6)
+      .length,
   }
 
   const formatNumber = (num?: number) => {
@@ -279,7 +280,9 @@ export function DashboardPage() {
                 <TrendingUp className="w-5 h-5 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">Path Finder</p>
-                  <p className="text-xs text-gray-500">Find connections between addresses</p>
+                  <p className="text-xs text-gray-500">
+                    Find connections between addresses
+                  </p>
                 </div>
               </Link>
               <Link

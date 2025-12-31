@@ -1,14 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "react-router-dom"
-import {
-  Tag,
-  Search,
-  ExternalLink,
-  Network,
-  Filter,
-  X,
-} from "lucide-react"
+import { Tag, Search, ExternalLink, Network, Filter, X } from "lucide-react"
 import { Button, Card, Input, LoadingSpinner, RiskBadge } from "@/components/common"
 import { graphService } from "@/services"
 
