@@ -3,8 +3,8 @@
  * Initialize MSW for browser environment
  */
 
-import { setupWorker } from 'msw/browser'
-import { handlers } from './handlers'
+import { setupWorker } from "msw/browser"
+import { handlers } from "./handlers"
 
 // Create MSW worker with all handlers
 export const worker = setupWorker(...handlers)
@@ -13,11 +13,11 @@ export const worker = setupWorker(...handlers)
 export const startMockWorker = async () => {
   if (import.meta.env.DEV) {
     await worker.start({
-      onUnhandledRequest: 'bypass', // Don't warn about unhandled requests
+      onUnhandledRequest: "bypass", // Don't warn about unhandled requests
       serviceWorker: {
-        url: '/mockServiceWorker.js',
+        url: "/mockServiceWorker.js",
       },
     })
-    console.log('[MSW] Mock Service Worker started')
+    console.log("[MSW] Mock Service Worker started")
   }
 }

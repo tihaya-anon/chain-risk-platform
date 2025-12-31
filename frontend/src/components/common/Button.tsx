@@ -1,9 +1,9 @@
-import { clsx } from 'clsx'
-import { Button as BaseButton } from '@base-ui-components/react/button'
-import type { ReactNode, ButtonHTMLAttributes } from 'react'
+import { clsx } from "clsx"
+import { Button as BaseButton } from "@base-ui-components/react/button"
+import type { ReactNode, ButtonHTMLAttributes } from "react"
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
-type ButtonSize = 'sm' | 'md' | 'lg'
+type ButtonVariant = "primary" | "secondary" | "danger" | "ghost"
+type ButtonSize = "sm" | "md" | "lg"
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
@@ -13,21 +13,21 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-  secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-  ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
+  primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
+  secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500",
+  danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
+  ghost: "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500",
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base',
+  sm: "px-3 py-1.5 text-sm",
+  md: "px-4 py-2 text-sm",
+  lg: "px-6 py-3 text-base",
 }
 
 export function Button({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   loading = false,
   disabled,
   className,
@@ -38,10 +38,10 @@ export function Button({
     <BaseButton
       disabled={disabled || loading}
       className={clsx(
-        'inline-flex items-center justify-center font-medium rounded-lg',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2',
-        'transition-colors duration-200',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
+        "inline-flex items-center justify-center font-medium rounded-lg",
+        "focus:outline-none focus:ring-2 focus:ring-offset-2",
+        "transition-colors duration-200",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
         variantStyles[variant],
         sizeStyles[size],
         className
@@ -49,11 +49,7 @@ export function Button({
       {...props}
     >
       {loading && (
-        <svg
-          className="animate-spin -ml-1 mr-2 h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
+        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
           <circle
             className="opacity-25"
             cx="12"

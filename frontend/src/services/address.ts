@@ -1,5 +1,5 @@
-import api from './api'
-import type { AddressInfo, AddressStats, Transfer, PaginatedResponse } from '@/types'
+import api from "./api"
+import type { AddressInfo, AddressStats, Transfer, PaginatedResponse } from "@/types"
 
 export interface TransferQuery {
   page?: number
@@ -11,7 +11,7 @@ export interface TransferQuery {
 }
 
 export const addressService = {
-  getAddressInfo: async (address: string, network = 'ethereum'): Promise<AddressInfo> => {
+  getAddressInfo: async (address: string, network = "ethereum"): Promise<AddressInfo> => {
     const response = await api.get<AddressInfo>(`/addresses/${address}`, {
       params: { network },
     })
@@ -29,7 +29,10 @@ export const addressService = {
     return response.data
   },
 
-  getAddressStats: async (address: string, network = 'ethereum'): Promise<AddressStats> => {
+  getAddressStats: async (
+    address: string,
+    network = "ethereum"
+  ): Promise<AddressStats> => {
     const response = await api.get<AddressStats>(`/addresses/${address}/stats`, {
       params: { network },
     })

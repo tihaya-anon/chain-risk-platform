@@ -1,16 +1,16 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
-import { Button, Input } from '@/components/common'
-import { authService } from '@/services'
-import { useAuthStore } from '@/store/auth'
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { useMutation } from "@tanstack/react-query"
+import { Button, Input } from "@/components/common"
+import { authService } from "@/services"
+import { useAuthStore } from "@/store/auth"
 
 export function LoginPage() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
 
   const loginMutation = useMutation({
     mutationFn: authService.login,
@@ -18,22 +18,22 @@ export function LoginPage() {
       // Get user profile
       const token = data.accessToken
       // Decode JWT to get user info (simple decode, not verify)
-      const payload = JSON.parse(atob(token.split('.')[1]))
+      const payload = JSON.parse(atob(token.split(".")[1]))
       setAuth(token, {
         sub: payload.sub,
         username: payload.username,
         role: payload.role,
       })
-      navigate('/')
+      navigate("/")
     },
     onError: () => {
-      setError('Invalid username or password')
+      setError("Invalid username or password")
     },
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    setError("")
     loginMutation.mutate({ username, password })
   }
 
@@ -42,12 +42,8 @@ export function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <span className="text-6xl">🔗</span>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Chain Risk Platform
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Sign in to access the dashboard
-          </p>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">Chain Risk Platform</h2>
+          <p className="mt-2 text-sm text-gray-600">Sign in to access the dashboard</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -70,9 +66,7 @@ export function LoginPage() {
             />
           </div>
 
-          {error && (
-            <div className="text-sm text-red-600 text-center">{error}</div>
-          )}
+          {error && <div className="text-sm text-red-600 text-center">{error}</div>}
 
           <Button
             type="submit"
