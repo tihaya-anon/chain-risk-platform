@@ -55,8 +55,10 @@ export KAFKA_GROUP_ID=chain-risk-platform
 # ==================== Nacos ====================
 export NACOS_SERVER="${DOCKER_HOST_IP}:18848"
 export NACOS_NAMESPACE=public
-export NACOS_USERNAME=nacos
-export NACOS_PASSWORD=nacos
+# Note: Leave NACOS_USERNAME and NACOS_PASSWORD empty when Nacos auth is disabled
+# If auth is enabled, set these to valid credentials
+export NACOS_USERNAME=
+export NACOS_PASSWORD=
 
 # ==================== Monitoring ====================
 export JAEGER_AGENT_HOST=$DOCKER_HOST_IP
