@@ -17,12 +17,13 @@ export interface GraphEdge {
   to: string
   label?: string
   arrows?: string
-  color?: string | { color: string; highlight?: string }
+  color?: string | { color: string; highlight?: string; hover?: string }
   width?: number
   dashes?: boolean
+  hoverWidth?: number
 }
 
-// Export neighbor info for hover panel
+// Export neighbor info for hover/select panel
 export interface HoveredNodeInfo {
   address: string
   riskScore?: number
@@ -35,9 +36,10 @@ export interface HoveredNodeInfo {
 interface AddressGraphProps {
   centerAddress: string
   neighbors: NeighborInfo[]
-  onNodeClick?: (address: string) => void
-  onNodeDoubleClick?: (address: string) => void
+  selectedNode?: string | null
+  onNodeSelect?: (info: HoveredNodeInfo | null) => void
   onNodeHover?: (info: HoveredNodeInfo | null) => void
+  onNodeDoubleClick?: (address: string) => void
   height?: string
   className?: string
 }
@@ -98,9 +100,10 @@ function formatAddress(address: string): string {
 export function AddressGraph({
   centerAddress,
   neighbors,
-  onNodeClick,
-  onNodeDoubleClick,
+  selectedNode,
+  onNodeSelect,
   onNodeHover,
+  onNodeDoubleClick,
   height = '500px',
   className = '',
 }: AddressGraphProps) {
@@ -110,15 +113,35 @@ export function AddressGraph({
 
   // Store callbacks in refs to avoid re-creating network on callback changes
   const onNodeHoverRef = useRef(onNodeHover)
-  const onNodeClickRef = useRef(onNodeClick)
+  const onNodeSelectRef = useRef(onNodeSelect)
   const onNodeDoubleClickRef = useRef(onNodeDoubleClick)
+  const selectedNodeRef = useRef(selectedNode)
 
-  // Update refs when callbacks change
+  // Update refs when callbacks/props change
   useEffect(() => {
     onNodeHoverRef.current = onNodeHover
-    onNodeClickRef.current = onNodeClick
+    onNodeSelectRef.current = onNodeSelect
     onNodeDoubleClickRef.current = onNodeDoubleClick
-  }, [onNodeHover, onNodeClick, onNodeDoubleClick])
+    selectedNodeRef.current = selectedNode
+  }, [onNodeHover, onNodeSelect, onNodeDoubleClick, selectedNode])
+
+  // Helper to get node info
+  const getNodeInfo = useCallback((nodeId: string): HoveredNodeInfo | null => {
+    if (nodeId === centerAddress) {
+      return { address: centerAddress, isCenter: true }
+    }
+    const neighbor = neighborsMapRef.current.get(nodeId)
+    if (neighbor) {
+      return {
+        address: neighbor.address,
+        riskScore: neighbor.riskScore,
+        tags: neighbor.tags,
+        transferCount: neighbor.transferCount,
+        direction: neighbor.direction,
+      }
+    }
+    return null
+  }, [centerAddress])
 
   // Build graph data
   const buildGraphData = useCallback(() => {
@@ -158,6 +181,13 @@ export function AddressGraph({
       const edgeId = `edge-${index}`
       const edgeWidth = Math.min(4, 1.5 + neighbor.transferCount * 0.15)
 
+      // Edge color - same color for highlight/hover to prevent color change
+      const getEdgeColor = (baseColor: string) => ({
+        color: baseColor,
+        highlight: baseColor,
+        hover: baseColor,
+      })
+
       if (neighbor.direction === 'incoming') {
         edges.push({
           id: edgeId,
@@ -165,7 +195,7 @@ export function AddressGraph({
           to: centerAddress,
           arrows: 'to',
           width: edgeWidth,
-          color: { color: COLORS.edge.incoming, highlight: '#34D399' },
+          color: getEdgeColor(COLORS.edge.incoming),
         })
       } else if (neighbor.direction === 'outgoing') {
         edges.push({
@@ -174,7 +204,7 @@ export function AddressGraph({
           to: neighbor.address,
           arrows: 'to',
           width: edgeWidth,
-          color: { color: COLORS.edge.outgoing, highlight: '#FB923C' },
+          color: getEdgeColor(COLORS.edge.outgoing),
         })
       } else {
         // Both directions
@@ -184,7 +214,7 @@ export function AddressGraph({
           to: neighbor.address,
           arrows: 'to;from',
           width: edgeWidth,
-          color: { color: COLORS.edge.both, highlight: '#9CA3AF' },
+          color: getEdgeColor(COLORS.edge.both),
         })
       }
     })
@@ -230,6 +260,8 @@ export function AddressGraph({
           color: 'rgba(0,0,0,0.05)',
           size: 4,
         },
+        hoverWidth: 1.5, // Multiplier for edge width on hover
+        selectionWidth: 1.5,
       },
       physics: {
         enabled: true,
@@ -252,6 +284,7 @@ export function AddressGraph({
         tooltipDelay: 0,
         hideEdgesOnDrag: true,
         hideEdgesOnZoom: true,
+        selectConnectedEdges: false,
       },
       layout: {
         improvedLayout: true,
@@ -264,38 +297,43 @@ export function AddressGraph({
       options
     )
 
-    // Hover event - update info panel (use ref to avoid re-creating network)
+    // Hover event - only trigger if no node is selected
     network.on('hoverNode', (params) => {
+      // Skip hover if a node is selected
+      if (selectedNodeRef.current) return
+
       const nodeId = params.node as string
-      if (nodeId === centerAddress) {
-        onNodeHoverRef.current?.({
-          address: centerAddress,
-          isCenter: true,
-        })
-      } else {
-        const neighbor = neighborsMapRef.current.get(nodeId)
-        if (neighbor) {
-          onNodeHoverRef.current?.({
-            address: neighbor.address,
-            riskScore: neighbor.riskScore,
-            tags: neighbor.tags,
-            transferCount: neighbor.transferCount,
-            direction: neighbor.direction,
-          })
-        }
+      const info = getNodeInfo(nodeId)
+      if (info) {
+        onNodeHoverRef.current?.(info)
       }
     })
 
     network.on('blurNode', () => {
-      // Optionally clear hover info when mouse leaves node
-      // onNodeHoverRef.current?.(null)
+      // Clear hover info only if no node is selected
+      if (!selectedNodeRef.current) {
+        onNodeHoverRef.current?.(null)
+      }
     })
 
-    // Click event
+    // Click event - toggle selection
     network.on('click', (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
-        onNodeClickRef.current?.(nodeId)
+
+        // If clicking the same node, deselect it
+        if (selectedNodeRef.current === nodeId) {
+          onNodeSelectRef.current?.(null)
+        } else {
+          // Select new node
+          const info = getNodeInfo(nodeId)
+          if (info) {
+            onNodeSelectRef.current?.(info)
+          }
+        }
+      } else {
+        // Clicked on empty space - deselect
+        onNodeSelectRef.current?.(null)
       }
     })
 
@@ -317,7 +355,7 @@ export function AddressGraph({
       network.destroy()
       networkRef.current = null
     }
-  }, [buildGraphData, centerAddress])
+  }, [buildGraphData, centerAddress, getNodeInfo])
 
   return (
     <div className={className}>

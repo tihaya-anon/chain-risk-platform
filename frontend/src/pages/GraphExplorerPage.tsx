@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   ArrowLeftRight,
   MousePointer,
+  MousePointerClick,
 } from 'lucide-react'
 import { Button, Input, Card, LoadingSpinner } from '@/components/common'
 import { AddressGraph, GraphLegend } from '@/components/graph'
@@ -31,6 +32,7 @@ export function GraphExplorerPage() {
   const [depth, setDepth] = useState(1)
   const [limit, setLimit] = useState(30)
   const [hoveredNode, setHoveredNode] = useState<HoveredNodeInfo | null>(null)
+  const [selectedNode, setSelectedNode] = useState<HoveredNodeInfo | null>(null)
 
   // Sync with URL changes (fixes the navigation issue)
   useEffect(() => {
@@ -38,6 +40,9 @@ export function GraphExplorerPage() {
     if (addressFromUrl && addressFromUrl !== currentAddress) {
       setSearchAddress(addressFromUrl)
       setCurrentAddress(addressFromUrl)
+      // Clear selection when navigating to new address
+      setSelectedNode(null)
+      setHoveredNode(null)
     }
   }, [searchParams, currentAddress])
 
@@ -83,10 +88,6 @@ export function GraphExplorerPage() {
     }
   }
 
-  const handleNodeClick = (address: string) => {
-    console.log('Node clicked:', address)
-  }
-
   const handleNodeDoubleClick = (address: string) => {
     setSearchAddress(address)
     setCurrentAddress(address)
@@ -95,6 +96,14 @@ export function GraphExplorerPage() {
 
   const handleNodeHover = (info: HoveredNodeInfo | null) => {
     setHoveredNode(info)
+  }
+
+  const handleNodeSelect = (info: HoveredNodeInfo | null) => {
+    setSelectedNode(info)
+    // Clear hover when selecting
+    if (info) {
+      setHoveredNode(null)
+    }
   }
 
   const handleAddTag = () => {
@@ -107,6 +116,10 @@ export function GraphExplorerPage() {
   const isLoading = addressInfoQuery.isLoading || neighborsQuery.isLoading
   const addressInfo = addressInfoQuery.data
   const neighbors = neighborsQuery.data
+
+  // Display node is either selected (priority) or hovered
+  const displayNode = selectedNode || hoveredNode
+  const isSelected = !!selectedNode
 
   return (
     <div className="h-full flex flex-col">
@@ -202,16 +215,17 @@ export function GraphExplorerPage() {
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
               {/* Graph */}
               <div className="xl:col-span-3">
-                <Card title="Address Graph" subtitle="Hover to see info, double-click to explore">
+                <Card title="Address Graph" subtitle="Click to select, double-click to explore">
                   <div className="mb-4">
                     <GraphLegend />
                   </div>
                   <AddressGraph
                     centerAddress={currentAddress}
                     neighbors={neighbors.neighbors}
-                    onNodeClick={handleNodeClick}
-                    onNodeDoubleClick={handleNodeDoubleClick}
+                    selectedNode={selectedNode?.address}
+                    onNodeSelect={handleNodeSelect}
                     onNodeHover={handleNodeHover}
+                    onNodeDoubleClick={handleNodeDoubleClick}
                     height="600px"
                   />
                   <div className="mt-4 text-sm text-gray-500">
@@ -223,17 +237,30 @@ export function GraphExplorerPage() {
 
               {/* Sidebar */}
               <div className="space-y-6">
-                {/* Hovered Node Info */}
-                <Card title="Hovered Node">
-                  {hoveredNode ? (
+                {/* Selected/Hovered Node Info */}
+                <Card
+                  title={isSelected ? 'Selected Node' : 'Hovered Node'}
+                  className={isSelected ? 'ring-2 ring-blue-500' : ''}
+                >
+                  {displayNode ? (
                     <div className="space-y-3">
+                      {isSelected && (
+                        <div className="flex justify-end">
+                          <button
+                            onClick={() => handleNodeSelect(null)}
+                            className="text-xs text-gray-500 hover:text-gray-700 underline"
+                          >
+                            Clear selection
+                          </button>
+                        </div>
+                      )}
                       <div>
                         <label className="text-xs text-gray-500">Address</label>
                         <p className="font-mono text-xs break-all">
-                          {hoveredNode.address}
+                          {displayNode.address}
                         </p>
                       </div>
-                      {hoveredNode.isCenter ? (
+                      {displayNode.isCenter ? (
                         <div className="py-2 px-3 bg-blue-50 rounded-lg text-center">
                           <span className="text-sm text-blue-700 font-medium">
                             Center Address
@@ -244,36 +271,40 @@ export function GraphExplorerPage() {
                           <div className="grid grid-cols-2 gap-2">
                             <div>
                               <label className="text-xs text-gray-500">Risk Score</label>
-                              <p className={`font-medium ${
-                                (hoveredNode.riskScore ?? 0) >= 0.6
-                                  ? 'text-red-600'
-                                  : 'text-green-600'
-                              }`}>
-                                {hoveredNode.riskScore?.toFixed(2) || 'N/A'}
+                              <p
+                                className={`font-medium ${
+                                  (displayNode.riskScore ?? 0) >= 0.6
+                                    ? 'text-red-600'
+                                    : 'text-green-600'
+                                }`}
+                              >
+                                {displayNode.riskScore?.toFixed(2) || 'N/A'}
                               </p>
                             </div>
                             <div>
                               <label className="text-xs text-gray-500">Transfers</label>
-                              <p className="font-medium">{hoveredNode.transferCount || 0}</p>
+                              <p className="font-medium">
+                                {displayNode.transferCount || 0}
+                              </p>
                             </div>
                           </div>
-                          {hoveredNode.direction && (
+                          {displayNode.direction && (
                             <div>
                               <label className="text-xs text-gray-500">Direction</label>
                               <div className="flex items-center gap-2 mt-1">
-                                {hoveredNode.direction === 'incoming' && (
+                                {displayNode.direction === 'incoming' && (
                                   <>
                                     <ArrowDownLeft className="w-4 h-4 text-green-600" />
                                     <span className="text-sm text-green-600">Incoming</span>
                                   </>
                                 )}
-                                {hoveredNode.direction === 'outgoing' && (
+                                {displayNode.direction === 'outgoing' && (
                                   <>
                                     <ArrowUpRight className="w-4 h-4 text-red-600" />
                                     <span className="text-sm text-red-600">Outgoing</span>
                                   </>
                                 )}
-                                {hoveredNode.direction === 'both' && (
+                                {displayNode.direction === 'both' && (
                                   <>
                                     <ArrowLeftRight className="w-4 h-4 text-gray-600" />
                                     <span className="text-sm text-gray-600">Bidirectional</span>
@@ -282,11 +313,11 @@ export function GraphExplorerPage() {
                               </div>
                             </div>
                           )}
-                          {hoveredNode.tags && hoveredNode.tags.length > 0 && (
+                          {displayNode.tags && displayNode.tags.length > 0 && (
                             <div>
                               <label className="text-xs text-gray-500">Tags</label>
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {hoveredNode.tags.map((tag, i) => (
+                                {displayNode.tags.map((tag, i) => (
                                   <span
                                     key={i}
                                     className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded"
@@ -303,8 +334,17 @@ export function GraphExplorerPage() {
                     </div>
                   ) : (
                     <div className="text-center py-4 text-gray-400">
-                      <MousePointer className="w-8 h-8 mx-auto mb-2" />
-                      <p className="text-sm">Hover over a node to see details</p>
+                      {isSelected ? (
+                        <>
+                          <MousePointerClick className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">Click a node to select it</p>
+                        </>
+                      ) : (
+                        <>
+                          <MousePointer className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">Hover over a node to see details</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </Card>
