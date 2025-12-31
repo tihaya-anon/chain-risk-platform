@@ -1,0 +1,80 @@
+# ============================================================
+# Chain Risk Platform - Pipeline Configuration
+# ============================================================
+# DataId: chain-risk-pipeline.yaml
+# Group: DEFAULT_GROUP
+# Description: Shared configuration for all pipeline services
+# ============================================================
+
+# Global pipeline control
+pipeline:
+  # Master switch - disable to stop all data processing
+  enabled: true
+
+  # ==================== Data Ingestion (Go) ====================
+  ingestion:
+    enabled: true
+    network: ethereum
+    polling:
+      # Polling interval in milliseconds (~1 block time for Ethereum)
+      intervalMs: 12000
+      # Number of blocks to fetch per batch
+      batchSize: 10
+      # Number of confirmations to wait
+      confirmations: 12
+    rateLimit:
+      # API requests per second
+      requestsPerSecond: 5
+
+  # ==================== Stream Processor (Flink) ====================
+  stream-processor:
+    enabled: true
+    # Flink parallelism (requires job restart to take effect)
+    parallelism: 2
+    checkpoint:
+      # Checkpoint interval in milliseconds
+      intervalMs: 60000
+    consumer:
+      # Max records per poll
+      maxPollRecords: 500
+
+  # ==================== Graph Engine (Java) ====================
+  graph-sync:
+    enabled: true
+    # Sync interval in milliseconds (5 minutes)
+    intervalMs: 300000
+    # Batch size for syncing transfers
+    batchSize: 1000
+
+  clustering:
+    enabled: true
+    # Minimum cluster size to persist
+    minClusterSize: 2
+    # Maximum depth for common input analysis
+    maxDepth: 3
+
+  propagation:
+    enabled: true
+    # Maximum hops for tag propagation
+    maxHops: 5
+    # Decay factor per hop (0.0 - 1.0)
+    decayFactor: 0.7
+    # Minimum score threshold to continue propagation
+    minThreshold: 0.1
+
+# ==================== Risk Scoring ====================
+risk:
+  # High risk threshold (0.0 - 1.0)
+  highThreshold: 0.7
+  # Medium risk threshold (0.0 - 1.0)
+  mediumThreshold: 0.4
+  # Cache TTL in seconds
+  cacheTtlSeconds: 300
+
+# ==================== Alert Settings ====================
+alert:
+  enabled: false
+  # Minimum risk score to trigger alert
+  minRiskScore: 0.8
+  # Alert cooldown in seconds (prevent spam)
+  cooldownSeconds: 3600

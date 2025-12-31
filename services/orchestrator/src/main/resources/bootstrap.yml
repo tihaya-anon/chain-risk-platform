@@ -1,0 +1,39 @@
+# ============================================================
+# Bootstrap Configuration for Nacos
+# ============================================================
+# This file is loaded BEFORE application.yml
+# Used for Nacos Config and Discovery setup
+# ============================================================
+
+spring:
+  application:
+    name: orchestrator
+
+  cloud:
+    nacos:
+      # Nacos Server Address
+      server-addr: ${NACOS_SERVER:localhost:18848}
+
+      # Configuration Center
+      config:
+        enabled: true
+        file-extension: yaml
+        # Shared configuration for all services
+        shared-configs:
+          - data-id: chain-risk-pipeline.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+        # Refresh configuration dynamically
+        refresh-enabled: true
+
+      # Service Discovery
+      discovery:
+        enabled: true
+        # Service registration
+        register-enabled: true
+        # Service group
+        group: DEFAULT_GROUP
+        # Service metadata
+        metadata:
+          version: 0.1.0
+          env: ${SPRING_PROFILES_ACTIVE:dev}

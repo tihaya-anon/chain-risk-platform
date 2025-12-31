@@ -5,16 +5,20 @@ spring:
   application:
     name: graph-engine
 
+  # Import Nacos configuration
+  config:
+    import: optional:nacos:chain-risk-pipeline.yaml
+
   # Neo4j Configuration
   neo4j:
-    uri: bolt://${NEO4J_HOST:localhost}:${NEO4J_PORT:7687}
+    uri: bolt://${NEO4J_HOST:localhost}:${NEO4J_PORT:17687}
     authentication:
       username: ${NEO4J_USERNAME:neo4j}
       password: ${NEO4J_PASSWORD:chainrisk123}
 
   # PostgreSQL Configuration (for reading transfers)
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:chainrisk}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:15432}/${POSTGRES_DB:chainrisk}
     username: ${POSTGRES_USER:chainrisk}
     password: ${POSTGRES_PASSWORD:chainrisk123}
     driver-class-name: org.postgresql.Driver
@@ -30,37 +34,37 @@ spring:
     resources:
       add-mappings: true
 
-# Graph Engine Configuration
+# Graph Engine Configuration (defaults, can be overridden by Nacos)
 graph:
   sync:
-    enabled: true
+    enabled: ${pipeline.graph-sync.enabled:true}
     # Sync interval in milliseconds (5 minutes)
-    interval: 300000
+    interval: ${pipeline.graph-sync.intervalMs:300000}
     # Batch size for syncing transfers
-    batch-size: 1000
+    batch-size: ${pipeline.graph-sync.batchSize:1000}
     # Network to sync
     network: ethereum
 
   clustering:
     # Minimum cluster size to persist
-    min-cluster-size: 2
+    min-cluster-size: ${pipeline.clustering.minClusterSize:2}
     # Maximum depth for common input analysis
-    max-depth: 3
+    max-depth: ${pipeline.clustering.maxDepth:3}
 
   propagation:
     # Maximum hops for tag propagation
-    max-hops: 5
+    max-hops: ${pipeline.propagation.maxHops:5}
     # Decay factor per hop (0.0 - 1.0)
-    decay-factor: 0.7
+    decay-factor: ${pipeline.propagation.decayFactor:0.7}
     # Minimum score threshold to continue propagation
-    min-threshold: 0.1
+    min-threshold: ${pipeline.propagation.minThreshold:0.1}
 
 # Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,refresh
   endpoint:
     health:
       show-details: when_authorized
@@ -72,6 +76,7 @@ logging:
     com.chainrisk.graph: DEBUG
     org.neo4j: INFO
     org.springframework.data.neo4j: INFO
+    com.alibaba.nacos: INFO
 
 # OpenAPI
 springdoc:

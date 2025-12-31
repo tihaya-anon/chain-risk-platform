@@ -6,34 +6,107 @@ import (
 	"math/big"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/client"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/config"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/nacos"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/producer"
 	"go.uber.org/zap"
 )
 
 // Service handles the data ingestion logic
 type Service struct {
-	cfg      *config.Config
-	client   client.BlockchainClient
-	producer producer.Producer
-	logger   *zap.Logger
+	cfg         *config.Config
+	client      client.BlockchainClient
+	producer    producer.Producer
+	logger      *zap.Logger
+	nacosClient *nacos.Client
 
 	lastProcessedBlock uint64
 	mu                 sync.RWMutex
+
+	// Manual control
+	manualPaused atomic.Bool
+	
+	// Dynamic configuration from Nacos
+	batchSize    atomic.Int32
+	intervalMs   atomic.Int32
 }
 
 // NewService creates a new ingestion service
 func NewService(cfg *config.Config, client client.BlockchainClient, producer producer.Producer, logger *zap.Logger) *Service {
-	return &Service{
+	svc := &Service{
 		cfg:      cfg,
 		client:   client,
 		producer: producer,
 		logger:   logger,
 	}
+	
+	// Set default values from local config
+	svc.batchSize.Store(int32(cfg.Blockchain.Polling.BatchSize))
+	svc.intervalMs.Store(int32(cfg.GetPollingInterval().Milliseconds()))
+	
+	return svc
+}
+
+// SetNacosClient sets the Nacos client and registers for config changes
+func (s *Service) SetNacosClient(nacosClient *nacos.Client) {
+	s.nacosClient = nacosClient
+	
+	// Update from Nacos config
+	s.updateFromNacos()
+	
+	// Register for config changes
+	nacosClient.OnConfigChange(func(config *nacos.PipelineConfig) {
+		s.updateFromNacos()
+	})
+}
+
+// updateFromNacos updates service configuration from Nacos
+func (s *Service) updateFromNacos() {
+	if s.nacosClient == nil {
+		return
+	}
+	
+	config := s.nacosClient.GetConfig()
+	
+	if config.Pipeline.Ingestion.Polling.BatchSize > 0 {
+		s.batchSize.Store(int32(config.Pipeline.Ingestion.Polling.BatchSize))
+	}
+	if config.Pipeline.Ingestion.Polling.IntervalMs > 0 {
+		s.intervalMs.Store(int32(config.Pipeline.Ingestion.Polling.IntervalMs))
+	}
+	
+	s.logger.Info("Configuration updated from Nacos",
+		zap.Int32("batchSize", s.batchSize.Load()),
+		zap.Int32("intervalMs", s.intervalMs.Load()))
+}
+
+// shouldRun checks if the service should run based on Nacos config and manual control
+func (s *Service) shouldRun() bool {
+	// Check Nacos config
+	if s.nacosClient != nil {
+		config := s.nacosClient.GetConfig()
+		if !config.Pipeline.Enabled {
+			s.logger.Debug("Skipping - pipeline disabled via Nacos")
+			return false
+		}
+		if !config.Pipeline.Ingestion.Enabled {
+			s.logger.Debug("Skipping - ingestion disabled via Nacos")
+			return false
+		}
+	}
+	
+	// Check manual pause
+	if s.manualPaused.Load() {
+		s.logger.Debug("Skipping - manually paused")
+		return false
+	}
+	
+	return true
 }
 
 // Start begins the data ingestion process
@@ -54,20 +127,27 @@ func (s *Service) Start(ctx context.Context) error {
 
 	s.logger.Info("Starting from block", zap.Uint64("block", startBlock))
 
-	// Start polling loop
-	ticker := time.NewTicker(s.cfg.GetPollingInterval())
-	defer ticker.Stop()
-
+	// Start polling loop with dynamic interval
 	for {
 		select {
 		case <-ctx.Done():
 			s.logger.Info("Shutting down ingestion service")
 			return ctx.Err()
-		case <-ticker.C:
+		default:
+			// Check if we should run
+			if !s.shouldRun() {
+				time.Sleep(time.Second)
+				continue
+			}
+			
+			// Poll blocks
 			if err := s.pollBlocks(ctx); err != nil {
 				s.logger.Error("Error polling blocks", zap.Error(err))
-				// Continue polling despite errors
 			}
+			
+			// Use dynamic interval from Nacos
+			interval := time.Duration(s.intervalMs.Load()) * time.Millisecond
+			time.Sleep(interval)
 		}
 	}
 }
@@ -119,17 +199,24 @@ func (s *Service) pollBlocks(ctx context.Context) error {
 		return nil
 	}
 
-	// Process blocks in batches
-	batchSize := uint64(s.cfg.Blockchain.Polling.BatchSize)
+	// Use dynamic batch size from Nacos
+	batchSize := uint64(s.batchSize.Load())
 	startBlock := lastProcessed + 1
 	endBlock := min64(startBlock+batchSize-1, safeBlock)
 
 	s.logger.Info("Processing blocks",
 		zap.Uint64("from", startBlock),
 		zap.Uint64("to", endBlock),
-		zap.Uint64("latest", latestBlock))
+		zap.Uint64("latest", latestBlock),
+		zap.Uint64("batchSize", batchSize))
 
 	for blockNum := startBlock; blockNum <= endBlock; blockNum++ {
+		// Check if we should stop (manual pause during processing)
+		if s.manualPaused.Load() {
+			s.logger.Info("Processing interrupted by manual pause")
+			break
+		}
+		
 		if err := s.processBlock(ctx, blockNum); err != nil {
 			s.logger.Error("Error processing block",
 				zap.Uint64("block", blockNum),
@@ -233,6 +320,25 @@ func (s *Service) GetLastProcessedBlock() uint64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.lastProcessedBlock
+}
+
+// ==================== Manual Control Methods ====================
+
+// Pause pauses the ingestion service
+func (s *Service) Pause() {
+	s.manualPaused.Store(true)
+	s.logger.Info("Ingestion paused manually")
+}
+
+// Resume resumes the ingestion service
+func (s *Service) Resume() {
+	s.manualPaused.Store(false)
+	s.logger.Info("Ingestion resumed")
+}
+
+// IsPaused returns whether the service is manually paused
+func (s *Service) IsPaused() bool {
+	return s.manualPaused.Load()
 }
 
 func min64(a, b uint64) uint64 {

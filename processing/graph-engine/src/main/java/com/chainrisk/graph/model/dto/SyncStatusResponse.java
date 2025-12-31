@@ -17,7 +17,7 @@ import java.time.Instant;
 public class SyncStatusResponse {
 
     /**
-     * Current sync status
+     * Current sync status (running, idle, disabled_by_nacos, paused_manually, disabled)
      */
     private String status;
 
@@ -55,4 +55,26 @@ public class SyncStatusResponse {
      * Error message if sync failed
      */
     private String errorMessage;
+
+    // ==================== Nacos Configuration Status ====================
+
+    /**
+     * Whether sync is enabled via Nacos config
+     */
+    private Boolean nacosEnabled;
+
+    /**
+     * Whether sync is manually paused via Admin API
+     */
+    private Boolean manualPaused;
+
+    /**
+     * Current batch size from Nacos config
+     */
+    private Integer batchSize;
+
+    /**
+     * Current sync interval in milliseconds from Nacos config
+     */
+    private Long intervalMs;
 }

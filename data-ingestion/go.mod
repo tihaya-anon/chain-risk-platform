@@ -4,10 +4,13 @@ go 1.23.0
 
 require (
 	github.com/IBM/sarama v1.42.1
+	github.com/gin-gonic/gin v1.9.1
 	github.com/joho/godotenv v1.5.1
+	github.com/nacos-group/nacos-sdk-go/v2 v2.2.5
 	github.com/prometheus/client_golang v1.23.2
 	github.com/spf13/viper v1.18.2
 	go.uber.org/zap v1.26.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

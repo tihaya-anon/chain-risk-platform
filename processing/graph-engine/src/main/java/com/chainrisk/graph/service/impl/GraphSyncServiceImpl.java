@@ -1,6 +1,7 @@
 package com.chainrisk.graph.service.impl;
 
 import com.chainrisk.graph.config.GraphProperties;
+import com.chainrisk.graph.config.PipelineProperties;
 import com.chainrisk.graph.model.dto.SyncStatusResponse;
 import com.chainrisk.graph.repository.GraphRepositoryImpl;
 import com.chainrisk.graph.repository.GraphRepositoryImpl.TransferData;
@@ -19,7 +20,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Implementation of GraphSyncService
- * Syncs transfer data from PostgreSQL to Neo4j on a scheduled basis
+ * Syncs transfer data from PostgreSQL to Neo4j on a scheduled basis.
+ * 
+ * Supports:
+ * - Nacos dynamic configuration (pipeline.graph-sync.*)
+ * - Manual pause/resume control via Admin API
  */
 @Slf4j
 @Service
@@ -30,16 +35,21 @@ public class GraphSyncServiceImpl implements GraphSyncService {
     private final SyncStateTracker syncStateTracker;
     private final GraphRepositoryImpl graphRepository;
     private final GraphProperties graphProperties;
+    private final PipelineProperties pipelineProperties;
 
     private final AtomicBoolean syncRunning = new AtomicBoolean(false);
+    
+    // Manual control flag (can be set via Admin API)
+    private final AtomicBoolean manualPaused = new AtomicBoolean(false);
+    
     private volatile Instant lastSyncTime;
     private volatile String lastError;
 
     @Override
     @Scheduled(fixedDelayString = "${graph.sync.interval:300000}", initialDelay = 10000)
     public int syncTransfers() {
-        if (!graphProperties.getSync().isEnabled()) {
-            log.debug("Sync is disabled");
+        // Check if sync should run
+        if (!shouldRunSync()) {
             return 0;
         }
 
@@ -60,13 +70,49 @@ public class GraphSyncServiceImpl implements GraphSyncService {
         }
     }
 
+    /**
+     * Check if sync should run based on Nacos config and manual control
+     */
+    private boolean shouldRunSync() {
+        // Check Nacos pipeline master switch
+        if (!pipelineProperties.isEnabled()) {
+            log.debug("Sync skipped - pipeline disabled via Nacos config");
+            return false;
+        }
+        
+        // Check Nacos graph-sync switch
+        if (!pipelineProperties.getGraphSync().isEnabled()) {
+            log.debug("Sync skipped - graph-sync disabled via Nacos config");
+            return false;
+        }
+        
+        // Check local config (fallback)
+        if (!graphProperties.getSync().isEnabled()) {
+            log.debug("Sync skipped - disabled via local config");
+            return false;
+        }
+        
+        // Check manual pause flag (Admin API)
+        if (manualPaused.get()) {
+            log.debug("Sync skipped - manually paused via Admin API");
+            return false;
+        }
+        
+        return true;
+    }
+
     private int doSync() {
         String network = graphProperties.getSync().getNetwork();
-        int batchSize = graphProperties.getSync().getBatchSize();
+        
+        // Use Nacos config for batch size if available, fallback to local config
+        int batchSize = pipelineProperties.getGraphSync().getBatchSize() > 0 
+            ? pipelineProperties.getGraphSync().getBatchSize()
+            : graphProperties.getSync().getBatchSize();
 
         // Get last synced block
         Long lastSyncedBlock = syncStateTracker.getLastSyncedBlock(network).orElse(0L);
-        log.info("Starting sync from block {} for network {}", lastSyncedBlock, network);
+        log.info("Starting sync from block {} for network {} (batchSize={})", 
+            lastSyncedBlock, network, batchSize);
 
         // Check if there's new data
         Long latestBlock = transferReader.getLatestBlockNumber(network);
@@ -80,6 +126,12 @@ public class GraphSyncServiceImpl implements GraphSyncService {
 
         // Sync in batches
         while (true) {
+            // Check if we should stop (manual pause during sync)
+            if (manualPaused.get()) {
+                log.info("Sync interrupted by manual pause");
+                break;
+            }
+            
             List<TransferRecord> transfers = transferReader.readTransfers(currentBlock, batchSize, network);
             
             if (transfers.isEmpty()) {
@@ -157,12 +209,32 @@ public class GraphSyncServiceImpl implements GraphSyncService {
 
         // Calculate next sync time
         Instant nextSync = null;
-        if (lastSyncTime != null && graphProperties.getSync().isEnabled()) {
-            nextSync = lastSyncTime.plusMillis(graphProperties.getSync().getInterval());
+        long interval = pipelineProperties.getGraphSync().getIntervalMs() > 0
+            ? pipelineProperties.getGraphSync().getIntervalMs()
+            : graphProperties.getSync().getInterval();
+            
+        if (lastSyncTime != null && shouldRunSync()) {
+            nextSync = lastSyncTime.plusMillis(interval);
+        }
+
+        // Determine effective status
+        String status;
+        if (syncRunning.get()) {
+            status = "running";
+        } else if (!shouldRunSync()) {
+            if (!pipelineProperties.isEnabled() || !pipelineProperties.getGraphSync().isEnabled()) {
+                status = "disabled_by_nacos";
+            } else if (manualPaused.get()) {
+                status = "paused_manually";
+            } else {
+                status = "disabled";
+            }
+        } else {
+            status = "idle";
         }
 
         return SyncStatusResponse.builder()
-                .status(syncRunning.get() ? "running" : "idle")
+                .status(status)
                 .lastSyncedBlock(lastSyncedBlock)
                 .totalAddresses(totalAddresses)
                 .totalTransfers(totalTransfers)
@@ -170,6 +242,10 @@ public class GraphSyncServiceImpl implements GraphSyncService {
                 .nextSyncTime(nextSync)
                 .network(network)
                 .errorMessage(lastError)
+                .nacosEnabled(pipelineProperties.getGraphSync().isEnabled())
+                .manualPaused(manualPaused.get())
+                .batchSize(pipelineProperties.getGraphSync().getBatchSize())
+                .intervalMs(interval)
                 .build();
     }
 
@@ -187,12 +263,22 @@ public class GraphSyncServiceImpl implements GraphSyncService {
                     .build();
         }
 
+        // Temporarily unpause for manual trigger
+        boolean wasPaused = manualPaused.get();
+
         // Run sync in background
         new Thread(() -> {
             try {
+                // Temporarily allow sync even if paused
+                manualPaused.set(false);
                 syncTransfers();
             } catch (Exception e) {
                 log.error("Manual sync failed", e);
+            } finally {
+                // Restore pause state
+                if (wasPaused) {
+                    manualPaused.set(true);
+                }
             }
         }).start();
 
@@ -200,6 +286,31 @@ public class GraphSyncServiceImpl implements GraphSyncService {
                 .status("started")
                 .network(graphProperties.getSync().getNetwork())
                 .build();
+    }
+
+    // ==================== Manual Control Methods ====================
+    
+    /**
+     * Pause sync (called by Admin API)
+     */
+    public void pause() {
+        manualPaused.set(true);
+        log.info("Graph sync paused manually");
+    }
+    
+    /**
+     * Resume sync (called by Admin API)
+     */
+    public void resume() {
+        manualPaused.set(false);
+        log.info("Graph sync resumed");
+    }
+    
+    /**
+     * Check if manually paused
+     */
+    public boolean isManualPaused() {
+        return manualPaused.get();
     }
 
     private TransferData toTransferData(TransferRecord record) {

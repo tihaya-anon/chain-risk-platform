@@ -5,15 +5,30 @@ spring:
   application:
     name: orchestrator
 
+  # Enable configuration properties scanning
+  config:
+    import: optional:nacos:chain-risk-pipeline.yaml
+
   # Redis Configuration
   data:
     redis:
       host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      port: ${REDIS_PORT:16379}
       timeout: 2000ms
 
   cloud:
+    # Load balancer configuration for service discovery
+    loadbalancer:
+      ribbon:
+        enabled: false
+
     gateway:
+      # Enable service discovery for routes
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
       # Global CORS configuration
       globalcors:
         cors-configurations:
@@ -86,7 +101,14 @@ spring:
           filters:
             - name: AuthenticationFilter
 
-# Service URLs
+        - id: admin-route
+          uri: http://localhost:${server.port:8080}
+          predicates:
+            - Path=/api/admin/**
+          filters:
+            - name: AuthenticationFilter
+
+# Service URLs (fallback when service discovery is not available)
 services:
   bff:
     url: ${BFF_URL:http://localhost:3001}
@@ -129,13 +151,14 @@ logging:
     root: INFO
     com.chainrisk.orchestrator: DEBUG
     org.springframework.cloud.gateway: DEBUG
+    com.alibaba.nacos: INFO
 
 # Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,circuitbreakers,ratelimiters
+        include: health,info,metrics,circuitbreakers,ratelimiters,refresh
   endpoint:
     health:
       show-details: always
