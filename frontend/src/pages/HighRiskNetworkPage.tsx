@@ -399,7 +399,7 @@ export function HighRiskNetworkPage() {
                                   onClick={() =>
                                     navigate(`/address?q=${addr.address}`)
                                   }
-                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-sm cursor-pointer"
                                 >
                                   <Search className="w-3 h-3" />
                                   Analyze
@@ -408,7 +408,7 @@ export function HighRiskNetworkPage() {
                                   onClick={() =>
                                     navigate(`/graph?address=${addr.address}`)
                                   }
-                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-sm cursor-pointer"
                                 >
                                   <NetworkIcon className="w-3 h-3" />
                                   Graph

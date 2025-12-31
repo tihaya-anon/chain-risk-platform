@@ -108,6 +108,18 @@ export function AddressGraph({
   const networkRef = useRef<Network | null>(null)
   const neighborsMapRef = useRef<Map<string, NeighborInfo>>(new Map())
 
+  // Store callbacks in refs to avoid re-creating network on callback changes
+  const onNodeHoverRef = useRef(onNodeHover)
+  const onNodeClickRef = useRef(onNodeClick)
+  const onNodeDoubleClickRef = useRef(onNodeDoubleClick)
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onNodeHoverRef.current = onNodeHover
+    onNodeClickRef.current = onNodeClick
+    onNodeDoubleClickRef.current = onNodeDoubleClick
+  }, [onNodeHover, onNodeClick, onNodeDoubleClick])
+
   // Build graph data
   const buildGraphData = useCallback(() => {
     const nodes: GraphNode[] = []
@@ -252,18 +264,18 @@ export function AddressGraph({
       options
     )
 
-    // Hover event - update info panel
+    // Hover event - update info panel (use ref to avoid re-creating network)
     network.on('hoverNode', (params) => {
       const nodeId = params.node as string
       if (nodeId === centerAddress) {
-        onNodeHover?.({
+        onNodeHoverRef.current?.({
           address: centerAddress,
           isCenter: true,
         })
       } else {
         const neighbor = neighborsMapRef.current.get(nodeId)
         if (neighbor) {
-          onNodeHover?.({
+          onNodeHoverRef.current?.({
             address: neighbor.address,
             riskScore: neighbor.riskScore,
             tags: neighbor.tags,
@@ -276,21 +288,21 @@ export function AddressGraph({
 
     network.on('blurNode', () => {
       // Optionally clear hover info when mouse leaves node
-      // onNodeHover?.(null)
+      // onNodeHoverRef.current?.(null)
     })
 
     // Click event
     network.on('click', (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
-        onNodeClick?.(nodeId)
+        onNodeClickRef.current?.(nodeId)
       }
     })
 
     network.on('doubleClick', (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
-        onNodeDoubleClick?.(nodeId)
+        onNodeDoubleClickRef.current?.(nodeId)
       }
     })
 
@@ -305,7 +317,7 @@ export function AddressGraph({
       network.destroy()
       networkRef.current = null
     }
-  }, [buildGraphData, centerAddress, onNodeClick, onNodeDoubleClick, onNodeHover])
+  }, [buildGraphData, centerAddress])
 
   return (
     <div className={className}>
