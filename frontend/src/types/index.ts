@@ -264,3 +264,135 @@ export interface HighRiskNetworkResponse {
   highRiskAddresses: GraphAddressInfo[]
   orchestratedAt: number
 }
+
+// ==================== Admin API Types ====================
+
+// Service Instance
+export interface ServiceInstance {
+  instanceId: string
+  ip: string
+  port: number
+  healthy: boolean
+  metadata: Record<string, string>
+}
+
+// Service Info
+export interface ServiceInfo {
+  name: string
+  groupName: string
+  clusterCount: number
+  instanceCount: number
+  healthyInstanceCount: number
+}
+
+// Pipeline Status
+export interface PipelineStatus {
+  ingestion: {
+    enabled: boolean
+    status: string
+    lastBlock: number
+    errorMessage?: string
+  }
+  streamProcessor: {
+    enabled: boolean
+    status: string
+    processedCount: number
+  }
+  graphSync: {
+    enabled: boolean
+    status: string
+    lastSyncTime: string
+  }
+  clustering: {
+    enabled: boolean
+    lastRunTime?: string
+  }
+  propagation: {
+    enabled: boolean
+    lastRunTime?: string
+  }
+}
+
+// Rate Limit Config
+export interface RateLimitConfig {
+  requestsPerSecond: number
+}
+
+// Polling Config
+export interface PollingConfig {
+  intervalMs: number
+  batchSize: number
+  confirmations: number
+}
+
+// Ingestion Config
+export interface IngestionConfig {
+  enabled: boolean
+  network: string
+  polling: PollingConfig
+  rateLimit: RateLimitConfig
+}
+
+// Consumer Config
+export interface ConsumerConfig {
+  maxPollRecords: number
+}
+
+// Checkpoint Config
+export interface CheckpointConfig {
+  intervalMs: number
+}
+
+// Stream Processor Config
+export interface StreamProcessorConfig {
+  enabled: boolean
+  parallelism: number
+  checkpoint: CheckpointConfig
+  consumer: ConsumerConfig
+}
+
+// Graph Sync Config
+export interface GraphSyncConfig {
+  enabled: boolean
+  intervalMs: number
+  batchSize: number
+}
+
+// Clustering Config
+export interface ClusteringConfig {
+  enabled: boolean
+  minClusterSize: number
+  maxDepth: number
+}
+
+// Propagation Config
+export interface PropagationConfig {
+  enabled: boolean
+  maxHops: number
+  decayFactor: number
+  minThreshold: number
+}
+
+// Pipeline Properties
+export interface PipelineProperties {
+  enabled: boolean
+  ingestion: IngestionConfig
+  streamProcessor: StreamProcessorConfig
+  graphSync: GraphSyncConfig
+  clustering: ClusteringConfig
+  propagation: PropagationConfig
+}
+
+// Risk Properties
+export interface RiskProperties {
+  highThreshold: number
+  mediumThreshold: number
+  cacheTtlSeconds: number
+}
+
+// All Config Response
+export interface AllConfigResponse {
+  risk?: RiskProperties
+  pipeline?: PipelineProperties
+  [key: string]: unknown
+}
