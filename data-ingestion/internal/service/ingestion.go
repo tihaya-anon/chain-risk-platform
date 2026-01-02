@@ -30,10 +30,10 @@ type Service struct {
 
 	// Manual control
 	manualPaused atomic.Bool
-	
+
 	// Dynamic configuration from Nacos
-	batchSize    atomic.Int32
-	intervalMs   atomic.Int32
+	batchSize  atomic.Int32
+	intervalMs atomic.Int32
 }
 
 // NewService creates a new ingestion service
@@ -44,21 +44,21 @@ func NewService(cfg *config.Config, client client.BlockchainClient, producer pro
 		producer: producer,
 		logger:   logger,
 	}
-	
+
 	// Set default values from local config
 	svc.batchSize.Store(int32(cfg.Blockchain.Polling.BatchSize))
 	svc.intervalMs.Store(int32(cfg.GetPollingInterval().Milliseconds()))
-	
+
 	return svc
 }
 
 // SetNacosClient sets the Nacos client and registers for config changes
 func (s *Service) SetNacosClient(nacosClient *nacos.Client) {
 	s.nacosClient = nacosClient
-	
+
 	// Update from Nacos config
 	s.updateFromNacos()
-	
+
 	// Register for config changes
 	nacosClient.OnConfigChange(func(config *nacos.PipelineConfig) {
 		s.updateFromNacos()
@@ -70,16 +70,16 @@ func (s *Service) updateFromNacos() {
 	if s.nacosClient == nil {
 		return
 	}
-	
+
 	config := s.nacosClient.GetConfig()
-	
+
 	if config.Pipeline.Ingestion.Polling.BatchSize > 0 {
 		s.batchSize.Store(int32(config.Pipeline.Ingestion.Polling.BatchSize))
 	}
 	if config.Pipeline.Ingestion.Polling.IntervalMs > 0 {
 		s.intervalMs.Store(int32(config.Pipeline.Ingestion.Polling.IntervalMs))
 	}
-	
+
 	s.logger.Info("Configuration updated from Nacos",
 		zap.Int32("batchSize", s.batchSize.Load()),
 		zap.Int32("intervalMs", s.intervalMs.Load()))
@@ -99,13 +99,13 @@ func (s *Service) shouldRun() bool {
 			return false
 		}
 	}
-	
+
 	// Check manual pause
 	if s.manualPaused.Load() {
 		s.logger.Debug("Skipping - manually paused")
 		return false
 	}
-	
+
 	return true
 }
 
@@ -139,13 +139,12 @@ func (s *Service) Start(ctx context.Context) error {
 				time.Sleep(time.Second)
 				continue
 			}
-			
+
 			// Poll blocks
-			// if err := s.pollBlocks(ctx); err != nil {
-			// 	s.logger.Error("Error polling blocks", zap.Error(err))
-			// }
-			s.logger.Info("Poll block disabled")
-			
+			if err := s.pollBlocks(ctx); err != nil {
+				s.logger.Error("Error polling blocks", zap.Error(err))
+			}
+
 			// Use dynamic interval from Nacos
 			interval := time.Duration(s.intervalMs.Load()) * time.Millisecond
 			time.Sleep(interval)
@@ -217,7 +216,7 @@ func (s *Service) pollBlocks(ctx context.Context) error {
 			s.logger.Info("Processing interrupted by manual pause")
 			break
 		}
-		
+
 		if err := s.processBlock(ctx, blockNum); err != nil {
 			s.logger.Error("Error processing block",
 				zap.Uint64("block", blockNum),

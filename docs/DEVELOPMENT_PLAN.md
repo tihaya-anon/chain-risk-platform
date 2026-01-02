@@ -27,6 +27,12 @@
 - [x] Kafka Producer 实现
 - [x] 配置管理 (Viper)
 - [x] 基础日志和监控
+- [x] **重构: 抽离统一 Fetcher 层** ✨ 新增
+  - [x] 创建 internal/fetcher 包（原始 API 数据获取）
+  - [x] 创建 internal/parser 包（数据解析）
+  - [x] 创建 internal/storage 包（数据持久化）
+  - [x] 重构 EtherscanClient 使用 fetcher + parser
+  - [x] 支持 Etherscan API V2 (chainid 参数)
 
 #### 1.3 流处理服务 (Java/Flink)
 - [x] Flink 项目搭建
@@ -35,9 +41,41 @@
 - [x] PostgreSQL Sink
 - [x] 基础窗口聚合
 
+#### 1.4 集成测试 ✅ 已完成
+- [x] **Mock Etherscan Server** ✨ 新增
+  - [x] 支持从 fixtures 加载真实 API 数据
+  - [x] 支持 fallback 生成模拟数据
+  - [x] 提供完整的 Etherscan API 兼容接口
+- [x] **Fixture Generator 工具** ✨ 新增
+  - [x] 从真实 Etherscan API 获取数据
+  - [x] 保存为 JSON fixtures 供测试使用
+  - [x] 支持获取 blocks、addresses、internal_txs
+  - [x] 生成 manifest.json 索引文件
+- [x] **端到端集成测试脚本**
+  - [x] 自动化测试流程
+  - [x] 支持远程 Docker 环境
+  - [x] 数据验证和报告生成
+- [x] **测试通过验证** ✅
+  - [x] Mock Server 正常运行
+  - [x] Data Ingestion 成功采集数据
+  - [x] Kafka 消息正常传输
+  - [x] Flink 处理并写入 PostgreSQL
+  - [x] 数据完整性验证通过
+
 ### 交付物
 - ✅ 可运行的数据采集 → 存储链路
 - ✅ 基础的 Transfer 数据表
+- ✅ **完整的集成测试框架** ✨ 新增
+- ✅ **可复用的测试 fixtures** ✨ 新增
+- ✅ **重构后的 data-ingestion 架构** ✨ 新增
+
+### 最近更新 (2026-01-02)
+- ✅ 完成 data-ingestion 重构，抽离 fetcher/parser/storage 层
+- ✅ 实现 fixture-gen 工具，可从真实 API 生成测试数据
+- ✅ 实现 Mock Etherscan Server，支持集成测试
+- ✅ 集成测试全流程通过验证
+- ✅ 升级到 Etherscan API V2
+- ✅ 消除约 200 行重复代码，提升可维护性
 
 ---
 
@@ -58,6 +96,7 @@
   - [x] GET /transfers - 交易列表 (分页)
 - [ ] Redis 缓存层
 - [x] Swagger 文档 (godoc 注释)
+- [x] Nacos 集成 ✨ 已完成
 
 #### 2.2 Risk ML Service (Python/FastAPI)
 - [x] 项目初始化 (pyproject.toml/uv)
@@ -73,6 +112,7 @@
   - [x] POST /risk/batch - 批量评分
   - [x] GET /risk/rules - 规则列表
 - [ ] 预留 ML 模型接口
+- [x] Nacos 集成 ✨ 已完成
 
 #### 2.3 Orchestrator (Java/Spring Cloud Gateway)
 - [x] Spring Cloud 项目搭建
@@ -84,13 +124,14 @@
 - [x] 请求日志 (LoggingFilter)
 - [x] Fallback 降级处理
 - [x] API 编排 (OrchestrationController)
-- [ ] Nacos/Consul 服务注册
-- [ ] 配置中心
+- [x] Nacos 服务注册与发现 ✨ 已完成
+- [x] Nacos 配置中心 ✨ 已完成
 
 ### 交付物
 - ✅ 可查询的地址/交易 API (基础功能)
 - ✅ 基础风险评分能力 (规则引擎)
 - ✅ API Gateway (认证、路由、熔断、限流)
+- ✅ **Nacos 服务治理集成** ✨ 已完成
 
 ---
 
@@ -113,6 +154,7 @@
 - [ ] GraphQL (可选)
 - [x] OpenAPI 文档
 - [x] Dockerfile
+- [x] Nacos 集成 ✨ 已完成
 
 **注意**: JWT 认证已移至 Orchestrator (Java)，BFF 完全信任 Gateway 转发的用户上下文。
 
@@ -210,8 +252,8 @@
 ## 📅 时间线总览
 
 ```
-Week 1-3:   Phase 1 - 核心数据流 ✅
-Week 4-6:   Phase 2 - 查询与风险服务 🔶 (85% 完成)
+Week 1-3:   Phase 1 - 核心数据流 ✅ (含集成测试和重构)
+Week 4-6:   Phase 2 - 查询与风险服务 🔶 (85% 完成，含 Nacos 集成)
 Week 7-8:   Phase 3 - BFF与前端 🔶 (80% 完成)
 Week 9+:    Phase 4 - 高级功能 🔶 (40% 完成，Graph Engine 已完成)
 ```
@@ -220,12 +262,43 @@ Week 9+:    Phase 4 - 高级功能 🔶 (40% 完成，Graph Engine 已完成)
 
 ## ✅ 里程碑检查点
 
-| 里程碑 | 预计时间 | 验收标准                    | 状态           |
-| ------ | -------- | --------------------------- | -------------- |
-| M1     | Week 3   | 数据能从链上采集并存入 DB   | ✅ 已完成       |
-| M2     | Week 6   | 能通过 API 查询地址和风险分 | ✅ 已完成       |
-| M3     | Week 8   | 完整 Demo 可演示            | 🔶 80% 完成     |
-| M4     | Week 12  | Graph + ML 功能上线         | 🔶 Graph 已完成 |
+| 里程碑 | 预计时间 | 验收标准                    | 状态                  |
+| ------ | -------- | --------------------------- | --------------------- |
+| M1     | Week 3   | 数据能从链上采集并存入 DB   | ✅ 已完成 (含集成测试) |
+| M2     | Week 6   | 能通过 API 查询地址和风险分 | ✅ 已完成 (含 Nacos)   |
+| M3     | Week 8   | 完整 Demo 可演示            | 🔶 80% 完成            |
+| M4     | Week 12  | Graph + ML 功能上线         | 🔶 Graph 已完成        |
+
+---
+
+## 📝 最近更新记录
+
+### 2026-01-02
+- ✅ **Phase 1 集成测试完成**
+  - 实现 Mock Etherscan Server（支持 fixtures 和 fallback 模式）
+  - 实现 fixture-gen 工具（从真实 API 生成测试数据）
+  - 端到端集成测试全流程通过
+  - 生成 214 个内部交易 fixtures
+  
+- ✅ **Data Ingestion 重构完成**
+  - 抽离 internal/fetcher 包（统一 API 数据获取）
+  - 抽离 internal/parser 包（数据解析）
+  - 抽离 internal/storage 包（数据持久化）
+  - 升级到 Etherscan API V2
+  - 消除约 200 行重复代码
+  - 提升代码可维护性和可测试性
+
+- ✅ **Nacos 集成完成**
+  - 所有服务（Go/Java/Python/TypeScript）集成 Nacos
+  - 服务注册与发现
+  - 配置中心集成
+  - 动态配置更新
+
+### 之前更新
+- ✅ Graph Engine 完整功能实现
+- ✅ Frontend 基础页面开发完成
+- ✅ Orchestrator API Gateway 完成
+- ✅ BFF 聚合层完成
 
 ---
 
@@ -234,3 +307,4 @@ Week 9+:    Phase 4 - 高级功能 🔶 (40% 完成，Graph Engine 已完成)
 - 每个 Phase 完成后进行代码 Review 和文档更新
 - 优先保证核心链路稳定，再扩展功能
 - 保持代码质量，写好单元测试
+- **重点关注代码复用和架构优化** ✨
