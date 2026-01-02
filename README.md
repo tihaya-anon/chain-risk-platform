@@ -40,7 +40,7 @@
 └───────────────────────┘ └───────────────┘ └─────────────────────────┘
 ```
 
-详细架构请参考 [PROJECT_OVERVIEW.md](./docs/PROJECT_OVERVIEW.md)
+详细架构请参考 [PROJECT_OVERVIEW.md](./docs/architecture/PROJECT_OVERVIEW.md)
 
 ## 🛠️ 技术栈
 
@@ -114,16 +114,16 @@ docker-compose up -d
 ## 📚 文档
 
 ### 项目文档
-- [项目总览](./docs/PROJECT_OVERVIEW.md)
-- [开发计划](./docs/DEVELOPMENT_PLAN.md)
-- [技术决策](./docs/TECH_DECISIONS.md)
+- [项目总览](./docs/architecture/PROJECT_OVERVIEW.md)
+- [开发计划](./docs/development/DEVELOPMENT_PLAN.md)
+- [技术决策](./docs/architecture/TECH_DECISIONS.md)
+- [📖 完整文档导航](./docs/README.md)
 
 ### 脚本和工具
 - [📖 Scripts 使用指南](./scripts/README.md) - 完整的脚本使用文档
-- [🚀 快速参考](./docs/SCRIPTS_QUICK_REFERENCE.md) - 常用命令速查
-- [📊 整理对比](./docs/SCRIPTS_COMPARISON.md) - 脚本整理前后对比
-- [📝 整理总结](./docs/SCRIPTS_REFACTORING.md) - 重构说明
-- [📋 更新日志](./docs/CHANGELOG_SCRIPTS.md) - 脚本变更记录
+- [🚀 快速参考](./docs/operations/SCRIPTS_QUICK_REFERENCE.md) - 常用命令速查
+- [📝 整理总结](./docs/operations/SCRIPTS_REFACTORING.md) - 重构说明
+- [📋 更新日志](./docs/changelog/CHANGELOG_SCRIPTS.md) - 脚本变更记录
 
 ### Makefile 命令
 
@@ -149,7 +149,7 @@ make build-all         # 构建所有服务
 make test-all          # 运行所有测试
 ```
 
-详细说明请参考 [Scripts 快速参考](./docs/SCRIPTS_QUICK_REFERENCE.md)
+详细说明请参考 [Scripts 快速参考](./docs/operations/SCRIPTS_QUICK_REFERENCE.md)
 
 ## 🗺️ Roadmap
 

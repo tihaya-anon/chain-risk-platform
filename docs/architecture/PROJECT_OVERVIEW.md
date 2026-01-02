@@ -26,7 +26,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Frontend (React/Vue)                         │
+│                        Frontend (React + TypeScript)                │
 └─────────────────────────────────┬───────────────────────────────────┘
                                   │
 ┌─────────────────────────────────▼───────────────────────────────────┐
@@ -42,7 +42,7 @@
 └───────────┬─────────────────────┬─────────────────────┬─────────────┘
             │                     │                     │
 ┌───────────▼───────────┐ ┌───────▼───────┐ ┌───────────▼───────────┐
-│    Query Service      │ │ Risk Service  │ │    Alert Service      │
+│    Query Service      │ │ Risk Service  │ │ Alert Service (规划中)│
 │        (Go)           │ │   (Python)    │ │        (Go)           │
 │      Gin + GORM       │ │   FastAPI     │ │        Gin            │
 └───────────┬───────────┘ └───────┬───────┘ └───────────┬───────────┘
@@ -61,13 +61,15 @@
            │ (Java)  │      │  (Java)   │     │  (Java)   │
            └────┬────┘      └─────┬─────┘     └─────┬─────┘
                 │                 │                 │
-                └────────┬────────┴────────┬────────┘
+                └──────────┬────────┴──────────┬────────┘
                          │                 │
                    ┌─────▼─────┐     ┌─────▼─────┐
                    │   Kafka   │     │PostgreSQL │
                    │           │     │ + Neo4j   │
                    └───────────┘     └───────────┘
 ```
+
+**注**: Alert Service 和 Batch Processor 目前仅有项目骨架，功能规划中。
 
 ---
 
@@ -86,7 +88,7 @@ chain-risk-platform/
 │   ├── query-service/         # Go (Gin + GORM)
 │   │   └── 地址/交易查询、分页、缓存
 │   │
-│   ├── alert-service/         # Go (Gin)
+│   ├── alert-service/         # Go (Gin) - 规划中
 │   │   └── 告警规则引擎、通知推送
 │   │
 │   └── risk-ml-service/       # Python (FastAPI)
@@ -96,7 +98,7 @@ chain-risk-platform/
 │   ├── stream-processor/      # Java (Flink)
 │   │   └── 实时交易流处理
 │   │
-│   ├── batch-processor/       # Java (Flink SQL / Spark)
+│   ├── batch-processor/       # Java (Flink SQL / Spark) - 规划中
 │   │   └── 每日批处理覆盖
 │   │
 │   └── graph-engine/          # Java
