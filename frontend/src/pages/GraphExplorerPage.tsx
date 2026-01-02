@@ -187,9 +187,9 @@ export function GraphExplorerPage() {
                     value={depth}
                     onChange={(e) => setDepth(Number(e.target.value))}
                     options={[
-                      [1, '1 hop'],
-                      [2, '2 hops'],
-                      [3, '3 hops']
+                      [1, "1 hop"],
+                      [2, "2 hops"],
+                      [3, "3 hops"],
                     ]}
                   />
                 </div>
@@ -199,10 +199,10 @@ export function GraphExplorerPage() {
                     value={limit}
                     onChange={(e) => setLimit(Number(e.target.value))}
                     options={[
-                      [10, '10'],
-                      [30, '30'],
-                      [50, '50'],
-                      [100, '100']
+                      [10, "10"],
+                      [30, "30"],
+                      [50, "50"],
+                      [100, "100"],
                     ]}
                   />
                 </div>

@@ -1,7 +1,7 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import { getConfig } from '../../config/config';
-import { getLogger } from '../../common/logger';
+import { Injectable, HttpException, HttpStatus } from "@nestjs/common";
+import axios, { AxiosInstance, AxiosError } from "axios";
+import { getConfig } from "../../config/config";
+import { getLogger } from "../../common/logger";
 import {
   AddressInfoResponse,
   AddressNeighborsResponse,
@@ -11,9 +11,9 @@ import {
   PropagationResultResponse,
   ClusteringResultResponse,
   AddTagRequestDto,
-} from './graph.dto';
+} from "./graph.dto";
 
-const logger = getLogger('GraphService');
+const logger = getLogger("GraphService");
 
 @Injectable()
 export class GraphService {
@@ -36,7 +36,7 @@ export class GraphService {
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'getAddressInfo', { address });
+      this.handleError(error, "getAddressInfo", { address });
     }
   }
 
@@ -52,7 +52,7 @@ export class GraphService {
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'getAddressNeighbors', { address, depth, limit });
+      this.handleError(error, "getAddressNeighbors", { address, depth, limit });
     }
   }
 
@@ -63,7 +63,7 @@ export class GraphService {
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'getAddressTags', { address });
+      this.handleError(error, "getAddressTags", { address });
     }
   }
 
@@ -78,7 +78,10 @@ export class GraphService {
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'addAddressTags', { address, tags: request.tags });
+      this.handleError(error, "addAddressTags", {
+        address,
+        tags: request.tags,
+      });
     }
   }
 
@@ -86,7 +89,7 @@ export class GraphService {
     try {
       await this.client.delete(`/api/graph/address/${address}/tags/${tag}`);
     } catch (error) {
-      this.handleError(error, 'removeAddressTag', { address, tag });
+      this.handleError(error, "removeAddressTag", { address, tag });
     }
   }
 
@@ -97,7 +100,7 @@ export class GraphService {
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'getAddressCluster', { address });
+      this.handleError(error, "getAddressCluster", { address });
     }
   }
 
@@ -115,7 +118,7 @@ export class GraphService {
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'findPath', { fromAddress, toAddress, maxDepth });
+      this.handleError(error, "findPath", { fromAddress, toAddress, maxDepth });
     }
   }
 
@@ -128,36 +131,41 @@ export class GraphService {
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'getCluster', { clusterId });
+      this.handleError(error, "getCluster", { clusterId });
     }
   }
 
   async runClustering(): Promise<ClusteringResultResponse> {
     try {
       const response = await this.client.post<ClusteringResultResponse>(
-        '/api/graph/cluster/run',
+        "/api/graph/cluster/run",
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'runClustering');
+      this.handleError(error, "runClustering");
     }
   }
 
   async manualCluster(addresses: string[]): Promise<ClusteringResultResponse> {
     try {
       const response = await this.client.post<ClusteringResultResponse>(
-        '/api/graph/cluster/manual',
+        "/api/graph/cluster/manual",
         addresses,
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'manualCluster', { addressCount: addresses.length });
+      this.handleError(error, "manualCluster", {
+        addressCount: addresses.length,
+      });
     }
   }
 
   // ============== Search Operations ==============
 
-  async searchByTag(tag: string, limit: number = 50): Promise<AddressInfoResponse[]> {
+  async searchByTag(
+    tag: string,
+    limit: number = 50,
+  ): Promise<AddressInfoResponse[]> {
     try {
       const response = await this.client.get<AddressInfoResponse[]>(
         `/api/graph/search/tag/${tag}`,
@@ -165,7 +173,7 @@ export class GraphService {
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'searchByTag', { tag, limit });
+      this.handleError(error, "searchByTag", { tag, limit });
     }
   }
 
@@ -175,12 +183,12 @@ export class GraphService {
   ): Promise<AddressInfoResponse[]> {
     try {
       const response = await this.client.get<AddressInfoResponse[]>(
-        '/api/graph/search/high-risk',
+        "/api/graph/search/high-risk",
         { params: { threshold, limit } },
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'getHighRiskAddresses', { threshold, limit });
+      this.handleError(error, "getHighRiskAddresses", { threshold, limit });
     }
   }
 
@@ -189,22 +197,21 @@ export class GraphService {
   async getSyncStatus(): Promise<SyncStatusResponse> {
     try {
       const response = await this.client.get<SyncStatusResponse>(
-        '/api/graph/sync/status',
+        "/api/graph/sync/status",
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'getSyncStatus');
+      this.handleError(error, "getSyncStatus");
     }
   }
 
   async triggerSync(): Promise<SyncStatusResponse> {
     try {
-      const response = await this.client.post<SyncStatusResponse>(
-        '/api/graph/sync',
-      );
+      const response =
+        await this.client.post<SyncStatusResponse>("/api/graph/sync");
       return response.data;
     } catch (error) {
-      this.handleError(error, 'triggerSync');
+      this.handleError(error, "triggerSync");
     }
   }
 
@@ -213,39 +220,49 @@ export class GraphService {
   async propagateTags(): Promise<PropagationResultResponse> {
     try {
       const response = await this.client.post<PropagationResultResponse>(
-        '/api/graph/propagate',
+        "/api/graph/propagate",
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'propagateTags');
+      this.handleError(error, "propagateTags");
     }
   }
 
-  async propagateFromAddress(address: string): Promise<PropagationResultResponse> {
+  async propagateFromAddress(
+    address: string,
+  ): Promise<PropagationResultResponse> {
     try {
       const response = await this.client.post<PropagationResultResponse>(
         `/api/graph/propagate/${address}`,
       );
       return response.data;
     } catch (error) {
-      this.handleError(error, 'propagateFromAddress', { address });
+      this.handleError(error, "propagateFromAddress", { address });
     }
   }
 
   // ============== Error Handling ==============
 
-  private handleError(error: unknown, method: string, context?: Record<string, unknown>): never {
+  private handleError(
+    error: unknown,
+    method: string,
+    context?: Record<string, unknown>,
+  ): never {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
-      const status = axiosError.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      const responseData = axiosError.response?.data as Record<string, unknown> | undefined;
-      const message = responseData?.message || responseData?.error || axiosError.message;
+      const status =
+        axiosError.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const responseData = axiosError.response?.data as
+        | Record<string, unknown>
+        | undefined;
+      const message =
+        responseData?.message || responseData?.error || axiosError.message;
 
       logger.error(`${method} failed`, { ...context, status, message });
 
       if (status === 404) {
         throw new HttpException(
-          (message as string) || 'Resource not found',
+          (message as string) || "Resource not found",
           HttpStatus.NOT_FOUND,
         );
       }
@@ -253,8 +270,15 @@ export class GraphService {
       throw new HttpException(message as string, status);
     }
 
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error(`${method} unexpected error`, { ...context, error: errorMessage });
-    throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    logger.error(`${method} unexpected error`, {
+      ...context,
+      error: errorMessage,
+    });
+    throw new HttpException(
+      "Internal server error",
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 }

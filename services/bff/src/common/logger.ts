@@ -1,14 +1,14 @@
-import * as winston from 'winston';
-import { getConfig } from '../config/config';
+import * as winston from "winston";
+import { getConfig } from "../config/config";
 
 const config = getConfig();
 
 // Define log format
 const consoleFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   winston.format.colorize(),
   winston.format.printf(({ timestamp, level, message, ...meta }) => {
-    const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+    const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : "";
     return `${timestamp} | ${level} | ${message}${metaStr}`;
   }),
 );
@@ -22,17 +22,17 @@ const jsonFormat = winston.format.combine(
 const transports: winston.transport[] = [];
 
 for (const outputPath of config.logging.outputPaths) {
-  if (outputPath === 'stdout') {
+  if (outputPath === "stdout") {
     transports.push(
       new winston.transports.Console({
-        format: config.logging.format === 'json' ? jsonFormat : consoleFormat,
+        format: config.logging.format === "json" ? jsonFormat : consoleFormat,
       }),
     );
-  } else if (outputPath === 'stderr') {
+  } else if (outputPath === "stderr") {
     transports.push(
       new winston.transports.Console({
-        stderrLevels: ['error', 'warn', 'info', 'debug'],
-        format: config.logging.format === 'json' ? jsonFormat : consoleFormat,
+        stderrLevels: ["error", "warn", "info", "debug"],
+        format: config.logging.format === "json" ? jsonFormat : consoleFormat,
       }),
     );
   } else {

@@ -112,10 +112,16 @@ export function PathFinderPage() {
               {/* Sidebar */}
               <div className="space-y-6">
                 {/* Source Risk */}
-                <AddressRiskCard title="Source Address Risk" risk={connection.fromAddressRisk} />
+                <AddressRiskCard
+                  title="Source Address Risk"
+                  risk={connection.fromAddressRisk}
+                />
 
                 {/* Target Risk */}
-                <AddressRiskCard title="Target Address Risk" risk={connection.toAddressRisk} />
+                <AddressRiskCard
+                  title="Target Address Risk"
+                  risk={connection.toAddressRisk}
+                />
 
                 {/* Path Details */}
                 {pathFound && <PathDetails path={connection.path.path} />}

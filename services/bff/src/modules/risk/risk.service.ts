@@ -1,7 +1,7 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import { getConfig } from '../../config/config';
-import { getLogger } from '../../common/logger';
+import { Injectable, HttpException, HttpStatus } from "@nestjs/common";
+import axios, { AxiosInstance, AxiosError } from "axios";
+import { getConfig } from "../../config/config";
+import { getLogger } from "../../common/logger";
 import {
   RiskScoreRequestDto,
   BatchRiskScoreRequestDto,
@@ -9,9 +9,9 @@ import {
   BatchRiskScoreResponse,
   RiskFactorResponse,
   RiskRule,
-} from './risk.dto';
+} from "./risk.dto";
 
-const logger = getLogger('RiskService');
+const logger = getLogger("RiskService");
 
 interface RiskServiceRawResponse {
   address: string;
@@ -50,25 +50,33 @@ export class RiskService {
 
   async scoreAddress(request: RiskScoreRequestDto): Promise<RiskScoreResponse> {
     try {
-      const response = await this.client.post<RiskServiceRawResponse>('/api/v1/risk/score', {
-        address: request.address,
-        network: request.network || 'ethereum',
-        include_factors: request.includeFactors ?? true,
-      });
+      const response = await this.client.post<RiskServiceRawResponse>(
+        "/api/v1/risk/score",
+        {
+          address: request.address,
+          network: request.network || "ethereum",
+          include_factors: request.includeFactors ?? true,
+        },
+      );
 
       return this.transformResponse(response.data);
     } catch (error) {
-      this.handleError(error, 'scoreAddress', request.address);
+      this.handleError(error, "scoreAddress", request.address);
     }
   }
 
-  async scoreAddressesBatch(request: BatchRiskScoreRequestDto): Promise<BatchRiskScoreResponse> {
+  async scoreAddressesBatch(
+    request: BatchRiskScoreRequestDto,
+  ): Promise<BatchRiskScoreResponse> {
     try {
-      const response = await this.client.post<BatchRiskServiceResponse>('/api/v1/risk/batch', {
-        addresses: request.addresses,
-        network: request.network || 'ethereum',
-        include_factors: request.includeFactors ?? false,
-      });
+      const response = await this.client.post<BatchRiskServiceResponse>(
+        "/api/v1/risk/batch",
+        {
+          addresses: request.addresses,
+          network: request.network || "ethereum",
+          include_factors: request.includeFactors ?? false,
+        },
+      );
 
       return {
         results: response.data.results.map((r) => this.transformResponse(r)),
@@ -76,16 +84,16 @@ export class RiskService {
         failed: response.data.failed,
       };
     } catch (error) {
-      this.handleError(error, 'scoreAddressesBatch');
+      this.handleError(error, "scoreAddressesBatch");
     }
   }
 
   async listRules(): Promise<RiskRule[]> {
     try {
-      const response = await this.client.get<RiskRule[]>('/api/v1/risk/rules');
+      const response = await this.client.get<RiskRule[]>("/api/v1/risk/rules");
       return response.data;
     } catch (error) {
-      this.handleError(error, 'listRules');
+      this.handleError(error, "listRules");
     }
   }
 
@@ -112,16 +120,25 @@ export class RiskService {
   private handleError(error: unknown, method: string, address?: string): never {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
-      const status = axiosError.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      const message = (axiosError.response?.data as any)?.detail || axiosError.message;
+      const status =
+        axiosError.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        (axiosError.response?.data as any)?.detail || axiosError.message;
 
       logger.error(`${method} failed`, { address, status, message });
 
       throw new HttpException(message, status);
     }
 
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error(`${method} unexpected error`, { address, error: errorMessage });
-    throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    logger.error(`${method} unexpected error`, {
+      address,
+      error: errorMessage,
+    });
+    throw new HttpException(
+      "Internal server error",
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 }

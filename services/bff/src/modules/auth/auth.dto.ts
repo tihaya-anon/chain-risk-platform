@@ -1,13 +1,13 @@
-import { IsString, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, MinLength } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class LoginDto {
-  @ApiProperty({ description: 'Username', example: 'admin' })
+  @ApiProperty({ description: "Username", example: "admin" })
   @IsString()
   @MinLength(3)
   username: string;
 
-  @ApiProperty({ description: 'Password', example: 'admin123' })
+  @ApiProperty({ description: "Password", example: "admin123" })
   @IsString()
   @MinLength(6)
   password: string;
@@ -31,12 +31,16 @@ export class UserPayload {
 }
 
 export class UserProfileResponse {
-  @ApiProperty({ description: 'User ID', example: '1' })
+  @ApiProperty({ description: "User ID", example: "1" })
   id: string;
 
-  @ApiProperty({ description: 'Username', example: 'admin' })
+  @ApiProperty({ description: "Username", example: "admin" })
   username: string;
 
-  @ApiProperty({ description: 'User role', example: 'admin', enum: ['admin', 'user'] })
+  @ApiProperty({
+    description: "User role",
+    example: "admin",
+    enum: ["admin", "user"],
+  })
   role: string;
 }

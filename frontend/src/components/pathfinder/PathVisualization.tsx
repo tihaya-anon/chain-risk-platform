@@ -17,7 +17,12 @@ interface PathVisualizationProps {
   message?: string
 }
 
-export function PathVisualization({ path, found, maxDepth, message }: PathVisualizationProps) {
+export function PathVisualization({
+  path,
+  found,
+  maxDepth,
+  message,
+}: PathVisualizationProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
 
@@ -161,8 +166,8 @@ export function PathVisualization({ path, found, maxDepth, message }: PathVisual
         found
           ? `${path.length} hops between addresses`
           : maxDepth
-          ? `No connection within ${maxDepth} hops`
-          : "No connection found"
+            ? `No connection within ${maxDepth} hops`
+            : "No connection found"
       }
     >
       {found ? (
@@ -194,7 +199,9 @@ export function PathVisualization({ path, found, maxDepth, message }: PathVisual
       ) : (
         <div className="text-center py-12">
           <AlertCircle className="w-16 h-16 text-gray-300 mx-auto" />
-          <p className="text-gray-500 mt-4">{message || "No direct or indirect connection found"}</p>
+          <p className="text-gray-500 mt-4">
+            {message || "No direct or indirect connection found"}
+          </p>
           <p className="text-sm text-gray-400 mt-2">
             Try increasing the max depth or check if the addresses are correct
           </p>

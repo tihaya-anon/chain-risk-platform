@@ -1,16 +1,21 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
-import { LoginDto, LoginResponse, UserPayload, UserProfileResponse } from './auth.dto';
-import { getLogger } from '../../common/logger';
-import { getConfig } from '../../config/config';
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import * as jwt from "jsonwebtoken";
+import {
+  LoginDto,
+  LoginResponse,
+  UserPayload,
+  UserProfileResponse,
+} from "./auth.dto";
+import { getLogger } from "../../common/logger";
+import { getConfig } from "../../config/config";
 
-const logger = getLogger('AuthService');
+const logger = getLogger("AuthService");
 const config = getConfig();
 
 // Demo users - in production, use a database
 const DEMO_USERS = [
-  { id: '1', username: 'admin', password: 'admin123', role: 'admin' },
-  { id: '2', username: 'user', password: 'user123', role: 'user' },
+  { id: "1", username: "admin", password: "admin123", role: "admin" },
+  { id: "2", username: "user", password: "user123", role: "user" },
 ];
 
 @Injectable()
@@ -21,8 +26,8 @@ export class AuthService {
     );
 
     if (!user) {
-      logger.warn('Login failed', { username: dto.username });
-      throw new UnauthorizedException('Invalid credentials');
+      logger.warn("Login failed", { username: dto.username });
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     const payload: UserPayload = {
@@ -36,11 +41,14 @@ export class AuthService {
       expiresIn: config.jwt.expiresIn,
     } as jwt.SignOptions);
 
-    logger.info('Login successful', { username: user.username, role: user.role });
+    logger.info("Login successful", {
+      username: user.username,
+      role: user.role,
+    });
 
     return {
       accessToken,
-      tokenType: 'Bearer',
+      tokenType: "Bearer",
       expiresIn: config.jwt.expiresIn,
     };
   }
@@ -50,7 +58,7 @@ export class AuthService {
    * In production, this could fetch additional user data from database
    */
   getUserProfile(userPayload: UserPayload): UserProfileResponse {
-    logger.debug('Building user profile', { userId: userPayload.sub });
+    logger.debug("Building user profile", { userId: userPayload.sub });
 
     return {
       id: userPayload.sub,

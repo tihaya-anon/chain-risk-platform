@@ -1,23 +1,23 @@
-import { IsString, IsOptional, IsInt, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsInt, Min, Max } from "class-validator";
+import { Type } from "class-transformer";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class AddressQueryDto {
-  @ApiPropertyOptional({ description: 'Network', default: 'ethereum' })
+  @ApiPropertyOptional({ description: "Network", default: "ethereum" })
   @IsString()
   @IsOptional()
-  network?: string = 'ethereum';
+  network?: string = "ethereum";
 }
 
 export class PaginationDto {
-  @ApiPropertyOptional({ description: 'Page number', default: 1 })
+  @ApiPropertyOptional({ description: "Page number", default: 1 })
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @IsOptional()
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Page size', default: 20 })
+  @ApiPropertyOptional({ description: "Page size", default: 20 })
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -27,22 +27,22 @@ export class PaginationDto {
 }
 
 export class TransferQueryDto extends PaginationDto {
-  @ApiPropertyOptional({ description: 'Network', default: 'ethereum' })
+  @ApiPropertyOptional({ description: "Network", default: "ethereum" })
   @IsString()
   @IsOptional()
-  network?: string = 'ethereum';
+  network?: string = "ethereum";
 
-  @ApiPropertyOptional({ description: 'Transfer type filter' })
+  @ApiPropertyOptional({ description: "Transfer type filter" })
   @IsString()
   @IsOptional()
   transferType?: string;
 
-  @ApiPropertyOptional({ description: 'Start time (RFC3339)' })
+  @ApiPropertyOptional({ description: "Start time (RFC3339)" })
   @IsString()
   @IsOptional()
   startTime?: string;
 
-  @ApiPropertyOptional({ description: 'End time (RFC3339)' })
+  @ApiPropertyOptional({ description: "End time (RFC3339)" })
   @IsString()
   @IsOptional()
   endTime?: string;
@@ -105,13 +105,17 @@ export class TransferResponse {
   @ApiProperty()
   network: string;
 
-  @ApiPropertyOptional({ description: 'Token contract address (for ERC20 transfers)' })
+  @ApiPropertyOptional({
+    description: "Token contract address (for ERC20 transfers)",
+  })
   tokenAddress?: string;
 
-  @ApiPropertyOptional({ description: 'Token symbol (for ERC20 transfers)' })
+  @ApiPropertyOptional({ description: "Token symbol (for ERC20 transfers)" })
   tokenSymbol?: string;
 
-  @ApiPropertyOptional({ description: 'Token decimal places (for ERC20 transfers)' })
+  @ApiPropertyOptional({
+    description: "Token decimal places (for ERC20 transfers)",
+  })
   tokenDecimal?: number;
 }
 

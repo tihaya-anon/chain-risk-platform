@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 
 /**
  * Extract user info from Gateway-injected headers
@@ -10,11 +10,11 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 export const GatewayUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    
+
     // Extract user info from Gateway headers
-    const userId = request.headers['x-user-id'];
-    const username = request.headers['x-user-username'];
-    const role = request.headers['x-user-role'];
+    const userId = request.headers["x-user-id"];
+    const username = request.headers["x-user-username"];
+    const role = request.headers["x-user-role"];
 
     if (!userId || !username || !role) {
       return null;

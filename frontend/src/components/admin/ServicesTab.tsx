@@ -50,7 +50,9 @@ export function ServicesTab({ services, isLoading }: ServicesTabProps) {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Group</span>
-                      <span className="font-medium text-gray-900">{service.groupName}</span>
+                      <span className="font-medium text-gray-900">
+                        {service.groupName}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Clusters</span>

@@ -30,10 +30,14 @@ export function ConfigTab({
                 <p className="text-2xl font-bold text-red-900">
                   {riskConfig?.highThreshold || "-"}
                 </p>
-                <p className="text-xs text-red-600 mt-1">Scores above this are high risk</p>
+                <p className="text-xs text-red-600 mt-1">
+                  Scores above this are high risk
+                </p>
               </div>
               <div className="p-4 bg-yellow-50 rounded-lg">
-                <p className="text-sm text-yellow-600 font-medium mb-1">Medium Threshold</p>
+                <p className="text-sm text-yellow-600 font-medium mb-1">
+                  Medium Threshold
+                </p>
                 <p className="text-2xl font-bold text-yellow-900">
                   {riskConfig?.mediumThreshold || "-"}
                 </p>
@@ -67,7 +71,9 @@ export function ConfigTab({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div className="p-3 bg-gray-50 rounded">
                   <p className="text-gray-600">Network</p>
-                  <p className="font-medium">{pipelineConfig?.ingestion?.network || "-"}</p>
+                  <p className="font-medium">
+                    {pipelineConfig?.ingestion?.network || "-"}
+                  </p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded">
                   <p className="text-gray-600">Interval</p>
@@ -127,7 +133,9 @@ export function ConfigTab({
                 </div>
                 <div className="p-3 bg-gray-50 rounded">
                   <p className="text-gray-600">Batch Size</p>
-                  <p className="font-medium">{pipelineConfig?.graphSync?.batchSize || "-"}</p>
+                  <p className="font-medium">
+                    {pipelineConfig?.graphSync?.batchSize || "-"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -144,7 +152,9 @@ export function ConfigTab({
                 </div>
                 <div className="p-3 bg-gray-50 rounded">
                   <p className="text-gray-600">Max Depth</p>
-                  <p className="font-medium">{pipelineConfig?.clustering?.maxDepth || "-"}</p>
+                  <p className="font-medium">
+                    {pipelineConfig?.clustering?.maxDepth || "-"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -155,7 +165,9 @@ export function ConfigTab({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div className="p-3 bg-gray-50 rounded">
                   <p className="text-gray-600">Max Hops</p>
-                  <p className="font-medium">{pipelineConfig?.propagation?.maxHops || "-"}</p>
+                  <p className="font-medium">
+                    {pipelineConfig?.propagation?.maxHops || "-"}
+                  </p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded">
                   <p className="text-gray-600">Decay Factor</p>

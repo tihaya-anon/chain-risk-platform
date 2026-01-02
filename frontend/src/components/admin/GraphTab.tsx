@@ -139,7 +139,9 @@ export function GraphTab({
                 <Clock className="w-4 h-4" />
                 <span className="text-sm font-medium">Network</span>
               </div>
-              <p className="text-2xl font-bold text-green-900">{syncStatus?.network || "-"}</p>
+              <p className="text-2xl font-bold text-green-900">
+                {syncStatus?.network || "-"}
+              </p>
             </div>
           </div>
 
@@ -218,11 +220,14 @@ export function GraphTab({
         </Card>
 
         {/* Manual Clustering */}
-        <Card title="Manual Clustering" subtitle="Group specific addresses into a cluster">
+        <Card
+          title="Manual Clustering"
+          subtitle="Group specific addresses into a cluster"
+        >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Manually create a cluster from a list of addresses. Enter one address per line
-              or separate with commas.
+              Manually create a cluster from a list of addresses. Enter one address per
+              line or separate with commas.
             </p>
 
             <div>
