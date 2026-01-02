@@ -58,6 +58,7 @@ START_BLOCK=1000
 NUM_BLOCKS=30  # Must be > confirmations (12) + some buffer
 CONFIRMATIONS=0  # Disable confirmations for testing
 EXPECTED_TRANSFERS=$((NUM_BLOCKS * 3))  # ~3 transfers per block on average
+EXPECTED_TRANSACTIONS=$NUM_BLOCKS  # Expect at least NUM_BLOCKS transactions
 
 log_info "Using Docker Host: $DOCKER_HOST_IP"
 log_info "Kafka Broker: $KAFKA_BROKER"
@@ -311,21 +312,83 @@ verify_results() {
     PROCESSING_STATE=$(echo $PROCESSING_STATE | tr -d ' ')
     
     log_info "Results:"
-    log_info "  - Transfers: $TRANSFER_COUNT"
-    log_info "  - Transactions: $TX_COUNT"
+    log_info "  - Transfers: $TRANSFER_COUNT (expected: >=$EXPECTED_TRANSFERS)"
+    log_info "  - Transactions: $TX_COUNT (expected: >=$EXPECTED_TRANSACTIONS)"
     log_info "  - Last processed block: $PROCESSING_STATE"
     
-    # Validate counts
-    if [ "$TRANSFER_COUNT" -lt 1 ]; then
-        log_error "No transfers found in database!"
+    # Track test failures
+    local TEST_FAILED=0
+    
+    # Validate transfer counts
+    if [ "$TRANSFER_COUNT" -lt "$EXPECTED_TRANSFERS" ]; then
+        log_error "Transfer count ($TRANSFER_COUNT) is less than expected ($EXPECTED_TRANSFERS)!"
+        TEST_FAILED=1
+    else
+        log_info "✓ Transfer count validation passed"
+    fi
+    
+    # Validate transaction counts
+    if [ "$TX_COUNT" -lt "$EXPECTED_TRANSACTIONS" ]; then
+        log_error "Transaction count ($TX_COUNT) is less than expected ($EXPECTED_TRANSACTIONS)!"
+        TEST_FAILED=1
+    else
+        log_info "✓ Transaction count validation passed"
+    fi
+    
+    # Validate processing state
+    if [ "$PROCESSING_STATE" = "N/A" ] || [ -z "$PROCESSING_STATE" ]; then
+        log_warn "Processing state not found in database"
+    else
+        EXPECTED_LAST_BLOCK=$((START_BLOCK + NUM_BLOCKS - 1))
+        if [ "$PROCESSING_STATE" -ge "$EXPECTED_LAST_BLOCK" ]; then
+            log_info "✓ Processing state validation passed (block: $PROCESSING_STATE)"
+        else
+            log_warn "Processing state ($PROCESSING_STATE) is less than expected ($EXPECTED_LAST_BLOCK)"
+        fi
+    fi
+    
+    # Data consistency checks
+    log_info "Checking data consistency..."
+    
+    # Check if all transactions have valid block numbers
+    INVALID_TX=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transactions WHERE block_number IS NULL OR block_number < $START_BLOCK OR block_number >= $((START_BLOCK + NUM_BLOCKS))")
+    INVALID_TX=$(echo $INVALID_TX | tr -d ' ')
+    
+    if [ "$INVALID_TX" -gt 0 ]; then
+        log_warn "Found $INVALID_TX transactions with invalid block numbers"
+    else
+        log_info "✓ All transactions have valid block numbers"
+    fi
+    
+    # Check if all transfers have valid block numbers
+    INVALID_TRANSFER=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transfers WHERE block_number IS NULL OR block_number < $START_BLOCK OR block_number >= $((START_BLOCK + NUM_BLOCKS))")
+    INVALID_TRANSFER=$(echo $INVALID_TRANSFER | tr -d ' ')
+    
+    if [ "$INVALID_TRANSFER" -gt 0 ]; then
+        log_warn "Found $INVALID_TRANSFER transfers with invalid block numbers"
+    else
+        log_info "✓ All transfers have valid block numbers"
+    fi
+    
+    # Check if native transfers have corresponding transactions
+    NATIVE_TRANSFERS=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transfers WHERE transfer_type = 'native'")
+    NATIVE_TRANSFERS=$(echo $NATIVE_TRANSFERS | tr -d ' ')
+    
+    ORPHAN_TRANSFERS=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transfers t LEFT JOIN chain_data.transactions tx ON t.tx_hash = tx.hash WHERE tx.hash IS NULL AND t.transfer_type = 'native'")
+    ORPHAN_TRANSFERS=$(echo $ORPHAN_TRANSFERS | tr -d ' ')
+    
+    if [ "$ORPHAN_TRANSFERS" -gt 0 ]; then
+        log_warn "Found $ORPHAN_TRANSFERS native transfers without corresponding transactions"
+    else
+        log_info "✓ All native transfers have corresponding transactions"
+    fi
+    
+    if [ $TEST_FAILED -eq 1 ]; then
+        log_error "Verification failed!"
         return 1
     fi
     
-    if [ "$TX_COUNT" -lt 1 ]; then
-        log_warn "No transactions found in database (may be expected if sink not implemented)"
-    fi
-    
-    log_info "Verification passed!"
+    log_info "✅ All verifications passed!"
     return 0
 }
 
@@ -334,25 +397,96 @@ print_sample_data() {
     log_info "Sample data from database:"
     
     echo ""
+    echo "=== Transfer Statistics ==="
+    PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
+SELECT 
+    transfer_type,
+    network,
+    COUNT(*) as count,
+    MIN(block_number) as min_block,
+    MAX(block_number) as max_block
+FROM chain_data.transfers
+GROUP BY transfer_type, network
+ORDER BY transfer_type, network;
+EOF
+    
+    echo ""
+    echo "=== Transaction Statistics ==="
+    PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
+SELECT 
+    network,
+    COUNT(*) as count,
+    MIN(block_number) as min_block,
+    MAX(block_number) as max_block,
+    COUNT(CASE WHEN is_error THEN 1 END) as error_count
+FROM chain_data.transactions
+GROUP BY network
+ORDER BY network;
+EOF
+    
+    echo ""
     echo "=== Sample Transfers ==="
     PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
-SELECT tx_hash, block_number, from_address, to_address, transfer_type, network
+SELECT 
+    tx_hash, 
+    block_number, 
+    from_address, 
+    to_address, 
+    transfer_type, 
+    token_symbol,
+    network
 FROM chain_data.transfers
+ORDER BY block_number DESC
 LIMIT 5;
 EOF
     
     echo ""
     echo "=== Sample Transactions ==="
     PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
-SELECT hash, block_number, from_address, to_address, network
+SELECT 
+    hash, 
+    block_number, 
+    from_address, 
+    to_address, 
+    value,
+    is_error,
+    network
 FROM chain_data.transactions
+ORDER BY block_number DESC
 LIMIT 5;
 EOF
     
     echo ""
     echo "=== Processing State ==="
     PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
-SELECT * FROM chain_data.processing_state;
+SELECT 
+    id,
+    network,
+    processor_type,
+    last_processed_block,
+    updated_at
+FROM chain_data.processing_state
+ORDER BY network, processor_type;
+EOF
+    
+    echo ""
+    echo "=== Data Integrity Check ==="
+    PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
+-- Check for native transfers without transactions
+SELECT 
+    'Native transfers without transactions' as check_type,
+    COUNT(*) as count
+FROM chain_data.transfers t
+LEFT JOIN chain_data.transactions tx ON t.tx_hash = tx.hash
+WHERE tx.hash IS NULL AND t.transfer_type = 'native'
+UNION ALL
+-- Check for transactions without any transfers
+SELECT 
+    'Transactions without transfers' as check_type,
+    COUNT(*) as count
+FROM chain_data.transactions tx
+LEFT JOIN chain_data.transfers t ON tx.hash = t.tx_hash
+WHERE t.tx_hash IS NULL;
 EOF
 }
 
