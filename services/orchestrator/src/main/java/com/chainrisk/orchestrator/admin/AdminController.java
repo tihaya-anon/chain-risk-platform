@@ -127,9 +127,31 @@ public class AdminController {
     // ==================== Pipeline Control Endpoints ====================
 
     @PostMapping("/pipeline/ingestion/{action}")
-    @Operation(summary = "Control data ingestion", description = "Pause, resume, or trigger data ingestion")
+    @Operation(summary = "Control data ingestion", description = "Pause or resume data ingestion")
     public Mono<Map<String, Object>> controlIngestion(@PathVariable String action) {
-        return callServiceAction("data-ingestion", "/admin/" + action)
+        String endpoint = switch (action) {
+            case "pause" -> "/admin/pause";
+            case "resume" -> "/admin/resume";
+            default -> {
+                Map<String, Object> error = new HashMap<>();
+                error.put("service", "data-ingestion");
+                error.put("action", action);
+                error.put("error", "Invalid action. Supported actions: pause, resume");
+                error.put("timestamp", System.currentTimeMillis());
+                yield null;
+            }
+        };
+        
+        if (endpoint == null) {
+            return Mono.just(Map.of(
+                "service", "data-ingestion",
+                "action", action,
+                "error", "Invalid action. Supported actions: pause, resume",
+                "timestamp", System.currentTimeMillis()
+            ));
+        }
+        
+        return callServiceAction("data-ingestion", endpoint)
             .map(response -> {
                 Map<String, Object> result = new HashMap<>();
                 result.put("service", "data-ingestion");

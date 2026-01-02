@@ -1,1 +1,427 @@
-{"openapi":"3.1.0","info":{"title":"Risk ML Service","description":"Risk scoring service with rule engine and ML models for blockchain address analysis","version":"0.1.0"},"paths":{"/health":{"get":{"summary":"Health Check","description":"Health check endpoint.","operationId":"health_check_health_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/admin/status":{"get":{"summary":"Admin Status","description":"Admin status endpoint with Nacos info.","operationId":"admin_status_admin_status_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/":{"get":{"summary":"Root","description":"Root endpoint with service info.","operationId":"root__get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/api/v1/risk/score":{"post":{"tags":["risk"],"summary":"Score Address","description":"Compute risk score for a single address.\n\n- **address**: Ethereum address (42 characters, starting with 0x)\n- **network**: Blockchain network (default: ethereum)\n- **include_factors**: Include detailed risk factors in response","operationId":"score_address_api_v1_risk_score_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RiskScoreRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RiskScoreResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/risk/batch":{"post":{"tags":["risk"],"summary":"Score Addresses Batch","description":"Compute risk scores for multiple addresses.\n\n- **addresses**: List of Ethereum addresses (max 100)\n- **network**: Blockchain network (default: ethereum)\n- **include_factors**: Include detailed risk factors (default: false for performance)","operationId":"score_addresses_batch_api_v1_risk_batch_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/BatchRiskScoreRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BatchRiskScoreResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/risk/rules":{"get":{"tags":["risk"],"summary":"List Rules","description":"List all registered risk evaluation rules.","operationId":"list_rules_api_v1_risk_rules_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"additionalProperties":true,"type":"object"},"type":"array","title":"Response List Rules Api V1 Risk Rules Get"}}}}}}}},"components":{"schemas":{"BatchRiskScoreRequest":{"properties":{"addresses":{"items":{"type":"string"},"type":"array","maxItems":100,"minItems":1,"title":"Addresses","description":"List of addresses"},"network":{"type":"string","title":"Network","description":"Blockchain network","default":"ethereum"},"include_factors":{"type":"boolean","title":"Include Factors","description":"Include detailed risk factors","default":false}},"type":"object","required":["addresses"],"title":"BatchRiskScoreRequest","description":"Request model for batch risk scoring."},"BatchRiskScoreResponse":{"properties":{"results":{"items":{"$ref":"#/components/schemas/RiskScoreResponse"},"type":"array","title":"Results","description":"Risk scores for each address"},"total":{"type":"integer","title":"Total","description":"Total addresses processed"},"failed":{"type":"integer","title":"Failed","description":"Number of failed evaluations","default":0}},"type":"object","required":["results","total"],"title":"BatchRiskScoreResponse","description":"Response model for batch risk scoring."},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"RiskFactor":{"properties":{"name":{"type":"string","title":"Name","description":"Risk factor name"},"score":{"type":"number","maximum":1.0,"minimum":0.0,"title":"Score","description":"Factor score (0-1)"},"weight":{"type":"number","title":"Weight","description":"Factor weight","default":1.0},"description":{"type":"string","title":"Description","description":"Human-readable description"},"triggered":{"type":"boolean","title":"Triggered","description":"Whether this factor was triggered","default":false}},"type":"object","required":["name","score","description"],"title":"RiskFactor","description":"Individual risk factor with score and description."},"RiskLevel":{"type":"string","enum":["low","medium","high","critical"],"title":"RiskLevel","description":"Risk level classification."},"RiskScoreRequest":{"properties":{"address":{"type":"string","maxLength":42,"minLength":42,"title":"Address","description":"Ethereum address"},"network":{"type":"string","title":"Network","description":"Blockchain network","default":"ethereum"},"include_factors":{"type":"boolean","title":"Include Factors","description":"Include detailed risk factors","default":true}},"type":"object","required":["address"],"title":"RiskScoreRequest","description":"Request model for single address risk scoring."},"RiskScoreResponse":{"properties":{"address":{"type":"string","title":"Address","description":"Evaluated address"},"network":{"type":"string","title":"Network","description":"Blockchain network"},"risk_score":{"type":"number","maximum":1.0,"minimum":0.0,"title":"Risk Score","description":"Overall risk score (0-1)"},"risk_level":{"$ref":"#/components/schemas/RiskLevel","description":"Risk level classification"},"factors":{"items":{"$ref":"#/components/schemas/RiskFactor"},"type":"array","title":"Factors","description":"Detailed risk factors"},"tags":{"items":{"type":"string"},"type":"array","title":"Tags","description":"Risk tags"},"evaluated_at":{"type":"string","format":"date-time","title":"Evaluated At","description":"Evaluation timestamp"},"cached":{"type":"boolean","title":"Cached","description":"Whether result was from cache","default":false}},"type":"object","required":["address","network","risk_score","risk_level"],"title":"RiskScoreResponse","description":"Response model for risk scoring."},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"}}}}
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Risk ML Service",
+        "description": "Risk scoring service with rule engine and ML models for blockchain address analysis",
+        "version": "0.1.0"
+    },
+    "paths": {
+        "/health": {
+            "get": {
+                "summary": "Health Check",
+                "description": "Health check endpoint.",
+                "operationId": "health_check_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/status": {
+            "get": {
+                "summary": "Admin Status",
+                "description": "Admin status endpoint with Nacos info.",
+                "operationId": "admin_status_admin_status_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/": {
+            "get": {
+                "summary": "Root",
+                "description": "Root endpoint with service info.",
+                "operationId": "root__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/risk/score": {
+            "post": {
+                "tags": [
+                    "risk"
+                ],
+                "summary": "Score Address",
+                "description": "Compute risk score for a single address.\n\n- **address**: Ethereum address (42 characters, starting with 0x)\n- **network**: Blockchain network (default: ethereum)\n- **include_factors**: Include detailed risk factors in response",
+                "operationId": "score_address_api_v1_risk_score_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RiskScoreRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RiskScoreResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/risk/batch": {
+            "post": {
+                "tags": [
+                    "risk"
+                ],
+                "summary": "Score Addresses Batch",
+                "description": "Compute risk scores for multiple addresses.\n\n- **addresses**: List of Ethereum addresses (max 100)\n- **network**: Blockchain network (default: ethereum)\n- **include_factors**: Include detailed risk factors (default: false for performance)",
+                "operationId": "score_addresses_batch_api_v1_risk_batch_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BatchRiskScoreRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BatchRiskScoreResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/risk/rules": {
+            "get": {
+                "tags": [
+                    "risk"
+                ],
+                "summary": "List Rules",
+                "description": "List all registered risk evaluation rules.",
+                "operationId": "list_rules_api_v1_risk_rules_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "additionalProperties": true,
+                                        "type": "object"
+                                    },
+                                    "type": "array",
+                                    "title": "Response List Rules Api V1 Risk Rules Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "BatchRiskScoreRequest": {
+                "properties": {
+                    "addresses": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "maxItems": 100,
+                        "minItems": 1,
+                        "title": "Addresses",
+                        "description": "List of addresses"
+                    },
+                    "network": {
+                        "type": "string",
+                        "title": "Network",
+                        "description": "Blockchain network",
+                        "default": "ethereum"
+                    },
+                    "include_factors": {
+                        "type": "boolean",
+                        "title": "Include Factors",
+                        "description": "Include detailed risk factors",
+                        "default": false
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "addresses"
+                ],
+                "title": "BatchRiskScoreRequest",
+                "description": "Request model for batch risk scoring."
+            },
+            "BatchRiskScoreResponse": {
+                "properties": {
+                    "results": {
+                        "items": {
+                            "$ref": "#/components/schemas/RiskScoreResponse"
+                        },
+                        "type": "array",
+                        "title": "Results",
+                        "description": "Risk scores for each address"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total",
+                        "description": "Total addresses processed"
+                    },
+                    "failed": {
+                        "type": "integer",
+                        "title": "Failed",
+                        "description": "Number of failed evaluations",
+                        "default": 0
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "results",
+                    "total"
+                ],
+                "title": "BatchRiskScoreResponse",
+                "description": "Response model for batch risk scoring."
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "RiskFactor": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name",
+                        "description": "Risk factor name"
+                    },
+                    "score": {
+                        "type": "number",
+                        "maximum": 1.0,
+                        "minimum": 0.0,
+                        "title": "Score",
+                        "description": "Factor score (0-1)"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "title": "Weight",
+                        "description": "Factor weight",
+                        "default": 1.0
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "Human-readable description"
+                    },
+                    "triggered": {
+                        "type": "boolean",
+                        "title": "Triggered",
+                        "description": "Whether this factor was triggered",
+                        "default": false
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "score",
+                    "description"
+                ],
+                "title": "RiskFactor",
+                "description": "Individual risk factor with score and description."
+            },
+            "RiskLevel": {
+                "type": "string",
+                "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                ],
+                "title": "RiskLevel",
+                "description": "Risk level classification."
+            },
+            "RiskScoreRequest": {
+                "properties": {
+                    "address": {
+                        "type": "string",
+                        "maxLength": 42,
+                        "minLength": 42,
+                        "title": "Address",
+                        "description": "Ethereum address"
+                    },
+                    "network": {
+                        "type": "string",
+                        "title": "Network",
+                        "description": "Blockchain network",
+                        "default": "ethereum"
+                    },
+                    "include_factors": {
+                        "type": "boolean",
+                        "title": "Include Factors",
+                        "description": "Include detailed risk factors",
+                        "default": true
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "address"
+                ],
+                "title": "RiskScoreRequest",
+                "description": "Request model for single address risk scoring."
+            },
+            "RiskScoreResponse": {
+                "properties": {
+                    "address": {
+                        "type": "string",
+                        "title": "Address",
+                        "description": "Evaluated address"
+                    },
+                    "network": {
+                        "type": "string",
+                        "title": "Network",
+                        "description": "Blockchain network"
+                    },
+                    "risk_score": {
+                        "type": "number",
+                        "maximum": 1.0,
+                        "minimum": 0.0,
+                        "title": "Risk Score",
+                        "description": "Overall risk score (0-1)"
+                    },
+                    "risk_level": {
+                        "$ref": "#/components/schemas/RiskLevel",
+                        "description": "Risk level classification"
+                    },
+                    "factors": {
+                        "items": {
+                            "$ref": "#/components/schemas/RiskFactor"
+                        },
+                        "type": "array",
+                        "title": "Factors",
+                        "description": "Detailed risk factors"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Tags",
+                        "description": "Risk tags"
+                    },
+                    "evaluated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Evaluated At",
+                        "description": "Evaluation timestamp"
+                    },
+                    "cached": {
+                        "type": "boolean",
+                        "title": "Cached",
+                        "description": "Whether result was from cache",
+                        "default": false
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "address",
+                    "network",
+                    "risk_score",
+                    "risk_level"
+                ],
+                "title": "RiskScoreResponse",
+                "description": "Response model for risk scoring."
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}

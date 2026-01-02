@@ -42,10 +42,10 @@ export const adminService = {
   },
 
   /**
-   * Control data ingestion (pause, resume, trigger)
+   * Control data ingestion (pause, resume)
    */
   controlIngestion: async (
-    action: "pause" | "resume" | "trigger"
+    action: "pause" | "resume"
   ): Promise<{ status: string; message: string }> => {
     const response = await api.post<{ status: string; message: string }>(
       `/admin/pipeline/ingestion/${action}`
