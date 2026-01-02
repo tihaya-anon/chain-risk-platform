@@ -209,7 +209,7 @@ update_graph_engine() {
         log_info "Graph Engine is running, fetching API spec..."
         
         # Fetch OpenAPI spec from running service
-        if curl -s http://localhost:8084/v3/api-docs > "$API_SPECS_DIR/graph-engine.openapi.json"; then
+        if curl -s http://localhost:8084/api-docs > "$API_SPECS_DIR/graph-engine.openapi.json"; then
             log_info "✅ Graph Engine API spec updated: docs/api-specs/graph-engine.openapi.json"
         else
             log_error "❌ Failed to fetch Graph Engine API spec"
