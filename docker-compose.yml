@@ -227,5 +227,3 @@ volumes:
 networks:
   default:
     name: chainrisk-network
-
-      - default
