@@ -4,6 +4,7 @@ import { Link } from "react-router-dom"
 import { Tag, Search, ExternalLink, Network, Filter, X } from "lucide-react"
 import { Button, Card, Input, LoadingSpinner, RiskBadge } from "@/components/common"
 import { graphService } from "@/services"
+import { Select } from "@/components/common/Select"
 
 // Common tags for quick selection
 const COMMON_TAGS = [
@@ -89,15 +90,17 @@ export function TagSearchPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-gray-400" />
-                  <select
+                  <Select
                     value={limit}
                     onChange={(e) => setLimit(Number(e.target.value))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  >
-                    <option value={20}>20 results</option>
-                    <option value={50}>50 results</option>
-                    <option value={100}>100 results</option>
-                  </select>
+                    options={
+                      [
+                        [20, '20 results'],
+                        [50, '50 results'],
+                        [100, '100 results']
+                      ]
+                    }
+                  />
                 </div>
                 <Button type="submit" loading={searchQuery.isLoading}>
                   <Search className="w-4 h-4 mr-1" />
@@ -114,11 +117,10 @@ export function TagSearchPage() {
                       key={tag}
                       type="button"
                       onClick={() => handleTagClick(tag)}
-                      className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                        activeTag === tag
-                          ? "bg-blue-100 border-blue-300 text-blue-700"
-                          : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                      }`}
+                      className={`px-3 py-1 text-sm rounded-full border transition-colors ${activeTag === tag
+                        ? "bg-blue-100 border-blue-300 text-blue-700"
+                        : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                        }`}
                     >
                       {tag}
                     </button>
@@ -198,11 +200,10 @@ export function TagSearchPage() {
                                 <button
                                   key={tag}
                                   onClick={() => handleTagClick(tag)}
-                                  className={`px-2 py-0.5 text-xs rounded cursor-pointer transition-colors ${
-                                    tag === activeTag
-                                      ? "bg-blue-100 text-blue-700"
-                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                  }`}
+                                  className={`px-2 py-0.5 text-xs rounded cursor-pointer transition-colors ${tag === activeTag
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                    }`}
                                 >
                                   {tag}
                                 </button>

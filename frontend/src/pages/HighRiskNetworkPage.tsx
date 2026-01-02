@@ -19,6 +19,7 @@ import {
 } from "@/components/risk"
 import { orchestrationService } from "@/services"
 import type { GraphAddressInfo } from "@/types"
+import { Select } from "@/components/common/Select"
 
 export function HighRiskNetworkPage() {
   const navigate = useNavigate()
@@ -56,29 +57,34 @@ export function HighRiskNetworkPage() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <label className="text-sm text-gray-600">Risk Threshold:</label>
-                <select
+                <Select
                   value={threshold}
                   onChange={(e) => setThreshold(Number(e.target.value))}
-                  className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                >
-                  <option value={0.5}>≥ 0.5 (Medium+)</option>
-                  <option value={0.6}>≥ 0.6 (High+)</option>
-                  <option value={0.7}>≥ 0.7 (High)</option>
-                  <option value={0.8}>≥ 0.8 (Critical)</option>
-                </select>
+                  options={
+                    [
+                      [0.5, "≥ 0.5 (Medium+)"],
+                      [0.6, "≥ 0.6 (High+)"],
+                      [0.7, "≥ 0.7 (High)"],
+                      [0.8, "≥ 0.8 (Critical)"],
+                    ]
+                  }
+                />
               </div>
               <div className="flex items-center gap-2">
                 <label className="text-sm text-gray-600">Limit:</label>
-                <select
+                <Select
                   value={limit}
                   onChange={(e) => setLimit(Number(e.target.value))}
-                  className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                >
-                  <option value={20}>20</option>
-                  <option value={30}>30</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
+                  options={
+                    [
+                      [10, "10"],
+                      [20, "20"],
+                      [30, "30"],
+                      [50, "50"],
+                      [100, "100"],
+                    ]
+                  }
+                />
               </div>
               <div className="flex items-center gap-2 border-l pl-4">
                 <label className="text-sm text-gray-600">View:</label>
@@ -86,8 +92,8 @@ export function HighRiskNetworkPage() {
                   <button
                     onClick={() => setViewMode("list")}
                     className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === "list"
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
                   >
                     <List className="w-4 h-4" />
@@ -96,8 +102,8 @@ export function HighRiskNetworkPage() {
                   <button
                     onClick={() => setViewMode("graph")}
                     className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === "graph"
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
                   >
                     <NetworkIcon className="w-4 h-4" />
@@ -167,10 +173,10 @@ export function HighRiskNetworkPage() {
             </div>
           )}
         </div>
-      </div>
+      </div >
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
+      < div className="flex-1 overflow-y-auto" >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Loading */}
           {highRiskQuery.isLoading && (
@@ -230,7 +236,7 @@ export function HighRiskNetworkPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   )
 }

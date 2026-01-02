@@ -5,6 +5,7 @@ import { Network, DataSet, Options } from "vis-network/standalone"
 import { Route, Search, ArrowLeftRight, Circle, Tag, AlertCircle } from "lucide-react"
 import { Button, Input, Card, LoadingSpinner, RiskBadge } from "@/components/common"
 import { orchestrationService } from "@/services"
+import { Select } from "@/components/common/Select"
 
 export function PathFinderPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -114,9 +115,8 @@ export function PathFinderPage() {
 
       nodes.push({
         id: node.address,
-        label: `${node.address.slice(0, 6)}...${node.address.slice(-4)}${
-          isStart ? "\n(Source)" : isEnd ? "\n(Target)" : ""
-        }`,
+        label: `${node.address.slice(0, 6)}...${node.address.slice(-4)}${isStart ? "\n(Source)" : isEnd ? "\n(Target)" : ""
+          }`,
         color: { background: bgColor, border: borderColor },
         size: isStart || isEnd ? 30 : 20,
         font: isStart || isEnd ? { color: "#FFFFFF" } : undefined,
@@ -242,16 +242,18 @@ export function PathFinderPage() {
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-gray-600">Max Depth:</label>
-                  <select
+                  <Select
                     value={maxDepth}
                     onChange={(e) => setMaxDepth(Number(e.target.value))}
-                    className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value={3}>3 hops</option>
-                    <option value={5}>5 hops</option>
-                    <option value={7}>7 hops</option>
-                    <option value={10}>10 hops</option>
-                  </select>
+                    options={
+                      [
+                        [3, '3 hops'],
+                        [5, '5 hops'],
+                        [7, '7 hops'],
+                        [10, '10 hops']
+                      ]
+                    }
+                  />
                 </div>
                 <Button type="button" variant="secondary" size="sm" onClick={handleSwap}>
                   <ArrowLeftRight className="w-4 h-4 mr-1" />
@@ -384,11 +386,10 @@ export function PathFinderPage() {
                           </div>
                           {node.riskScore !== undefined && (
                             <span
-                              className={`px-2 py-0.5 text-xs rounded ${
-                                node.riskScore >= 0.6
+                              className={`px-2 py-0.5 text-xs rounded ${node.riskScore >= 0.6
                                   ? "bg-red-100 text-red-700"
                                   : "bg-green-100 text-green-700"
-                              }`}
+                                }`}
                             >
                               {node.riskScore.toFixed(2)}
                             </span>

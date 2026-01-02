@@ -22,6 +22,7 @@ import {
 } from "@/components/graph"
 import type { HoveredNodeInfo } from "@/components/graph/AddressGraph"
 import { graphService } from "@/services"
+import { Select } from "@/components/common/Select"
 
 export function GraphExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -182,28 +183,28 @@ export function GraphExplorerPage() {
               <div className="flex flex-wrap gap-4 items-center pt-4 border-t">
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-gray-600">Depth:</label>
-                  <select
+                  <Select
                     value={depth}
                     onChange={(e) => setDepth(Number(e.target.value))}
-                    className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value={1}>1 hop</option>
-                    <option value={2}>2 hops</option>
-                    <option value={3}>3 hops</option>
-                  </select>
+                    options={[
+                      [1, '1 hop'],
+                      [2, '2 hops'],
+                      [3, '3 hops']
+                    ]}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-gray-600">Max Neighbors:</label>
-                  <select
+                  <Select
                     value={limit}
                     onChange={(e) => setLimit(Number(e.target.value))}
-                    className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value={10}>10</option>
-                    <option value={30}>30</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
+                    options={[
+                      [10, '10'],
+                      [30, '30'],
+                      [50, '50'],
+                      [100, '100']
+                    ]}
+                  />
                 </div>
                 {currentAddress && (
                   <Button
