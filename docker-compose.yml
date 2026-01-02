@@ -106,9 +106,9 @@ services:
     image: danielqsj/kafka-exporter:latest
     container_name: kafka-exporter
     command:
-      - '--kafka.server=kafka:29092'
-      - '--topic.filter=.*'
-      - '--group.filter=.*'
+      - "--kafka.server=kafka:29092"
+      - "--topic.filter=.*"
+      - "--group.filter=.*"
     ports:
       - "0.0.0.0:19308:9308"
     depends_on:
@@ -166,6 +166,51 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
 
+  # ============== Database UI Tools ==============
+  # PostgreSQL UI - pgAdmin
+  pgadmin:
+    image: dpage/pgadmin4:8.2
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@chainrisk.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "0.0.0.0:15050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Redis UI - RedisInsight
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "0.0.0.0:15540:5540"
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Kafka UI - kafka-ui
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.1
+    container_name: kafka-ui
+    ports:
+      - "0.0.0.0:18080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: chainrisk-kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      - kafka
+      - zookeeper
+    restart: unless-stopped
+
 volumes:
   zookeeper_data:
   kafka_data:
@@ -176,29 +221,11 @@ volumes:
   prometheus_data:
   grafana_data:
   nacos_data:
+  pgadmin_data:
+  redisinsight_data:
 
 networks:
   default:
     name: chainrisk-network
 
-      - default
-
-  bff:
-    build:
-      context: ./services/bff
-      dockerfile: Dockerfile
-    container_name: bff
-    ports:
-      - "0.0.0.0:3001:3001"
-    environment:
-      NODE_ENV: production
-      PORT: 3001
-      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production-min-256-bits}
-      # Backend service URLs
-      ADDRESS_SERVICE_URL: http://address-service:8081
-      RISK_SERVICE_URL: http://risk-service:8082
-    depends_on:
-      - redis
-    restart: unless-stopped
-    networks:
       - default
