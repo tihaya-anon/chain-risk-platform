@@ -10,9 +10,9 @@ import {
   Users,
   TrendingUp,
   Clock,
-  ExternalLink,
 } from "lucide-react"
-import { Card, LoadingSpinner, RiskBadge } from "@/components/common"
+import { Card, LoadingSpinner } from "@/components/common"
+import { AddressTable } from "@/components/table"
 import { graphService } from "@/services"
 
 export function DashboardPage() {
@@ -20,20 +20,20 @@ export function DashboardPage() {
   const syncQuery = useQuery({
     queryKey: ["syncStatus"],
     queryFn: () => graphService.getSyncStatus(),
-    refetchInterval: 30000, // Refresh every 30s
+    refetchInterval: 30000,
   })
 
-  // Fetch high-risk addresses for alerts
+  // Fetch high-risk addresses
   const highRiskQuery = useQuery({
     queryKey: ["dashboardHighRisk"],
     queryFn: () => graphService.getHighRiskAddresses(0.7, 10),
-    refetchInterval: 60000, // Refresh every 60s
+    refetchInterval: 60000,
   })
 
   const syncStatus = syncQuery.data
   const highRiskAddresses = highRiskQuery.data || []
 
-  // Calculate risk distribution from high-risk addresses
+  // Calculate risk distribution
   const riskDistribution = {
     critical: highRiskAddresses.filter((a) => a.riskScore >= 0.8).length,
     high: highRiskAddresses.filter((a) => a.riskScore >= 0.6 && a.riskScore < 0.8).length,
@@ -313,80 +313,13 @@ export function DashboardPage() {
               No high-risk addresses found
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Address
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Risk Score
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Tags
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Transactions
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Last Seen
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {highRiskAddresses.slice(0, 5).map((addr) => (
-                    <tr key={addr.address} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <Link
-                          to={`/address?q=${addr.address}`}
-                          className="font-mono text-sm text-blue-600 hover:underline"
-                        >
-                          {addr.address.slice(0, 10)}...{addr.address.slice(-8)}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <RiskBadge score={addr.riskScore} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {addr.tags.slice(0, 2).map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {addr.tags.length > 2 && (
-                            <span className="text-xs text-gray-500">
-                              +{addr.tags.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {addr.txCount.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {formatTime(addr.lastSeen)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          to={`/graph?address=${addr.address}`}
-                          className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <AddressTable
+              addresses={highRiskAddresses.slice(0, 5)}
+              showTxCount={true}
+              showTags={true}
+              showLastSeen={true}
+              maxTagsDisplay={2}
+            />
           )}
         </Card>
       </div>

@@ -469,12 +469,12 @@ export const handlers = [
 
   // ============ Admin Handlers ============
 
-  http.get("/api/admin/services", async () => {
+  http.get(`${API_BASE}/admin/services`, async () => {
     await delay(300)
     return HttpResponse.json(generateServicesInfo())
   }),
 
-  http.get("/api/admin/services/:serviceName", async ({ params }) => {
+  http.get(`${API_BASE}/admin/services/:serviceName`, async ({ params }) => {
     await delay(300)
     const { serviceName } = params
 
@@ -498,12 +498,12 @@ export const handlers = [
     return HttpResponse.json(instances)
   }),
 
-  http.get("/api/admin/pipeline/status", async () => {
+  http.get(`${API_BASE}/admin/pipeline/status`, async () => {
     await delay(300)
     return HttpResponse.json(generatePipelineStatus())
   }),
 
-  http.post("/api/admin/pipeline/ingestion/:action", async ({ params }) => {
+  http.post(`${API_BASE}/admin/pipeline/ingestion/:action`, async ({ params }) => {
     await delay(400)
     const { action } = params
 
@@ -517,7 +517,7 @@ export const handlers = [
     })
   }),
 
-  http.post("/api/admin/pipeline/graph-sync/:action", async ({ params }) => {
+  http.post(`${API_BASE}/admin/pipeline/graph-sync/:action`, async ({ params }) => {
     await delay(400)
     const { action } = params
 
@@ -531,7 +531,7 @@ export const handlers = [
     })
   }),
 
-  http.get("/api/admin/config/all", async () => {
+  http.get(`${API_BASE}/admin/config/all`, async () => {
     await delay(300)
     return HttpResponse.json({
       risk: generateRiskConfig(),
@@ -539,12 +539,12 @@ export const handlers = [
     })
   }),
 
-  http.get("/api/admin/config/risk", async () => {
+  http.get(`${API_BASE}/admin/config/risk`, async () => {
     await delay(200)
     return HttpResponse.json(generateRiskConfig())
   }),
 
-  http.get("/api/admin/config/pipeline", async () => {
+  http.get(`${API_BASE}/admin/config/pipeline`, async () => {
     await delay(300)
     return HttpResponse.json(generatePipelineConfig())
   }),
