@@ -222,6 +222,7 @@ export function HighRiskNetworkPage() {
                       </div>
                       <HighRiskGraph
                         addresses={addresses}
+                        selectedNode={selectedAddress?.address}
                         onNodeHover={handleNodeHover}
                         onNodeClick={handleNodeClick}
                         onNodeDoubleClick={(addr) => navigate(`/graph?address=${addr}`)}

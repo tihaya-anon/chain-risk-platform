@@ -5,6 +5,7 @@ import type { GraphAddressInfo } from "@/types"
 
 interface HighRiskGraphProps {
   addresses: GraphAddressInfo[]
+  selectedNode?: string | null
   onNodeHover?: (address: GraphAddressInfo | null) => void
   onNodeClick?: (address: GraphAddressInfo | null) => void
   onNodeDoubleClick?: (address: string) => void
@@ -30,6 +31,7 @@ function getRiskBorderColor(riskScore: number | undefined): string {
 
 export function HighRiskGraph({
   addresses,
+  selectedNode,
   onNodeHover,
   onNodeClick,
   onNodeDoubleClick,
@@ -38,11 +40,13 @@ export function HighRiskGraph({
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
   const callbacksRef = useRef({ onNodeHover, onNodeClick, onNodeDoubleClick })
+  const selectedNodeRef = useRef<string | null>(null)
 
   // Update callbacks ref without triggering re-render
   useEffect(() => {
     callbacksRef.current = { onNodeHover, onNodeClick, onNodeDoubleClick }
-  }, [onNodeHover, onNodeClick, onNodeDoubleClick])
+    selectedNodeRef.current = selectedNode || null
+  }, [onNodeHover, onNodeClick, onNodeDoubleClick, selectedNode])
 
   useEffect(() => {
     if (!containerRef.current || !addresses.length) return
@@ -132,21 +136,39 @@ export function HighRiskGraph({
       options
     )
 
+    // Hover event - only trigger if no node is selected
     network.on("hoverNode", (params) => {
+      // Skip hover if a node is selected
+      if (selectedNodeRef.current) return
+
       const nodeId = params.node as string
       const addr = addresses.find((a) => a.address === nodeId)
       callbacksRef.current.onNodeHover?.(addr || null)
     })
 
     network.on("blurNode", () => {
-      callbacksRef.current.onNodeHover?.(null)
+      // Clear hover info only if no node is selected
+      if (!selectedNodeRef.current) {
+        callbacksRef.current.onNodeHover?.(null)
+      }
     })
 
+    // Click event - toggle selection
     network.on("click", (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
-        const addr = addresses.find((a) => a.address === nodeId)
-        callbacksRef.current.onNodeClick?.(addr || null)
+
+        // If clicking the same node, deselect it
+        if (selectedNodeRef.current === nodeId) {
+          callbacksRef.current.onNodeClick?.(null)
+        } else {
+          // Select new node
+          const addr = addresses.find((a) => a.address === nodeId)
+          callbacksRef.current.onNodeClick?.(addr || null)
+        }
+      } else {
+        // Clicked on empty space - deselect
+        callbacksRef.current.onNodeClick?.(null)
       }
     })
 
