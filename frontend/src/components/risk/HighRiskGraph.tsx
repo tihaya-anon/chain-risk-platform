@@ -29,6 +29,33 @@ function getRiskBorderColor(riskScore: number | undefined): string {
   return "#10B981"
 }
 
+function getRiskHighlightColor(riskScore: number | undefined): string {
+  if (riskScore === undefined) return "#D1D5DB"
+  if (riskScore >= 0.8) return "#FCA5A5"
+  if (riskScore >= 0.6) return "#FDBA74"
+  if (riskScore >= 0.4) return "#FCD34D"
+  return "#6EE7B7"
+}
+
+function getRiskHighlightBorderColor(riskScore: number | undefined): string {
+  if (riskScore === undefined) return "#9CA3AF"
+  if (riskScore >= 0.8) return "#F87171"
+  if (riskScore >= 0.6) return "#FB923C"
+  if (riskScore >= 0.4) return "#FBBF24"
+  return "#34D399"
+}
+
+function getRiskColors(riskScore: number | undefined) {
+  return {
+    background: getRiskColor(riskScore),
+    border: getRiskBorderColor(riskScore),
+    highlight: {
+      background: getRiskHighlightColor(riskScore),
+      border: getRiskHighlightBorderColor(riskScore),
+    },
+  }
+}
+
 export function HighRiskGraph({
   addresses,
   selectedNode,
@@ -54,10 +81,7 @@ export function HighRiskGraph({
     const nodes = addresses.map((addr) => ({
       id: addr.address,
       label: `${addr.address.slice(0, 6)}...${addr.address.slice(-4)}`,
-      color: {
-        background: getRiskColor(addr.riskScore),
-        border: getRiskBorderColor(addr.riskScore),
-      },
+      color: getRiskColors(addr.riskScore),
       size: Math.min(30, 15 + (addr.riskScore || 0) * 15),
       borderWidth: 2,
     }))
