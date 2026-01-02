@@ -56,31 +56,37 @@ const COLORS = {
     background: "#3B82F6",
     border: "#2563EB",
     highlight: { background: "#60A5FA", border: "#3B82F6" },
+    hover: { background: "#60A5FA", border: "#3B82F6" },
   },
   low: {
     background: "#34D399",
     border: "#10B981",
     highlight: { background: "#6EE7B7", border: "#34D399" },
+    hover: { background: "#6EE7B7", border: "#34D399" },
   },
   medium: {
     background: "#FBBF24",
     border: "#F59E0B",
     highlight: { background: "#FCD34D", border: "#FBBF24" },
+    hover: { background: "#FCD34D", border: "#FBBF24" },
   },
   high: {
     background: "#FB923C",
     border: "#F97316",
     highlight: { background: "#FDBA74", border: "#FB923C" },
+    hover: { background: "#FDBA74", border: "#FB923C" },
   },
   critical: {
     background: "#F87171",
     border: "#EF4444",
     highlight: { background: "#FCA5A5", border: "#F87171" },
+    hover: { background: "#FCA5A5", border: "#F87171" },
   },
   unknown: {
     background: "#9CA3AF",
     border: "#6B7280",
     highlight: { background: "#D1D5DB", border: "#9CA3AF" },
+    hover: { background: "#D1D5DB", border: "#9CA3AF" },
   },
   edge: {
     incoming: "#10B981",
