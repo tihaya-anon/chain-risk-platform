@@ -72,14 +72,6 @@ export function PipelineTab({
                 <Play className="w-4 h-4 mr-1" />
                 Resume
               </Button>
-              <Button
-                size="sm"
-                onClick={() => controlIngestion.mutate("trigger")}
-                loading={controlIngestion.isPending}
-              >
-                <RefreshCw className="w-4 h-4 mr-1" />
-                Trigger
-              </Button>
             </div>
           </div>
 

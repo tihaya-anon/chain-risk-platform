@@ -77,7 +77,7 @@ export function AdminPage() {
 
   // Pipeline control mutations
   const controlIngestionMutation = useMutation({
-    mutationFn: (action: "pause" | "resume" | "trigger") =>
+    mutationFn: (action: "pause" | "resume") =>
       adminService.controlIngestion(action),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminPipelineStatus"] })
