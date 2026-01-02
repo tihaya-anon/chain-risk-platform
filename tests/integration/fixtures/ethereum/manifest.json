@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "description": "Test fixtures generated from real Etherscan API responses",
+  "generatedAt": "",
+  "network": "ethereum",
+  "apiSource": "https://api.etherscan.io/api",
+  "blocks": [],
+  "addresses": [],
+  "notes": "Run fixture-gen tool to populate this directory with real API data"
+}
