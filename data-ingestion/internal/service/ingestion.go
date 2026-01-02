@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -177,6 +178,13 @@ func (s *Service) determineStartBlock(ctx context.Context) (uint64, error) {
 	return blockNum, nil
 }
 
+// isBlockNotFoundError checks if an error is due to a block not being found
+// This is used to handle cases where a block is requested but doesn't exist yet (e.g., during sync) or has been reorged out.
+func (s *Service) isBlockNotFoundError(err error) bool {
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "not found")
+}
+
 // pollBlocks fetches and processes new blocks
 func (s *Service) pollBlocks(ctx context.Context) error {
 	latestBlock, err := s.client.GetLatestBlockNumber(ctx)
@@ -218,9 +226,14 @@ func (s *Service) pollBlocks(ctx context.Context) error {
 		}
 
 		if err := s.processBlock(ctx, blockNum); err != nil {
-			s.logger.Error("Error processing block",
-				zap.Uint64("block", blockNum),
-				zap.Error(err))
+			if s.isBlockNotFoundError(err) {
+				s.logger.Debug("Block not found",
+					zap.Uint64("block", blockNum))
+			} else {
+				s.logger.Error("Error processing block",
+					zap.Uint64("block", blockNum),
+					zap.Error(err))
+			}
 			// Continue with next block
 			continue
 		}
