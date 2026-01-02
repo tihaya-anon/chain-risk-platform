@@ -107,6 +107,8 @@ help:
 	@echo "🧪 Integration Test:"
 	@echo "  make test-integration  Run integration tests"
 	@echo "  make mock-server-build Build mock Etherscan server"
+	@echo "  make mock-server-run   Run mock server with fixtures"
+	@echo "  make fixture-gen       Generate test fixtures from real API"
 	@echo ""
 	@echo "📋 Logs:"
 	@echo "  make logs-query        Tail query service logs"
@@ -596,3 +598,27 @@ mock-server-build: ## Build mock Etherscan server
 	@echo "🔨 Building mock server..."
 	@cd tests/integration/mock_server && mkdir -p bin && go build -o bin/mock_server .
 	@echo "✅ Mock server built: tests/integration/mock_server/bin/mock_server"
+
+mock-server-run: mock-server-build ## Run mock server with fixtures
+	@echo "🚀 Starting mock server..."
+	@cd tests/integration/mock_server && ./bin/mock_server -fixtures ../fixtures/ethereum -port 8545
+
+fixture-gen-build: ## Build fixture generator tool
+	@echo "🔨 Building fixture-gen..."
+	@cd data-ingestion && go build -o bin/fixture-gen ./cmd/fixture-gen
+	@echo "✅ fixture-gen built: data-ingestion/bin/fixture-gen"
+
+fixture-gen: fixture-gen-build ## Generate test fixtures (requires ETHERSCAN_API_KEY)
+	@echo "📥 Generating test fixtures..."
+	@if [ -z "$$ETHERSCAN_API_KEY" ]; then \
+		echo "❌ Error: ETHERSCAN_API_KEY environment variable is required"; \
+		echo "   Set it with: export ETHERSCAN_API_KEY=your_api_key"; \
+		exit 1; \
+	fi
+	@cd data-ingestion && ./bin/fixture-gen \
+		-network ethereum \
+		-output ../tests/integration/fixtures \
+		-latest 3 \
+		-rate-limit 5 \
+		-verbose
+	@echo "✅ Fixtures generated in tests/integration/fixtures/ethereum/"
