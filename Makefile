@@ -8,10 +8,39 @@ SHELL := /bin/bash
 # Export all variables to sub-makes and shell commands
 export
 
+# ============================================
+# Common Variables
+# ============================================
+
 # Log directory for background services
 LOGS_DIR := .logs
 
+# Java 17 setup (required for all Java services)
+JAVA17_HOME := $(shell /usr/libexec/java_home -v 17 2>/dev/null)
+JAVA17_ENV := export JAVA_HOME=$(JAVA17_HOME) &&
+
+# Maven common flags
+MVN_QUIET := -q
+MVN_SKIP_TESTS := -DskipTests
+
+# Environment loading command
+LOAD_ENV := set -a && source .env.local && source ./scripts/load-env.sh > /dev/null &&
+
+# Service directories
+DIR_INGESTION := data-ingestion
+DIR_QUERY := services/query-service
+DIR_ALERT := services/alert-service
+DIR_RISK := services/risk-ml-service
+DIR_BFF := services/bff
+DIR_ORCHESTRATOR := services/orchestrator
+DIR_GRAPH := processing/graph-engine
+DIR_FLINK := processing/stream-processor
+DIR_FRONTEND := frontend
+
+# ============================================
 # Default target
+# ============================================
+
 help:
 	@echo ""
 	@echo "Chain Risk Platform - Available Commands"
@@ -125,6 +154,14 @@ help:
 	@echo "  make logs-graph        Tail graph service logs"
 	@echo "  make logs-all          Tail all service logs"
 	@echo ""
+	@echo "🛑 Stop Services:"
+	@echo "  make stop-svc          Stop all backend services"
+	@echo "  make stop-query        Stop query service"
+	@echo "  make stop-risk         Stop risk service"
+	@echo "  make stop-bff          Stop bff service"
+	@echo "  make stop-graph        Stop graph engine"
+	@echo "  make stop-flink        Stop flink processor"
+	@echo ""
 
 # ============================================
 # Infrastructure
@@ -141,7 +178,7 @@ infra-down: ## Stop infrastructure
 	@echo "✅ Infrastructure stopped"
 
 infra-check: ## Check infrastructure status
-	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/check-infra.sh'
+	@bash -c '$(LOAD_ENV) ./scripts/check-infra.sh'
 
 # ============================================
 # Data Ingestion (Go)
@@ -302,24 +339,24 @@ bff-clean: ## Clean bff artifacts
 
 orchestrator-init: ## Initialize orchestrator dependencies
 	@echo "📦 Initializing orchestrator..."
-	@bash -c 'cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q'
+	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn clean install $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ orchestrator initialized"
 
 orchestrator-build: ## Build orchestrator
 	@echo "🔨 Building orchestrator..."
-	@bash -c 'cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q'
+	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ orchestrator built"
 
 orchestrator-run: ## Run orchestrator
-	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn spring-boot:run'
+	@bash -c '$(LOAD_ENV) cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn spring-boot:run'
 
 orchestrator-test: ## Test orchestrator
 	@echo "🧪 Testing orchestrator..."
-	@bash -c 'cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn test'
+	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn test'
 
 orchestrator-clean: ## Clean orchestrator artifacts
 	@echo "🧹 Cleaning orchestrator..."
-	@bash -c 'cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean -q'
+	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 	@echo "✅ orchestrator cleaned"
 
 # ============================================
@@ -328,28 +365,32 @@ orchestrator-clean: ## Clean orchestrator artifacts
 
 graph-init: ## Initialize graph-engine dependencies
 	@echo "📦 Initializing graph-engine..."
-	@bash -c 'cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q'
+	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn clean install $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ graph-engine initialized"
 
 graph-build: ## Build graph-engine
 	@echo "🔨 Building graph-engine..."
-	@bash -c 'cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q'
+	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ graph-engine built"
 
 graph-run: ## Run graph-engine
-	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn spring-boot:run'
+	@bash -c '$(LOAD_ENV) ./scripts/run-graph-engine.sh'
 
 graph-test: ## Test graph-engine
 	@echo "🧪 Testing graph-engine..."
-	@bash -c 'cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn test'
+	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn test'
 
 graph-clean: ## Clean graph-engine artifacts
 	@echo "🧹 Cleaning graph-engine..."
-	@bash -c 'cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean -q'
+	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 	@echo "✅ graph-engine cleaned"
 
 graph-stop: ## Stop graph-engine
-	@./scripts/stop-graph-engine.sh
+	@echo "🛑 Stopping graph-engine..."
+	@-pkill -f "graph-engine.*\.jar" 2>/dev/null || true
+	@sleep 1
+	@-pkill -9 -f "graph-engine.*\.jar" 2>/dev/null || true
+	@echo "✅ graph-engine stopped"
 
 # ============================================
 # Stream Processor (Java/Flink)
@@ -357,25 +398,32 @@ graph-stop: ## Stop graph-engine
 
 flink-init: ## Initialize stream-processor dependencies
 	@echo "📦 Initializing stream-processor..."
-	@bash -c 'cd processing/stream-processor && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q'
+	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn clean install $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ stream-processor initialized"
 
 flink-build: ## Build stream-processor
 	@echo "🔨 Building stream-processor..."
-	@bash -c 'cd processing/stream-processor && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q'
+	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ stream-processor built"
 
 flink-run: ## Run stream-processor
-	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/run-flink.sh'
+	@bash -c '$(LOAD_ENV) ./scripts/run-flink.sh'
 
 flink-test: ## Test stream-processor
 	@echo "🧪 Testing stream-processor..."
-	@bash -c 'cd processing/stream-processor && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn test'
+	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn test'
 
 flink-clean: ## Clean stream-processor artifacts
 	@echo "🧹 Cleaning stream-processor..."
-	@bash -c 'cd processing/stream-processor && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean -q'
+	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 	@echo "✅ stream-processor cleaned"
+
+flink-stop: ## Stop stream-processor
+	@echo "🛑 Stopping stream-processor..."
+	@-pkill -f "stream-processor.*\.jar" 2>/dev/null || true
+	@sleep 1
+	@-pkill -9 -f "stream-processor.*\.jar" 2>/dev/null || true
+	@echo "✅ stream-processor stopped"
 
 # ============================================
 # Frontend (React)
@@ -481,10 +529,10 @@ run-svc: ## Run query, risk, bff, graph in background (logs in .logs/)
 	@mkdir -p $(LOGS_DIR)
 	@echo "🚀 Starting services in background..."
 	@echo "   Logs: $(LOGS_DIR)/"
-	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/query-service && go run ./cmd/... > ../../$(LOGS_DIR)/query.log 2>&1 &'
-	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/risk-ml-service && uv run uvicorn app.main:app --reload --port 8082 > ../../$(LOGS_DIR)/risk.log 2>&1 &'
-	@cd services/bff && npm run start:dev > ../../$(LOGS_DIR)/bff.log 2>&1 &
-	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/run-graph-engine.sh > $(LOGS_DIR)/graph.log 2>&1 &'
+	@bash -c '$(LOAD_ENV) cd $(DIR_QUERY) && go run ./cmd/... > ../../$(LOGS_DIR)/query.log 2>&1 &'
+	@bash -c '$(LOAD_ENV) cd $(DIR_RISK) && uv run uvicorn app.main:app --reload --port 8082 > ../../$(LOGS_DIR)/risk.log 2>&1 &'
+	@cd $(DIR_BFF) && npm run start:dev > ../../$(LOGS_DIR)/bff.log 2>&1 &
+	@bash -c '$(LOAD_ENV) ./scripts/run-graph-engine.sh > $(LOGS_DIR)/graph.log 2>&1 &'
 	@sleep 2
 	@echo "✅ Services started:"
 	@echo "   - Query Service:  http://localhost:8081 (log: $(LOGS_DIR)/query.log)"
@@ -576,6 +624,32 @@ stop-svc: ## Stop all background services (including tmux session)
 			echo "   tmux session kept. Run manually: tmux kill-session -t chain-risk"; \
 		fi \
 	fi
+
+stop-query: ## Stop query service
+	@echo "🛑 Stopping query service..."
+	@-pkill -f "query-service" 2>/dev/null || true
+	@echo "✅ query service stopped"
+
+stop-risk: ## Stop risk service
+	@echo "🛑 Stopping risk service..."
+	@-pkill -f "uvicorn app.main:app" 2>/dev/null || true
+	@echo "✅ risk service stopped"
+
+stop-bff: ## Stop bff service
+	@echo "🛑 Stopping bff service..."
+	@-pkill -f "nest start" 2>/dev/null || true
+	@-pkill -f "ts-node" 2>/dev/null || true
+	@echo "✅ bff service stopped"
+
+stop-alert: ## Stop alert service
+	@echo "🛑 Stopping alert service..."
+	@-pkill -f "alert-service" 2>/dev/null || true
+	@echo "✅ alert service stopped"
+
+stop-ingestion: ## Stop data ingestion service
+	@echo "🛑 Stopping data ingestion..."
+	@-pkill -f "data-ingestion" 2>/dev/null || true
+	@echo "✅ data ingestion stopped"
 
 # ============================================
 # Logs

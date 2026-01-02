@@ -113,9 +113,43 @@ docker-compose up -d
 
 ## 📚 文档
 
+### 项目文档
 - [项目总览](./docs/PROJECT_OVERVIEW.md)
 - [开发计划](./docs/DEVELOPMENT_PLAN.md)
 - [技术决策](./docs/TECH_DECISIONS.md)
+
+### 脚本和工具
+- [📖 Scripts 使用指南](./scripts/README.md) - 完整的脚本使用文档
+- [🚀 快速参考](./docs/SCRIPTS_QUICK_REFERENCE.md) - 常用命令速查
+- [📊 整理对比](./docs/SCRIPTS_COMPARISON.md) - 脚本整理前后对比
+- [📝 整理总结](./docs/SCRIPTS_REFACTORING.md) - 重构说明
+- [📋 更新日志](./docs/CHANGELOG_SCRIPTS.md) - 脚本变更记录
+
+### Makefile 命令
+
+查看所有可用命令：
+```bash
+make help
+```
+
+常用命令：
+```bash
+# 基础设施
+make infra-up          # 启动基础设施
+make infra-check       # 检查基础设施状态
+
+# 服务管理
+make run-svc           # 启动所有服务（后台）
+make stop-svc          # 停止所有服务
+make logs-all          # 查看所有日志
+
+# 构建和测试
+make init-all          # 初始化所有服务
+make build-all         # 构建所有服务
+make test-all          # 运行所有测试
+```
+
+详细说明请参考 [Scripts 快速参考](./docs/SCRIPTS_QUICK_REFERENCE.md)
 
 ## 🗺️ Roadmap
 

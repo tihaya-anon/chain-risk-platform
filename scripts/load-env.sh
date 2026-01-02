@@ -6,6 +6,9 @@
 #   source scripts/load-env.sh              # Auto-detect from .env.local
 #   source scripts/load-env.sh <IP>         # Specify Docker host IP
 #   source scripts/load-env.sh localhost    # Use localhost
+#
+# NOTE: This script is deprecated. Use scripts/common.sh instead.
+#       Kept for backward compatibility with Makefile.
 # ============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,72 +23,61 @@ elif [ -f "$PROJECT_ROOT/.env.local" ]; then
 fi
 DOCKER_HOST_IP=${DOCKER_HOST_IP:-localhost}
 
-echo "============================================"
-echo "Chain Risk Platform - Environment Setup"
-echo "============================================"
-echo "Docker Host IP: $DOCKER_HOST_IP"
-echo "============================================"
-
 # ==================== Base ====================
 export DOCKER_HOST_IP
 
 # ==================== Database ====================
-export POSTGRES_HOST=$DOCKER_HOST_IP
-export POSTGRES_PORT=15432
-export POSTGRES_USER=chainrisk
-export POSTGRES_PASSWORD=chainrisk123
-export POSTGRES_DB=chainrisk
+export POSTGRES_HOST=${POSTGRES_HOST:-$DOCKER_HOST_IP}
+export POSTGRES_PORT=${POSTGRES_PORT:-15432}
+export POSTGRES_USER=${POSTGRES_USER:-chainrisk}
+export POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-chainrisk123}
+export POSTGRES_DB=${POSTGRES_DB:-chainrisk}
 
 # ==================== Neo4j ====================
-export NEO4J_HOST=$DOCKER_HOST_IP
-export NEO4J_PORT=17687
-export NEO4J_URI="bolt://${DOCKER_HOST_IP}:17687"
-export NEO4J_USER=neo4j
-export NEO4J_PASSWORD=chainrisk123
+export NEO4J_HOST=${NEO4J_HOST:-$DOCKER_HOST_IP}
+export NEO4J_PORT=${NEO4J_PORT:-17687}
+export NEO4J_URI=${NEO4J_URI:-"bolt://${DOCKER_HOST_IP}:17687"}
+export NEO4J_USER=${NEO4J_USER:-neo4j}
+export NEO4J_PASSWORD=${NEO4J_PASSWORD:-chainrisk123}
 
 # ==================== Redis ====================
-export REDIS_HOST=$DOCKER_HOST_IP
-export REDIS_PORT=16379
-export REDIS_PASSWORD=
+export REDIS_HOST=${REDIS_HOST:-$DOCKER_HOST_IP}
+export REDIS_PORT=${REDIS_PORT:-16379}
+export REDIS_PASSWORD=${REDIS_PASSWORD:-}
 
 # ==================== Kafka ====================
-export KAFKA_BROKERS="${DOCKER_HOST_IP}:19092"
-export KAFKA_GROUP_ID=chain-risk-platform
+export KAFKA_BROKERS=${KAFKA_BROKERS:-"${DOCKER_HOST_IP}:19092"}
+export KAFKA_GROUP_ID=${KAFKA_GROUP_ID:-chain-risk-platform}
 
 # ==================== Nacos ====================
-export NACOS_SERVER="${DOCKER_HOST_IP}:18848"
-# Note: Use empty string for default/public namespace
-# The "public" namespace in Nacos UI corresponds to empty namespace ID
-export NACOS_NAMESPACE=
-# Note: Leave NACOS_USERNAME and NACOS_PASSWORD empty when Nacos auth is disabled
-# If auth is enabled, set these to valid credentials
-export NACOS_USERNAME=
-export NACOS_PASSWORD=
+export NACOS_SERVER=${NACOS_SERVER:-"${DOCKER_HOST_IP}:18848"}
+export NACOS_NAMESPACE=${NACOS_NAMESPACE:-}
+export NACOS_USERNAME=${NACOS_USERNAME:-}
+export NACOS_PASSWORD=${NACOS_PASSWORD:-}
 
 # ==================== Monitoring ====================
-export JAEGER_AGENT_HOST=$DOCKER_HOST_IP
-export JAEGER_AGENT_PORT=6831
-export JAEGER_ENDPOINT="http://${DOCKER_HOST_IP}:14268/api/traces"
+export JAEGER_AGENT_HOST=${JAEGER_AGENT_HOST:-$DOCKER_HOST_IP}
+export JAEGER_AGENT_PORT=${JAEGER_AGENT_PORT:-6831}
+export JAEGER_ENDPOINT=${JAEGER_ENDPOINT:-"http://${DOCKER_HOST_IP}:14268/api/traces"}
 
 # ==================== Service Ports ====================
-export ORCHESTRATOR_PORT=8080
-export BFF_PORT=3001
-export QUERY_SERVICE_PORT=8081
-export RISK_SERVICE_PORT=8082
-export ALERT_SERVICE_PORT=8083
-export GRAPH_ENGINE_PORT=8084
-export DATA_INGESTION_PORT=9091
+export ORCHESTRATOR_PORT=${ORCHESTRATOR_PORT:-8080}
+export BFF_PORT=${BFF_PORT:-3001}
+export QUERY_SERVICE_PORT=${QUERY_SERVICE_PORT:-8081}
+export RISK_SERVICE_PORT=${RISK_SERVICE_PORT:-8082}
+export ALERT_SERVICE_PORT=${ALERT_SERVICE_PORT:-8083}
+export GRAPH_ENGINE_PORT=${GRAPH_ENGINE_PORT:-8084}
+export DATA_INGESTION_PORT=${DATA_INGESTION_PORT:-9091}
 
 # ==================== Environment ====================
-export NODE_ENV=development
-export GO_ENV=development
-export SPRING_PROFILES_ACTIVE=dev
+export NODE_ENV=${NODE_ENV:-development}
+export GO_ENV=${GO_ENV:-development}
+export SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
 
 # ==================== Load .env.local overrides ====================
 if [ -f "$PROJECT_ROOT/.env.local" ]; then
-    echo "Loading overrides from .env.local..."
     while IFS='=' read -r key value; do
-        # Skip comments, empty lines, and DOCKER_HOST_IP
+        # Skip comments, empty lines, and DOCKER_HOST_IP (already set)
         [[ $key =~ ^#.*$ ]] && continue
         [[ -z $key ]] && continue
         [[ $key == "DOCKER_HOST_IP" ]] && continue
@@ -98,17 +90,3 @@ if [ -f "$PROJECT_ROOT/.env.local" ]; then
         fi
     done < "$PROJECT_ROOT/.env.local"
 fi
-
-echo ""
-echo "Environment variables set:"
-echo "  DOCKER_HOST_IP    = $DOCKER_HOST_IP"
-echo "  NACOS_SERVER      = $NACOS_SERVER"
-echo "  NACOS_USERNAME    = $NACOS_USERNAME"
-echo "  KAFKA_BROKERS     = $KAFKA_BROKERS"
-echo "  POSTGRES_HOST     = $POSTGRES_HOST"
-echo "  REDIS_HOST        = $REDIS_HOST"
-echo "  NEO4J_URI         = $NEO4J_URI"
-echo "  JAEGER_ENDPOINT   = $JAEGER_ENDPOINT"
-echo ""
-echo "Ready to run services."
-echo "============================================"
