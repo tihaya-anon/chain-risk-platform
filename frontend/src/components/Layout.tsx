@@ -84,7 +84,7 @@ export function Layout({ children }: LayoutProps) {
                     )}
                   >
                     <Icon className="w-4 h-4" />
-                    {item.label}
+                    <span className="hidden lg:inline">{item.label}</span>
                   </Link>
                 )
               })}
