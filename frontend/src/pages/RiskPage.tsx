@@ -1,19 +1,10 @@
 import { useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Link } from "react-router-dom"
-import {
-  AlertTriangle,
-  Search,
-  Shield,
-  CheckCircle,
-  XCircle,
-  Scale,
-  Tag,
-  ExternalLink,
-} from "lucide-react"
-import { Button, Card, LoadingSpinner, RiskBadge } from "@/components/common"
+import { AlertTriangle, Search, Shield, Scale } from "lucide-react"
+import { Button, Card, LoadingSpinner } from "@/components/common"
+import { AddressTable } from "@/components/table"
 import { riskService } from "@/services"
-import type { RiskScore, RiskRule } from "@/types"
+import type { RiskScore, RiskRule, GraphAddressInfo } from "@/types"
 
 export function RiskPage() {
   const [addresses, setAddresses] = useState("")
@@ -45,6 +36,23 @@ export function RiskPage() {
       })
     }
   }
+
+  // Convert RiskScore to GraphAddressInfo for AddressTable
+  const convertToGraphAddressInfo = (riskScores: RiskScore[]): GraphAddressInfo[] => {
+    return riskScores.map((score) => ({
+      address: score.address,
+      network: score.network,
+      riskScore: score.riskScore,
+      tags: score.tags || [],
+      firstSeen: score.evaluatedAt,
+      lastSeen: score.evaluatedAt,
+      txCount: 0, // Not available in RiskScore
+      incomingCount: 0, // Not available in RiskScore
+      outgoingCount: 0, // Not available in RiskScore
+    }))
+  }
+
+  const tableData = convertToGraphAddressInfo(results)
 
   return (
     <div className="h-full flex flex-col">
@@ -135,87 +143,13 @@ export function RiskPage() {
               title="Analysis Results"
               subtitle={`${results.length} addresses analyzed`}
             >
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Address
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Score
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Risk Level
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Triggered Rules
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tags
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {results.map((result, i) => (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <Link
-                            to={`/address?q=${result.address}`}
-                            className="inline-flex items-center gap-1 font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {result.address.slice(0, 10)}...
-                            {result.address.slice(-8)}
-                            <ExternalLink className="w-3 h-3" />
-                          </Link>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <span className="font-medium">
-                            {result.riskScore.toFixed(1)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <RiskBadge level={result.riskLevel} size="sm" />
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex flex-wrap gap-1">
-                            {result.factors
-                              ?.filter((f) => f.triggered)
-                              .map((f, j) => (
-                                <span
-                                  key={j}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 text-xs rounded"
-                                >
-                                  <CheckCircle className="w-3 h-3" />
-                                  {f.name}
-                                </span>
-                              ))}
-                            {result.factors?.filter((f) => f.triggered).length === 0 && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-600 text-xs rounded">
-                                <XCircle className="w-3 h-3" />
-                                None
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex flex-wrap gap-1">
-                            {result.tags?.map((tag, j) => (
-                              <span
-                                key={j}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded"
-                              >
-                                <Tag className="w-3 h-3" />
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <AddressTable
+                addresses={tableData}
+                showTxCount={false}
+                showInOut={false}
+                showTags={true}
+                showLastSeen={false}
+              />
             </Card>
           )}
 
