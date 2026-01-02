@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -50,7 +51,7 @@ public class SyncStateTracker {
             DO UPDATE SET last_processed_block = ?, updated_at = ?
             """;
         
-        Instant now = Instant.now();
+        Timestamp now = Timestamp.from(Instant.now());
         jdbcTemplate.update(sql, SYNC_STATE_ID, blockNumber, network, now, blockNumber, now);
         log.debug("Updated sync state: block {} for network {}", blockNumber, network);
     }
@@ -66,8 +67,8 @@ public class SyncStateTracker {
             """;
         
         try {
-            java.sql.Timestamp timestamp = jdbcTemplate.queryForObject(sql, java.sql.Timestamp.class, SYNC_STATE_ID, network);
-            return Optional.ofNullable(timestamp).map(java.sql.Timestamp::toInstant);
+            Timestamp timestamp = jdbcTemplate.queryForObject(sql, Timestamp.class, SYNC_STATE_ID, network);
+            return Optional.ofNullable(timestamp).map(Timestamp::toInstant);
         } catch (Exception e) {
             return Optional.empty();
         }
