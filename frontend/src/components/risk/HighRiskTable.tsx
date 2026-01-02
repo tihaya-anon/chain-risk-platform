@@ -23,12 +23,16 @@ export function HighRiskTable({ addresses }: HighRiskTableProps) {
 // Selected Address Panel for graph view
 interface SelectedAddressPanelProps {
   address: GraphAddressInfo | null
+  isSelected?: boolean
+  onClearSelection?: () => void
   onAnalyze?: (address: string) => void
   onExploreGraph?: (address: string) => void
 }
 
 export function SelectedAddressPanel({
   address,
+  isSelected = false,
+  onClearSelection,
   onAnalyze,
   onExploreGraph,
 }: SelectedAddressPanelProps) {
@@ -43,8 +47,21 @@ export function SelectedAddressPanel({
   }
 
   return (
-    <Card title="Selected Address">
+    <Card
+      title={isSelected ? "Selected Address" : "Hovered Address"}
+      className={isSelected ? "ring-1 ring-blue-500" : ""}
+    >
       <div className="space-y-3">
+        {isSelected && onClearSelection && (
+          <div className="flex justify-end">
+            <button
+              onClick={onClearSelection}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
         <div>
           <label className="text-xs text-gray-500">Address</label>
           <p className="font-mono text-xs break-all">{address.address}</p>

@@ -26,6 +26,7 @@ export function HighRiskNetworkPage() {
 
   const [threshold, setThreshold] = useState(0.6)
   const [limit, setLimit] = useState(30)
+  const [hoveredAddress, setHoveredAddress] = useState<GraphAddressInfo | null>(null)
   const [selectedAddress, setSelectedAddress] = useState<GraphAddressInfo | null>(null)
   const [viewMode, setViewMode] = useState<"list" | "graph">("list")
 
@@ -36,6 +37,24 @@ export function HighRiskNetworkPage() {
   })
 
   const addresses = highRiskQuery.data?.highRiskAddresses || []
+
+  // Display selected node if available, otherwise show hovered node
+  const displayAddress = selectedAddress || hoveredAddress
+
+  const handleNodeClick = (address: GraphAddressInfo | null) => {
+    setSelectedAddress(address)
+    // Clear hover state when selecting
+    if (address) {
+      setHoveredAddress(null)
+    }
+  }
+
+  const handleNodeHover = (address: GraphAddressInfo | null) => {
+    // Only update hover if no node is selected
+    if (!selectedAddress) {
+      setHoveredAddress(address)
+    }
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -87,22 +106,20 @@ export function HighRiskNetworkPage() {
                 <div className="flex rounded-md overflow-hidden border border-gray-300">
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
-                      viewMode === "list"
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
-                    }`}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === "list"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
+                      }`}
                   >
                     <List className="w-4 h-4" />
                     List
                   </button>
                   <button
                     onClick={() => setViewMode("graph")}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
-                      viewMode === "graph"
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
-                    }`}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === "graph"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
+                      }`}
                   >
                     <NetworkIcon className="w-4 h-4" />
                     Graph
@@ -198,15 +215,15 @@ export function HighRiskNetworkPage() {
                   <div className="lg:col-span-3">
                     <Card
                       title="Risk Network Graph"
-                      subtitle="Double-click a node to explore"
+                      subtitle="Click to select, double-click to explore"
                     >
                       <div className="mb-4">
                         <HighRiskGraphLegend />
                       </div>
                       <HighRiskGraph
                         addresses={addresses}
-                        onNodeHover={setSelectedAddress}
-                        onNodeClick={setSelectedAddress}
+                        onNodeHover={handleNodeHover}
+                        onNodeClick={handleNodeClick}
                         onNodeDoubleClick={(addr) => navigate(`/graph?address=${addr}`)}
                         height="500px"
                       />
@@ -214,7 +231,9 @@ export function HighRiskNetworkPage() {
                   </div>
                   <div>
                     <SelectedAddressPanel
-                      address={selectedAddress}
+                      address={displayAddress}
+                      isSelected={!!selectedAddress}
+                      onClearSelection={() => setSelectedAddress(null)}
                       onAnalyze={(addr: string) => navigate(`/address?q=${addr}`)}
                       onExploreGraph={(addr: string) =>
                         navigate(`/graph?address=${addr}`)
