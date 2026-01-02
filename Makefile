@@ -302,12 +302,12 @@ bff-clean: ## Clean bff artifacts
 
 orchestrator-init: ## Initialize orchestrator dependencies
 	@echo "📦 Initializing orchestrator..."
-	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q
+	@bash -c 'cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q'
 	@echo "✅ orchestrator initialized"
 
 orchestrator-build: ## Build orchestrator
 	@echo "🔨 Building orchestrator..."
-	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q
+	@bash -c 'cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q'
 	@echo "✅ orchestrator built"
 
 orchestrator-run: ## Run orchestrator
@@ -315,11 +315,11 @@ orchestrator-run: ## Run orchestrator
 
 orchestrator-test: ## Test orchestrator
 	@echo "🧪 Testing orchestrator..."
-	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn test
+	@bash -c 'cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn test'
 
 orchestrator-clean: ## Clean orchestrator artifacts
 	@echo "🧹 Cleaning orchestrator..."
-	@cd services/orchestrator && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn clean -q
+	@bash -c 'cd services/orchestrator && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean -q'
 	@echo "✅ orchestrator cleaned"
 
 # ============================================
@@ -328,12 +328,12 @@ orchestrator-clean: ## Clean orchestrator artifacts
 
 graph-init: ## Initialize graph-engine dependencies
 	@echo "📦 Initializing graph-engine..."
-	@cd processing/graph-engine && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q
+	@bash -c 'cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q'
 	@echo "✅ graph-engine initialized"
 
 graph-build: ## Build graph-engine
 	@echo "🔨 Building graph-engine..."
-	@cd processing/graph-engine && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q
+	@bash -c 'cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q'
 	@echo "✅ graph-engine built"
 
 graph-run: ## Run graph-engine
@@ -341,11 +341,11 @@ graph-run: ## Run graph-engine
 
 graph-test: ## Test graph-engine
 	@echo "🧪 Testing graph-engine..."
-	@cd processing/graph-engine && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn test
+	@bash -c 'cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn test'
 
 graph-clean: ## Clean graph-engine artifacts
 	@echo "🧹 Cleaning graph-engine..."
-	@cd processing/graph-engine && export JAVA_HOME=$(/usr/libexec/java_home -v 17) && mvn clean -q
+	@bash -c 'cd processing/graph-engine && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean -q'
 	@echo "✅ graph-engine cleaned"
 
 graph-stop: ## Stop graph-engine
@@ -357,12 +357,12 @@ graph-stop: ## Stop graph-engine
 
 flink-init: ## Initialize stream-processor dependencies
 	@echo "📦 Initializing stream-processor..."
-	@cd processing/stream-processor && mvn clean install -DskipTests -q
+	@bash -c 'cd processing/stream-processor && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean install -DskipTests -q'
 	@echo "✅ stream-processor initialized"
 
 flink-build: ## Build stream-processor
 	@echo "🔨 Building stream-processor..."
-	@cd processing/stream-processor && mvn package -DskipTests -q
+	@bash -c 'cd processing/stream-processor && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn package -DskipTests -q'
 	@echo "✅ stream-processor built"
 
 flink-run: ## Run stream-processor
@@ -370,11 +370,11 @@ flink-run: ## Run stream-processor
 
 flink-test: ## Test stream-processor
 	@echo "🧪 Testing stream-processor..."
-	@cd processing/stream-processor && mvn test
+	@bash -c 'cd processing/stream-processor && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn test'
 
 flink-clean: ## Clean stream-processor artifacts
 	@echo "🧹 Cleaning stream-processor..."
-	@cd processing/stream-processor && mvn clean -q
+	@bash -c 'cd processing/stream-processor && export JAVA_HOME=$$(/usr/libexec/java_home -v 17) && mvn clean -q'
 	@echo "✅ stream-processor cleaned"
 
 # ============================================
