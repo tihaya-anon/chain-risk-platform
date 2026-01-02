@@ -40,7 +40,7 @@ public class GraphRepositoryImpl {
             
             MERGE (to:Address {address: $toAddress})
             ON CREATE SET to.firstSeen = $timestamp, to.lastSeen = $timestamp, 
-                         to.txCount = 1, to.tags = [], to.riskScore = 0.0, to.network = $network
+                         to.txCount = 1, from.tags = [], to.riskScore = 0.0, to.network = $network
             ON MATCH SET to.lastSeen = CASE WHEN to.lastSeen < $timestamp THEN $timestamp ELSE to.lastSeen END,
                          to.firstSeen = CASE WHEN to.firstSeen > $timestamp THEN $timestamp ELSE to.firstSeen END,
                          to.txCount = coalesce(to.txCount, 0) + 1
@@ -58,7 +58,7 @@ public class GraphRepositoryImpl {
                     "txHash", txHash,
                     "value", value,
                     "blockNumber", blockNumber,
-                    "timestamp", timestamp,
+                    "timestamp", timestamp.toEpochMilli(),
                     "tokenSymbol", tokenSymbol != null ? tokenSymbol : "ETH",
                     "tokenAddress", tokenAddress != null ? tokenAddress : "",
                     "transferType", transferType != null ? transferType : "native",
@@ -101,7 +101,7 @@ public class GraphRepositoryImpl {
                         "txHash", t.txHash(),
                         "value", t.value(),
                         "blockNumber", t.blockNumber(),
-                        "timestamp", t.timestamp(),
+                        "timestamp", t.timestamp().toEpochMilli(),
                         "tokenSymbol", t.tokenSymbol() != null ? t.tokenSymbol() : "ETH",
                         "tokenAddress", t.tokenAddress() != null ? t.tokenAddress() : "",
                         "transferType", t.transferType() != null ? t.transferType() : "native",
