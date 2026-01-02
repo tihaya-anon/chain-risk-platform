@@ -37,6 +37,12 @@ export function HighRiskGraph({
 }: HighRiskGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
+  const callbacksRef = useRef({ onNodeHover, onNodeClick, onNodeDoubleClick })
+
+  // Update callbacks ref without triggering re-render
+  useEffect(() => {
+    callbacksRef.current = { onNodeHover, onNodeClick, onNodeDoubleClick }
+  }, [onNodeHover, onNodeClick, onNodeDoubleClick])
 
   useEffect(() => {
     if (!containerRef.current || !addresses.length) return
@@ -129,21 +135,25 @@ export function HighRiskGraph({
     network.on("hoverNode", (params) => {
       const nodeId = params.node as string
       const addr = addresses.find((a) => a.address === nodeId)
-      onNodeHover?.(addr || null)
+      callbacksRef.current.onNodeHover?.(addr || null)
+    })
+
+    network.on("blurNode", () => {
+      callbacksRef.current.onNodeHover?.(null)
     })
 
     network.on("click", (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
         const addr = addresses.find((a) => a.address === nodeId)
-        onNodeClick?.(addr || null)
+        callbacksRef.current.onNodeClick?.(addr || null)
       }
     })
 
     network.on("doubleClick", (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
-        onNodeDoubleClick?.(nodeId)
+        callbacksRef.current.onNodeDoubleClick?.(nodeId)
       }
     })
 
@@ -157,7 +167,7 @@ export function HighRiskGraph({
       network.destroy()
       networkRef.current = null
     }
-  }, [addresses, onNodeHover, onNodeClick, onNodeDoubleClick])
+  }, [addresses]) // Only depend on addresses, not callbacks
 
   return (
     <div
