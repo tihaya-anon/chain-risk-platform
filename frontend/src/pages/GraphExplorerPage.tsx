@@ -180,7 +180,7 @@ export function GraphExplorerPage() {
                 </Button>
               </div>
 
-              <div className="flex flex-wrap gap-4 items-center pt-4 border-t">
+              <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-gray-600">Depth:</label>
                   <Select
