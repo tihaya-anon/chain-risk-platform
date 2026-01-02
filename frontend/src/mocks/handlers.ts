@@ -25,6 +25,10 @@ import {
   generateConnectionResponse,
   generateHighRiskNetworkResponse,
   randomTags,
+  generateServicesInfo,
+  generatePipelineStatus,
+  generateRiskConfig,
+  generatePipelineConfig,
 } from "./data"
 
 const API_BASE = "/api/v1"
@@ -461,5 +465,87 @@ export const handlers = [
     }
 
     return HttpResponse.json(generateBatchRiskScores(body.addresses))
+  }),
+
+  // ============ Admin Handlers ============
+
+  http.get("/api/admin/services", async () => {
+    await delay(300)
+    return HttpResponse.json(generateServicesInfo())
+  }),
+
+  http.get("/api/admin/services/:serviceName", async ({ params }) => {
+    await delay(300)
+    const { serviceName } = params
+
+    if (!serviceName || typeof serviceName !== "string") {
+      return HttpResponse.json({ message: "Invalid service name" }, { status: 400 })
+    }
+
+    // Generate mock instances for the service
+    const instanceCount = Math.floor(Math.random() * 3) + 1
+    const instances = Array.from({ length: instanceCount }, (_, i) => ({
+      instanceId: `192.168.1.${10 + i}:8080`,
+      ip: `192.168.1.${10 + i}`,
+      port: 8080,
+      healthy: Math.random() > 0.2, // 80% healthy
+      metadata: {
+        version: "1.0.0",
+        zone: "default",
+      },
+    }))
+
+    return HttpResponse.json(instances)
+  }),
+
+  http.get("/api/admin/pipeline/status", async () => {
+    await delay(300)
+    return HttpResponse.json(generatePipelineStatus())
+  }),
+
+  http.post("/api/admin/pipeline/ingestion/:action", async ({ params }) => {
+    await delay(400)
+    const { action } = params
+
+    if (!["pause", "resume", "trigger"].includes(action as string)) {
+      return HttpResponse.json({ message: "Invalid action" }, { status: 400 })
+    }
+
+    return HttpResponse.json({
+      status: "success",
+      message: `Data ingestion ${action}d successfully`,
+    })
+  }),
+
+  http.post("/api/admin/pipeline/graph-sync/:action", async ({ params }) => {
+    await delay(400)
+    const { action } = params
+
+    if (!["pause", "resume", "trigger"].includes(action as string)) {
+      return HttpResponse.json({ message: "Invalid action" }, { status: 400 })
+    }
+
+    return HttpResponse.json({
+      status: "success",
+      message: `Graph sync ${action}d successfully`,
+    })
+  }),
+
+  http.get("/api/admin/config/all", async () => {
+    await delay(300)
+    return HttpResponse.json({
+      risk: generateRiskConfig(),
+      pipeline: generatePipelineConfig(),
+    })
+  }),
+
+  http.get("/api/admin/config/risk", async () => {
+    await delay(200)
+    return HttpResponse.json(generateRiskConfig())
+  }),
+
+  http.get("/api/admin/config/pipeline", async () => {
+    await delay(300)
+    return HttpResponse.json(generatePipelineConfig())
   }),
 ]

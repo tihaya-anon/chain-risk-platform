@@ -25,6 +25,10 @@ import type {
   AddressAnalysis,
   ConnectionResponse,
   HighRiskNetworkResponse,
+  ServiceInfo,
+  PipelineStatus,
+  RiskProperties,
+  PipelineProperties,
 } from "@/types"
 
 // ============ Helpers ============
@@ -434,4 +438,108 @@ export const generateHighRiskNetworkResponse = (
   count: limit,
   highRiskAddresses: generateHighRiskAddresses(threshold, limit),
   orchestratedAt: Date.now(),
+})
+
+// ============ Admin Data Generators ============
+
+export const generateServiceInfo = (name: string): ServiceInfo => {
+  const instanceCount = Math.floor(Math.random() * 5) + 1
+  const healthyInstanceCount = Math.floor(Math.random() * instanceCount) + 1
+
+  return {
+    name,
+    groupName: "DEFAULT_GROUP",
+    clusterCount: 1,
+    instanceCount,
+    healthyInstanceCount,
+  }
+}
+
+export const generateServicesInfo = (): ServiceInfo[] => [
+  generateServiceInfo("bff-service"),
+  generateServiceInfo("orchestrator-service"),
+  generateServiceInfo("graph-engine-service"),
+  generateServiceInfo("query-service"),
+  generateServiceInfo("risk-ml-service"),
+  generateServiceInfo("data-ingestion-service"),
+]
+
+export const generatePipelineStatus = (): PipelineStatus => {
+  const ingestionStatus = ["IDLE", "RUNNING", "FAILED"][Math.floor(Math.random() * 3)]
+  const graphSyncStatus = ["IDLE", "RUNNING", "COMPLETED"][Math.floor(Math.random() * 3)]
+
+  return {
+    ingestion: {
+      enabled: true,
+      status: ingestionStatus,
+      lastBlock: Math.floor(Math.random() * 1000000) + 18000000,
+      errorMessage: ingestionStatus === "FAILED" ? "Connection timeout" : undefined,
+    },
+    streamProcessor: {
+      enabled: true,
+      status: "RUNNING",
+      processedCount: Math.floor(Math.random() * 1000000) + 100000,
+    },
+    graphSync: {
+      enabled: true,
+      status: graphSyncStatus,
+      lastSyncTime: randomDate(1),
+    },
+    clustering: {
+      enabled: true,
+      lastRunTime: randomDate(7),
+    },
+    propagation: {
+      enabled: true,
+      lastRunTime: randomDate(7),
+    },
+  }
+}
+
+export const generateRiskConfig = (): RiskProperties => ({
+  highThreshold: 0.7,
+  mediumThreshold: 0.4,
+  cacheTtlSeconds: 3600,
+})
+
+export const generatePipelineConfig = (): PipelineProperties => ({
+  enabled: true,
+  ingestion: {
+    enabled: true,
+    network: "ethereum",
+    polling: {
+      intervalMs: 5000,
+      batchSize: 100,
+      confirmations: 12,
+    },
+    rateLimit: {
+      requestsPerSecond: 10,
+    },
+  },
+  streamProcessor: {
+    enabled: true,
+    parallelism: 4,
+    checkpoint: {
+      intervalMs: 60000,
+    },
+    consumer: {
+      maxPollRecords: 500,
+    },
+  },
+  graphSync: {
+    enabled: true,
+    intervalMs: 300000,
+    batchSize: 1000,
+  },
+  clustering: {
+    enabled: true,
+    minClusterSize: 3,
+    maxDepth: 3,
+  },
+  propagation: {
+    enabled: true,
+    maxHops: 3,
+    decayFactor: 0.8,
+    minThreshold: 0.1,
+  },
 })
