@@ -65,7 +65,7 @@ export const randomTags = (): string[] => {
     "dao",
     "bridge",
   ]
-  const count = Math.floor(Math.random() * 3)
+  const count = Math.floor(Math.random() * 7)
   return allTags.sort(() => Math.random() - 0.5).slice(0, count)
 }
 

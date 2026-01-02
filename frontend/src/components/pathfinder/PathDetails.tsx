@@ -1,5 +1,6 @@
 import { Tag } from "lucide-react"
 import { Card } from "@/components/common"
+import { Link } from "react-router-dom"
 
 interface PathNode {
   address: string
@@ -10,9 +11,10 @@ interface PathNode {
 
 interface PathDetailsProps {
   path: PathNode[]
+  maxTagsDisplay?: number
 }
 
-export function PathDetails({ path }: PathDetailsProps) {
+export function PathDetails({ path, maxTagsDisplay = 2 }: PathDetailsProps) {
   return (
     <Card title="Path Details">
       <div className="space-y-3">
@@ -22,9 +24,12 @@ export function PathDetails({ path }: PathDetailsProps) {
               {index + 1}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="font-mono text-xs truncate">
+              <Link
+                to={`/address?q=${node.address}`}
+                className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              >
                 {node.address.slice(0, 10)}...{node.address.slice(-8)}
-              </p>
+              </Link>
             </div>
             {node.tags && node.tags.length > 0 && (
               <div className="flex flex-col gap-1 mt-1">
@@ -37,6 +42,11 @@ export function PathDetails({ path }: PathDetailsProps) {
                     {tag}
                   </span>
                 ))}
+                {node.tags.length > maxTagsDisplay && (
+                  <span className="text-xs text-gray-500">
+                    +{node.tags.length - maxTagsDisplay}
+                  </span>
+                )}
               </div>
             )}
             {node.riskScore !== undefined && (
