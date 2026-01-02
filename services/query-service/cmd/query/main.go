@@ -105,9 +105,10 @@ func main() {
 	// Initialize handlers
 	transferHandler := handler.NewTransferHandler(queryService, zapLogger)
 	addressHandler := handler.NewAddressHandler(queryService, zapLogger)
+	cacheHandler := handler.NewCacheHandler(queryService, zapLogger)
 
 	// Setup router
-	router := setupRouter(cfg, transferHandler, addressHandler, nacosClient, zapLogger)
+	router := setupRouter(cfg, transferHandler, addressHandler, cacheHandler, nacosClient, zapLogger)
 
 	// Start server
 	srv := &http.Server{
@@ -283,7 +284,7 @@ func initRedis(cfg config.RedisConfig) (*redis.Client, error) {
 	return client, nil
 }
 
-func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, addressHandler *handler.AddressHandler, nacosClient *nacos.Client, zapLogger *zap.Logger) *gin.Engine {
+func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, addressHandler *handler.AddressHandler, cacheHandler *handler.CacheHandler, nacosClient *nacos.Client, zapLogger *zap.Logger) *gin.Engine {
 	if cfg.Server.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -328,6 +329,7 @@ func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, a
 		handler.RegisterAll(api,
 			transferHandler,
 			addressHandler,
+			cacheHandler,
 		)
 	}
 

@@ -94,7 +94,12 @@
   - [x] GET /addresses/:address/transfers - 地址交易记录
   - [x] GET /addresses/:address/stats - 地址统计
   - [x] GET /transfers - 交易列表 (分页)
-- [ ] Redis 缓存层
+- [x] Redis 缓存层 ✨ 已完成
+  - [x] 地址信息缓存 (5分钟TTL)
+  - [x] 交易记录缓存 (2分钟TTL)
+  - [x] 统计数据缓存 (1分钟TTL)
+  - [x] 缓存失效策略
+  - [x] 缓存管理API (GET /cache/stats, DELETE /cache/addresses/:address)
 - [x] Swagger 文档 (godoc 注释)
 - [x] Nacos 集成 ✨ 已完成
 

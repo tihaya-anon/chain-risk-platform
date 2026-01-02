@@ -127,7 +127,7 @@ func (s *QueryService) GetAddressInfo(ctx context.Context, address, network stri
 	return &resp, nil
 }
 
-// GetAddressTransfers retrieves transfers for a specific address
+// GetAddressTransfers retrieves transfers for a specific address with caching
 func (s *QueryService) GetAddressTransfers(ctx context.Context, address string, filter model.TransferFilter, pagination model.PaginationRequest) (*model.ListResponse[model.TransferResponse], error) {
 	page, pageSize := s.normalizePagination(pagination)
 
@@ -135,6 +135,23 @@ func (s *QueryService) GetAddressTransfers(ctx context.Context, address string, 
 		filter.Network = "ethereum"
 	}
 
+	// Try cache first (only for requests without time filters)
+	cacheEnabled := s.cache != nil && filter.StartTime == "" && filter.EndTime == ""
+	var cacheKey string
+
+	if cacheEnabled {
+		cacheKey = cache.AddressTransfersKeyWithFilter(address, filter.Network, filter.TransferType, page, pageSize)
+		var cached model.ListResponse[model.TransferResponse]
+		if err := s.cache.Get(ctx, cacheKey, &cached); err == nil {
+			s.logger.Debug("Cache hit for address transfers",
+				zap.String("address", address),
+				zap.Int("page", page),
+				zap.Int("pageSize", pageSize))
+			return &cached, nil
+		}
+	}
+
+	// Query database
 	transfers, total, err := s.transferRepo.GetByAddress(ctx, address, filter, page, pageSize)
 	if err != nil {
 		return nil, fmt.Errorf("get address transfers: %w", err)
@@ -145,10 +162,19 @@ func (s *QueryService) GetAddressTransfers(ctx context.Context, address string, 
 		responses[i] = t.ToResponse()
 	}
 
-	return &model.ListResponse[model.TransferResponse]{
+	result := &model.ListResponse[model.TransferResponse]{
 		Items:      responses,
 		Pagination: model.NewPaginationResponse(page, pageSize, total),
-	}, nil
+	}
+
+	// Cache the result
+	if cacheEnabled && len(responses) > 0 {
+		if err := s.cache.Set(ctx, cacheKey, result, s.config.Redis.CacheTTL.Transfers); err != nil {
+			s.logger.Warn("Failed to cache address transfers", zap.Error(err))
+		}
+	}
+
+	return result, nil
 }
 
 // GetAddressStats retrieves value statistics for an address
@@ -174,7 +200,7 @@ func (s *QueryService) GetAddressStats(ctx context.Context, address, network str
 	}
 
 	// Cache the result
-	if s.cache != nil {
+	if s.cache != nil && stats != nil {
 		cacheKey := cache.AddressStatsKey(address, network)
 		if err := s.cache.Set(ctx, cacheKey, stats, s.config.Redis.CacheTTL.Stats); err != nil {
 			s.logger.Warn("Failed to cache address stats", zap.Error(err))
@@ -182,6 +208,41 @@ func (s *QueryService) GetAddressStats(ctx context.Context, address, network str
 	}
 
 	return stats, nil
+}
+
+// InvalidateAddressCache invalidates all cache entries for an address
+func (s *QueryService) InvalidateAddressCache(ctx context.Context, address, network string) error {
+	if s.cache == nil {
+		return nil
+	}
+
+	if network == "" {
+		network = "ethereum"
+	}
+
+	if err := s.cache.InvalidateAddress(ctx, address, network); err != nil {
+		return fmt.Errorf("invalidate address cache: %w", err)
+	}
+
+	s.logger.Info("Invalidated cache for address",
+		zap.String("address", address),
+		zap.String("network", network))
+
+	return nil
+}
+
+// GetCacheStats returns cache statistics
+func (s *QueryService) GetCacheStats(ctx context.Context) (*cache.CacheStats, error) {
+	if s.cache == nil {
+		return nil, fmt.Errorf("cache not enabled")
+	}
+
+	return s.cache.GetStats(ctx)
+}
+
+// IsCacheEnabled returns whether caching is enabled
+func (s *QueryService) IsCacheEnabled() bool {
+	return s.cache != nil
 }
 
 // normalizePagination ensures pagination values are within bounds
