@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -49,21 +50,30 @@ type EtherscanFetcher struct {
 	logger      *zap.Logger
 }
 
-// rateLimiter implements a simple token bucket rate limiter
+// rateLimiter implements a token bucket rate limiter with adaptive backoff
 type rateLimiter struct {
-	mu        sync.Mutex
-	tokens    int
-	maxTokens int
-	interval  time.Duration
-	lastTime  time.Time
+	mu           sync.Mutex
+	tokens       float64
+	maxTokens    float64
+	refillRate   float64 // tokens per second
+	lastRefill   time.Time
+	minInterval  time.Duration // minimum time between requests
 }
 
 func newRateLimiter(rateLimit int) *rateLimiter {
+	// Use a more conservative rate: allow burst but maintain average
+	// For rateLimit=5, we use 3 tokens/sec to be safe
+	effectiveRate := float64(rateLimit) * 0.6 // 60% of stated limit for safety
+	if effectiveRate < 1 {
+		effectiveRate = 1
+	}
+	
 	return &rateLimiter{
-		tokens:    rateLimit,
-		maxTokens: rateLimit,
-		interval:  time.Second,
-		lastTime:  time.Now(),
+		tokens:      effectiveRate,
+		maxTokens:   effectiveRate,
+		refillRate:  effectiveRate,
+		lastRefill:  time.Now(),
+		minInterval: time.Duration(1000/effectiveRate) * time.Millisecond,
 	}
 }
 
@@ -72,21 +82,26 @@ func (r *rateLimiter) Wait() {
 	defer r.mu.Unlock()
 
 	now := time.Now()
-	elapsed := now.Sub(r.lastTime)
+	elapsed := now.Sub(r.lastRefill)
 
 	// Refill tokens based on elapsed time
-	tokensToAdd := int(elapsed/r.interval) * r.maxTokens
-	r.tokens = min(r.tokens+tokensToAdd, r.maxTokens)
-	r.lastTime = now
+	tokensToAdd := elapsed.Seconds() * r.refillRate
+	r.tokens = min64(r.tokens+tokensToAdd, r.maxTokens)
+	r.lastRefill = now
 
-	if r.tokens <= 0 {
-		sleepTime := r.interval - (elapsed % r.interval)
-		time.Sleep(sleepTime)
-		r.tokens = r.maxTokens
-		r.lastTime = time.Now()
+	// If no tokens available, wait until we have at least 1
+	if r.tokens < 1 {
+		waitTime := time.Duration((1-r.tokens)/r.refillRate*1000) * time.Millisecond
+		time.Sleep(waitTime)
+		r.tokens = 1
+		r.lastRefill = time.Now()
 	}
 
-	r.tokens--
+	// Consume one token
+	r.tokens -= 1
+
+	// Ensure minimum interval between requests
+	time.Sleep(r.minInterval)
 }
 
 // NewEtherscanFetcher creates a new Etherscan fetcher
@@ -125,31 +140,60 @@ func (f *EtherscanFetcher) Close() error {
 	return nil
 }
 
-// doRequest performs an HTTP request with rate limiting and returns raw response
+// doRequest performs an HTTP request with rate limiting and automatic retry on rate limit errors
 func (f *EtherscanFetcher) doRequest(ctx context.Context, url string) (json.RawMessage, error) {
-	f.rateLimiter.Wait()
+	maxRetries := 3
+	baseBackoff := 2 * time.Second
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		// Apply rate limiting before each attempt
+		f.rateLimiter.Wait()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("create request: %w", err)
+		}
+
+		resp, err := f.httpClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("do request: %w", err)
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("read response: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+		}
+
+		// Check if response indicates rate limit error
+		var errorResp struct {
+			Status  string `json:"status"`
+			Message string `json:"message"`
+			Result  string `json:"result"`
+		}
+		if err := json.Unmarshal(body, &errorResp); err == nil {
+			if errorResp.Status == "0" && strings.Contains(errorResp.Message, "rate limit") {
+				if attempt < maxRetries {
+					// Exponential backoff
+					backoffTime := baseBackoff * time.Duration(1<<uint(attempt))
+					f.logger.Warn("Rate limit hit, retrying",
+						zap.Int("attempt", attempt+1),
+						zap.Duration("backoff", backoffTime))
+					time.Sleep(backoffTime)
+					continue
+				}
+				return nil, fmt.Errorf("rate limit exceeded after %d retries: %s", maxRetries, errorResp.Message)
+			}
+		}
+
+		return json.RawMessage(body), nil
 	}
 
-	resp, err := f.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("do request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
-	}
-
-	return json.RawMessage(body), nil
+	return nil, fmt.Errorf("max retries exceeded")
 }
 
 // GetLatestBlockNumber returns the latest block number
@@ -252,7 +296,7 @@ func (f *EtherscanFetcher) FetchTokenTransfers(ctx context.Context, address stri
 	return body, nil
 }
 
-func min(a, b int) int {
+func min64(a, b float64) float64 {
 	if a < b {
 		return a
 	}
