@@ -50,13 +50,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/model.APIResponse"
+                                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.AddressInfoResponse"
+                                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.AddressInfoResponse"
                                         }
                                     }
                                 }
@@ -66,19 +66,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     }
                 }
@@ -119,13 +119,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/model.APIResponse"
+                                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.AddressStats"
+                                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.AddressStats"
                                         }
                                     }
                                 }
@@ -135,13 +135,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     }
                 }
@@ -212,19 +212,99 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cache/addresses/{address}": {
+            "delete": {
+                "description": "Remove all cached data for a specific blockchain address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cache"
+                ],
+                "summary": "Invalidate cache for an address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Blockchain Address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ethereum",
+                        "description": "Network",
+                        "name": "network",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cache/stats": {
+            "get": {
+                "description": "Get Redis cache statistics including hit rate, memory usage, and key count",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cache"
+                ],
+                "summary": "Get cache statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     }
                 }
@@ -312,13 +392,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     }
                 }
@@ -352,7 +432,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/model.APIResponse"
+                                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                                 },
                                 {
                                     "type": "object",
@@ -360,7 +440,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/model.TransferResponse"
+                                                "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.TransferResponse"
                                             }
                                         }
                                     }
@@ -371,13 +451,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     }
                 }
@@ -411,13 +491,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/model.APIResponse"
+                                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.TransferResponse"
+                                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.TransferResponse"
                                         }
                                     }
                                 }
@@ -427,19 +507,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.APIResponse"
+                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
                         }
                     }
                 }
@@ -447,7 +527,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.APIError": {
+        "github_com_0ksks_chain-risk-platform_query-service_internal_model.APIError": {
             "type": "object",
             "properties": {
                 "code": {
@@ -458,12 +538,12 @@ const docTemplate = `{
                 }
             }
         },
-        "model.APIResponse": {
+        "github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse": {
             "type": "object",
             "properties": {
                 "data": {},
                 "error": {
-                    "$ref": "#/definitions/model.APIError"
+                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIError"
                 },
                 "meta": {},
                 "success": {
@@ -471,7 +551,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.AddressInfoResponse": {
+        "github_com_0ksks_chain-risk-platform_query-service_internal_model.AddressInfoResponse": {
             "type": "object",
             "properties": {
                 "address": {
@@ -500,7 +580,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.AddressStats": {
+        "github_com_0ksks_chain-risk-platform_query-service_internal_model.AddressStats": {
             "type": "object",
             "properties": {
                 "avgTxValue": {
@@ -520,7 +600,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.TransferResponse": {
+        "github_com_0ksks_chain-risk-platform_query-service_internal_model.TransferResponse": {
             "type": "object",
             "properties": {
                 "blockNumber": {

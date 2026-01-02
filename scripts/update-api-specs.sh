@@ -52,6 +52,15 @@ update_query_service() {
     if ! command -v swag &> /dev/null; then
         log_warn "swag not found, installing..."
         go install github.com/swaggo/swag/cmd/swag@latest
+        # Add GOPATH/bin to PATH for this session
+        export PATH="$PATH:$(go env GOPATH)/bin"
+    fi
+    
+    # Verify swag is now available
+    if ! command -v swag &> /dev/null; then
+        log_error "swag installation failed or not in PATH"
+        log_info "Try running: export PATH=\$PATH:\$(go env GOPATH)/bin"
+        return 1
     fi
     
     # Generate swagger docs

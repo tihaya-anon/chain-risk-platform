@@ -49,7 +49,7 @@ func (h *CacheHandler) RegisterRoutes() RouteGroup {
 // @Tags cache
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.APIResponse{data=cache.CacheStats}
+// @Success 200 {object} model.APIResponse
 // @Failure 500 {object} model.APIResponse
 // @Router /api/v1/cache/stats [get]
 func (h *CacheHandler) GetCacheStats(c *gin.Context) {
