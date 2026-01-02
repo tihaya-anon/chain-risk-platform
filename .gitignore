@@ -45,3 +45,6 @@ secrets/
 *.pem
 *.key
 .logs/
+
+# Large data
+tests/integration/fixtures/ethereum/

@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/fetcher"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/storage"
 	"go.uber.org/zap"
 )
 
@@ -54,51 +56,6 @@ type NetworkConfig struct {
 	APIKey  string
 }
 
-// Manifest tracks all fetched fixtures
-type Manifest struct {
-	Version     string            `json:"version"`
-	GeneratedAt string            `json:"generatedAt"`
-	Network     string            `json:"network"`
-	APISource   string            `json:"apiSource"`
-	Blocks      []BlockManifest   `json:"blocks,omitempty"`
-	Addresses   []AddressManifest `json:"addresses,omitempty"`
-}
-
-type BlockManifest struct {
-	Number      uint64 `json:"number"`
-	Hash        string `json:"hash"`
-	TxCount     int    `json:"txCount"`
-	Timestamp   string `json:"timestamp"`
-	FixtureFile string `json:"fixtureFile"`
-}
-
-type AddressManifest struct {
-	Address     string `json:"address"`
-	StartBlock  uint64 `json:"startBlock"`
-	EndBlock    uint64 `json:"endBlock"`
-	TxCount     int    `json:"txCount"`
-	FixtureFile string `json:"fixtureFile"`
-}
-
-// BlockFixture contains all data related to a block
-type BlockFixture struct {
-	Network       string                     `json:"network"`
-	BlockNumber   uint64                     `json:"blockNumber"`
-	FetchedAt     string                     `json:"fetchedAt"`
-	BlockResponse json.RawMessage            `json:"blockResponse"`
-	InternalTxs   map[string]json.RawMessage `json:"internalTxs,omitempty"`
-}
-
-// AddressFixture contains transaction data for an address
-type AddressFixture struct {
-	Network        string          `json:"network"`
-	Address        string          `json:"address"`
-	StartBlock     uint64          `json:"startBlock"`
-	EndBlock       uint64          `json:"endBlock"`
-	FetchedAt      string          `json:"fetchedAt"`
-	TxListResponse json.RawMessage `json:"txListResponse"`
-}
-
 func main() {
 	flag.Parse()
 
@@ -127,26 +84,25 @@ func main() {
 		zap.String("baseURL", netCfg.BaseURL))
 
 	// Create fetcher
-	fetcher := NewFixtureFetcher(netCfg, *rateLimit, logger)
+	f := fetcher.NewEtherscanFetcher(netCfg.Name, netCfg.BaseURL, netCfg.APIKey, *rateLimit, logger)
+	defer f.Close()
 
-	// Create output directories
-	networkDir := filepath.Join(*outputDir, *network)
-	blocksDir := filepath.Join(networkDir, "blocks")
-	addressesDir := filepath.Join(networkDir, "addresses")
-
-	for _, dir := range []string{blocksDir, addressesDir} {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			logger.Fatal("Failed to create directory", zap.String("dir", dir), zap.Error(err))
-		}
+	// Create storage
+	store, err := storage.NewFileStorage(*outputDir, *network)
+	if err != nil {
+		logger.Fatal("Failed to create storage", zap.Error(err))
 	}
 
 	ctx := context.Background()
-	manifest := &Manifest{
-		Version:     "1.0",
-		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
-		Network:     *network,
-		APISource:   netCfg.BaseURL,
+
+	// Load or create manifest
+	manifest, err := store.LoadManifest()
+	if err != nil {
+		logger.Fatal("Failed to load manifest", zap.Error(err))
 	}
+	manifest.GeneratedAt = time.Now().UTC().Format(time.RFC3339)
+	manifest.Network = *network
+	manifest.APISource = netCfg.BaseURL
 
 	// Determine which blocks to fetch
 	blockNumbers := []uint64{}
@@ -166,7 +122,7 @@ func main() {
 		}
 	} else if *latest > 0 {
 		// Fetch latest N blocks
-		latestNum, err := fetcher.GetLatestBlockNumber(ctx)
+		latestNum, err := f.GetLatestBlockNumber(ctx)
 		if err != nil {
 			logger.Fatal("Failed to get latest block number", zap.Error(err))
 		}
@@ -180,42 +136,10 @@ func main() {
 		logger.Info("Fetching blocks", zap.Int("count", len(blockNumbers)))
 
 		for _, blockNum := range blockNumbers {
-			fixture, err := fetcher.FetchBlock(ctx, blockNum, *includeInternalTxs)
-			if err != nil {
+			if err := fetchAndSaveBlock(ctx, f, store, blockNum, *includeInternalTxs, manifest, logger); err != nil {
 				logger.Error("Failed to fetch block", zap.Uint64("block", blockNum), zap.Error(err))
 				continue
 			}
-
-			// Save fixture
-			filename := fmt.Sprintf("%d.json", blockNum)
-			fixturePath := filepath.Join(blocksDir, filename)
-			if err := saveJSON(fixturePath, fixture); err != nil {
-				logger.Error("Failed to save fixture", zap.String("path", fixturePath), zap.Error(err))
-				continue
-			}
-
-			// Parse block for manifest
-			var blockResp struct {
-				Result struct {
-					Hash         string        `json:"hash"`
-					Timestamp    string        `json:"timestamp"`
-					Transactions []interface{} `json:"transactions"`
-				} `json:"result"`
-			}
-			json.Unmarshal(fixture.BlockResponse, &blockResp)
-
-			manifest.Blocks = append(manifest.Blocks, BlockManifest{
-				Number:      blockNum,
-				Hash:        blockResp.Result.Hash,
-				TxCount:     len(blockResp.Result.Transactions),
-				Timestamp:   blockResp.Result.Timestamp,
-				FixtureFile: filepath.Join("blocks", filename),
-			})
-
-			logger.Info("Saved block fixture",
-				zap.Uint64("block", blockNum),
-				zap.Int("txCount", len(blockResp.Result.Transactions)),
-				zap.Int("internalTxCount", len(fixture.InternalTxs)))
 		}
 	}
 
@@ -226,25 +150,24 @@ func main() {
 			zap.Uint64("startBlock", *startBlock),
 			zap.Uint64("endBlock", *endBlock))
 
-		fixture, err := fetcher.FetchAddressTransactions(ctx, *address, *startBlock, *endBlock)
+		raw, err := f.FetchAddressTransactions(ctx, *address, *startBlock, *endBlock)
 		if err != nil {
 			logger.Fatal("Failed to fetch address transactions", zap.Error(err))
 		}
 
-		// Save fixture
-		filename := fmt.Sprintf("%s_%d_%d.json", *address, *startBlock, *endBlock)
-		fixturePath := filepath.Join(addressesDir, filename)
-		if err := saveJSON(fixturePath, fixture); err != nil {
-			logger.Fatal("Failed to save fixture", zap.Error(err))
+		// Save to storage
+		if err := store.SaveAddressTxs(*address, *startBlock, *endBlock, raw); err != nil {
+			logger.Fatal("Failed to save address transactions", zap.Error(err))
 		}
 
 		// Parse for manifest
 		var txResp struct {
 			Result []interface{} `json:"result"`
 		}
-		json.Unmarshal(fixture.TxListResponse, &txResp)
+		json.Unmarshal(raw, &txResp)
 
-		manifest.Addresses = append(manifest.Addresses, AddressManifest{
+		filename := fmt.Sprintf("%s_%d_%d.json", *address, *startBlock, *endBlock)
+		manifest.Addresses = append(manifest.Addresses, storage.AddressManifest{
 			Address:     *address,
 			StartBlock:  *startBlock,
 			EndBlock:    *endBlock,
@@ -262,20 +185,15 @@ func main() {
 		hashes := strings.Split(*txHashes, ",")
 		logger.Info("Fetching internal transactions", zap.Int("count", len(hashes)))
 
-		internalTxsDir := filepath.Join(networkDir, "internal_txs")
-		os.MkdirAll(internalTxsDir, 0755)
-
 		for _, hash := range hashes {
 			hash = strings.TrimSpace(hash)
-			resp, err := fetcher.FetchInternalTransactions(ctx, hash)
+			resp, err := f.FetchInternalTransactions(ctx, hash)
 			if err != nil {
 				logger.Error("Failed to fetch internal txs", zap.String("hash", hash), zap.Error(err))
 				continue
 			}
 
-			filename := fmt.Sprintf("%s.json", hash)
-			fixturePath := filepath.Join(internalTxsDir, filename)
-			if err := saveJSON(fixturePath, resp); err != nil {
+			if err := store.SaveInternalTx(hash, resp); err != nil {
 				logger.Error("Failed to save internal txs", zap.Error(err))
 				continue
 			}
@@ -285,15 +203,81 @@ func main() {
 	}
 
 	// Save manifest
-	manifestPath := filepath.Join(networkDir, "manifest.json")
-	if err := saveJSON(manifestPath, manifest); err != nil {
+	if err := store.SaveManifest(manifest); err != nil {
 		logger.Fatal("Failed to save manifest", zap.Error(err))
 	}
 
 	logger.Info("Fixture generation complete",
 		zap.Int("blocks", len(manifest.Blocks)),
-		zap.Int("addresses", len(manifest.Addresses)),
-		zap.String("manifest", manifestPath))
+		zap.Int("addresses", len(manifest.Addresses)))
+}
+
+// fetchAndSaveBlock fetches a block and saves it to storage
+func fetchAndSaveBlock(ctx context.Context, f fetcher.Fetcher, store storage.Storage, blockNum uint64, includeInternalTxs bool, manifest *storage.Manifest, logger *zap.Logger) error {
+	// Fetch block
+	blockResp, err := f.FetchBlockByNumber(ctx, blockNum)
+	if err != nil {
+		return fmt.Errorf("fetch block: %w", err)
+	}
+
+	// Save block
+	if err := store.SaveBlock(blockNum, blockResp); err != nil {
+		return fmt.Errorf("save block: %w", err)
+	}
+
+	// Parse block for manifest
+	var blockData struct {
+		Result struct {
+			Hash         string        `json:"hash"`
+			Timestamp    string        `json:"timestamp"`
+			Transactions []interface{} `json:"transactions"`
+		} `json:"result"`
+	}
+	json.Unmarshal(blockResp, &blockData)
+
+	filename := fmt.Sprintf("%d.json", blockNum)
+	manifest.Blocks = append(manifest.Blocks, storage.BlockManifest{
+		Number:      blockNum,
+		Hash:        blockData.Result.Hash,
+		TxCount:     len(blockData.Result.Transactions),
+		Timestamp:   blockData.Result.Timestamp,
+		FixtureFile: filepath.Join("blocks", filename),
+	})
+
+	logger.Info("Saved block fixture",
+		zap.Uint64("block", blockNum),
+		zap.Int("txCount", len(blockData.Result.Transactions)))
+
+	// Fetch internal transactions if requested
+	if includeInternalTxs {
+		for _, tx := range blockData.Result.Transactions {
+			txMap, ok := tx.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			txHash, ok := txMap["hash"].(string)
+			if !ok {
+				continue
+			}
+
+			internalResp, err := f.FetchInternalTransactions(ctx, txHash)
+			if err != nil {
+				logger.Warn("Failed to fetch internal txs",
+					zap.String("hash", txHash),
+					zap.Error(err))
+				continue
+			}
+
+			if err := store.SaveInternalTx(txHash, internalResp); err != nil {
+				logger.Warn("Failed to save internal txs",
+					zap.String("hash", txHash),
+					zap.Error(err))
+				continue
+			}
+		}
+	}
+
+	return nil
 }
 
 // buildNetworkConfig creates network configuration from flags and environment
@@ -305,7 +289,7 @@ func buildNetworkConfig(network, baseURL, apiKey string) *NetworkConfig {
 		if baseURL != "" {
 			cfg.BaseURL = baseURL
 		} else {
-			cfg.BaseURL = "https://api.etherscan.io/api?"
+			cfg.BaseURL = "https://api.etherscan.io/v2/api?"
 		}
 		if apiKey != "" {
 			cfg.APIKey = apiKey
@@ -330,12 +314,4 @@ func buildNetworkConfig(network, baseURL, apiKey string) *NetworkConfig {
 	}
 
 	return cfg
-}
-
-func saveJSON(path string, v interface{}) error {
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0644)
 }

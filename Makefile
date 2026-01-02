@@ -146,7 +146,8 @@ ingestion-init: ## Initialize data-ingestion dependencies
 
 ingestion-build: ## Build data-ingestion
 	@echo "🔨 Building data-ingestion..."
-	@cd data-ingestion && go build -o bin/ingestion ./cmd/...
+	@cd data-ingestion && go build -o bin/ingestion ./cmd/ingestion
+	@cd data-ingestion && go build -o bin/fixture-gen ./cmd/fixture-gen
 	@echo "✅ data-ingestion built"
 
 ingestion-run: ## Run data-ingestion
@@ -610,15 +611,10 @@ fixture-gen-build: ## Build fixture generator tool
 
 fixture-gen: fixture-gen-build ## Generate test fixtures (requires ETHERSCAN_API_KEY)
 	@echo "📥 Generating test fixtures..."
-	@if [ -z "$$ETHERSCAN_API_KEY" ]; then \
-		echo "❌ Error: ETHERSCAN_API_KEY environment variable is required"; \
-		echo "   Set it with: export ETHERSCAN_API_KEY=your_api_key"; \
-		exit 1; \
-	fi
-	@cd data-ingestion && ./bin/fixture-gen \
+	@bash -c 'set -a && source .env.local && cd data-ingestion && ./bin/fixture-gen \
 		-network ethereum \
 		-output ../tests/integration/fixtures \
 		-latest 3 \
 		-rate-limit 5 \
-		-verbose
+		-verbose'
 	@echo "✅ Fixtures generated in tests/integration/fixtures/ethereum/"
