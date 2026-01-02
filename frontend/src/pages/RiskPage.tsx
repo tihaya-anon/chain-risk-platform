@@ -149,6 +149,7 @@ export function RiskPage() {
                 showInOut={false}
                 showTags={true}
                 showLastSeen={false}
+                maxTagsDisplay={5}
               />
             </Card>
           )}

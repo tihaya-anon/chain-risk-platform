@@ -8,8 +8,8 @@ import { useAuthStore } from "@/store/auth"
 export function LoginPage() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
+  const [username, setUsername] = useState("admin")
+  const [password, setPassword] = useState("admin123")
   const [error, setError] = useState("")
 
   const loginMutation = useMutation({

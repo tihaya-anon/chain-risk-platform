@@ -97,6 +97,15 @@ export function BasicInfoSection({ data }: { data: AddressAnalysis }) {
             {info.firstSeen ? new Date(info.firstSeen).toLocaleDateString() : "N/A"}
           </p>
         </div>
+        <div>
+          <label className="text-sm text-gray-500 flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            Last Seen
+          </label>
+          <p className="font-medium">
+            {info.lastSeen ? new Date(info.lastSeen).toLocaleDateString() : "N/A"}
+          </p>
+        </div>
       </div>
     </div>
   )
