@@ -90,7 +90,7 @@ export function HighRiskNetworkPage() {
                     className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
                       viewMode === "list"
                         ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
+                        : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
                     }`}
                   >
                     <List className="w-4 h-4" />
@@ -101,7 +101,7 @@ export function HighRiskNetworkPage() {
                     className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
                       viewMode === "graph"
                         ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
+                        : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
                     }`}
                   >
                     <NetworkIcon className="w-4 h-4" />

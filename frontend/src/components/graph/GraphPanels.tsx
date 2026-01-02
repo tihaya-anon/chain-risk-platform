@@ -23,7 +23,7 @@ export function NodeInfoPanel({
   return (
     <Card
       title={isSelected ? "Selected Node" : "Hovered Node"}
-      className={isSelected ? "ring-2 ring-blue-500" : ""}
+      className={isSelected ? "ring-1 ring-blue-500" : ""}
     >
       {displayNode ? (
         <div className="space-y-3">
