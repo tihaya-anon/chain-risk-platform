@@ -46,12 +46,21 @@ function getRiskHighlightBorderColor(riskScore: number | undefined): string {
 }
 
 function getRiskColors(riskScore: number | undefined) {
+  const baseColor = getRiskColor(riskScore)
+  const baseBorder = getRiskBorderColor(riskScore)
+  const highlightColor = getRiskHighlightColor(riskScore)
+  const highlightBorder = getRiskHighlightBorderColor(riskScore)
+
   return {
-    background: getRiskColor(riskScore),
-    border: getRiskBorderColor(riskScore),
+    background: baseColor,
+    border: baseBorder,
     highlight: {
-      background: getRiskHighlightColor(riskScore),
-      border: getRiskHighlightBorderColor(riskScore),
+      background: highlightColor,
+      border: highlightBorder,
+    },
+    hover: {
+      background: highlightColor,
+      border: highlightBorder,
     },
   }
 }
