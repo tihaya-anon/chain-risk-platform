@@ -104,6 +104,14 @@ help:
 	@echo "  make lint-all          Lint all services"
 	@echo "  make clean-all         Clean all artifacts"
 	@echo ""
+	@echo "📚 API Documentation:"
+	@echo "  make api-update        Update all API specifications"
+	@echo "  make api-update-query  Update Query Service API spec"
+	@echo "  make api-update-bff    Update BFF API spec"
+	@echo "  make api-update-risk   Update Risk ML Service API spec"
+	@echo "  make api-update-orch   Update Orchestrator API spec"
+	@echo "  make api-update-graph  Update Graph Engine API spec"
+	@echo ""
 	@echo "🧪 Integration Test:"
 	@echo "  make test-integration  Run integration tests"
 	@echo "  make mock-server-build Build mock Etherscan server"
@@ -587,6 +595,28 @@ logs-graph: ## Tail graph service logs
 
 logs-all: ## Tail all service logs
 	@tail -f $(LOGS_DIR)/*.log
+
+# ============================================
+# API Documentation
+# ============================================
+
+api-update: ## Update all API specifications
+	@./scripts/update-api-specs.sh --all
+
+api-update-query: ## Update Query Service API spec
+	@./scripts/update-api-specs.sh --query
+
+api-update-bff: ## Update BFF API spec
+	@./scripts/update-api-specs.sh --bff
+
+api-update-risk: ## Update Risk ML Service API spec
+	@./scripts/update-api-specs.sh --risk
+
+api-update-orch: ## Update Orchestrator API spec
+	@./scripts/update-api-specs.sh --orchestrator
+
+api-update-graph: ## Update Graph Engine API spec
+	@./scripts/update-api-specs.sh --graph
 
 # ============================================
 # Integration Test
