@@ -116,7 +116,8 @@ func (p *KafkaProducer) SendBatch(ctx context.Context, events []*model.ChainEven
 			},
 		}
 	}
-
+	p.logger.Debug("Run in test mode, messages are not sent")
+	return nil
 	return p.producer.SendMessages(messages)
 }
 
@@ -142,7 +143,8 @@ func (p *KafkaProducer) sendEvent(_ context.Context, key string, event *model.Ch
 			},
 		},
 	}
-
+	p.logger.Debug("Run in test mode, messages are not sent")
+	return nil
 	partition, offset, err := p.producer.SendMessage(msg)
 	if err != nil {
 		p.logger.Error("Failed to send message",

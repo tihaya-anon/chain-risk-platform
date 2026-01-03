@@ -9,13 +9,13 @@ blockchain:
 
   # Etherscan API (V2)
   etherscan:
-    baseUrl: https://api.etherscan.io/v2/api?chainid=1
+    baseUrl: https://api.etherscan.io/v2/api
     apiKey: ${ETHERSCAN_API_KEY}
     rateLimit: 5 # requests per second
 
   # BSCScan API (V2)
   bscscan:
-    baseUrl: https://api.bscscan.com/v2/api?chainid=56
+    baseUrl: https://api.bscscan.com/v2/api
     apiKey: ${BSCSCAN_API_KEY}
     rateLimit: 5
 
@@ -41,7 +41,7 @@ kafka:
 
 # Logging Configuration
 logging:
-  level: info # debug, info, warn, error
+  level: debug # debug, info, warn, error
   format: json # json, console
   outputPaths:
     - stdout

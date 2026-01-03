@@ -198,7 +198,7 @@ func (f *EtherscanFetcher) doRequest(ctx context.Context, url string) (json.RawM
 
 // GetLatestBlockNumber returns the latest block number
 func (f *EtherscanFetcher) GetLatestBlockNumber(ctx context.Context) (uint64, error) {
-	url := fmt.Sprintf("%s&chainid=%s&module=proxy&action=eth_blockNumber&apikey=%s", f.baseURL, f.chainID, f.apiKey)
+	url := fmt.Sprintf("%s?chainid=%s&module=proxy&action=eth_blockNumber&apikey=%s", f.baseURL, f.chainID, f.apiKey)
 
 	body, err := f.doRequest(ctx, url)
 	if err != nil {
@@ -234,7 +234,7 @@ func (f *EtherscanFetcher) GetLatestBlockNumber(ctx context.Context) (uint64, er
 
 // FetchBlockByNumber fetches raw block data by block number
 func (f *EtherscanFetcher) FetchBlockByNumber(ctx context.Context, blockNumber uint64) (json.RawMessage, error) {
-	url := fmt.Sprintf("%s&chainid=%s&module=proxy&action=eth_getBlockByNumber&tag=0x%x&boolean=true&apikey=%s",
+	url := fmt.Sprintf("%s?chainid=%s&module=proxy&action=eth_getBlockByNumber&tag=0x%x&boolean=true&apikey=%s",
 		f.baseURL, f.chainID, blockNumber, f.apiKey)
 
 	body, err := f.doRequest(ctx, url)
@@ -259,7 +259,7 @@ func (f *EtherscanFetcher) FetchBlockByNumber(ctx context.Context, blockNumber u
 
 // FetchInternalTransactions fetches raw internal transactions for a tx hash
 func (f *EtherscanFetcher) FetchInternalTransactions(ctx context.Context, txHash string) (json.RawMessage, error) {
-	url := fmt.Sprintf("%s&chainid=%s&module=account&action=txlistinternal&txhash=%s&apikey=%s",
+	url := fmt.Sprintf("%s?chainid=%s&module=account&action=txlistinternal&txhash=%s&apikey=%s",
 		f.baseURL, f.chainID, txHash, f.apiKey)
 
 	body, err := f.doRequest(ctx, url)
@@ -272,7 +272,7 @@ func (f *EtherscanFetcher) FetchInternalTransactions(ctx context.Context, txHash
 
 // FetchAddressTransactions fetches raw transactions for an address
 func (f *EtherscanFetcher) FetchAddressTransactions(ctx context.Context, address string, startBlock, endBlock uint64) (json.RawMessage, error) {
-	url := fmt.Sprintf("%s&chainid=%s&module=account&action=txlist&address=%s&startblock=%d&endblock=%d&sort=asc&apikey=%s",
+	url := fmt.Sprintf("%s?chainid=%s&module=account&action=txlist&address=%s&startblock=%d&endblock=%d&sort=asc&apikey=%s",
 		f.baseURL, f.chainID, address, startBlock, endBlock, f.apiKey)
 
 	body, err := f.doRequest(ctx, url)
@@ -285,7 +285,7 @@ func (f *EtherscanFetcher) FetchAddressTransactions(ctx context.Context, address
 
 // FetchTokenTransfers fetches raw token transfers for an address
 func (f *EtherscanFetcher) FetchTokenTransfers(ctx context.Context, address string, startBlock, endBlock uint64) (json.RawMessage, error) {
-	url := fmt.Sprintf("%s&chainid=%s&module=account&action=tokentx&address=%s&startblock=%d&endblock=%d&sort=asc&apikey=%s",
+	url := fmt.Sprintf("%s?chainid=%s&module=account&action=tokentx&address=%s&startblock=%d&endblock=%d&sort=asc&apikey=%s",
 		f.baseURL, f.chainID, address, startBlock, endBlock, f.apiKey)
 
 	body, err := f.doRequest(ctx, url)

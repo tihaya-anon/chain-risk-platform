@@ -196,7 +196,7 @@ ingestion-build: ## Build data-ingestion
 	@echo "✅ data-ingestion built"
 
 ingestion-run: ## Run data-ingestion
-	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd data-ingestion && go run ./cmd/...'
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd data-ingestion && ./bin/ingestion'
 
 ingestion-test: ## Test data-ingestion
 	@echo "🧪 Testing data-ingestion..."
