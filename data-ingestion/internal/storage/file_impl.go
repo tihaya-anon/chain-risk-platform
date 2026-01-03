@@ -1,14 +1,18 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
 )
 
 // FileStorage implements Storage using file system
+// This is primarily used for fixture generation and testing
 type FileStorage struct {
 	baseDir      string
 	network      string
@@ -41,7 +45,7 @@ func NewFileStorage(baseDir, network string) (*FileStorage, error) {
 }
 
 // SaveBlock saves raw block data
-func (s *FileStorage) SaveBlock(blockNumber uint64, data json.RawMessage) error {
+func (s *FileStorage) SaveBlock(ctx context.Context, blockNumber uint64, data json.RawMessage) error {
 	filename := fmt.Sprintf("%d.json", blockNumber)
 	path := filepath.Join(s.blocksDir, filename)
 
@@ -60,7 +64,7 @@ func (s *FileStorage) SaveBlock(blockNumber uint64, data json.RawMessage) error 
 }
 
 // SaveInternalTx saves raw internal transaction data
-func (s *FileStorage) SaveInternalTx(txHash string, data json.RawMessage) error {
+func (s *FileStorage) SaveInternalTx(ctx context.Context, txHash string, data json.RawMessage) error {
 	filename := fmt.Sprintf("%s.json", txHash)
 	path := filepath.Join(s.internalDir, filename)
 
@@ -79,7 +83,7 @@ func (s *FileStorage) SaveInternalTx(txHash string, data json.RawMessage) error 
 }
 
 // SaveAddressTxs saves raw address transaction data
-func (s *FileStorage) SaveAddressTxs(address string, startBlock, endBlock uint64, data json.RawMessage) error {
+func (s *FileStorage) SaveAddressTxs(ctx context.Context, address string, startBlock, endBlock uint64, data json.RawMessage) error {
 	filename := fmt.Sprintf("%s_%d_%d.json", address, startBlock, endBlock)
 	path := filepath.Join(s.addressesDir, filename)
 
@@ -98,7 +102,7 @@ func (s *FileStorage) SaveAddressTxs(address string, startBlock, endBlock uint64
 }
 
 // SaveManifest saves the manifest file
-func (s *FileStorage) SaveManifest(manifest *Manifest) error {
+func (s *FileStorage) SaveManifest(ctx context.Context, manifest *Manifest) error {
 	networkDir := filepath.Join(s.baseDir, s.network)
 	path := filepath.Join(networkDir, "manifest.json")
 
@@ -111,7 +115,7 @@ func (s *FileStorage) SaveManifest(manifest *Manifest) error {
 }
 
 // LoadManifest loads the manifest file
-func (s *FileStorage) LoadManifest() (*Manifest, error) {
+func (s *FileStorage) LoadManifest(ctx context.Context) (*Manifest, error) {
 	networkDir := filepath.Join(s.baseDir, s.network)
 	path := filepath.Join(networkDir, "manifest.json")
 
@@ -134,4 +138,39 @@ func (s *FileStorage) LoadManifest() (*Manifest, error) {
 	}
 
 	return &manifest, nil
+}
+
+// SaveTransaction is not supported by FileStorage (use PostgresStorage for structured data)
+func (s *FileStorage) SaveTransaction(ctx context.Context, network string, tx *model.Transaction) error {
+	return fmt.Errorf("SaveTransaction not supported by FileStorage, use PostgresStorage")
+}
+
+// SaveTransactions is not supported by FileStorage
+func (s *FileStorage) SaveTransactions(ctx context.Context, network string, txs []*model.Transaction) error {
+	return fmt.Errorf("SaveTransactions not supported by FileStorage, use PostgresStorage")
+}
+
+// SaveTransfer is not supported by FileStorage
+func (s *FileStorage) SaveTransfer(ctx context.Context, network string, transfer *model.Transfer) error {
+	return fmt.Errorf("SaveTransfer not supported by FileStorage, use PostgresStorage")
+}
+
+// SaveTransfers is not supported by FileStorage
+func (s *FileStorage) SaveTransfers(ctx context.Context, network string, transfers []*model.Transfer) error {
+	return fmt.Errorf("SaveTransfers not supported by FileStorage, use PostgresStorage")
+}
+
+// GetLastProcessedBlock returns 0 for FileStorage (not supported)
+func (s *FileStorage) GetLastProcessedBlock(ctx context.Context, network, processorType string) (uint64, error) {
+	return 0, nil
+}
+
+// SetLastProcessedBlock is a no-op for FileStorage
+func (s *FileStorage) SetLastProcessedBlock(ctx context.Context, network, processorType string, blockNumber uint64) error {
+	return nil
+}
+
+// Close is a no-op for FileStorage
+func (s *FileStorage) Close() error {
+	return nil
 }

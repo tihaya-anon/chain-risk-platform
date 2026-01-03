@@ -96,7 +96,7 @@ func main() {
 	ctx := context.Background()
 
 	// Load or create manifest
-	manifest, err := store.LoadManifest()
+	manifest, err := store.LoadManifest(ctx)
 	if err != nil {
 		logger.Fatal("Failed to load manifest", zap.Error(err))
 	}
@@ -156,7 +156,7 @@ func main() {
 		}
 
 		// Save to storage
-		if err := store.SaveAddressTxs(*address, *startBlock, *endBlock, raw); err != nil {
+		if err := store.SaveAddressTxs(ctx, *address, *startBlock, *endBlock, raw); err != nil {
 			logger.Fatal("Failed to save address transactions", zap.Error(err))
 		}
 
@@ -193,7 +193,7 @@ func main() {
 				continue
 			}
 
-			if err := store.SaveInternalTx(hash, resp); err != nil {
+			if err := store.SaveInternalTx(ctx, hash, resp); err != nil {
 				logger.Error("Failed to save internal txs", zap.Error(err))
 				continue
 			}
@@ -203,7 +203,7 @@ func main() {
 	}
 
 	// Save manifest
-	if err := store.SaveManifest(manifest); err != nil {
+	if err := store.SaveManifest(ctx, manifest); err != nil {
 		logger.Fatal("Failed to save manifest", zap.Error(err))
 	}
 
@@ -221,7 +221,7 @@ func fetchAndSaveBlock(ctx context.Context, f fetcher.Fetcher, store storage.Sto
 	}
 
 	// Save block
-	if err := store.SaveBlock(blockNum, blockResp); err != nil {
+	if err := store.SaveBlock(ctx, blockNum, blockResp); err != nil {
 		return fmt.Errorf("save block: %w", err)
 	}
 
@@ -268,7 +268,7 @@ func fetchAndSaveBlock(ctx context.Context, f fetcher.Fetcher, store storage.Sto
 				continue
 			}
 
-			if err := store.SaveInternalTx(txHash, internalResp); err != nil {
+			if err := store.SaveInternalTx(ctx, txHash, internalResp); err != nil {
 				logger.Warn("Failed to save internal txs",
 					zap.String("hash", txHash),
 					zap.Error(err))
@@ -289,7 +289,7 @@ func buildNetworkConfig(network, baseURL, apiKey string) *NetworkConfig {
 		if baseURL != "" {
 			cfg.BaseURL = baseURL
 		} else {
-			cfg.BaseURL = "https://api.etherscan.io/v2/api?"
+			cfg.BaseURL = "https://api.etherscan.io/v2/api"
 		}
 		if apiKey != "" {
 			cfg.APIKey = apiKey
@@ -300,7 +300,7 @@ func buildNetworkConfig(network, baseURL, apiKey string) *NetworkConfig {
 		if baseURL != "" {
 			cfg.BaseURL = baseURL
 		} else {
-			cfg.BaseURL = "https://api.bscscan.com/api?"
+			cfg.BaseURL = "https://api.bscscan.com/v2/api"
 		}
 		if apiKey != "" {
 			cfg.APIKey = apiKey
