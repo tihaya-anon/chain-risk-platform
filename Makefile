@@ -720,6 +720,12 @@ api-update-graph: ## Update Graph Engine API spec
 test-integration: ## Run integration test (mock server + data pipeline)
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/run-integration-test.sh'
 
+test-integration-phase1: ## Run integration test Phase 1 (data ingestion to Kafka only)
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/test-integration-phase1.sh'
+
+test-integration-phase2: ## Run integration test Phase 2 (Flink processing only, reusable)
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/test-integration-phase2.sh'
+
 mock-server-build: ## Build mock Etherscan server
 	@echo "🔨 Building mock server..."
 	@cd tests/integration/mock_server && mkdir -p bin && go build -o bin/mock_server .
