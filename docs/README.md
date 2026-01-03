@@ -8,7 +8,8 @@
 
 系统架构、技术选型和设计决策相关文档
 
-- **[项目总览](./architecture/PROJECT_OVERVIEW.md)** - 项目目标、技术栈、系统架构总览
+- **[项目总览](./architecture/PROJECT_OVERVIEW.md)** - 项目目标、技术栈、Lambda 架构总览
+- **[Lambda 架构详解](./architecture/LAMBDA_ARCHITECTURE.md)** - 流批一体处理设计与实现（⭐ 新增）
 - **[网关与BFF架构](./architecture/GATEWAY_BFF_ARCHITECTURE.md)** - Orchestrator和BFF的职责划分与请求流程
 - **[Orchestrator架构](./architecture/ORCHESTRATOR_ARCHITECTURE.md)** - API网关与编排服务的统一架构设计
 - **[技术决策记录](./architecture/TECH_DECISIONS.md)** - 重要技术决策及其原因（TDR）
@@ -63,8 +64,9 @@ API规范管理和OpenAPI文档
 
 ### 新手入门
 1. 阅读 [项目总览](./architecture/PROJECT_OVERVIEW.md) 了解项目背景和架构
-2. 查看 [开发计划](./development/DEVELOPMENT_PLAN.md) 了解当前开发阶段
-3. 参考 [脚本快速参考](./operations/SCRIPTS_QUICK_REFERENCE.md) 启动开发环境
+2. 阅读 [Lambda 架构详解](./architecture/LAMBDA_ARCHITECTURE.md) 理解流批一体处理
+3. 查看 [开发计划](./development/DEVELOPMENT_PLAN.md) 了解当前开发阶段
+4. 参考 [脚本快速参考](./operations/SCRIPTS_QUICK_REFERENCE.md) 启动开发环境
 
 ### 开发人员
 1. 遵循 [Git工作流指南](./operations/GIT_WORKFLOW.md) 进行代码提交
@@ -72,9 +74,10 @@ API规范管理和OpenAPI文档
 3. 查看 [开发进度](./development/PROGRESS.md) 了解当前任务状态
 
 ### 架构师/技术负责人
-1. 查阅 [技术决策记录](./architecture/TECH_DECISIONS.md) 了解技术选型依据
-2. 参考 [Orchestrator架构](./architecture/ORCHESTRATOR_ARCHITECTURE.md) 了解网关设计
-3. 阅读 [网关与BFF架构](./architecture/GATEWAY_BFF_ARCHITECTURE.md) 了解职责划分
+1. 查阅 [技术决策记录](./architecture/TECH_DECISIONS.md) 了解技术选型依据（特别是 TDR-007）
+2. 深入理解 [Lambda 架构详解](./architecture/LAMBDA_ARCHITECTURE.md) 的流批分离设计
+3. 参考 [Orchestrator架构](./architecture/ORCHESTRATOR_ARCHITECTURE.md) 了解网关设计
+4. 阅读 [网关与BFF架构](./architecture/GATEWAY_BFF_ARCHITECTURE.md) 了解职责划分
 
 ---
 
@@ -84,10 +87,11 @@ API规范管理和OpenAPI文档
 docs/
 ├── README.md                    # 本文件 - 文档导航索引
 ├── architecture/                # 架构设计文档
-│   ├── PROJECT_OVERVIEW.md
+│   ├── PROJECT_OVERVIEW.md      # 项目总览（Lambda 架构）
+│   ├── LAMBDA_ARCHITECTURE.md   # Lambda 架构详解 ⭐ 新增
 │   ├── GATEWAY_BFF_ARCHITECTURE.md
 │   ├── ORCHESTRATOR_ARCHITECTURE.md
-│   └── TECH_DECISIONS.md
+│   └── TECH_DECISIONS.md        # 技术决策（TDR-007 已更新）
 ├── development/                 # 开发计划文档
 │   ├── DEVELOPMENT_PLAN.md
 │   ├── PROGRESS.md
@@ -114,6 +118,39 @@ docs/
 
 ---
 
+## 🎯 文档更新亮点（2026-01-03）
+
+### ⭐ Lambda 架构重构
+- **新增文档**: [Lambda 架构详解](./architecture/LAMBDA_ARCHITECTURE.md)
+  - 详细说明 Speed Layer（Flink）、Batch Layer（Spark）、Serving Layer 的职责
+  - 提供完整的代码示例和实现方案
+  - 包含数据表设计、监控指标、应用场景对比
+
+- **更新文档**: [项目总览](./architecture/PROJECT_OVERVIEW.md)
+  - 架构图更新为 Lambda 架构
+  - 新增数据流详解（实时流、批处理、图分析）
+  - 明确 Flink、Spark、Graph Engine 的职责分工
+
+- **更新文档**: [技术决策记录](./architecture/TECH_DECISIONS.md)
+  - TDR-007 重大更新：从"流批一体"改为"Lambda 架构"
+  - 详细说明为什么需要 Flink 双写 + Spark 覆盖
+  - 对比传统架构与 Lambda 架构的优势
+
+- **更新文档**: [README.md](../README.md)
+  - 主页同步 Lambda 架构说明
+  - 新增技术栈（Scala/Spark）
+  - 更新项目结构和核心特性
+
+### 🔧 架构优化要点
+1. **Flink Stream Processor**: 从单写 PostgreSQL 改为**双写 PostgreSQL + Neo4j**
+2. **Spark Batch Processor**: 新增**覆盖写入 Neo4j** 的逻辑
+3. **Graph Engine**: 
+   - ❌ 移除定时从 PostgreSQL 同步的逻辑
+   - ✅ 新增监听 Kafka `transfers` Topic 的增量分析
+   - ✅ 保留每日批量图分析
+
+---
+
 ## 🔄 文档维护
 
 ### 文档更新原则
@@ -137,4 +174,4 @@ docs/
 
 ---
 
-**最后更新**: 2026-01-02
+**最后更新**: 2026-01-03

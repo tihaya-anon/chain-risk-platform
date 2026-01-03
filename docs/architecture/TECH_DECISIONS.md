@@ -19,8 +19,10 @@
 | -------- | ------------------ | ------------------------------ |
 | 数据采集 | Go                 | 高并发、低资源占用             |
 | 流处理   | Java/Flink         | 生态成熟、与工作经验一致       |
+| 批处理   | Scala/Spark        | 大数据处理标准、生态丰富       |
 | 查询服务 | Go/Gin             | 高性能、快速开发               |
 | 风险服务 | Python/FastAPI     | ML 生态、快速迭代              |
+| 图分析   | Java/Spring+Neo4j  | 企业级方案、图数据库集成好     |
 | 服务治理 | Java/Spring Cloud  | 企业级方案、功能完善           |
 | BFF      | TypeScript/Nest.js | 前后端类型一致、GraphQL 支持好 |
 | 前端     | React/TypeScript   | 生态丰富、类型安全             |
@@ -46,11 +48,13 @@
 - 开源、功能强大
 - JSON 支持好，适合半结构化数据
 - 扩展性好 (TimescaleDB, PostGIS)
+- 支持 UPSERT（流批覆盖场景）
 
 #### Neo4j
 - 图查询性能优秀
 - Cypher 查询语言直观
 - 适合地址关系和 Tag Propagation
+- 支持 MERGE 操作（流批覆盖场景）
 
 #### Redis
 - 高性能缓存
@@ -60,7 +64,8 @@
 #### Kafka
 - 高吞吐量
 - 持久化消息
-- 与 Flink 集成好
+- 与 Flink/Spark 集成好
+- 支持流批一体架构
 
 ---
 
@@ -158,28 +163,188 @@ rules = [
 ### 实现方式
 - 使用 Neo4j 存储图结构
 - Cypher 查询实现传播
-- 定期批量更新
+- 增量传播（Kafka 触发）+ 批量传播（定时任务）
 
 ---
 
-## TDR-007: 流批一体处理
+## TDR-007: Lambda 架构 - 流批一体处理（重要更新）
 
 ### 决策
-- 实时流：Flink DataStream
-- 批处理：Flink SQL
-- 批处理结果覆盖流处理结果
+采用 **Lambda 架构**，实现流批分离、职责明确
 
-### 数据流
+- **实时流**：Flink DataStream 双写 PostgreSQL + Neo4j
+- **批处理**：Spark 每日覆盖修正流处理数据
+- **图分析**：Graph Engine 基于 Neo4j 进行增量 + 批量分析
+
+### 背景
+传统方案存在的问题：
+1. Graph Engine 定时从 PostgreSQL 同步数据到 Neo4j，延迟 5 分钟
+2. 重复计算：Flink 写 PostgreSQL，Graph Engine 再读取重建图
+3. 资源浪费：批量同步产生大量数据库查询
+4. 实时性差：图分析结果需要等待同步完成
+
+### 架构设计
+
+#### 数据流
 ```
-链上数据 → Kafka → Flink Stream → 实时表
-                         ↓
-              Flink SQL (每日) → 覆盖实时表
+┌─────────────────────────────────────────────────────────────┐
+│                    实时流（Flink Stream）                    │
+│                                                              │
+│  链上数据 → Kafka (raw-blocks)                               │
+│                ↓                                             │
+│          Flink Stream Processor                              │
+│                ↓                                             │
+│      ┌─────────┴─────────┐                                   │
+│      ↓                   ↓                                   │
+│  PostgreSQL          Neo4j                                   │
+│  (source='stream')   (source='stream')                       │
+│      ↓                   ↓                                   │
+│  Query Service      Graph Engine (增量分析)                  │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                   批处理流（Spark Batch）                    │
+│                                                              │
+│  全节点 RPC (重新扫描昨天区块)                               │
+│                ↓                                             │
+│          Spark Batch Processor                               │
+│                ↓                                             │
+│      ┌─────────┴─────────┐                                   │
+│      ↓                   ↓                                   │
+│  PostgreSQL          Neo4j                                   │
+│  (source='batch')    (source='batch')                        │
+│  覆盖 stream 数据    覆盖 stream 数据                        │
+│      ↓                   ↓                                   │
+│  Query Service      Graph Engine (批量分析)                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### 原因
-- 与当前工作经验一致
-- Flink 流批一体，技术栈统一
+#### 职责分配
+
+| 组件 | 职责 | 输入 | 输出 |
+|-----|------|------|------|
+| **Flink Stream** | 实时流处理 | Kafka `raw-blocks` | PostgreSQL + Neo4j (source='stream') |
+| **Spark Batch** | 批处理覆盖 | 全节点 RPC | PostgreSQL + Neo4j (source='batch', 覆盖) |
+| **Graph Engine** | 图分析服务 | Neo4j 图数据 | 聚类结果、标签传播、图查询 API |
+
+### 核心改动
+
+#### 1. Flink Stream Processor
+```java
+// 双写策略
+DataStream<Transfer> transfers = ...;
+
+// 写入 PostgreSQL
+transfers.addSink(JdbcSink.sink(
+    "INSERT INTO transfers (...) VALUES (...) " +
+    "ON CONFLICT (tx_hash) DO UPDATE SET source='stream'",
+    ...
+));
+
+// 写入 Neo4j
+transfers.addSink(new Neo4jSink<Transfer>() {
+    @Override
+    public void invoke(Transfer t, Context context) {
+        session.run(
+            "MERGE (from:Address {address: $from}) " +
+            "MERGE (to:Address {address: $to}) " +
+            "MERGE (from)-[r:TRANSFER {tx_hash: $txHash}]->(to) " +
+            "ON CREATE SET r.source = 'stream', r.timestamp = $timestamp",
+            parameters(...)
+        );
+    }
+});
+```
+
+#### 2. Spark Batch Processor
+```scala
+// 覆盖策略
+val transfers = spark.read
+    .format("web3")
+    .option("rpcUrl", "https://eth-mainnet.g.alchemy.com/v2/...")
+    .load()
+
+// 覆盖写入 PostgreSQL
+transfers.write
+    .format("jdbc")
+    .option("conflictAction", "DO UPDATE SET source='batch', corrected_at=NOW()")
+    .save()
+
+// 覆盖写入 Neo4j
+transfers.foreachPartition { partition =>
+    session.run(
+        "MERGE (from:Address {address: $from}) " +
+        "MERGE (to:Address {address: $to}) " +
+        "MERGE (from)-[r:TRANSFER {tx_hash: $txHash}]->(to) " +
+        "ON MATCH SET r.source = 'batch', r.corrected_at = timestamp()",
+        parameters(...)
+    )
+}
+```
+
+#### 3. Graph Engine
+```java
+// ❌ 移除：定时从 PostgreSQL 同步的逻辑
+// @Scheduled(fixedDelayString = "${graph.sync.interval:300000}")
+// public int syncTransfers() { ... }
+
+// ✅ 新增：增量图分析（Kafka 触发）
+@KafkaListener(topics = "transfers", groupId = "graph-engine")
+public void onNewTransfer(Transfer transfer) {
+    // 增量聚类
+    if (shouldTriggerClustering(transfer)) {
+        clusteringService.runIncrementalClustering(
+            transfer.getFromAddr(), 
+            transfer.getToAddr()
+        );
+    }
+    
+    // 增量标签传播
+    if (isHighRiskAddress(transfer.getFromAddr())) {
+        tagPropagationService.propagateFromAddress(transfer.getFromAddr());
+    }
+}
+
+// ✅ 保留：批量图分析（定时任务）
+@Scheduled(cron = "0 0 3 * * ?") // 每天凌晨 3 点
+public ClusteringResultResponse runClustering() {
+    // 全图聚类、PageRank、社区发现
+    ...
+}
+```
+
+### 优势对比
+
+| 维度 | 传统架构 | Lambda 架构（本项目） |
+|-----|---------|---------------------|
+| **Neo4j 数据延迟** | 5 分钟（定时同步） | 秒级（Flink 直接写入） |
+| **PostgreSQL 压力** | 高（Graph Engine 频繁查询） | 低（只用于 Query Service） |
+| **图分析实时性** | 差（需等待同步） | 好（增量分析 + 批量分析） |
+| **数据一致性** | 弱（同步可能失败） | 强（Spark 批处理覆盖） |
+| **资源利用率** | 低（重复计算） | 高（流批分离，各司其职） |
+
+### 应用场景
+
+#### 场景 1: Transfer 数据提取与修正
+- **Flink 流处理**: 快速解析，可能有错（数据丢失、解析失败、区块重组）
+- **Spark 批处理**: 精确解析，处理复杂合约、等待区块确认
+
+#### 场景 2: 地址风险评分
+- **Flink 流处理**: 简单规则（黑名单检查），秒级响应
+- **Spark 批处理**: 复杂 ML 模型，全局特征（过去 30 天交易模式）
+
+#### 场景 3: 地址聚类与标签传播
+- **Graph Engine 增量**: 局部子图分析，实时响应
+- **Graph Engine 批量**: 全图算法（PageRank、Louvain），每日运行
+
+### 技术栈一致性
+- 与工作经验一致（Flink + Spark）
+- Java/Scala 技术栈统一
 - 批处理保证数据最终一致性
+- 图分析实时性提升（从 5 分钟延迟到秒级）
+
+### 日期
+2026-01-03
 
 ---
 
@@ -193,16 +358,20 @@ rules = [
 ```yaml
 # 初始资源配置
 services:
-  bff-gateway:      { replicas: 2, cpu: 500m, memory: 512Mi }
+  orchestrator:     { replicas: 2, cpu: 500m, memory: 512Mi }
+  bff:              { replicas: 2, cpu: 500m, memory: 512Mi }
   query-service:    { replicas: 2, cpu: 500m, memory: 512Mi }
   risk-ml-service:  { replicas: 2, cpu: 1000m, memory: 1Gi }
   alert-service:    { replicas: 2, cpu: 500m, memory: 512Mi }
   
 processing:
   stream-processor: { replicas: 1, cpu: 2000m, memory: 4Gi }
+  batch-processor:  { replicas: 1, cpu: 4000m, memory: 8Gi }
+  graph-engine:     { replicas: 2, cpu: 1000m, memory: 2Gi }
   
 databases:
   postgresql:       { replicas: 1, cpu: 1000m, memory: 2Gi }
+  neo4j:            { replicas: 1, cpu: 2000m, memory: 4Gi }
   redis:            { replicas: 1, cpu: 500m, memory: 1Gi }
   kafka:            { replicas: 3, cpu: 1000m, memory: 2Gi }
 ```
@@ -234,3 +403,7 @@ databases:
 ### 日期
 [决策日期]
 ```
+
+---
+
+**最后更新**: 2026-01-03
