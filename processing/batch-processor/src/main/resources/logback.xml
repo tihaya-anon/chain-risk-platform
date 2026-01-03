@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console: colored output -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %highlight([%-4level]) %cyan(%logger{20}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File: full details with line numbers -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/batch-processor.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/batch-processor.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36}:%line - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Reduce Spark noise -->
+    <logger name="org.apache.spark" level="WARN"/>
+    <logger name="org.apache.spark.SparkContext" level="INFO"/>
+    <logger name="org.apache.spark.sql.execution" level="WARN"/>
+    <logger name="org.apache.spark.scheduler" level="WARN"/>
+    <logger name="org.apache.spark.storage" level="WARN"/>
+    
+    <!-- Reduce Hadoop noise -->
+    <logger name="org.apache.hadoop" level="WARN"/>
+    
+    <!-- Reduce Parquet noise -->
+    <logger name="org.apache.parquet" level="WARN"/>
+    
+    <!-- Reduce Netty noise (used by Neo4j driver) -->
+    <logger name="io.netty" level="WARN"/>
+    
+    <!-- Reduce Neo4j driver noise -->
+    <logger name="org.neo4j.driver" level="WARN"/>
+    
+    <!-- Reduce JDBC noise -->
+    <logger name="org.postgresql" level="WARN"/>
+    
+    <!-- Application logging -->
+    <logger name="com.chainrisk" level="INFO"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
