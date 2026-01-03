@@ -169,7 +169,15 @@ public class TransferCorrectionJob {
                         stmt.setInt(3, row.getAs("log_index"));
                         stmt.setString(4, row.getAs("from_address"));
                         stmt.setString(5, row.getAs("to_address"));
-                        stmt.setString(6, row.getAs("value"));
+                        
+                        // Handle value (BigDecimal from PostgreSQL)
+                        Object value = row.getAs("value");
+                        if (value != null) {
+                            stmt.setString(6, value.toString());
+                        } else {
+                            stmt.setString(6, "0");
+                        }
+                        
                         stmt.setString(7, row.getAs("token_address"));
                         stmt.setString(8, row.getAs("token_symbol"));
                         
