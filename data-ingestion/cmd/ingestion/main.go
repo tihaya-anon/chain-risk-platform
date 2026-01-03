@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/client"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/config"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/fetcher"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/handler"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/nacos"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/producer"
@@ -87,30 +87,29 @@ func main() {
 		logger.Info("NACOS_SERVER not set, running without Nacos integration")
 	}
 
-	// Initialize blockchain client
-	var blockchainClient client.BlockchainClient
+	// Initialize fetcher based on network
+	var blockFetcher fetcher.Fetcher
 	switch cfg.Blockchain.Network {
 	case "ethereum":
-		blockchainClient, err = client.NewEtherscanClient(
+		blockFetcher = fetcher.NewEtherscanFetcher(
 			cfg.Blockchain.Network,
 			cfg.Blockchain.Etherscan.BaseURL,
 			cfg.Blockchain.Etherscan.APIKey,
 			cfg.Blockchain.Etherscan.RateLimit,
+			logger,
 		)
 	case "bsc":
-		blockchainClient, err = client.NewEtherscanClient(
+		blockFetcher = fetcher.NewEtherscanFetcher(
 			cfg.Blockchain.Network,
 			cfg.Blockchain.BSCScan.BaseURL,
 			cfg.Blockchain.BSCScan.APIKey,
 			cfg.Blockchain.BSCScan.RateLimit,
+			logger,
 		)
 	default:
 		logger.Fatal("Unsupported network", zap.String("network", cfg.Blockchain.Network))
 	}
-	if err != nil {
-		logger.Fatal("Failed to create blockchain client", zap.Error(err))
-	}
-	defer blockchainClient.Close()
+	defer blockFetcher.Close()
 
 	// Initialize producer (Kafka in production, Noop in test mode)
 	// The actual implementation is selected at compile time via build tags
@@ -121,7 +120,7 @@ func main() {
 	defer msgProducer.Close()
 
 	// Initialize ingestion service
-	ingestionService := service.NewService(cfg, blockchainClient, msgProducer, logger)
+	ingestionService := service.NewService(cfg, blockFetcher, msgProducer, logger)
 
 	// Set Nacos client if available
 	if nacosClient != nil {

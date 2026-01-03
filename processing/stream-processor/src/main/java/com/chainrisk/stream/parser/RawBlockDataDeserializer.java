@@ -1,9 +1,8 @@
 package com.chainrisk.stream.parser;
 
-import com.chainrisk.stream.model.ChainEvent;
+import com.chainrisk.stream.model.RawBlockData;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.slf4j.Logger;
@@ -12,22 +11,26 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 /**
- * Kafka deserializer for ChainEvent
+ * Deserializer for RawBlockData from Kafka
+ * Handles the new format where data-ingestion sends raw block JSON
  */
-public class ChainEventDeserializer implements DeserializationSchema<ChainEvent> {
+public class RawBlockDataDeserializer implements DeserializationSchema<RawBlockData> {
     private static final long serialVersionUID = 1L;
-    private static final Logger LOG = LoggerFactory.getLogger(ChainEventDeserializer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RawBlockDataDeserializer.class);
 
     private transient ObjectMapper objectMapper;
 
     @Override
-    public ChainEvent deserialize(byte[] message) throws IOException {
+    public RawBlockData deserialize(byte[] message) throws IOException {
         if (objectMapper == null) {
             initObjectMapper();
         }
 
         try {
-            return objectMapper.readValue(message, ChainEvent.class);
+            RawBlockData data = objectMapper.readValue(message, RawBlockData.class);
+            LOG.debug("Deserialized raw block data: network={}, block={}", 
+                    data.getNetwork(), data.getBlockNumber());
+            return data;
         } catch (Exception e) {
             LOG.error("Failed to deserialize message: {}", new String(message), e);
             return null;
@@ -35,18 +38,17 @@ public class ChainEventDeserializer implements DeserializationSchema<ChainEvent>
     }
 
     @Override
-    public boolean isEndOfStream(ChainEvent nextElement) {
+    public boolean isEndOfStream(RawBlockData nextElement) {
         return false;
     }
 
     @Override
-    public TypeInformation<ChainEvent> getProducedType() {
-        return TypeInformation.of(ChainEvent.class);
+    public TypeInformation<RawBlockData> getProducedType() {
+        return TypeInformation.of(RawBlockData.class);
     }
 
     private void initObjectMapper() {
         objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 }

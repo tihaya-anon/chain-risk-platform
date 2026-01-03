@@ -2,28 +2,30 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"math/big"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/client"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/config"
-	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
+	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/fetcher"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/nacos"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/producer"
 	"go.uber.org/zap"
 )
 
 // Service handles the data ingestion logic
+// It fetches raw block data from blockchain APIs and sends it to Kafka
+// The raw JSON is sent as-is for downstream processing by stream-processor
 type Service struct {
-	cfg         *config.Config
-	client      client.BlockchainClient
-	producer    producer.Producer
-	logger      *zap.Logger
+	cfg      *config.Config
+	fetcher  fetcher.Fetcher
+	producer producer.Producer
+	logger   *zap.Logger
+
 	nacosClient *nacos.Client
 
 	lastProcessedBlock uint64
@@ -38,11 +40,11 @@ type Service struct {
 }
 
 // NewService creates a new ingestion service
-func NewService(cfg *config.Config, client client.BlockchainClient, producer producer.Producer, logger *zap.Logger) *Service {
+func NewService(cfg *config.Config, f fetcher.Fetcher, p producer.Producer, logger *zap.Logger) *Service {
 	svc := &Service{
 		cfg:      cfg,
-		client:   client,
-		producer: producer,
+		fetcher:  f,
+		producer: p,
 		logger:   logger,
 	}
 
@@ -158,7 +160,7 @@ func (s *Service) determineStartBlock(ctx context.Context) (uint64, error) {
 	startBlockCfg := s.cfg.Blockchain.Polling.StartBlock
 
 	if startBlockCfg == "latest" {
-		latestBlock, err := s.client.GetLatestBlockNumber(ctx)
+		latestBlock, err := s.fetcher.GetLatestBlockNumber(ctx)
 		if err != nil {
 			return 0, fmt.Errorf("get latest block: %w", err)
 		}
@@ -179,7 +181,6 @@ func (s *Service) determineStartBlock(ctx context.Context) (uint64, error) {
 }
 
 // isBlockNotFoundError checks if an error is due to a block not being found
-// This is used to handle cases where a block is requested but doesn't exist yet (e.g., during sync) or has been reorged out.
 func (s *Service) isBlockNotFoundError(err error) bool {
 	msg := strings.ToLower(err.Error())
 	return strings.Contains(msg, "not found")
@@ -187,7 +188,7 @@ func (s *Service) isBlockNotFoundError(err error) bool {
 
 // pollBlocks fetches and processes new blocks
 func (s *Service) pollBlocks(ctx context.Context) error {
-	latestBlock, err := s.client.GetLatestBlockNumber(ctx)
+	latestBlock, err := s.fetcher.GetLatestBlockNumber(ctx)
 	if err != nil {
 		return fmt.Errorf("get latest block: %w", err)
 	}
@@ -246,86 +247,97 @@ func (s *Service) pollBlocks(ctx context.Context) error {
 	return nil
 }
 
-// processBlock processes a single block
+// processBlock fetches raw block data and sends it to Kafka
 func (s *Service) processBlock(ctx context.Context, blockNumber uint64) error {
-	block, err := s.client.GetBlockByNumber(ctx, blockNumber)
+	// Fetch raw block data from API
+	rawBlock, err := s.fetcher.FetchBlockByNumber(ctx, blockNumber)
 	if err != nil {
-		return fmt.Errorf("get block %d: %w", blockNumber, err)
+		return fmt.Errorf("fetch block %d: %w", blockNumber, err)
 	}
 
-	s.logger.Debug("Processing block",
+	// Extract timestamp from raw block for the message
+	timestamp := s.extractBlockTimestamp(rawBlock)
+
+	// Check if block has valid data (filter out error responses)
+	if !s.isValidBlockResponse(rawBlock) {
+		s.logger.Warn("Invalid block response, skipping",
+			zap.Uint64("block", blockNumber))
+		return nil
+	}
+
+	// Create raw block data message
+	data := &producer.RawBlockData{
+		Network:     s.fetcher.Network(),
+		BlockNumber: blockNumber,
+		Timestamp:   timestamp,
+		RawBlock:    rawBlock,
+	}
+
+	// Send to Kafka
+	if err := s.producer.SendRawBlock(ctx, data); err != nil {
+		return fmt.Errorf("send raw block %d: %w", blockNumber, err)
+	}
+
+	s.logger.Debug("Sent raw block to Kafka",
 		zap.Uint64("block", blockNumber),
-		zap.Int("txCount", len(block.Transactions)))
-
-	// Process each transaction
-	for _, tx := range block.Transactions {
-		// Send transaction to Kafka
-		if err := s.producer.SendTransaction(ctx, s.client.Network(), tx); err != nil {
-			s.logger.Error("Error sending transaction",
-				zap.String("txHash", tx.Hash),
-				zap.Error(err))
-			continue
-		}
-
-		// Extract and send native transfer
-		if tx.Value != nil && tx.Value.Cmp(big.NewInt(0)) > 0 {
-			transfer := s.extractNativeTransfer(tx)
-			if err := s.producer.SendTransfer(ctx, s.client.Network(), transfer); err != nil {
-				s.logger.Error("Error sending transfer",
-					zap.String("txHash", tx.Hash),
-					zap.Error(err))
-			}
-		}
-
-		// Get internal transactions (expensive API calls, disabled by default)
-		if s.cfg.Blockchain.Polling.EnableInternalTx {
-			s.processInternalTransactions(ctx, tx.Hash)
-		}
-	}
+		zap.Int("size", len(rawBlock)))
 
 	return nil
 }
 
-// extractNativeTransfer extracts a native token transfer from a transaction
-func (s *Service) extractNativeTransfer(tx *model.Transaction) *model.Transfer {
-	symbol := "ETH"
-	if s.cfg.Blockchain.Network == "bsc" {
-		symbol = "BNB"
+// extractBlockTimestamp extracts the timestamp from raw block JSON
+func (s *Service) extractBlockTimestamp(rawBlock json.RawMessage) int64 {
+	// Try to extract timestamp from the raw block
+	// Etherscan API returns: {"result": {"timestamp": "0x..."}}
+	var resp struct {
+		Result struct {
+			Timestamp string `json:"timestamp"`
+		} `json:"result"`
 	}
 
-	return &model.Transfer{
-		TxHash:       tx.Hash,
-		BlockNumber:  tx.BlockNumber,
-		LogIndex:     0,
-		From:         tx.From,
-		To:           tx.To,
-		Value:        tx.Value,
-		TokenAddress: "", // empty for native token
-		TokenSymbol:  symbol,
-		TokenDecimal: 18,
-		Timestamp:    tx.Timestamp,
-		TransferType: "native",
+	if err := json.Unmarshal(rawBlock, &resp); err != nil {
+		return time.Now().Unix()
 	}
+
+	if resp.Result.Timestamp == "" {
+		return time.Now().Unix()
+	}
+
+	// Parse hex timestamp
+	ts, err := strconv.ParseInt(strings.TrimPrefix(resp.Result.Timestamp, "0x"), 16, 64)
+	if err != nil {
+		return time.Now().Unix()
+	}
+
+	return ts
 }
 
-// processInternalTransactions fetches and sends internal transactions
-func (s *Service) processInternalTransactions(ctx context.Context, txHash string) {
-	internalTxs, err := s.client.GetInternalTransactions(ctx, txHash)
-	if err != nil {
-		s.logger.Error("Error getting internal transactions",
-			zap.String("txHash", txHash),
-			zap.Error(err))
-		return
+// isValidBlockResponse checks if the API response contains valid block data
+func (s *Service) isValidBlockResponse(rawBlock json.RawMessage) bool {
+	// Check for error responses or empty results
+	var resp struct {
+		Status  string          `json:"status"`
+		Message string          `json:"message"`
+		Result  json.RawMessage `json:"result"`
 	}
 
-	for _, itx := range internalTxs {
-		if err := s.producer.SendInternalTransaction(ctx, s.client.Network(), itx); err != nil {
-			s.logger.Error("Error sending internal transaction",
-				zap.String("txHash", txHash),
-				zap.String("traceId", itx.TraceID),
-				zap.Error(err))
-		}
+	if err := json.Unmarshal(rawBlock, &resp); err != nil {
+		return false
 	}
+
+	// Check for API error status
+	if resp.Status == "0" {
+		s.logger.Debug("API returned error status",
+			zap.String("message", resp.Message))
+		return false
+	}
+
+	// Check for null or empty result
+	if len(resp.Result) == 0 || string(resp.Result) == "null" {
+		return false
+	}
+
+	return true
 }
 
 // GetLastProcessedBlock returns the last processed block number

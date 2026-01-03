@@ -1,9 +1,9 @@
 package com.chainrisk.stream.job;
 
-import com.chainrisk.stream.model.ChainEvent;
+import com.chainrisk.stream.model.RawBlockData;
 import com.chainrisk.stream.model.Transaction;
 import com.chainrisk.stream.model.Transfer;
-import com.chainrisk.stream.parser.ChainEventDeserializer;
+import com.chainrisk.stream.parser.RawBlockDataDeserializer;
 import com.chainrisk.stream.parser.TransactionParser;
 import com.chainrisk.stream.parser.TransferParser;
 import com.chainrisk.stream.sink.JdbcSinkFactory;
@@ -18,9 +18,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.Instant;
 
 /**
- * Main Flink job for processing blockchain transactions and extracting transfers
+ * Main Flink job for processing raw blockchain data and extracting transactions/transfers
+ * 
+ * This job receives raw block data from Kafka (sent by data-ingestion service),
+ * parses the JSON, extracts transactions and transfers, and writes them to PostgreSQL.
  */
 public class TransferExtractionJob {
     private static final Logger LOG = LoggerFactory.getLogger(TransferExtractionJob.class);
@@ -54,30 +58,30 @@ public class TransferExtractionJob {
         env.getCheckpointConfig().setMinPauseBetweenCheckpoints(30000);
         env.getCheckpointConfig().setCheckpointTimeout(120000);
 
-        // Create Kafka source
-        KafkaSource<ChainEvent> kafkaSource = KafkaSource.<ChainEvent>builder()
+        // Create Kafka source for raw block data
+        KafkaSource<RawBlockData> kafkaSource = KafkaSource.<RawBlockData>builder()
                 .setBootstrapServers(kafkaBrokers)
                 .setTopics(kafkaTopic)
                 .setGroupId(kafkaGroupId)
                 .setStartingOffsets(OffsetsInitializer.earliest())
-                .setValueOnlyDeserializer(new ChainEventDeserializer())
+                .setValueOnlyDeserializer(new RawBlockDataDeserializer())
                 .build();
 
         // Create watermark strategy with bounded out-of-orderness
-        WatermarkStrategy<ChainEvent> watermarkStrategy = WatermarkStrategy
-                .<ChainEvent>forBoundedOutOfOrderness(Duration.ofMinutes(1))
+        WatermarkStrategy<RawBlockData> watermarkStrategy = WatermarkStrategy
+                .<RawBlockData>forBoundedOutOfOrderness(Duration.ofMinutes(1))
                 .withTimestampAssigner((event, timestamp) -> 
-                        event.getTimestamp() != null ? event.getTimestamp().toEpochMilli() : timestamp);
+                        event.getTimestamp() != null ? event.getTimestamp() * 1000 : timestamp);
 
         // Read from Kafka
-        DataStream<ChainEvent> eventStream = env
+        DataStream<RawBlockData> rawBlockStream = env
                 .fromSource(kafkaSource, watermarkStrategy, "Kafka Source")
-                .name("Chain Events");
+                .name("Raw Block Data");
 
-        // Filter out null events
-        DataStream<ChainEvent> validEvents = eventStream
-                .filter(event -> event != null && event.getData() != null)
-                .name("Filter Valid Events");
+        // Filter out null and invalid blocks
+        DataStream<RawBlockData> validBlocks = rawBlockStream
+                .filter(block -> block != null && block.isValid())
+                .name("Filter Valid Blocks");
 
         // Create JDBC sink factory
         JdbcSinkFactory sinkFactory = new JdbcSinkFactory(jdbcUrl, jdbcUser, jdbcPassword);
@@ -85,10 +89,10 @@ public class TransferExtractionJob {
         // ============== Processing State Tracking ==============
         if (enableStateTracking) {
             // Extract block numbers and track processing state per network
-            validEvents
-                    .map(event -> new org.apache.flink.api.java.tuple.Tuple2<>(
-                            event.getNetwork(),
-                            event.getBlockNumber()))
+            validBlocks
+                    .map(block -> new org.apache.flink.api.java.tuple.Tuple2<>(
+                            block.getNetwork(),
+                            block.getBlockNumber()))
                     .returns(org.apache.flink.api.common.typeinfo.Types.TUPLE(
                             org.apache.flink.api.common.typeinfo.Types.STRING,
                             org.apache.flink.api.common.typeinfo.Types.LONG))
@@ -100,9 +104,8 @@ public class TransferExtractionJob {
         }
 
         // ============== Transaction Stream ==============
-        // Parse and write transactions to chain_data.transactions
-        DataStream<Transaction> transactions = validEvents
-                .filter(ChainEvent::isTransaction)
+        // Parse raw blocks and extract transactions
+        DataStream<Transaction> transactions = validBlocks
                 .flatMap(new TransactionParser())
                 .name("Parse Transactions");
 
@@ -117,8 +120,8 @@ public class TransferExtractionJob {
         LOG.info("Transaction sink configured");
 
         // ============== Transfer Stream ==============
-        // Parse and write transfers to chain_data.transfers
-        DataStream<Transfer> transfers = validEvents
+        // Parse raw blocks and extract transfers (native + ERC20)
+        DataStream<Transfer> transfers = validBlocks
                 .flatMap(new TransferParser())
                 .name("Parse Transfers");
 

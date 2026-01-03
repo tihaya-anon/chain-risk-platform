@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/config"
-	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
 	"github.com/IBM/sarama"
 	"go.uber.org/zap"
 )
@@ -78,55 +77,78 @@ func NewKafkaProducer(cfg *config.KafkaConfig, logger *zap.Logger) (*KafkaProduc
 	}, nil
 }
 
-// SendTransaction sends a transaction to Kafka
-func (p *KafkaProducer) SendTransaction(ctx context.Context, network string, tx *model.Transaction) error {
-	event := model.NewChainEvent("transaction", network, tx.BlockNumber, tx.Timestamp, tx)
-	return p.sendEvent(ctx, tx.Hash, event)
+// SendRawBlock sends raw block data to Kafka
+func (p *KafkaProducer) SendRawBlock(ctx context.Context, data *RawBlockData) error {
+	value, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("marshal raw block data: %w", err)
+	}
+
+	// Use block number as key for ordering within partition
+	key := fmt.Sprintf("%s-%d", data.Network, data.BlockNumber)
+
+	msg := &sarama.ProducerMessage{
+		Topic: p.topic,
+		Key:   sarama.StringEncoder(key),
+		Value: sarama.ByteEncoder(value),
+		Headers: []sarama.RecordHeader{
+			{
+				Key:   []byte("network"),
+				Value: []byte(data.Network),
+			},
+			{
+				Key:   []byte("block_number"),
+				Value: []byte(fmt.Sprintf("%d", data.BlockNumber)),
+			},
+		},
+	}
+
+	partition, offset, err := p.producer.SendMessage(msg)
+	if err != nil {
+		p.logger.Error("Failed to send raw block",
+			zap.String("network", data.Network),
+			zap.Uint64("blockNumber", data.BlockNumber),
+			zap.Error(err))
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	p.logger.Debug("Raw block sent",
+		zap.String("network", data.Network),
+		zap.Uint64("blockNumber", data.BlockNumber),
+		zap.Int32("partition", partition),
+		zap.Int64("offset", offset))
+
+	return nil
 }
 
-// SendTransfer sends a transfer to Kafka
-func (p *KafkaProducer) SendTransfer(ctx context.Context, network string, transfer *model.Transfer) error {
-	event := model.NewChainEvent("transfer", network, transfer.BlockNumber, transfer.Timestamp, transfer)
-	key := fmt.Sprintf("%s-%d", transfer.TxHash, transfer.LogIndex)
-	return p.sendEvent(ctx, key, event)
-}
-
-// SendInternalTransaction sends an internal transaction to Kafka
-func (p *KafkaProducer) SendInternalTransaction(ctx context.Context, network string, itx *model.InternalTransaction) error {
-	event := model.NewChainEvent("internal_tx", network, itx.BlockNumber, time.Now(), itx)
-	key := fmt.Sprintf("%s-%s", itx.Hash, itx.TraceID)
-	return p.sendEvent(ctx, key, event)
-}
-
-// SendBatch sends multiple events to Kafka
-func (p *KafkaProducer) SendBatch(ctx context.Context, events []*model.ChainEvent) error {
-	if len(events) == 0 {
+// SendRawBlocks sends multiple raw blocks in batch
+func (p *KafkaProducer) SendRawBlocks(ctx context.Context, blocks []*RawBlockData) error {
+	if len(blocks) == 0 {
 		return nil
 	}
 
-	messages := make([]*sarama.ProducerMessage, len(events))
+	messages := make([]*sarama.ProducerMessage, len(blocks))
 
-	for i, event := range events {
-		data, err := json.Marshal(event)
+	for i, data := range blocks {
+		value, err := json.Marshal(data)
 		if err != nil {
-			return fmt.Errorf("marshal event: %w", err)
+			return fmt.Errorf("marshal raw block data: %w", err)
 		}
 
-		// Use block number as key for ordering within partition
-		key := fmt.Sprintf("%d", event.BlockNumber)
+		key := fmt.Sprintf("%s-%d", data.Network, data.BlockNumber)
 
 		messages[i] = &sarama.ProducerMessage{
 			Topic: p.topic,
 			Key:   sarama.StringEncoder(key),
-			Value: sarama.ByteEncoder(data),
+			Value: sarama.ByteEncoder(value),
 			Headers: []sarama.RecordHeader{
 				{
-					Key:   []byte("event_type"),
-					Value: []byte(event.EventType),
+					Key:   []byte("network"),
+					Value: []byte(data.Network),
 				},
 				{
-					Key:   []byte("network"),
-					Value: []byte(event.Network),
+					Key:   []byte("block_number"),
+					Value: []byte(fmt.Sprintf("%d", data.BlockNumber)),
 				},
 			},
 		}
@@ -141,45 +163,6 @@ func (p *KafkaProducer) SendBatch(ctx context.Context, events []*model.ChainEven
 
 	p.logger.Debug("Batch sent",
 		zap.Int("count", len(messages)))
-
-	return nil
-}
-
-// sendEvent sends a single event to Kafka
-func (p *KafkaProducer) sendEvent(_ context.Context, key string, event *model.ChainEvent) error {
-	data, err := json.Marshal(event)
-	if err != nil {
-		return fmt.Errorf("marshal event: %w", err)
-	}
-
-	msg := &sarama.ProducerMessage{
-		Topic: p.topic,
-		Key:   sarama.StringEncoder(key),
-		Value: sarama.ByteEncoder(data),
-		Headers: []sarama.RecordHeader{
-			{
-				Key:   []byte("event_type"),
-				Value: []byte(event.EventType),
-			},
-			{
-				Key:   []byte("network"),
-				Value: []byte(event.Network),
-			},
-		},
-	}
-
-	partition, offset, err := p.producer.SendMessage(msg)
-	if err != nil {
-		p.logger.Error("Failed to send message",
-			zap.String("key", key),
-			zap.Error(err))
-		return fmt.Errorf("send message: %w", err)
-	}
-
-	p.logger.Debug("Message sent",
-		zap.String("key", key),
-		zap.Int32("partition", partition),
-		zap.Int64("offset", offset))
 
 	return nil
 }

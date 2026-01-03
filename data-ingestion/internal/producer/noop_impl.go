@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/config"
-	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/model"
 	"go.uber.org/zap"
 )
 
@@ -34,43 +33,23 @@ func NewNoopProducer(logger *zap.Logger) *NoopProducer {
 	}
 }
 
-// SendTransaction logs the transaction but does not send it
-func (p *NoopProducer) SendTransaction(ctx context.Context, network string, tx *model.Transaction) error {
+// SendRawBlock logs the raw block but does not send it
+func (p *NoopProducer) SendRawBlock(ctx context.Context, data *RawBlockData) error {
 	atomic.AddInt64(&p.messageCount, 1)
-	p.logger.Debug("Noop: would send transaction",
-		zap.String("network", network),
-		zap.String("hash", tx.Hash),
-		zap.Uint64("block", tx.BlockNumber))
+	p.logger.Debug("Noop: would send raw block",
+		zap.String("network", data.Network),
+		zap.Uint64("blockNumber", data.BlockNumber),
+		zap.Int("rawBlockSize", len(data.RawBlock)))
 	return nil
 }
 
-// SendTransfer logs the transfer but does not send it
-func (p *NoopProducer) SendTransfer(ctx context.Context, network string, transfer *model.Transfer) error {
-	atomic.AddInt64(&p.messageCount, 1)
-	p.logger.Debug("Noop: would send transfer",
-		zap.String("network", network),
-		zap.String("txHash", transfer.TxHash),
-		zap.Uint("logIndex", transfer.LogIndex))
-	return nil
-}
-
-// SendInternalTransaction logs the internal transaction but does not send it
-func (p *NoopProducer) SendInternalTransaction(ctx context.Context, network string, itx *model.InternalTransaction) error {
-	atomic.AddInt64(&p.messageCount, 1)
-	p.logger.Debug("Noop: would send internal transaction",
-		zap.String("network", network),
-		zap.String("hash", itx.Hash),
-		zap.String("traceId", itx.TraceID))
-	return nil
-}
-
-// SendBatch logs the batch but does not send it
-func (p *NoopProducer) SendBatch(ctx context.Context, events []*model.ChainEvent) error {
-	count := int64(len(events))
+// SendRawBlocks logs the batch but does not send it
+func (p *NoopProducer) SendRawBlocks(ctx context.Context, blocks []*RawBlockData) error {
+	count := int64(len(blocks))
 	atomic.AddInt64(&p.messageCount, count)
 	atomic.AddInt64(&p.batchCount, 1)
-	p.logger.Debug("Noop: would send batch",
-		zap.Int64("eventCount", count),
+	p.logger.Debug("Noop: would send raw blocks batch",
+		zap.Int64("blockCount", count),
 		zap.Int64("totalMessages", atomic.LoadInt64(&p.messageCount)),
 		zap.Int64("totalBatches", atomic.LoadInt64(&p.batchCount)))
 	return nil
