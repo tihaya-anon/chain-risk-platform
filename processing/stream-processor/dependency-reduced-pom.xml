@@ -8,7 +8,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>stream-processor</artifactId>
   <name>Chain Risk Platform - Stream Processor</name>
-  <description>Real-time stream processing with Apache Flink</description>
+  <description>Real-time stream processing with Apache Flink (Lambda Architecture - Speed Layer)</description>
   <build>
     <plugins>
       <plugin>
@@ -115,6 +115,7 @@
   </dependencies>
   <properties>
     <main.class>com.chainrisk.stream.StreamProcessorApp</main.class>
+    <neo4j.driver.version>5.14.0</neo4j.driver.version>
     <flink.scope>provided</flink.scope>
   </properties>
 </project>

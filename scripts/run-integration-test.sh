@@ -45,20 +45,22 @@ log_error() {
 # Configuration - use environment variables from env-remote.sh
 MOCK_SERVER_PORT=8545
 DOCKER_HOST_IP="${DOCKER_HOST_IP:-localhost}"
-KAFKA_BROKER="${KAFKA_BROKERS:-localhost:19092}"
+KAFKA_BROKER="${KAFKA_BROKERS:-$DOCKER_HOST_IP:19092}"
 KAFKA_TOPIC="chain-transactions"
-POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
+KAFKA_TRANSFERS_TOPIC="transfers"
+POSTGRES_HOST="${POSTGRES_HOST:-$DOCKER_HOST_IP}"
 POSTGRES_PORT="${POSTGRES_PORT:-15432}"
 POSTGRES_DB="chainrisk"
 POSTGRES_USER="${POSTGRES_USER:-chainrisk}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-chainrisk123}"
 
 # Neo4j configuration
-NEO4J_HOST="${NEO4J_HOST:-localhost}"
+NEO4J_HOST="${NEO4J_HOST:-$DOCKER_HOST_IP}"
 NEO4J_BOLT_PORT="${NEO4J_BOLT_PORT:-17687}"
 NEO4J_HTTP_PORT="${NEO4J_HTTP_PORT:-17474}"
 NEO4J_USER="${NEO4J_USER:-neo4j}"
 NEO4J_PASSWORD="${NEO4J_PASSWORD:-chainrisk123}"
+NEO4J_URI="bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT"
 
 # Test parameters
 START_BLOCK=1000
@@ -70,11 +72,12 @@ EXPECTED_TRANSACTIONS=$NUM_BLOCKS  # Expect at least NUM_BLOCKS transactions
 # Feature flags
 ENABLE_NEO4J_SINK="${ENABLE_NEO4J_SINK:-true}"
 ENABLE_KAFKA_PRODUCER="${ENABLE_KAFKA_PRODUCER:-true}"
+ENABLE_STATE_TRACKING="${ENABLE_STATE_TRACKING:-true}"
 
 log_info "Using Docker Host: $DOCKER_HOST_IP"
 log_info "Kafka Broker: $KAFKA_BROKER"
 log_info "PostgreSQL: $POSTGRES_HOST:$POSTGRES_PORT"
-log_info "Neo4j: $NEO4J_HOST:$NEO4J_BOLT_PORT (HTTP: $NEO4J_HTTP_PORT)"
+log_info "Neo4j: $NEO4J_URI"
 log_info "Neo4j Sink Enabled: $ENABLE_NEO4J_SINK"
 log_info "Kafka Producer Enabled: $ENABLE_KAFKA_PRODUCER"
 
@@ -92,7 +95,10 @@ cleanup() {
         kill $INGESTION_PID 2>/dev/null || true
     fi
     
-    # Kill Flink if running
+    # Kill Flink if running (tmux or direct)
+    if command -v tmux &> /dev/null && tmux has-session -t flink-stream 2>/dev/null; then
+        tmux kill-session -t flink-stream 2>/dev/null || true
+    fi
     if [ -n "$FLINK_PID" ]; then
         kill $FLINK_PID 2>/dev/null || true
     fi
@@ -208,7 +214,7 @@ EOF
         
         # Use cypher-shell if available
         if command -v cypher-shell &> /dev/null; then
-            cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+            cypher-shell -a "$NEO4J_URI" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
                 "MATCH (n) DETACH DELETE n" 2>/dev/null || log_warn "Failed to clear Neo4j data (cypher-shell)"
         else
             log_warn "cypher-shell not installed, skipping Neo4j data cleanup"
@@ -318,32 +324,53 @@ run_data_ingestion() {
 # Run Flink stream processor with Lambda Architecture dual-write
 run_stream_processor() {
     log_info "Running Flink stream processor (Lambda Speed Layer)..."
+    log_info "  Kafka Brokers: $KAFKA_BROKER"
+    log_info "  Neo4j URI: $NEO4J_URI"
     log_info "  Neo4j Sink: $ENABLE_NEO4J_SINK"
     log_info "  Kafka Producer: $ENABLE_KAFKA_PRODUCER"
     
     cd "$PROJECT_ROOT"
     
-    # Export Neo4j configuration for Flink
-    export NEO4J_URI="bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT"
+    # Export all configuration for Flink
+    export KAFKA_BROKERS="$KAFKA_BROKER"
+    export KAFKA_TOPIC="$KAFKA_TOPIC"
+    export KAFKA_GROUP_ID="stream-processor"
+    export KAFKA_TRANSFERS_TOPIC="$KAFKA_TRANSFERS_TOPIC"
+    export POSTGRES_HOST="$POSTGRES_HOST"
+    export POSTGRES_PORT="$POSTGRES_PORT"
+    export POSTGRES_DB="$POSTGRES_DB"
+    export POSTGRES_USER="$POSTGRES_USER"
+    export POSTGRES_PASSWORD="$POSTGRES_PASSWORD"
+    export NEO4J_URI="$NEO4J_URI"
     export NEO4J_USER="$NEO4J_USER"
     export NEO4J_PASSWORD="$NEO4J_PASSWORD"
     export ENABLE_NEO4J_SINK="$ENABLE_NEO4J_SINK"
     export ENABLE_KAFKA_PRODUCER="$ENABLE_KAFKA_PRODUCER"
+    export ENABLE_STATE_TRACKING="$ENABLE_STATE_TRACKING"
     
-    # Use the existing run-flink.sh script (it handles build and run)
-    # Run in background and capture PID
-    bash -c './scripts/run-flink.sh' &
-    FLINK_PID=$!
-    
-    log_info "Stream processor started (PID: $FLINK_PID)"
+    # Run Flink in background (will use tmux if available)
+    if command -v tmux &> /dev/null; then
+        log_info "Starting Flink in tmux session..."
+        # Kill existing session if exists
+        tmux kill-session -t flink-stream 2>/dev/null || true
+        
+        # Start Flink in tmux (run-flink.sh will detect tmux)
+        ./scripts/run-flink.sh &
+        FLINK_PID=$!
+        
+        # Wait a bit for tmux session to start
+        sleep 5
+        
+        log_info "Flink started in tmux session 'flink-stream'"
+    else
+        log_warn "tmux not available, running Flink in background"
+        ./scripts/run-flink.sh &
+        FLINK_PID=$!
+    fi
     
     # Wait for processing
     log_info "Waiting for stream processing to complete..."
     sleep 30
-    
-    # Stop processor
-    kill $FLINK_PID 2>/dev/null || true
-    FLINK_PID=""
     
     log_info "Stream processing completed"
 }
@@ -419,15 +446,15 @@ verify_neo4j_results() {
     fi
     
     # Count Address nodes
-    ADDRESS_COUNT=$(cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+    ADDRESS_COUNT=$(cypher-shell -a "$NEO4J_URI" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
         "MATCH (a:Address) RETURN count(a) as count" --format plain 2>/dev/null | tail -1 | tr -d ' ' || echo "0")
     
     # Count TRANSFER relationships
-    TRANSFER_REL_COUNT=$(cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+    TRANSFER_REL_COUNT=$(cypher-shell -a "$NEO4J_URI" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
         "MATCH ()-[r:TRANSFER]->() RETURN count(r) as count" --format plain 2>/dev/null | tail -1 | tr -d ' ' || echo "0")
     
     # Count stream-sourced data
-    STREAM_COUNT=$(cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+    STREAM_COUNT=$(cypher-shell -a "$NEO4J_URI" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
         "MATCH ()-[r:TRANSFER {source: 'stream'}]->() RETURN count(r) as count" --format plain 2>/dev/null | tail -1 | tr -d ' ' || echo "0")
     
     log_info "Neo4j Results:"
@@ -505,7 +532,7 @@ EOF
     if [ "$ENABLE_NEO4J_SINK" = "true" ] && command -v cypher-shell &> /dev/null; then
         echo ""
         echo "=== Neo4j Sample Data ==="
-        cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+        cypher-shell -a "$NEO4J_URI" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
             "MATCH (from:Address)-[r:TRANSFER]->(to:Address) RETURN from.address, to.address, r.amount, r.source LIMIT 5" \
             --format plain 2>/dev/null || log_warn "Failed to query Neo4j sample data"
     fi

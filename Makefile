@@ -427,12 +427,24 @@ flink-clean: ## Clean stream-processor artifacts
 	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 	@echo "✅ stream-processor cleaned"
 
-flink-stop: ## Stop stream-processor
+flink-stop: ## Stop stream-processor (tmux or pkill)
 	@echo "🛑 Stopping stream-processor..."
-	@-pkill -f "stream-processor.*\.jar" 2>/dev/null || true
-	@sleep 1
-	@-pkill -9 -f "stream-processor.*\.jar" 2>/dev/null || true
-	@echo "✅ stream-processor stopped"
+	@if command -v tmux >/dev/null 2>&1 && tmux has-session -t flink-stream 2>/dev/null; then \
+		tmux kill-session -t flink-stream; \
+		echo "✅ Stopped tmux session 'flink-stream'"; \
+	else \
+		pkill -f "stream-processor.*\.jar" 2>/dev/null || true; \
+		sleep 1; \
+		pkill -9 -f "stream-processor.*\.jar" 2>/dev/null || true; \
+		echo "✅ stream-processor stopped"; \
+	fi
+
+flink-logs: ## View stream-processor logs (tmux or file)
+	@if command -v tmux >/dev/null 2>&1 && tmux has-session -t flink-stream 2>/dev/null; then \
+		tmux attach -t flink-stream; \
+	else \
+		tail -f $(DIR_FLINK)/logs/stream-processor.log 2>/dev/null || echo "❌ No logs found"; \
+	fi
 
 # ============================================
 # Frontend (React)
