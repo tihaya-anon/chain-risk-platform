@@ -12,12 +12,13 @@
 
     <artifactId>stream-processor</artifactId>
     <name>Chain Risk Platform - Stream Processor</name>
-    <description>Real-time stream processing with Apache Flink</description>
+    <description>Real-time stream processing with Apache Flink (Lambda Architecture - Speed Layer)</description>
 
     <properties>
         <main.class>com.chainrisk.stream.StreamProcessorApp</main.class>
         <!-- Default scope for Flink dependencies (provided for cluster, compile for local) -->
         <flink.scope>provided</flink.scope>
+        <neo4j.driver.version>5.14.0</neo4j.driver.version>
     </properties>
 
     <dependencies>
@@ -62,6 +63,13 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+        </dependency>
+
+        <!-- Neo4j Driver (for dual-write to graph database) -->
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>${neo4j.driver.version}</version>
         </dependency>
 
         <!-- Jackson -->
