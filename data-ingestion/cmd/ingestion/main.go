@@ -112,15 +112,16 @@ func main() {
 	}
 	defer blockchainClient.Close()
 
-	// Initialize Kafka producer
-	kafkaProducer, err := producer.NewKafkaProducer(&cfg.Kafka, logger)
+	// Initialize producer (Kafka in production, Noop in test mode)
+	// The actual implementation is selected at compile time via build tags
+	msgProducer, err := producer.NewProducer(&cfg.Kafka, logger)
 	if err != nil {
-		logger.Fatal("Failed to create Kafka producer", zap.Error(err))
+		logger.Fatal("Failed to create producer", zap.Error(err))
 	}
-	defer kafkaProducer.Close()
+	defer msgProducer.Close()
 
 	// Initialize ingestion service
-	ingestionService := service.NewService(cfg, blockchainClient, kafkaProducer, logger)
+	ingestionService := service.NewService(cfg, blockchainClient, msgProducer, logger)
 
 	// Set Nacos client if available
 	if nacosClient != nil {

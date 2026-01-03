@@ -1,3 +1,5 @@
+//go:build !test_mode
+
 package producer
 
 import (
@@ -12,14 +14,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// KafkaProducer handles sending messages to Kafka
+// KafkaProducer implements Producer interface using Kafka
 type KafkaProducer struct {
 	producer sarama.SyncProducer
 	topic    string
 	logger   *zap.Logger
 }
 
-// NewKafkaProducer creates a new Kafka producer
+// NewProducer creates a new Kafka producer (production mode)
+func NewProducer(cfg *config.KafkaConfig, logger *zap.Logger) (Producer, error) {
+	return NewKafkaProducer(cfg, logger)
+}
+
+// NewKafkaProducer creates a new Kafka producer instance
 func NewKafkaProducer(cfg *config.KafkaConfig, logger *zap.Logger) (*KafkaProducer, error) {
 	saramaConfig := sarama.NewConfig()
 
@@ -60,6 +67,10 @@ func NewKafkaProducer(cfg *config.KafkaConfig, logger *zap.Logger) (*KafkaProduc
 		return nil, fmt.Errorf("create kafka producer: %w", err)
 	}
 
+	logger.Info("Kafka producer initialized",
+		zap.Strings("brokers", cfg.Brokers),
+		zap.String("topic", cfg.Topic))
+
 	return &KafkaProducer{
 		producer: producer,
 		topic:    cfg.Topic,
@@ -89,6 +100,10 @@ func (p *KafkaProducer) SendInternalTransaction(ctx context.Context, network str
 
 // SendBatch sends multiple events to Kafka
 func (p *KafkaProducer) SendBatch(ctx context.Context, events []*model.ChainEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+
 	messages := make([]*sarama.ProducerMessage, len(events))
 
 	for i, event := range events {
@@ -116,9 +131,18 @@ func (p *KafkaProducer) SendBatch(ctx context.Context, events []*model.ChainEven
 			},
 		}
 	}
-	p.logger.Debug("Run in test mode, messages are not sent")
+
+	if err := p.producer.SendMessages(messages); err != nil {
+		p.logger.Error("Failed to send batch",
+			zap.Int("count", len(messages)),
+			zap.Error(err))
+		return fmt.Errorf("send batch: %w", err)
+	}
+
+	p.logger.Debug("Batch sent",
+		zap.Int("count", len(messages)))
+
 	return nil
-	return p.producer.SendMessages(messages)
 }
 
 // sendEvent sends a single event to Kafka
@@ -143,8 +167,7 @@ func (p *KafkaProducer) sendEvent(_ context.Context, key string, event *model.Ch
 			},
 		},
 	}
-	p.logger.Debug("Run in test mode, messages are not sent")
-	return nil
+
 	partition, offset, err := p.producer.SendMessage(msg)
 	if err != nil {
 		p.logger.Error("Failed to send message",
@@ -163,14 +186,6 @@ func (p *KafkaProducer) sendEvent(_ context.Context, key string, event *model.Ch
 
 // Close closes the Kafka producer
 func (p *KafkaProducer) Close() error {
+	p.logger.Info("Closing Kafka producer")
 	return p.producer.Close()
-}
-
-// Producer interface for dependency injection
-type Producer interface {
-	SendTransaction(ctx context.Context, network string, tx *model.Transaction) error
-	SendTransfer(ctx context.Context, network string, transfer *model.Transfer) error
-	SendInternalTransaction(ctx context.Context, network string, itx *model.InternalTransaction) error
-	SendBatch(ctx context.Context, events []*model.ChainEvent) error
-	Close() error
 }

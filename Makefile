@@ -189,14 +189,23 @@ ingestion-init: ## Initialize data-ingestion dependencies
 	@cd data-ingestion && go mod tidy
 	@echo "✅ data-ingestion initialized"
 
-ingestion-build: ## Build data-ingestion
-	@echo "🔨 Building data-ingestion..."
+ingestion-build: ## Build data-ingestion (production mode)
+	@echo "🔨 Building data-ingestion (production)..."
 	@cd data-ingestion && go build -o bin/ingestion ./cmd/ingestion
 	@cd data-ingestion && go build -o bin/fixture-gen ./cmd/fixture-gen
 	@echo "✅ data-ingestion built"
 
-ingestion-run: ## Run data-ingestion
+ingestion-build-test: ## Build data-ingestion (test mode - no Kafka)
+	@echo "🔨 Building data-ingestion (test mode)..."
+	@cd data-ingestion && go build -tags test_mode -o bin/ingestion-test ./cmd/ingestion
+	@cd data-ingestion && go build -o bin/fixture-gen ./cmd/fixture-gen
+	@echo "✅ data-ingestion built (test mode - Kafka disabled)"
+
+ingestion-run: ## Run data-ingestion (production mode)
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd data-ingestion && ./bin/ingestion'
+
+ingestion-run-test: ## Run data-ingestion (test mode - no Kafka)
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd data-ingestion && ./bin/ingestion-test'
 
 ingestion-test: ## Test data-ingestion
 	@echo "🧪 Testing data-ingestion..."

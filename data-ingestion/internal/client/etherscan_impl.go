@@ -14,6 +14,7 @@ import (
 type EtherscanClient struct {
 	fetcher fetcher.Fetcher
 	parser  parser.Parser
+	network string
 	logger  *zap.Logger
 }
 
@@ -28,13 +29,14 @@ func NewEtherscanClient(network, baseURL, apiKey string, rateLimit int) (*Ethers
 	return &EtherscanClient{
 		fetcher: f,
 		parser:  p,
+		network: network,
 		logger:  logger,
 	}, nil
 }
 
 // Network returns the network name
 func (c *EtherscanClient) Network() string {
-	return c.fetcher.Network()
+	return c.network
 }
 
 // Close closes the client
