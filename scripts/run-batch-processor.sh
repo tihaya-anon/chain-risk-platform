@@ -99,29 +99,28 @@ run_batch_processor() {
     # Path to log4j2 config
     LOG4J2_CONF="file:$(pwd)/src/main/resources/log4j2.properties"
     
-    # Build Spark submit arguments
-    SPARK_ARGS=(
-        --class com.chainrisk.batch.BatchProcessorApp
-        --master local[*]
-        --driver-memory 1g
-        --executor-memory 1g
-        --conf spark.sql.adaptive.enabled=true
-        --conf spark.driver.host=localhost
-        --conf spark.driver.bindAddress=localhost
-        --conf spark.network.timeout=600s
-        --conf spark.executor.heartbeatInterval=60s
-        --conf "spark.driver.extraJavaOptions=-Dlog4j2.configurationFile=$LOG4J2_CONF -Dio.netty.tryReflectionSetAccessible=true"
-        --conf "spark.executor.extraJavaOptions=-Dlog4j2.configurationFile=$LOG4J2_CONF"
-        target/batch-processor-1.0.0-SNAPSHOT.jar
-        --jdbc.url "$POSTGRES_JDBC_URL"
-        --jdbc.user "$POSTGRES_USER"
-        --jdbc.password "$POSTGRES_PASSWORD"
-        --neo4j.uri "$NEO4J_URI"
-        --neo4j.user "$NEO4J_USER"
-        --neo4j.password "$NEO4J_PASSWORD"
-        --enable.neo4j.sink "$ENABLE_NEO4J_SINK"
-        --network "$NETWORK"
-    )
+    # Build spark-submit command
+    SPARK_CMD="spark-submit \
+        --class com.chainrisk.batch.BatchProcessorApp \
+        --master 'local[*]' \
+        --driver-memory 1g \
+        --executor-memory 1g \
+        --conf spark.sql.adaptive.enabled=true \
+        --conf spark.driver.host=localhost \
+        --conf spark.driver.bindAddress=localhost \
+        --conf spark.network.timeout=600s \
+        --conf spark.executor.heartbeatInterval=60s \
+        --conf 'spark.driver.extraJavaOptions=-Dlog4j2.configurationFile=$LOG4J2_CONF -Dio.netty.tryReflectionSetAccessible=true' \
+        --conf 'spark.executor.extraJavaOptions=-Dlog4j2.configurationFile=$LOG4J2_CONF' \
+        target/batch-processor-1.0.0-SNAPSHOT.jar \
+        --jdbc.url '$POSTGRES_JDBC_URL' \
+        --jdbc.user '$POSTGRES_USER' \
+        --jdbc.password '$POSTGRES_PASSWORD' \
+        --neo4j.uri '$NEO4J_URI' \
+        --neo4j.user '$NEO4J_USER' \
+        --neo4j.password '$NEO4J_PASSWORD' \
+        --enable.neo4j.sink '$ENABLE_NEO4J_SINK' \
+        --network '$NETWORK'"
     
     # Check if tmux is available
     if command -v tmux &> /dev/null; then
@@ -133,14 +132,22 @@ run_batch_processor() {
         tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
         
         # Create new tmux session and run Spark
-        tmux new-session -d -s "$TMUX_SESSION" "spark-submit ${SPARK_ARGS[*]}"
+        # Use bash -c to properly handle the command with variables
+        tmux new-session -d -s "$TMUX_SESSION" "cd $(pwd) && $SPARK_CMD; echo 'Press enter to exit'; read"
         
-        log_info "Spark Batch Processor started in tmux session '$TMUX_SESSION'"
-        log_info ""
-        log_info "Commands:"
-        log_info "  View logs:  tmux attach -t $TMUX_SESSION"
-        log_info "  Stop Spark: tmux kill-session -t $TMUX_SESSION"
-        log_info "  Or use:     make stop-batch"
+        # Wait a moment and check if session is running
+        sleep 2
+        if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+            log_info "Spark Batch Processor started in tmux session '$TMUX_SESSION'"
+            log_info ""
+            log_info "Commands:"
+            log_info "  View logs:  tmux attach -t $TMUX_SESSION"
+            log_info "  Stop Spark: tmux kill-session -t $TMUX_SESSION"
+            log_info "  Or use:     make stop-batch"
+        else
+            log_error "Failed to start tmux session. Running in foreground..."
+            eval "$SPARK_CMD"
+        fi
         
     else
         log_warn "tmux not installed, running Spark in foreground"
@@ -148,7 +155,7 @@ run_batch_processor() {
         log_warn "Install tmux: brew install tmux (macOS) or apt-get install tmux (Linux)"
         
         # Run Spark job directly
-        spark-submit "${SPARK_ARGS[@]}"
+        eval "$SPARK_CMD"
     fi
 }
 
