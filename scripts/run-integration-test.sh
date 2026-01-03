@@ -370,7 +370,22 @@ run_stream_processor() {
     
     # Wait for processing
     log_info "Waiting for stream processing to complete..."
-    sleep 30
+    
+    # Wait longer for Flink to start and process data
+    log_info "Waiting 60 seconds for Flink to process data..."
+    sleep 60
+    
+    # Check if data is being processed (retry logic)
+    log_info "Checking if data is being processed..."
+    for i in {1..5}; do
+        TRANSFER_COUNT=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transfers" 2>/dev/null | tr -d ' ')
+        if [ "$TRANSFER_COUNT" -gt 0 ]; then
+            log_info "Data found! Transfer count: $TRANSFER_COUNT"
+            break
+        fi
+        log_warn "No data yet (attempt $i/5), waiting 10 more seconds..."
+        sleep 10
+    done
     
     log_info "Stream processing completed"
 }
