@@ -173,7 +173,14 @@ public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
         params.put("logIndex", logIndex != null ? logIndex : 0);
         
         params.put("blockNumber", row.getAs("block_number"));
-        params.put("amount", row.getAs("value"));
+        
+        // Convert BigDecimal to String for Neo4j
+        Object value = row.getAs("value");
+        if (value != null) {
+            params.put("amount", value.toString());
+        } else {
+            params.put("amount", "0");
+        }
         
         // Convert Timestamp to epoch seconds
         Timestamp timestamp = row.getAs("timestamp");
