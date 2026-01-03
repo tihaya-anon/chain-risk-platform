@@ -170,12 +170,14 @@ public class TransferCorrectionJob {
                         stmt.setString(4, row.getAs("from_address"));
                         stmt.setString(5, row.getAs("to_address"));
                         
-                        // Handle value (BigDecimal from PostgreSQL)
+                        // Handle value (BigDecimal from PostgreSQL NUMERIC type)
                         Object value = row.getAs("value");
-                        if (value != null) {
-                            stmt.setString(6, value.toString());
+                        if (value instanceof java.math.BigDecimal) {
+                            stmt.setBigDecimal(6, (java.math.BigDecimal) value);
+                        } else if (value != null) {
+                            stmt.setBigDecimal(6, new java.math.BigDecimal(value.toString()));
                         } else {
-                            stmt.setString(6, "0");
+                            stmt.setBigDecimal(6, java.math.BigDecimal.ZERO);
                         }
                         
                         stmt.setString(7, row.getAs("token_address"));
