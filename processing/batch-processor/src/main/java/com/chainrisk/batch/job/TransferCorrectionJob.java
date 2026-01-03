@@ -68,6 +68,9 @@ public class TransferCorrectionJob {
 
             // Step 2: Transform and validate data (in production, this would re-parse from blockchain)
             Dataset<Row> correctedTransfers = correctTransfers(streamTransfers);
+            
+            // Cache the dataset since we'll use it twice (PostgreSQL + Neo4j)
+            correctedTransfers.cache();
 
             // Step 3: Write corrected transfers back to PostgreSQL (source='batch')
             LOG.info("Writing corrected transfers to PostgreSQL...");
@@ -78,6 +81,9 @@ public class TransferCorrectionJob {
                 LOG.info("Writing corrected transfers to Neo4j...");
                 writeToNeo4j(correctedTransfers, neo4jUri, neo4jUser, neo4jPassword);
             }
+            
+            // Unpersist the cached dataset
+            correctedTransfers.unpersist();
 
             LOG.info("=== Batch Layer Complete ===");
             LOG.info("Corrected {} transfers", transferCount);
