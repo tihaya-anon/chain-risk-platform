@@ -726,6 +726,9 @@ test-integration-phase1: ## Run integration test Phase 1 (data ingestion to Kafk
 test-integration-phase2: ## Run integration test Phase 2 (Flink processing only, reusable)
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/test-integration-phase2.sh'
 
+test-integration-phase3: ## Run integration test Phase 3 (Spark batch processing, correct stream data)
+	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/test-integration-phase3.sh'
+
 mock-server-build: ## Build mock Etherscan server
 	@echo "🔨 Building mock server..."
 	@cd tests/integration/mock_server && mkdir -p bin && go build -o bin/mock_server .
