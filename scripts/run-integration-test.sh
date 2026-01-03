@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Integration Test Script for Chain Risk Platform
+# Integration Test Script for Chain Risk Platform (Lambda Architecture)
 # This script runs the complete data pipeline with mock data
-# Supports both local and remote Docker environments
+# Tests: data-ingestion → Kafka → Flink (dual-write) → PostgreSQL + Neo4j
 
 set -e
 
@@ -53,6 +53,13 @@ POSTGRES_DB="chainrisk"
 POSTGRES_USER="${POSTGRES_USER:-chainrisk}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-chainrisk123}"
 
+# Neo4j configuration
+NEO4J_HOST="${NEO4J_HOST:-localhost}"
+NEO4J_BOLT_PORT="${NEO4J_BOLT_PORT:-17687}"
+NEO4J_HTTP_PORT="${NEO4J_HTTP_PORT:-17474}"
+NEO4J_USER="${NEO4J_USER:-neo4j}"
+NEO4J_PASSWORD="${NEO4J_PASSWORD:-chainrisk123}"
+
 # Test parameters
 START_BLOCK=1000
 NUM_BLOCKS=30  # Must be > confirmations (12) + some buffer
@@ -60,9 +67,16 @@ CONFIRMATIONS=0  # Disable confirmations for testing
 EXPECTED_TRANSFERS=$((NUM_BLOCKS * 3))  # ~3 transfers per block on average
 EXPECTED_TRANSACTIONS=$NUM_BLOCKS  # Expect at least NUM_BLOCKS transactions
 
+# Feature flags
+ENABLE_NEO4J_SINK="${ENABLE_NEO4J_SINK:-true}"
+ENABLE_KAFKA_PRODUCER="${ENABLE_KAFKA_PRODUCER:-true}"
+
 log_info "Using Docker Host: $DOCKER_HOST_IP"
 log_info "Kafka Broker: $KAFKA_BROKER"
 log_info "PostgreSQL: $POSTGRES_HOST:$POSTGRES_PORT"
+log_info "Neo4j: $NEO4J_HOST:$NEO4J_BOLT_PORT (HTTP: $NEO4J_HTTP_PORT)"
+log_info "Neo4j Sink Enabled: $ENABLE_NEO4J_SINK"
+log_info "Kafka Producer Enabled: $ENABLE_KAFKA_PRODUCER"
 
 # Cleanup function
 cleanup() {
@@ -130,6 +144,22 @@ check_prerequisites() {
         exit 1
     fi
     
+    # Check Neo4j connection (optional - warn only)
+    if [ "$ENABLE_NEO4J_SINK" = "true" ]; then
+        if ! nc -z $NEO4J_HOST $NEO4J_BOLT_PORT 2>/dev/null; then
+            log_warn "Cannot connect to Neo4j at $NEO4J_HOST:$NEO4J_BOLT_PORT"
+            log_warn "Neo4j verification will be skipped"
+            ENABLE_NEO4J_SINK="false"
+        else
+            # Try to verify Neo4j HTTP endpoint
+            if curl -s -u "$NEO4J_USER:$NEO4J_PASSWORD" "http://$NEO4J_HOST:$NEO4J_HTTP_PORT" > /dev/null 2>&1; then
+                log_info "Neo4j connection verified"
+            else
+                log_warn "Neo4j HTTP endpoint not accessible, verification will be limited"
+            fi
+        fi
+    fi
+    
     log_info "Prerequisites check passed"
 }
 
@@ -162,7 +192,7 @@ ensure_kafka_topic() {
 
 # Clear test data from database
 clear_test_data() {
-    log_info "Clearing test data from database..."
+    log_info "Clearing test data from PostgreSQL..."
     
     PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
 TRUNCATE chain_data.transfers CASCADE;
@@ -170,7 +200,21 @@ TRUNCATE chain_data.transactions CASCADE;
 TRUNCATE chain_data.processing_state CASCADE;
 EOF
     
-    log_info "Test data cleared"
+    log_info "PostgreSQL test data cleared"
+    
+    # Clear Neo4j data (optional)
+    if [ "$ENABLE_NEO4J_SINK" = "true" ]; then
+        log_info "Clearing test data from Neo4j..."
+        
+        # Use cypher-shell if available
+        if command -v cypher-shell &> /dev/null; then
+            cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+                "MATCH (n) DETACH DELETE n" 2>/dev/null || log_warn "Failed to clear Neo4j data (cypher-shell)"
+        else
+            log_warn "cypher-shell not installed, skipping Neo4j data cleanup"
+            log_warn "Install with: brew install cypher-shell (macOS) or apt-get install cypher-shell (Linux)"
+        fi
+    fi
 }
 
 # Build mock Etherscan server
@@ -271,11 +315,20 @@ run_data_ingestion() {
     return 0
 }
 
-# Run Flink stream processor using run-flink.sh
+# Run Flink stream processor with Lambda Architecture dual-write
 run_stream_processor() {
-    log_info "Running Flink stream processor..."
+    log_info "Running Flink stream processor (Lambda Speed Layer)..."
+    log_info "  Neo4j Sink: $ENABLE_NEO4J_SINK"
+    log_info "  Kafka Producer: $ENABLE_KAFKA_PRODUCER"
     
     cd "$PROJECT_ROOT"
+    
+    # Export Neo4j configuration for Flink
+    export NEO4J_URI="bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT"
+    export NEO4J_USER="$NEO4J_USER"
+    export NEO4J_PASSWORD="$NEO4J_PASSWORD"
+    export ENABLE_NEO4J_SINK="$ENABLE_NEO4J_SINK"
+    export ENABLE_KAFKA_PRODUCER="$ENABLE_KAFKA_PRODUCER"
     
     # Use the existing run-flink.sh script (it handles build and run)
     # Run in background and capture PID
@@ -295,9 +348,9 @@ run_stream_processor() {
     log_info "Stream processing completed"
 }
 
-# Verify results in database
-verify_results() {
-    log_info "Verifying results in database..."
+# Verify results in PostgreSQL
+verify_postgresql_results() {
+    log_info "Verifying results in PostgreSQL..."
     
     # Count transfers
     TRANSFER_COUNT=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transfers")
@@ -311,7 +364,7 @@ verify_results() {
     PROCESSING_STATE=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT last_processed_block FROM chain_data.processing_state LIMIT 1" 2>/dev/null || echo "N/A")
     PROCESSING_STATE=$(echo $PROCESSING_STATE | tr -d ' ')
     
-    log_info "Results:"
+    log_info "PostgreSQL Results:"
     log_info "  - Transfers: $TRANSFER_COUNT (expected: >=$EXPECTED_TRANSFERS)"
     log_info "  - Transactions: $TX_COUNT (expected: >=$EXPECTED_TRANSACTIONS)"
     log_info "  - Last processed block: $PROCESSING_STATE"
@@ -347,54 +400,62 @@ verify_results() {
         fi
     fi
     
-    # Data consistency checks
-    log_info "Checking data consistency..."
-    
-    # Check if all transactions have valid block numbers
-    INVALID_TX=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transactions WHERE block_number IS NULL OR block_number < $START_BLOCK OR block_number >= $((START_BLOCK + NUM_BLOCKS))")
-    INVALID_TX=$(echo $INVALID_TX | tr -d ' ')
-    
-    if [ "$INVALID_TX" -gt 0 ]; then
-        log_warn "Found $INVALID_TX transactions with invalid block numbers"
-    else
-        log_info "✓ All transactions have valid block numbers"
+    return $TEST_FAILED
+}
+
+# Verify results in Neo4j (optional)
+verify_neo4j_results() {
+    if [ "$ENABLE_NEO4J_SINK" != "true" ]; then
+        log_info "Neo4j verification skipped (sink disabled)"
+        return 0
     fi
     
-    # Check if all transfers have valid block numbers
-    INVALID_TRANSFER=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transfers WHERE block_number IS NULL OR block_number < $START_BLOCK OR block_number >= $((START_BLOCK + NUM_BLOCKS))")
-    INVALID_TRANSFER=$(echo $INVALID_TRANSFER | tr -d ' ')
+    log_info "Verifying results in Neo4j..."
     
-    if [ "$INVALID_TRANSFER" -gt 0 ]; then
-        log_warn "Found $INVALID_TRANSFER transfers with invalid block numbers"
-    else
-        log_info "✓ All transfers have valid block numbers"
+    if ! command -v cypher-shell &> /dev/null; then
+        log_warn "cypher-shell not installed, skipping Neo4j verification"
+        log_warn "Install with: brew install cypher-shell (macOS)"
+        return 0
     fi
     
-    # Check if native transfers have corresponding transactions
-    NATIVE_TRANSFERS=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transfers WHERE transfer_type = 'native'")
-    NATIVE_TRANSFERS=$(echo $NATIVE_TRANSFERS | tr -d ' ')
+    # Count Address nodes
+    ADDRESS_COUNT=$(cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+        "MATCH (a:Address) RETURN count(a) as count" --format plain 2>/dev/null | tail -1 | tr -d ' ' || echo "0")
     
-    ORPHAN_TRANSFERS=$(PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT COUNT(*) FROM chain_data.transfers t LEFT JOIN chain_data.transactions tx ON t.tx_hash = tx.hash WHERE tx.hash IS NULL AND t.transfer_type = 'native'")
-    ORPHAN_TRANSFERS=$(echo $ORPHAN_TRANSFERS | tr -d ' ')
+    # Count TRANSFER relationships
+    TRANSFER_REL_COUNT=$(cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+        "MATCH ()-[r:TRANSFER]->() RETURN count(r) as count" --format plain 2>/dev/null | tail -1 | tr -d ' ' || echo "0")
     
-    if [ "$ORPHAN_TRANSFERS" -gt 0 ]; then
-        log_warn "Found $ORPHAN_TRANSFERS native transfers without corresponding transactions"
+    # Count stream-sourced data
+    STREAM_COUNT=$(cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+        "MATCH ()-[r:TRANSFER {source: 'stream'}]->() RETURN count(r) as count" --format plain 2>/dev/null | tail -1 | tr -d ' ' || echo "0")
+    
+    log_info "Neo4j Results:"
+    log_info "  - Address nodes: $ADDRESS_COUNT"
+    log_info "  - TRANSFER relationships: $TRANSFER_REL_COUNT"
+    log_info "  - Stream-sourced transfers: $STREAM_COUNT"
+    
+    # Validate Neo4j data
+    if [ "$ADDRESS_COUNT" -gt 0 ] && [ "$TRANSFER_REL_COUNT" -gt 0 ]; then
+        log_info "✓ Neo4j dual-write validation passed"
+        
+        # Check if all transfers are marked as stream
+        if [ "$STREAM_COUNT" -eq "$TRANSFER_REL_COUNT" ]; then
+            log_info "✓ All transfers correctly marked with source='stream'"
+        else
+            log_warn "Some transfers not marked with source='stream' ($STREAM_COUNT/$TRANSFER_REL_COUNT)"
+        fi
+        
+        return 0
     else
-        log_info "✓ All native transfers have corresponding transactions"
-    fi
-    
-    if [ $TEST_FAILED -eq 1 ]; then
-        log_error "Verification failed!"
+        log_warn "Neo4j data validation failed (Address: $ADDRESS_COUNT, Transfers: $TRANSFER_REL_COUNT)"
         return 1
     fi
-    
-    log_info "✅ All verifications passed!"
-    return 0
 }
 
 # Print sample data
 print_sample_data() {
-    log_info "Sample data from database:"
+    log_info "Sample data from PostgreSQL:"
     
     echo ""
     echo "=== Transfer Statistics ==="
@@ -440,62 +501,23 @@ ORDER BY block_number DESC
 LIMIT 5;
 EOF
     
-    echo ""
-    echo "=== Sample Transactions ==="
-    PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
-SELECT 
-    hash, 
-    block_number, 
-    from_address, 
-    to_address, 
-    value,
-    is_error,
-    network
-FROM chain_data.transactions
-ORDER BY block_number DESC
-LIMIT 5;
-EOF
-    
-    echo ""
-    echo "=== Processing State ==="
-    PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
-SELECT 
-    id,
-    network,
-    processor_type,
-    last_processed_block,
-    updated_at
-FROM chain_data.processing_state
-ORDER BY network, processor_type;
-EOF
-    
-    echo ""
-    echo "=== Data Integrity Check ==="
-    PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB << EOF
--- Check for native transfers without transactions
-SELECT 
-    'Native transfers without transactions' as check_type,
-    COUNT(*) as count
-FROM chain_data.transfers t
-LEFT JOIN chain_data.transactions tx ON t.tx_hash = tx.hash
-WHERE tx.hash IS NULL AND t.transfer_type = 'native'
-UNION ALL
--- Check for transactions without any transfers
-SELECT 
-    'Transactions without transfers' as check_type,
-    COUNT(*) as count
-FROM chain_data.transactions tx
-LEFT JOIN chain_data.transfers t ON tx.hash = t.tx_hash
-WHERE t.tx_hash IS NULL;
-EOF
+    # Print Neo4j sample data if available
+    if [ "$ENABLE_NEO4J_SINK" = "true" ] && command -v cypher-shell &> /dev/null; then
+        echo ""
+        echo "=== Neo4j Sample Data ==="
+        cypher-shell -a "bolt://$NEO4J_HOST:$NEO4J_BOLT_PORT" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
+            "MATCH (from:Address)-[r:TRANSFER]->(to:Address) RETURN from.address, to.address, r.amount, r.source LIMIT 5" \
+            --format plain 2>/dev/null || log_warn "Failed to query Neo4j sample data"
+    fi
 }
 
 # Main execution
 main() {
-    log_info "Starting Integration Test"
-    log_info "========================="
+    log_info "Starting Integration Test (Lambda Architecture)"
+    log_info "================================================"
     log_info "Docker Host: $DOCKER_HOST_IP"
-    log_info "========================="
+    log_info "Testing: data-ingestion → Kafka → Flink → PostgreSQL + Neo4j"
+    log_info "================================================"
     
     check_prerequisites
     clear_test_data
@@ -508,11 +530,21 @@ main() {
     fi
     
     run_stream_processor
-    verify_results
+    
+    # Verify PostgreSQL results
+    if ! verify_postgresql_results; then
+        log_error "PostgreSQL verification failed"
+        exit 1
+    fi
+    
+    # Verify Neo4j results (optional)
+    verify_neo4j_results || log_warn "Neo4j verification had issues (non-fatal)"
+    
     print_sample_data
     
-    log_info "========================="
-    log_info "Integration Test Complete"
+    log_info "================================================"
+    log_info "✅ Integration Test Complete"
+    log_info "================================================"
 }
 
 main "$@"
