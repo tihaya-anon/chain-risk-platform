@@ -1,15 +1,15 @@
 # 开发进度追踪
 
-> 最后更新: 2026-01-02
+> 最后更新: 2026-01-04
 
 ## 📊 总体进度
 
-| Phase                   | 状态     | 进度 | 说明                                      |
-| ----------------------- | -------- | ---- | ----------------------------------------- |
-| Phase 1: 核心数据流     | ✅ 已完成 | 100% | 端到端数据流验证通过，监控已配置          |
-| Phase 2: 查询与风险服务 | 🔶 进行中 | 95%  | Redis缓存已完成，仅缺少单元测试           |
-| Phase 3: BFF与前端      | 🔶 进行中 | 80%  | 基础功能已完成，待完善图表和响应式        |
-| Phase 4: 高级功能       | 🔶 进行中 | 40%  | Graph Engine 已完成，ML/批处理/告警待开发 |
+| Phase                   | 状态     | 进度 | 说明                                  |
+| ----------------------- | -------- | ---- | ------------------------------------- |
+| Phase 1: 核心数据流     | ✅ 已完成 | 100% | 端到端数据流验证通过，监控已配置      |
+| Phase 2: 查询与风险服务 | 🔶 进行中 | 95%  | Redis缓存已完成，仅缺少单元测试       |
+| Phase 3: BFF与前端      | 🔶 进行中 | 80%  | 基础功能已完成，待完善图表和响应式    |
+| Phase 4: 高级功能       | 🔶 进行中 | 50%  | Graph Engine + Batch Processor 已完成 |
 
 状态图例: 🔲 未开始 | 🔶 进行中 | ✅ 已完成 | ⏸️ 暂停
 
@@ -207,12 +207,17 @@
 | XGBoost 模型 | 🔲    |      |
 | 模型服务化   | 🔲    |      |
 
-### 4.3 批处理 (Java/Flink SQL)
-| 任务       | 状态 | 备注           |
-| ---------- | ---- | -------------- |
-| 项目骨架   | ✅    | pom.xml 已创建 |
-| 每日批处理 | 🔲    |                |
-| 流批合并   | 🔲    |                |
+### 4.3 批处理 (Java/Spark)
+| 任务             | 状态 | 备注                                           |
+| ---------------- | ---- | ---------------------------------------------- |
+| 项目骨架         | ✅    | pom.xml 已创建                                 |
+| Spark 批处理作业 | ✅    | BatchProcessorApp 已实现                       |
+| Transfer 校正    | ✅    | Lambda 架构批处理层                            |
+| Neo4j 同步       | ✅    | 批量同步到图数据库                             |
+| 独立运行脚本     | ✅    | scripts/run-batch-processor.sh                 |
+| Makefile 集成    | ✅    | batch-init/build/run/test/clean/stop/logs 命令 |
+| log4j2 日志配置  | ✅    | 与 stream-processor 格式一致                   |
+| 单元测试         | 🔲    | 待补充                                         |
 
 ### 4.4 Alert Service (Go/Gin)
 | 任务     | 状态 | 备注             |
@@ -224,6 +229,18 @@
 ---
 
 ## 📝 开发日志
+
+### 2026-01-04
+- ✅ 重构 Batch Processor 运行方式
+  - 从 test-integration-phase3.sh 中提取独立运行脚本
+  - 添加 scripts/run-batch-processor.sh (支持 tmux 后台运行)
+  - Makefile 添加 batch-init/build/run/test/clean/stop/logs 命令
+  - 集成到 init-all/build-all/test-all/clean-all/stop-svc
+- ✅ 修复 Batch Processor 日志配置
+  - Spark 使用 log4j2，通过 extraJavaOptions 指定配置文件
+  - 日志格式与 stream-processor 保持一致
+- ✅ 修复 tmux 会话启动问题
+  - 数组参数在 tmux 中展开有问题，改用字符串命令
 
 ### 2025-12-31
 - 📝 全面更新开发进度文档，反映各微服务实际完成状态
