@@ -164,7 +164,13 @@ run_batch_processor() {
     
     cd "$PROJECT_ROOT/processing/batch-processor"
     
-    # Run Spark job locally with Netty workaround
+    # Ensure logs directory exists
+    mkdir -p logs
+    
+    # Path to log4j2 config
+    LOG4J2_CONF="file:$(pwd)/src/main/resources/log4j2.properties"
+    
+    # Run Spark job locally
     spark-submit \
         --class com.chainrisk.batch.BatchProcessorApp \
         --master local[*] \
@@ -175,7 +181,8 @@ run_batch_processor() {
         --conf spark.driver.bindAddress=localhost \
         --conf spark.network.timeout=600s \
         --conf spark.executor.heartbeatInterval=60s \
-        --driver-java-options "-Dio.netty.tryReflectionSetAccessible=true" \
+        --conf "spark.driver.extraJavaOptions=-Dlog4j2.configurationFile=$LOG4J2_CONF -Dio.netty.tryReflectionSetAccessible=true" \
+        --conf "spark.executor.extraJavaOptions=-Dlog4j2.configurationFile=$LOG4J2_CONF" \
         target/batch-processor-1.0.0-SNAPSHOT.jar \
         --jdbc.url "$POSTGRES_JDBC_URL" \
         --jdbc.user "$POSTGRES_USER" \

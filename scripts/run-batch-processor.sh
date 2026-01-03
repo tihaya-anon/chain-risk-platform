@@ -93,6 +93,12 @@ run_batch_processor() {
     log_info "Network: $NETWORK"
     log_info "Neo4j Sink: $ENABLE_NEO4J_SINK"
     
+    # Ensure logs directory exists
+    mkdir -p logs
+    
+    # Path to log4j2 config
+    LOG4J2_CONF="file:$(pwd)/src/main/resources/log4j2.properties"
+    
     # Build Spark submit arguments
     SPARK_ARGS=(
         --class com.chainrisk.batch.BatchProcessorApp
@@ -104,7 +110,8 @@ run_batch_processor() {
         --conf spark.driver.bindAddress=localhost
         --conf spark.network.timeout=600s
         --conf spark.executor.heartbeatInterval=60s
-        --driver-java-options "-Dio.netty.tryReflectionSetAccessible=true"
+        --conf "spark.driver.extraJavaOptions=-Dlog4j2.configurationFile=$LOG4J2_CONF -Dio.netty.tryReflectionSetAccessible=true"
+        --conf "spark.executor.extraJavaOptions=-Dlog4j2.configurationFile=$LOG4J2_CONF"
         target/batch-processor-1.0.0-SNAPSHOT.jar
         --jdbc.url "$POSTGRES_JDBC_URL"
         --jdbc.user "$POSTGRES_USER"
