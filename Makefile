@@ -118,6 +118,13 @@ help:
 	@echo "  make flink-test        Run tests"
 	@echo "  make flink-clean       Clean artifacts"
 	@echo ""
+	@echo "📊 Batch Processor (Java/Spark):"
+	@echo "  make batch-init        Initialize dependencies"
+	@echo "  make batch-build       Build service"
+	@echo "  make batch-run         Run service"
+	@echo "  make batch-test        Run tests"
+	@echo "  make batch-clean       Clean artifacts"
+	@echo ""
 	@echo "🖥️  Frontend (React):"
 	@echo "  make frontend-init     Initialize dependencies"
 	@echo "  make frontend-build    Build service"
@@ -161,6 +168,7 @@ help:
 	@echo "  make stop-bff          Stop bff service"
 	@echo "  make stop-graph        Stop graph engine"
 	@echo "  make stop-flink        Stop flink processor"
+	@echo "  make stop-batch        Stop batch processor"
 	@echo ""
 
 # ============================================
@@ -447,6 +455,53 @@ flink-logs: ## View stream-processor logs (tmux or file)
 	fi
 
 # ============================================
+# Batch Processor (Java/Spark)
+# ============================================
+
+DIR_BATCH := processing/batch-processor
+
+batch-init: ## Initialize batch-processor dependencies
+	@echo "📦 Initializing batch-processor..."
+	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn clean install $(MVN_SKIP_TESTS) $(MVN_QUIET)'
+	@echo "✅ batch-processor initialized"
+
+batch-build: ## Build batch-processor
+	@echo "🔨 Building batch-processor..."
+	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) -Plocal $(MVN_QUIET)'
+	@echo "✅ batch-processor built"
+
+batch-run: ## Run batch-processor
+	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh'
+
+batch-test: ## Test batch-processor
+	@echo "🧪 Testing batch-processor..."
+	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn test'
+
+batch-clean: ## Clean batch-processor artifacts
+	@echo "🧹 Cleaning batch-processor..."
+	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
+	@echo "✅ batch-processor cleaned"
+
+batch-stop: ## Stop batch-processor (tmux or pkill)
+	@echo "🛑 Stopping batch-processor..."
+	@if command -v tmux >/dev/null 2>&1 && tmux has-session -t spark-batch 2>/dev/null; then \
+		tmux kill-session -t spark-batch; \
+		echo "✅ Stopped tmux session 'spark-batch'"; \
+	else \
+		pkill -f "batch-processor.*\.jar" 2>/dev/null || true; \
+		sleep 1; \
+		pkill -9 -f "batch-processor.*\.jar" 2>/dev/null || true; \
+		echo "✅ batch-processor stopped"; \
+	fi
+
+batch-logs: ## View batch-processor logs (tmux or file)
+	@if command -v tmux >/dev/null 2>&1 && tmux has-session -t spark-batch 2>/dev/null; then \
+		tmux attach -t spark-batch; \
+	else \
+		tail -f $(DIR_BATCH)/logs/batch-processor.log 2>/dev/null || echo "❌ No logs found"; \
+	fi
+
+# ============================================
 # Frontend (React)
 # ============================================
 
@@ -490,6 +545,7 @@ init-all: ## Initialize all services
 	@$(MAKE) orchestrator-init || true
 	@$(MAKE) graph-init || true
 	@$(MAKE) flink-init || true
+	@$(MAKE) batch-init || true
 	@$(MAKE) frontend-init || true
 	@echo "✅ All services initialized"
 
@@ -503,6 +559,7 @@ build-all: ## Build all services
 	@$(MAKE) orchestrator-build || echo "⏭️  orchestrator: skipped"
 	@$(MAKE) graph-build || echo "⏭️  graph: skipped"
 	@$(MAKE) flink-build || echo "⏭️  flink: skipped"
+	@$(MAKE) batch-build || echo "⏭️  batch: skipped"
 	@$(MAKE) frontend-build || echo "⏭️  frontend: skipped"
 	@echo "✅ All services built"
 
@@ -516,6 +573,7 @@ test-all: ## Test all services
 	@$(MAKE) orchestrator-test || echo "⏭️  orchestrator: skipped"
 	@$(MAKE) graph-test || echo "⏭️  graph: skipped"
 	@$(MAKE) flink-test || echo "⏭️  flink: skipped"
+	@$(MAKE) batch-test || echo "⏭️  batch: skipped"
 	@$(MAKE) frontend-test || echo "⏭️  frontend: skipped"
 	@echo "✅ All tests completed"
 
@@ -539,6 +597,7 @@ clean-all: ## Clean all artifacts
 	@$(MAKE) orchestrator-clean || true
 	@$(MAKE) graph-clean || true
 	@$(MAKE) flink-clean || true
+	@$(MAKE) batch-clean || true
 	@$(MAKE) frontend-clean || true
 	@echo "✅ All artifacts cleaned"
 
@@ -635,6 +694,8 @@ stop-svc: ## Stop all background services (including tmux session)
 	@-pkill -f "nest start" 2>/dev/null || true
 	@-pkill -f "ts-node" 2>/dev/null || true
 	@-pkill -f "graph-engine" 2>/dev/null || true
+	@-pkill -f "stream-processor.*\.jar" 2>/dev/null || true
+	@-pkill -f "batch-processor.*\.jar" 2>/dev/null || true
 	@echo "✅ Services stopped"
 	@if tmux has-session -t chain-risk 2>/dev/null; then \
 		read -p "🗑️  Kill tmux session 'chain-risk'? [y/N] " answer; \
@@ -643,6 +704,24 @@ stop-svc: ## Stop all background services (including tmux session)
 			echo "✅ tmux session killed"; \
 		else \
 			echo "   tmux session kept. Run manually: tmux kill-session -t chain-risk"; \
+		fi \
+	fi
+	@if tmux has-session -t flink-stream 2>/dev/null; then \
+		read -p "🗑️  Kill tmux session 'flink-stream'? [y/N] " answer; \
+		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+			tmux kill-session -t flink-stream; \
+			echo "✅ tmux session killed"; \
+		else \
+			echo "   tmux session kept. Run manually: tmux kill-session -t flink-stream"; \
+		fi \
+	fi
+	@if tmux has-session -t spark-batch 2>/dev/null; then \
+		read -p "🗑️  Kill tmux session 'spark-batch'? [y/N] " answer; \
+		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+			tmux kill-session -t spark-batch; \
+			echo "✅ tmux session killed"; \
+		else \
+			echo "   tmux session kept. Run manually: tmux kill-session -t spark-batch"; \
 		fi \
 	fi
 
