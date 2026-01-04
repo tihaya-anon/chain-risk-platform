@@ -2,8 +2,8 @@ FROM apache/hive:4.0.0
 
 USER root
 
-# Install curl
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Install curl and netcat
+RUN apt-get update && apt-get install -y curl netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
 # Download PostgreSQL JDBC driver
 RUN curl -L https://jdbc.postgresql.org/download/postgresql-42.7.1.jar \
