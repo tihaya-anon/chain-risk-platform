@@ -168,101 +168,193 @@ public class TransferExtractionJob {
 
 ---
 
-### 2️⃣ Batch Layer（批处理层）
+### 2️⃣ Batch Layer（批处理层）+ Data Lake (Hudi)
 
 #### 职责
-提供**准确**的数据处理，覆盖修正流处理的错误
+- **数据归档**：PostgreSQL 冷数据归档到 Hudi
+- **批处理修正**：在 Hudi 上进行 UPSERT 覆盖修正
+- **历史存储**：Hudi 作为全量历史数据存储
 
 #### 技术栈
+- **Apache Hudi** (数据湖存储)
 - **Spark Batch Processor** (Scala)
 - **全节点 RPC** (数据源)
 
-#### 数据流
+#### 架构图
+
 ```
-全节点 RPC (重新扫描昨天的区块)
-    ↓
-Spark Batch Processor
-    ├─ 完整解析逻辑（处理复杂合约）
-    ├─ 等待区块确认（避免重组）
-    ├─ 新合约类型支持
-    └─ 全局特征计算
-    ↓
-覆盖写入策略
-├─ PostgreSQL (source='batch', 覆盖 stream)
-│   └─ ON CONFLICT DO UPDATE SET source='batch', corrected_at=NOW()
-│
-└─ Neo4j (source='batch', 覆盖 stream)
-    └─ ON MATCH SET source='batch', corrected_at=timestamp()
-    ↓
-触发 Graph Engine 批量分析
-    └─ 全图聚类、PageRank、社区发现
+┌─────────────────────────────────────────────────────────────────┐
+│                         Speed Layer                             │
+│                                                                 │
+│  Kafka → Flink Stream → PostgreSQL (热数据, 7天) + Neo4j        │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            │ 每日归档 (02:00)
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      Data Lake Layer (Hudi)                     │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                    Hudi Tables                          │   │
+│  │                                                         │   │
+│  │  transfers (MOR)     addresses (MOR)    risk_scores    │   │
+│  │  - 全量历史数据       - 全量地址数据      - 历史评分     │   │
+│  │  - 按 network/dt 分区 - 按 network 分区                 │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                            ↑                                    │
+│                            │                                    │
+│                   Spark Batch (03:00)                           │
+│                   (全节点 RPC → UPSERT 修正)                    │
+│                            │                                    │
+│                            ↓                                    │
+│              近期被修正数据回写 PostgreSQL (04:00)               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 数据流
+
+```
+1. 归档任务 (每日 02:00)
+   PostgreSQL (7天前数据) → Hudi
+   然后从 PostgreSQL 删除已归档数据
+
+2. 批处理修正 (每日 03:00)
+   全节点 RPC → Spark → Hudi (UPSERT 覆盖)
+
+3. 热数据回写 (每日 04:00)
+   Hudi 中近期被修正的数据 → PostgreSQL
+```
+
+#### Hudi 表设计
+
+```sql
+-- transfers 表 (MOR 模式)
+CREATE TABLE hudi_transfers (
+    tx_hash STRING,              -- recordKey
+    block_number BIGINT,         -- precombineKey
+    from_addr STRING,
+    to_addr STRING,
+    amount DECIMAL(38,0),
+    token_address STRING,
+    timestamp BIGINT,
+    network STRING,
+    source STRING,               -- 'stream' / 'batch'
+    created_at TIMESTAMP,
+    corrected_at TIMESTAMP
+) USING hudi
+PARTITIONED BY (network, dt)
+OPTIONS (
+    type = 'mor',
+    primaryKey = 'tx_hash',
+    preCombineField = 'block_number',
+    hoodie.cleaner.commits.retained = 24,
+    hoodie.keep.min.commits = 20,
+    hoodie.keep.max.commits = 30
+);
 ```
 
 #### 实现示例
 
-```scala processing/batch-processor/src/main/scala/TransferCorrectionJob.scala
+##### 1. 冷数据归档任务
+
+```python
+# processing/batch-processor/jobs/archive_to_hudi.py
+
+def archive_cold_data():
+    spark = SparkSession.builder \
+        .appName("Archive Cold Data to Hudi") \
+        .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
+        .getOrCreate()
+    
+    seven_days_ago = int((datetime.now() - timedelta(days=7)).timestamp())
+    
+    # 1. 从 PostgreSQL 读取冷数据
+    cold_data = spark.read.format("jdbc") \
+        .option("url", "jdbc:postgresql://postgres:5432/chainrisk") \
+        .option("query", f"""
+            SELECT *, DATE(to_timestamp(timestamp)) as dt 
+            FROM transfers 
+            WHERE timestamp < {seven_days_ago}
+        """) \
+        .option("user", "postgres") \
+        .option("password", "postgres") \
+        .load()
+    
+    if cold_data.count() == 0:
+        print("No cold data to archive")
+        return
+    
+    # 2. 写入 Hudi
+    cold_data.write.format("hudi") \
+        .option("hoodie.table.name", "transfers") \
+        .option("hoodie.datasource.write.operation", "upsert") \
+        .option("hoodie.datasource.write.recordkey.field", "tx_hash") \
+        .option("hoodie.datasource.write.precombine.field", "block_number") \
+        .option("hoodie.datasource.write.partitionpath.field", "network,dt") \
+        .option("hoodie.upsert.shuffle.parallelism", 200) \
+        .mode("append") \
+        .save("s3://chainrisk-datalake/hudi/transfers")
+    
+    # 3. 从 PostgreSQL 删除已归档数据
+    with psycopg2.connect("postgresql://postgres:postgres@postgres:5432/chainrisk") as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"DELETE FROM transfers WHERE timestamp < {seven_days_ago}")
+            print(f"Deleted {cur.rowcount} rows from PostgreSQL")
+        conn.commit()
+```
+
+##### 2. 批处理修正任务
+
+```scala
+// processing/batch-processor/src/main/scala/com/chainrisk/batch/TransferCorrectionJob.scala
+
 object TransferCorrectionJob {
     def main(args: Array[String]): Unit = {
         val spark = SparkSession.builder()
-            .appName("Transfer Correction")
+            .appName("Transfer Correction to Hudi")
+            .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
             .getOrCreate()
         
-        // 1. 从全节点重新获取昨天的区块
-        val blocks = spark.read
-            .format("web3")  // 自定义 DataSource
-            .option("rpcUrl", "https://eth-mainnet.g.alchemy.com/v2/...")
-            .option("startBlock", yesterdayStart)
-            .option("endBlock", yesterdayEnd)
-            .option("confirmations", 12)  // 等待 12 个确认
-            .load()
+        val yesterday = LocalDate.now().minusDays(1)
+        val yesterdayStart = yesterday.atStartOfDay().toEpochSecond(ZoneOffset.UTC)
+        val yesterdayEnd = yesterday.plusDays(1).atStartOfDay().toEpochSecond(ZoneOffset.UTC)
         
-        // 2. 完整解析逻辑
-        val transfers = blocks
-            .flatMap(parseTransfersWithFullLogic)  // 处理复杂合约
+        // 1. 从全节点重新扫描昨天的区块
+        val correctedTransfers = spark.read
+            .format("web3")
+            .option("rpcUrl", sys.env("ETH_RPC_URL"))
+            .option("startTimestamp", yesterdayStart)
+            .option("endTimestamp", yesterdayEnd)
+            .option("confirmations", 12)
+            .load()
             .withColumn("source", lit("batch"))
             .withColumn("corrected_at", current_timestamp())
+            .withColumn("dt", to_date(from_unixtime(col("timestamp"))))
         
-        // 3. 覆盖写入 PostgreSQL
-        transfers.write
-            .format("jdbc")
-            .option("url", "jdbc:postgresql://...")
-            .option("dbtable", "transfers")
-            .option("conflictAction", 
-                "ON CONFLICT (tx_hash) DO UPDATE SET " +
-                "  from_addr = EXCLUDED.from_addr, " +
-                "  to_addr = EXCLUDED.to_addr, " +
-                "  amount = EXCLUDED.amount, " +
-                "  source = 'batch', " +
-                "  corrected_at = NOW()")
+        // 2. UPSERT 到 Hudi (自动覆盖 stream 数据)
+        correctedTransfers.write.format("hudi")
+            .option("hoodie.table.name", "transfers")
+            .option("hoodie.datasource.write.operation", "upsert")
+            .option("hoodie.datasource.write.recordkey.field", "tx_hash")
+            .option("hoodie.datasource.write.precombine.field", "block_number")
+            .option("hoodie.datasource.write.partitionpath.field", "network,dt")
             .mode("append")
-            .save()
+            .save("s3://chainrisk-datalake/hudi/transfers")
         
-        // 4. 覆盖写入 Neo4j
-        transfers.foreachPartition { partition =>
-            val driver = GraphDatabase.driver("bolt://neo4j:7687", ...)
-            val session = driver.session()
-            
-            partition.foreach { row =>
-                session.run(
-                    "MERGE (from:Address {address: $from}) " +
-                    "ON MATCH SET from.source = 'batch', " +
-                    "             from.corrected_at = timestamp() " +
-                    "MERGE (to:Address {address: $to}) " +
-                    "ON MATCH SET to.source = 'batch', " +
-                    "             to.corrected_at = timestamp() " +
-                    "MERGE (from)-[r:TRANSFER {tx_hash: $txHash}]->(to) " +
-                    "ON MATCH SET r.source = 'batch', " +
-                    "             r.corrected_at = timestamp()",
-                    parameters(...)
-                )
-            }
-            
-            session.close()
-            driver.close()
+        // 3. 近期被修正的数据回写 PostgreSQL
+        val sevenDaysAgo = LocalDate.now().minusDays(7).atStartOfDay().toEpochSecond(ZoneOffset.UTC)
+        val recentCorrected = correctedTransfers.filter(col("timestamp") >= sevenDaysAgo)
+        
+        if (recentCorrected.count() > 0) {
+            recentCorrected.write.format("jdbc")
+                .option("url", "jdbc:postgresql://postgres:5432/chainrisk")
+                .option("dbtable", "transfers")
+                .option("user", "postgres")
+                .option("password", "postgres")
+                .mode("append")
+                .save()
+            // Note: 需要配置 ON CONFLICT DO UPDATE
         }
-        
-        // 5. 触发 Graph Engine 批量分析
-        triggerGraphAnalysis()
     }
 }
 ```
@@ -272,47 +364,111 @@ object TransferCorrectionJob {
 ```yaml
 # Airflow DAG
 dag:
-  name: daily_batch_correction
-  schedule: "0 2 * * *"  # 每天凌晨 2 点
+  name: daily_hudi_pipeline
+  schedule: "0 2 * * *"
   
   tasks:
+    - name: archive_cold_data
+      type: spark_submit
+      script: archive_to_hudi.py
+      schedule: "0 2 * * *"  # 02:00
+      resources:
+        executor_memory: 4g
+        num_executors: 5
+      
     - name: transfer_correction
       type: spark_submit
       script: TransferCorrectionJob.scala
+      schedule: "0 3 * * *"  # 03:00
+      depends_on: [archive_cold_data]
       resources:
-        executor_memory: 4g
-        executor_cores: 2
+        executor_memory: 8g
         num_executors: 10
       
-    - name: risk_scoring_batch
+    - name: hudi_compaction
       type: spark_submit
-      script: RiskScoringBatchJob.py
+      script: hudi_compaction.py
+      schedule: "0 5 * * *"  # 05:00
       depends_on: [transfer_correction]
       
     - name: graph_analysis_batch
       type: http_trigger
       url: http://graph-engine:8084/admin/clustering/run
+      schedule: "0 6 * * *"  # 06:00
       depends_on: [transfer_correction]
 ```
 
 #### 特点
-- ✅ **准确性高**：完整解析逻辑
-- ✅ **数据完整**：从全节点重新扫描
-- ✅ **处理复杂场景**：重组、新合约、复杂 ML 模型
-- ⚠️ **延迟高**：T+1 天
+- ✅ **存储成本低**：冷数据在对象存储 (S3/MinIO)
+- ✅ **批处理无锁**：UPSERT 在 Hudi 上操作，不影响 PostgreSQL
+- ✅ **Schema 演进**：Hudi 原生支持
+- ✅ **Time Travel**：支持历史版本查询（审计需求）
+- ✅ **PostgreSQL 体积可控**：只保留 7 天热数据
 
 ---
 
 ### 3️⃣ Serving Layer（服务层）
 
 #### 职责
-合并批视图和实时视图，提供统一查询接口
+- 合并热数据 (PostgreSQL) 和冷数据 (Hudi) 查询
+- 提供统一查询接口
 
 #### 技术栈
-- **Query Service** (Go) - 查询 PostgreSQL
+- **Query Service** (Go) - 查询路由
+- **Trino/Presto** - Hudi 查询引擎
 - **Risk Service** (Python) - 风险评分
 - **Alert Service** (Go) - 告警服务
 - **Graph Engine** (Java) - 图分析
+
+#### 查询路由策略
+
+```go
+// services/query-service/internal/service/transfer_service.go
+
+func (s *TransferService) GetTransfers(addr string, startTime, endTime int64) ([]Transfer, error) {
+    sevenDaysAgo := time.Now().AddDate(0, 0, -7).Unix()
+    
+    if startTime >= sevenDaysAgo {
+        // 全部在热数据范围，只查 PostgreSQL
+        return s.repo.QueryPostgres(addr, startTime, endTime)
+    } else if endTime < sevenDaysAgo {
+        // 全部是冷数据，只查 Hudi (通过 Trino)
+        return s.repo.QueryHudi(addr, startTime, endTime)
+    } else {
+        // 跨越冷热边界，合并查询
+        hotData, err := s.repo.QueryPostgres(addr, sevenDaysAgo, endTime)
+        if err != nil {
+            return nil, err
+        }
+        coldData, err := s.repo.QueryHudi(addr, startTime, sevenDaysAgo)
+        if err != nil {
+            return nil, err
+        }
+        return s.mergeAndDedupe(coldData, hotData), nil
+    }
+}
+
+// Hudi 查询通过 Trino
+func (r *TransferRepository) QueryHudi(addr string, startTime, endTime int64) ([]Transfer, error) {
+    query := `
+        SELECT tx_hash, block_number, from_addr, to_addr, amount, timestamp, source
+        FROM hudi.chainrisk.transfers
+        WHERE (from_addr = ? OR to_addr = ?)
+          AND timestamp >= ? AND timestamp < ?
+        ORDER BY timestamp DESC
+    `
+    return r.trinoClient.Query(query, addr, addr, startTime, endTime)
+}
+```
+
+#### 数据源选择
+
+| 查询类型    | 数据源            | 说明               |
+| ----------- | ----------------- | ------------------ |
+| 近 7 天交易 | PostgreSQL        | 低延迟，高并发     |
+| 历史交易    | Hudi (Trino)      | 大范围扫描，成本低 |
+| 跨时间范围  | PostgreSQL + Hudi | 合并去重           |
+| 图查询      | Neo4j             | 关系分析           |
 
 #### 查询策略
 
@@ -460,14 +616,14 @@ LIMIT 100
 
 ### 场景 1: Transfer 数据提取
 
-| 维度 | Flink 流处理 | Spark 批处理 |
-|-----|-------------|-------------|
-| **数据源** | Kafka 实时消息 | 全节点 RPC 重新扫描 |
-| **解析逻辑** | 简化版（快速） | 完整版（处理复杂合约） |
-| **数据完整性** | 可能丢失 | 保证完整 |
-| **区块重组** | 无法处理 | 等待确认后处理 |
-| **新合约支持** | 需要重启更新 | 可以回填历史数据 |
-| **延迟** | 秒级 | T+1 天 |
+| 维度           | Flink 流处理   | Spark 批处理           |
+| -------------- | -------------- | ---------------------- |
+| **数据源**     | Kafka 实时消息 | 全节点 RPC 重新扫描    |
+| **解析逻辑**   | 简化版（快速） | 完整版（处理复杂合约） |
+| **数据完整性** | 可能丢失       | 保证完整               |
+| **区块重组**   | 无法处理       | 等待确认后处理         |
+| **新合约支持** | 需要重启更新   | 可以回填历史数据       |
+| **延迟**       | 秒级           | T+1 天                 |
 
 **覆盖原因**: 流处理可能丢失数据、解析错误、区块重组
 
@@ -475,13 +631,13 @@ LIMIT 100
 
 ### 场景 2: 地址风险评分
 
-| 维度 | Flink 流处理 | Spark 批处理 |
-|-----|-------------|-------------|
-| **特征工程** | 窗口内简单特征 | 全局历史特征 |
-| **模型复杂度** | 轻量规则引擎 | 复杂 ML 模型（XGBoost、GNN） |
-| **计算资源** | 受限（延迟要求） | 充足（可用大量 CPU/GPU） |
-| **数据完整性** | 可能缺少关联数据 | 可以 JOIN 所有历史表 |
-| **延迟** | 秒级 | T+1 天 |
+| 维度           | Flink 流处理     | Spark 批处理                 |
+| -------------- | ---------------- | ---------------------------- |
+| **特征工程**   | 窗口内简单特征   | 全局历史特征                 |
+| **模型复杂度** | 轻量规则引擎     | 复杂 ML 模型（XGBoost、GNN） |
+| **计算资源**   | 受限（延迟要求） | 充足（可用大量 CPU/GPU）     |
+| **数据完整性** | 可能缺少关联数据 | 可以 JOIN 所有历史表         |
+| **延迟**       | 秒级             | T+1 天                       |
 
 **覆盖原因**: 批处理可以计算全局特征、使用复杂模型
 
@@ -489,13 +645,13 @@ LIMIT 100
 
 ### 场景 3: 地址聚类与标签传播
 
-| 维度 | Graph Engine 增量 | Graph Engine 批量 |
-|-----|------------------|------------------|
-| **触发方式** | Kafka 消息触发 | 定时任务（每日凌晨） |
-| **分析范围** | 局部子图 | 全图 |
+| 维度           | Graph Engine 增量      | Graph Engine 批量           |
+| -------------- | ---------------------- | --------------------------- |
+| **触发方式**   | Kafka 消息触发         | 定时任务（每日凌晨）        |
+| **分析范围**   | 局部子图               | 全图                        |
 | **算法复杂度** | 简单聚类（Union-Find） | PageRank、Louvain、社区发现 |
-| **迭代计算** | 不支持 | 支持（Spark GraphX） |
-| **延迟** | 秒级 | 每日 |
+| **迭代计算**   | 不支持                 | 支持（Spark GraphX）        |
+| **延迟**       | 秒级                   | 每日                        |
 
 **覆盖原因**: 批量分析可以运行复杂图算法、获得全局视图
 
@@ -550,14 +706,14 @@ metrics:
 
 ## 🚀 优势总结
 
-| 维度 | Lambda 架构优势 |
-|-----|----------------|
-| **实时性** | Flink 直接写入 Neo4j，Graph Engine 秒级响应 |
-| **准确性** | Spark 批处理覆盖修正错误数据 |
-| **数据完整性** | 批处理保证最终一致性 |
-| **系统解耦** | 流批分离，Graph Engine 无需同步数据 |
-| **资源优化** | 减少 PostgreSQL 查询压力，无重复计算 |
-| **可扩展性** | 流批独立扩展，互不影响 |
+| 维度           | Lambda 架构优势                             |
+| -------------- | ------------------------------------------- |
+| **实时性**     | Flink 直接写入 Neo4j，Graph Engine 秒级响应 |
+| **准确性**     | Spark 批处理覆盖修正错误数据                |
+| **数据完整性** | 批处理保证最终一致性                        |
+| **系统解耦**   | 流批分离，Graph Engine 无需同步数据         |
+| **资源优化**   | 减少 PostgreSQL 查询压力，无重复计算        |
+| **可扩展性**   | 流批独立扩展，互不影响                      |
 
 ---
 

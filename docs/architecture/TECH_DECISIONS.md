@@ -188,44 +188,44 @@ rules = [
 #### 数据流
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    实时流（Flink Stream）                    │
-│                                                              │
-│  链上数据 → Kafka (raw-blocks)                               │
-│                ↓                                             │
-│          Flink Stream Processor                              │
-│                ↓                                             │
-│      ┌─────────┴─────────┐                                   │
-│      ↓                   ↓                                   │
-│  PostgreSQL          Neo4j                                   │
-│  (source='stream')   (source='stream')                       │
-│      ↓                   ↓                                   │
-│  Query Service      Graph Engine (增量分析)                  │
+│                    实时流（Flink Stream）                   │
+│                                                             │
+│  链上数据 → Kafka (raw-blocks)                              │
+│                ↓                                            │
+│          Flink Stream Processor                             │
+│                ↓                                            │
+│      ┌─────────┴─────────┐                                  │
+│      ↓                   ↓                                  │
+│  PostgreSQL          Neo4j                                  │
+│  (source='stream')   (source='stream')                      │
+│      ↓                   ↓                                  │
+│  Query Service      Graph Engine (增量分析)                 │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│                   批处理流（Spark Batch）                    │
-│                                                              │
-│  全节点 RPC (重新扫描昨天区块)                               │
-│                ↓                                             │
-│          Spark Batch Processor                               │
-│                ↓                                             │
-│      ┌─────────┴─────────┐                                   │
-│      ↓                   ↓                                   │
-│  PostgreSQL          Neo4j                                   │
-│  (source='batch')    (source='batch')                        │
-│  覆盖 stream 数据    覆盖 stream 数据                        │
-│      ↓                   ↓                                   │
-│  Query Service      Graph Engine (批量分析)                  │
+│                   批处理流（Spark Batch）                   │
+│                                                             │
+│  全节点 RPC (重新扫描昨天区块)                              │
+│                ↓                                            │
+│          Spark Batch Processor                              │
+│                ↓                                            │
+│      ┌─────────┴─────────┐                                  │
+│      ↓                   ↓                                  │
+│  PostgreSQL          Neo4j                                  │
+│  (source='batch')    (source='batch')                       │
+│  覆盖 stream 数据    覆盖 stream 数据                       │
+│      ↓                   ↓                                  │
+│  Query Service      Graph Engine (批量分析)                 │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 #### 职责分配
 
-| 组件 | 职责 | 输入 | 输出 |
-|-----|------|------|------|
-| **Flink Stream** | 实时流处理 | Kafka `raw-blocks` | PostgreSQL + Neo4j (source='stream') |
-| **Spark Batch** | 批处理覆盖 | 全节点 RPC | PostgreSQL + Neo4j (source='batch', 覆盖) |
-| **Graph Engine** | 图分析服务 | Neo4j 图数据 | 聚类结果、标签传播、图查询 API |
+| 组件             | 职责       | 输入               | 输出                                      |
+| ---------------- | ---------- | ------------------ | ----------------------------------------- |
+| **Flink Stream** | 实时流处理 | Kafka `raw-blocks` | PostgreSQL + Neo4j (source='stream')      |
+| **Spark Batch**  | 批处理覆盖 | 全节点 RPC         | PostgreSQL + Neo4j (source='batch', 覆盖) |
+| **Graph Engine** | 图分析服务 | Neo4j 图数据       | 聚类结果、标签传播、图查询 API            |
 
 ### 核心改动
 
@@ -315,13 +315,13 @@ public ClusteringResultResponse runClustering() {
 
 ### 优势对比
 
-| 维度 | 传统架构 | Lambda 架构（本项目） |
-|-----|---------|---------------------|
-| **Neo4j 数据延迟** | 5 分钟（定时同步） | 秒级（Flink 直接写入） |
+| 维度                | 传统架构                    | Lambda 架构（本项目）      |
+| ------------------- | --------------------------- | -------------------------- |
+| **Neo4j 数据延迟**  | 5 分钟（定时同步）          | 秒级（Flink 直接写入）     |
 | **PostgreSQL 压力** | 高（Graph Engine 频繁查询） | 低（只用于 Query Service） |
-| **图分析实时性** | 差（需等待同步） | 好（增量分析 + 批量分析） |
-| **数据一致性** | 弱（同步可能失败） | 强（Spark 批处理覆盖） |
-| **资源利用率** | 低（重复计算） | 高（流批分离，各司其职） |
+| **图分析实时性**    | 差（需等待同步）            | 好（增量分析 + 批量分析）  |
+| **数据一致性**      | 弱（同步可能失败）          | 强（Spark 批处理覆盖）     |
+| **资源利用率**      | 低（重复计算）              | 高（流批分离，各司其职）   |
 
 ### 应用场景
 
@@ -375,6 +375,89 @@ databases:
   redis:            { replicas: 1, cpu: 500m, memory: 1Gi }
   kafka:            { replicas: 3, cpu: 1000m, memory: 2Gi }
 ```
+
+---
+
+## TDR-009: Hudi 数据湖存储
+
+### 决策
+引入 Apache Hudi 作为数据湖层，实现冷热数据分离
+
+### 背景
+原方案将全量数据存储在 PostgreSQL，存在问题：
+1. **存储成本高**：PostgreSQL 存储全量历史数据成本高
+2. **批处理锁竞争**：Spark 批处理 UPSERT 时与线上查询竞争
+3. **历史查询慢**：PostgreSQL 不适合大范围历史数据扫描
+
+### 架构设计
+
+```
+Speed Layer (不变):
+  Kafka → Flink → PostgreSQL (热数据, 7天) + Neo4j
+
+Data Lake Layer (新增):
+  PostgreSQL → 归档任务 → Hudi (全量历史)
+                            ↑
+  全节点 RPC → Spark Batch → Hudi (UPSERT 修正)
+                            ↓
+              近期修正数据 → PostgreSQL (回写)
+
+Serving Layer:
+  Query Service → PostgreSQL (近7天) + Hudi/Trino (历史)
+```
+
+### 数据分层
+
+| 数据类型         | 存储位置        | 保留策略              |
+| ---------------- | --------------- | --------------------- |
+| 热数据 (近 7 天) | PostgreSQL      | 7 天后归档到 Hudi     |
+| 全量历史         | Hudi (S3/MinIO) | 永久保留，按日期分区  |
+| 图数据           | Neo4j           | 近 30 天 + 高风险子图 |
+
+### 任务调度
+
+```
+每日凌晨:
+  02:00 - 归档任务: PostgreSQL 冷数据 → Hudi
+  03:00 - 批处理修正: 全节点 RPC → Spark → Hudi
+  04:00 - 热数据回写: Hudi 近期修正 → PostgreSQL
+  05:00 - Hudi Compaction
+  06:00 - Graph Engine 批量分析
+```
+
+### Hudi 配置
+
+| 配置项     | 值                  | 说明                 |
+| ---------- | ------------------- | -------------------- |
+| 表类型     | MOR (Merge On Read) | 写入快，适合流式场景 |
+| 主键       | tx_hash             | 交易唯一标识         |
+| 预合并字段 | block_number        | 取最新区块的数据     |
+| 分区       | network, dt         | 按网络和日期分区     |
+
+### 优势对比
+
+| 维度            | 原方案 (全量 PostgreSQL) | Hudi 方案         |
+| --------------- | ------------------------ | ----------------- |
+| 存储成本        | 高                       | 低 (对象存储)     |
+| 批处理影响      | 锁竞争                   | 无影响 (独立存储) |
+| 历史查询        | 慢                       | 快 (Spark/Trino)  |
+| Schema 演进     | DDL 变更                 | 原生支持          |
+| Time Travel     | 不支持                   | 支持              |
+| PostgreSQL 体积 | 持续增长                 | 固定 (7 天)       |
+
+### 改动范围
+
+| 组件          | 改动                 |
+| ------------- | -------------------- |
+| Flink Stream  | 不变                 |
+| PostgreSQL    | 不变 (多了归档删除)  |
+| Neo4j         | 不变                 |
+| Spark Batch   | 数据源改为 Hudi      |
+| Query Service | 添加 Hudi 查询路由   |
+| 新增          | 归档任务、Trino 集成 |
+
+### 日期
+2026-01-04
 
 ---
 
