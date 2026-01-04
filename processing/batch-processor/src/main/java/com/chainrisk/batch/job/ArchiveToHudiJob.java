@@ -24,12 +24,14 @@ public class ArchiveToHudiJob {
     private final String minioEndpoint;
     private final String minioAccessKey;
     private final String minioSecretKey;
+    private final String hiveMetastoreUri;
     private final int retentionDays;
     private final String sparkMaster;
 
     public ArchiveToHudiJob(String postgresUrl, String postgresUser, String postgresPassword,
                            String hudiBasePath, String minioEndpoint, 
                            String minioAccessKey, String minioSecretKey,
+                           String hiveMetastoreUri,
                            int retentionDays, String sparkMaster) {
         this.postgresUrl = postgresUrl;
         this.postgresUser = postgresUser;
@@ -38,6 +40,7 @@ public class ArchiveToHudiJob {
         this.minioEndpoint = minioEndpoint;
         this.minioAccessKey = minioAccessKey;
         this.minioSecretKey = minioSecretKey;
+        this.hiveMetastoreUri = hiveMetastoreUri;
         this.retentionDays = retentionDays;
         this.sparkMaster = sparkMaster;
     }
@@ -99,6 +102,8 @@ public class ArchiveToHudiJob {
                 .config("spark.hadoop.fs.s3a.path.style.access", "true")
                 .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
                 .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
+                .config("hive.metastore.uris", hiveMetastoreUri)
+                .enableHiveSupport()
                 .getOrCreate();
     }
 
@@ -130,9 +135,17 @@ public class ArchiveToHudiJob {
                 .option("hoodie.upsert.shuffle.parallelism", "2")
                 .option("hoodie.insert.shuffle.parallelism", "2")
                 .option("hoodie.datasource.write.hive_style_partitioning", "true")
-                // Disable embedded timeline server
                 .option("hoodie.embed.timeline.server", "false")
                 .option("hoodie.filesystem.view.type", "MEMORY")
+                // Hive sync options
+                .option("hoodie.datasource.hive_sync.enable", "true")
+                .option("hoodie.datasource.hive_sync.database", "chainrisk")
+                .option("hoodie.datasource.hive_sync.table", "transfers")
+                .option("hoodie.datasource.hive_sync.mode", "hms")
+                .option("hoodie.datasource.hive_sync.metastore.uris", hiveMetastoreUri)
+                .option("hoodie.datasource.hive_sync.partition_fields", "network,dt")
+                .option("hoodie.datasource.hive_sync.partition_extractor_class", 
+                        "org.apache.hudi.hive.MultiPartKeysValueExtractor")
                 .mode(SaveMode.Append)
                 .save(hudiBasePath + "/transfers");
     }
@@ -160,6 +173,7 @@ public class ArchiveToHudiJob {
         String minioAccessKey = System.getenv().getOrDefault("MINIO_ACCESS_KEY", "minioadmin");
         String minioSecretKey = System.getenv().getOrDefault("MINIO_SECRET_KEY", "minioadmin123");
         String hudiBasePath = System.getenv().getOrDefault("HUDI_BASE_PATH", "s3a://chainrisk-datalake/hudi");
+        String hiveMetastoreUri = System.getenv().getOrDefault("HIVE_METASTORE_URI", "thrift://localhost:19083");
         String sparkMaster = System.getenv().getOrDefault("SPARK_MASTER", "local[*]");
         
         int retentionDays = Integer.parseInt(System.getenv().getOrDefault("RETENTION_DAYS", "7"));
@@ -170,6 +184,7 @@ public class ArchiveToHudiJob {
         ArchiveToHudiJob job = new ArchiveToHudiJob(
                 postgresUrl, postgresUser, postgresPassword,
                 hudiBasePath, minioEndpoint, minioAccessKey, minioSecretKey,
+                hiveMetastoreUri,
                 retentionDays, sparkMaster
         );
 
