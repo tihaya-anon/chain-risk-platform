@@ -22,8 +22,6 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      # INTERNAL: for inter-container communication (kafka:29092)
-      # EXTERNAL: for host/remote access (DOCKER_HOST_IP:19092, default localhost)
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:19092
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://${DOCKER_HOST_IP:-localhost}:19092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
@@ -59,8 +57,8 @@ services:
       NEO4J_AUTH: neo4j/chainrisk123
       NEO4J_PLUGINS: '["apoc"]'
     ports:
-      - "0.0.0.0:17474:7474" # HTTP
-      - "0.0.0.0:17687:7687" # Bolt
+      - "0.0.0.0:17474:7474"
+      - "0.0.0.0:17687:7687"
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
@@ -143,13 +141,7 @@ services:
     volumes:
       - nacos_data:/home/nacos/data
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:8848/nacos/v1/console/health/readiness",
-        ]
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/v1/console/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -160,14 +152,13 @@ services:
     image: jaegertracing/all-in-one:1.50
     container_name: jaeger
     ports:
-      - "0.0.0.0:26686:16686" # UI
-      - "0.0.0.0:14268:14268" # HTTP collector
-      - "0.0.0.0:16831:6831/udp" # Thrift compact
+      - "0.0.0.0:26686:16686"
+      - "0.0.0.0:14268:14268"
+      - "0.0.0.0:16831:6831/udp"
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
 
   # ============== Database UI Tools ==============
-  # PostgreSQL UI - pgAdmin
   pgadmin:
     image: dpage/pgadmin4:8.2
     container_name: pgadmin
@@ -183,7 +174,6 @@ services:
       - postgres
     restart: unless-stopped
 
-  # Redis UI - RedisInsight
   redisinsight:
     image: redis/redisinsight:latest
     container_name: redisinsight
@@ -195,7 +185,6 @@ services:
       - redis
     restart: unless-stopped
 
-  # Kafka UI - kafka-ui
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.1
     container_name: kafka-ui
@@ -212,7 +201,6 @@ services:
     restart: unless-stopped
 
   # ============== Hudi Data Lake Infrastructure ==============
-  # MinIO - S3-compatible object storage for Hudi
   minio:
     image: minio/minio:latest
     container_name: minio
@@ -220,18 +208,17 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123
     ports:
-      - "0.0.0.0:19000:9000"  # API
-      - "0.0.0.0:19001:9001"  # Console
+      - "0.0.0.0:19000:9000"
+      - "0.0.0.0:19001:9001"
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # MinIO client - create initial buckets
   minio-init:
     image: minio/mc:latest
     container_name: minio-init
@@ -243,26 +230,9 @@ services:
       mc alias set myminio http://minio:9000 minioadmin minioadmin123;
       mc mb myminio/chainrisk-datalake --ignore-existing;
       mc mb myminio/chainrisk-warehouse --ignore-existing;
-      mc anonymous set download myminio/chainrisk-datalake;
       exit 0;
       "
 
-  # Hive Metastore database (uses existing postgres with separate schema)
-  hive-metastore-db-init:
-    image: postgres:15-alpine
-    container_name: hive-metastore-db-init
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      PGPASSWORD: chainrisk123
-    entrypoint: >
-      /bin/sh -c "
-      psql -h postgres -U chainrisk -d chainrisk -c 'CREATE SCHEMA IF NOT EXISTS hive_metastore;';
-      exit 0;
-      "
-
-  # Hive Metastore
   hive-metastore:
     build:
       context: ./infra/hive
@@ -273,18 +243,14 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-      hive-metastore-db-init:
-        condition: service_completed_successfully
     environment:
       SERVICE_NAME: metastore
-      DB_DRIVER: postgres
     ports:
       - "0.0.0.0:19083:9083"
     volumes:
-      - ./infra/hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml
+      - ./infra/hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
     restart: unless-stopped
 
-  # Trino - SQL query engine for Hudi
   trino:
     image: trinodb/trino:435
     container_name: trino
@@ -294,8 +260,11 @@ services:
     ports:
       - "0.0.0.0:18081:8080"
     volumes:
-      - ./infra/trino/etc:/etc/trino
-      - ./infra/trino/catalog:/etc/trino/catalog
+      - ./infra/trino/etc/config.properties:/etc/trino/config.properties:ro
+      - ./infra/trino/etc/node.properties:/etc/trino/node.properties:ro
+      - ./infra/trino/etc/jvm.config:/etc/trino/jvm.config:ro
+      - ./infra/trino/etc/log.properties:/etc/trino/log.properties:ro
+      - ./infra/trino/catalog:/etc/trino/catalog:ro
     restart: unless-stopped
 
 volumes:
@@ -311,7 +280,6 @@ volumes:
   pgadmin_data:
   redisinsight_data:
   minio_data:
-  hive_warehouse:
 
 networks:
   default:
