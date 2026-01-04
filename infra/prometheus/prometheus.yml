@@ -25,6 +25,26 @@ scrape_configs:
       - source_labels: [__address__]
         target_label: instance
         replacement: "postgres"
+
+  # MinIO
+  - job_name: "minio"
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs:
+      - targets: ["minio:9000"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "minio"
+
+  # Trino
+  - job_name: "trino"
+    static_configs:
+      - targets: ["trino:8080"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "trino"
+
   # Application services (uncomment when ready to monitor these services)
   # - job_name: "query-service"
   #   static_configs:
