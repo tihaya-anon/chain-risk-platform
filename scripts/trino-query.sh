@@ -29,37 +29,71 @@ if [ -z "$QUERY" ]; then
     exit 1
 fi
 
-# Check if trino CLI is installed locally
-if command_exists trino; then
-    log_info "Using local Trino CLI"
-    trino --server "http://${DOCKER_HOST_IP}:${TRINO_PORT}" --user "$TRINO_USER" --execute "$QUERY"
-else
-    # Use curl to execute via REST API
-    log_info "Using Trino REST API (install trino-cli for better output)"
+log_info "Executing: $QUERY"
+log_info "Trino server: http://${DOCKER_HOST_IP}:${TRINO_PORT}"
+
+# Submit query
+RESPONSE=$(curl -s -X POST "http://${DOCKER_HOST_IP}:${TRINO_PORT}/v1/statement" \
+    -H "X-Trino-User: ${TRINO_USER}" \
+    -H "Content-Type: text/plain" \
+    -d "$QUERY")
+
+# Check for immediate error
+ERROR=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); e=d.get('error'); print(e.get('message') if e else '')" 2>/dev/null || echo "")
+if [ -n "$ERROR" ]; then
+    log_error "$ERROR"
+    exit 1
+fi
+
+NEXT_URI=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('nextUri',''))" 2>/dev/null || echo "")
+
+if [ -z "$NEXT_URI" ]; then
+    # Maybe immediate result
+    echo "$RESPONSE" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+if 'columns' in d:
+    cols = [c['name'] for c in d['columns']]
+    print('\t'.join(cols))
+if 'data' in d:
+    for row in d['data']:
+        print('\t'.join(str(v) for v in row))
+" 2>/dev/null || echo "$RESPONSE"
+    exit 0
+fi
+
+# Poll for results
+while [ -n "$NEXT_URI" ]; do
+    sleep 0.3
+    RESPONSE=$(curl -s "$NEXT_URI" -H "X-Trino-User: ${TRINO_USER}")
     
-    # Submit query
-    RESPONSE=$(curl -s -X POST "http://${DOCKER_HOST_IP}:${TRINO_PORT}/v1/statement" \
-        -H "X-Trino-User: ${TRINO_USER}" \
-        -H "X-Trino-Source: trino-query-script" \
-        -d "$QUERY")
-    
-    NEXT_URI=$(echo "$RESPONSE" | grep -o '"nextUri":"[^"]*"' | cut -d'"' -f4)
-    
-    if [ -z "$NEXT_URI" ]; then
-        echo "$RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE"
+    # Check for error
+    ERROR=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); e=d.get('error'); print(e.get('message') if e else '')" 2>/dev/null || echo "")
+    if [ -n "$ERROR" ]; then
+        log_error "$ERROR"
         exit 1
     fi
     
-    # Poll for results
-    while [ -n "$NEXT_URI" ]; do
-        sleep 0.5
-        RESPONSE=$(curl -s "$NEXT_URI" -H "X-Trino-User: ${TRINO_USER}")
-        NEXT_URI=$(echo "$RESPONSE" | grep -o '"nextUri":"[^"]*"' | cut -d'"' -f4)
-        
-        # Check for data
-        DATA=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps(d.get('data', [])))" 2>/dev/null)
-        if [ "$DATA" != "[]" ] && [ -n "$DATA" ]; then
-            echo "$DATA" | python3 -m json.tool
-        fi
-    done
-fi
+    # Print columns header (only once)
+    echo "$RESPONSE" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+if 'columns' in d and d.get('data'):
+    cols = [c['name'] for c in d['columns']]
+    print('\t'.join(cols))
+    print('-' * 40)
+" 2>/dev/null || true
+    
+    # Print data
+    echo "$RESPONSE" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+if 'data' in d:
+    for row in d['data']:
+        print('\t'.join(str(v) if v is not None else 'NULL' for v in row))
+" 2>/dev/null || true
+    
+    NEXT_URI=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('nextUri',''))" 2>/dev/null || echo "")
+done
+
+log_success "Query completed"
