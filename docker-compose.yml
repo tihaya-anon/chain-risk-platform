@@ -245,10 +245,15 @@ services:
         condition: service_healthy
     environment:
       SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      SERVICE_OPTS: "-Xmx1G -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/chainrisk -Djavax.jdo.option.ConnectionUserName=chainrisk -Djavax.jdo.option.ConnectionPassword=chainrisk123"
+      IS_RESUME: "true"
+      SKIP_SCHEMA_INIT: "false"
     ports:
       - "0.0.0.0:19083:9083"
     volumes:
       - ./infra/hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+      - hive_metastore_data:/opt/hive/data
     restart: unless-stopped
 
   trino:
@@ -280,6 +285,7 @@ volumes:
   pgadmin_data:
   redisinsight_data:
   minio_data:
+  hive_metastore_data:
 
 networks:
   default:
