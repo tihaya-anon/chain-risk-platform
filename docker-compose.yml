@@ -220,8 +220,8 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123
     ports:
-      - "0.0.0.0:19000:9000"  # API
-      - "0.0.0.0:19001:9001"  # Console
+      - "0.0.0.0:19000:9000" # API
+      - "0.0.0.0:19001:9001" # Console
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -264,26 +264,24 @@ services:
 
   # Hive Metastore
   hive-metastore:
-    image: apache/hive:4.0.0
+    build:
+      context: ./infra/hive
+      dockerfile: Dockerfile
     container_name: hive-metastore
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_healthy
+      hive-metastore-db-init:
+        condition: service_completed_successfully
     environment:
       SERVICE_NAME: metastore
       DB_DRIVER: postgres
-      SERVICE_OPTS: >-
-        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
-        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/chainrisk?currentSchema=hive_metastore
-        -Djavax.jdo.option.ConnectionUserName=chainrisk
-        -Djavax.jdo.option.ConnectionPassword=chainrisk123
     ports:
       - "0.0.0.0:19083:9083"
     volumes:
-      - ./infra/hive/conf:/opt/hive/conf
-      - hive_warehouse:/opt/hive/data/warehouse
+      - ./infra/hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml
     restart: unless-stopped
 
   # Trino - SQL query engine for Hudi

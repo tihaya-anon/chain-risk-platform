@@ -24,6 +24,7 @@ infra/grafana/provisioning/dashboards/data-pipeline-overview.json
 infra/init-scripts/postgres/01-init.sql
 
 # Hive Metastore
+infra/hive/Dockerfile
 infra/hive/conf/hive-site.xml
 
 # Trino
