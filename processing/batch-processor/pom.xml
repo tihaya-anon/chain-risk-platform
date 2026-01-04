@@ -12,11 +12,13 @@
 
     <artifactId>batch-processor</artifactId>
     <name>Chain Risk Platform - Batch Processor</name>
-    <description>Daily batch processing with Apache Spark (Lambda Architecture - Batch Layer)</description>
+    <description>Daily batch processing with Apache Spark and Hudi</description>
 
     <properties>
         <main.class>com.chainrisk.batch.BatchProcessorApp</main.class>
         <spark.version>3.5.0</spark.version>
+        <hudi.version>0.14.1</hudi.version>
+        <hadoop.version>3.3.6</hadoop.version>
         <neo4j.driver.version>5.14.0</neo4j.driver.version>
     </properties>
 
@@ -35,6 +37,25 @@
             <artifactId>spark-sql_2.12</artifactId>
             <version>${spark.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- Hudi Spark Bundle -->
+        <dependency>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-spark3.5-bundle_2.12</artifactId>
+            <version>${hudi.version}</version>
+        </dependency>
+
+        <!-- Hadoop AWS for S3/MinIO -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-aws</artifactId>
+            <version>${hadoop.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-bundle</artifactId>
+            <version>1.12.367</version>
         </dependency>
 
         <!-- PostgreSQL JDBC -->
@@ -83,12 +104,8 @@
     </dependencies>
 
     <profiles>
-        <!-- Local profile: includes Spark dependencies for standalone execution -->
         <profile>
             <id>local</id>
-            <properties>
-                <spark.scope>compile</spark.scope>
-            </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.apache.spark</groupId>
@@ -127,6 +144,7 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>${main.class}</mainClass>
                                 </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                             <filters>
                                 <filter>

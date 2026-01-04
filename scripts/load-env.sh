@@ -3,12 +3,8 @@
 # Load environment variables for Chain Risk Platform
 # ============================================================
 # Usage: 
-#   source scripts/load-env.sh              # Auto-detect from .env.local
-#   source scripts/load-env.sh <IP>         # Specify Docker host IP
-#   source scripts/load-env.sh localhost    # Use localhost
-#
-# NOTE: This script is deprecated. Use scripts/common.sh instead.
-#       Kept for backward compatibility with Makefile.
+#   source scripts/load-env.sh
+#   source scripts/load-env.sh <IP>
 # ============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,7 +14,6 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 if [ -n "$1" ]; then
     DOCKER_HOST_IP="$1"
 elif [ -f "$PROJECT_ROOT/.env.local" ]; then
-    # Extract DOCKER_HOST_IP from .env.local
     DOCKER_HOST_IP=$(grep "^DOCKER_HOST_IP=" "$PROJECT_ROOT/.env.local" | cut -d'=' -f2)
 fi
 DOCKER_HOST_IP=${DOCKER_HOST_IP:-localhost}
@@ -55,6 +50,16 @@ export NACOS_NAMESPACE=${NACOS_NAMESPACE:-}
 export NACOS_USERNAME=${NACOS_USERNAME:-}
 export NACOS_PASSWORD=${NACOS_PASSWORD:-}
 
+# ==================== Hudi Data Lake ====================
+export MINIO_ENDPOINT=${MINIO_ENDPOINT:-"http://${DOCKER_HOST_IP}:19000"}
+export MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+export MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin123}
+export HUDI_BASE_PATH=${HUDI_BASE_PATH:-"s3a://chainrisk-datalake/hudi"}
+export TRINO_HOST=${TRINO_HOST:-$DOCKER_HOST_IP}
+export TRINO_PORT=${TRINO_PORT:-18081}
+export HIVE_METASTORE_URI=${HIVE_METASTORE_URI:-"thrift://${DOCKER_HOST_IP}:19083"}
+export RETENTION_DAYS=${RETENTION_DAYS:-7}
+
 # ==================== Monitoring ====================
 export JAEGER_AGENT_HOST=${JAEGER_AGENT_HOST:-$DOCKER_HOST_IP}
 export JAEGER_AGENT_PORT=${JAEGER_AGENT_PORT:-6831}
@@ -77,14 +82,11 @@ export SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
 # ==================== Load .env.local overrides ====================
 if [ -f "$PROJECT_ROOT/.env.local" ]; then
     while IFS='=' read -r key value; do
-        # Skip comments, empty lines, and DOCKER_HOST_IP (already set)
         [[ $key =~ ^#.*$ ]] && continue
         [[ -z $key ]] && continue
         [[ $key == "DOCKER_HOST_IP" ]] && continue
-        # Remove leading/trailing whitespace
         key=$(echo "$key" | xargs)
         value=$(echo "$value" | xargs)
-        # Export if not empty
         if [ -n "$key" ] && [ -n "$value" ]; then
             export "$key=$value"
         fi
