@@ -14,9 +14,6 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 
-/**
- * Archive cold data from PostgreSQL to Hudi
- */
 public class ArchiveToHudiJob {
     private static final Logger LOG = LoggerFactory.getLogger(ArchiveToHudiJob.class);
 
@@ -125,14 +122,17 @@ public class ArchiveToHudiJob {
         data.write()
                 .format("hudi")
                 .option("hoodie.table.name", "transfers")
-                .option("hoodie.datasource.write.table.type", "MERGE_ON_READ")
-                .option("hoodie.datasource.write.operation", "upsert")
+                .option("hoodie.datasource.write.table.type", "COPY_ON_WRITE")
+                .option("hoodie.datasource.write.operation", "insert")
                 .option("hoodie.datasource.write.recordkey.field", "tx_hash,log_index")
                 .option("hoodie.datasource.write.precombine.field", "block_number")
                 .option("hoodie.datasource.write.partitionpath.field", "network,dt")
                 .option("hoodie.upsert.shuffle.parallelism", "2")
                 .option("hoodie.insert.shuffle.parallelism", "2")
                 .option("hoodie.datasource.write.hive_style_partitioning", "true")
+                // Disable embedded timeline server
+                .option("hoodie.embed.timeline.server", "false")
+                .option("hoodie.filesystem.view.type", "MEMORY")
                 .mode(SaveMode.Append)
                 .save(hudiBasePath + "/transfers");
     }
