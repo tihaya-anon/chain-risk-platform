@@ -214,15 +214,12 @@ services:
   # ============== Hudi Data Lake Infrastructure ==============
   # MinIO - S3-compatible object storage for Hudi
   minio:
-    image: minio/minio:RELEASE.2024-01-01T16-36-33Z
     container_name: minio
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123
     ports:
       - "0.0.0.0:19000:9000" # API
-      - "0.0.0.0:19001:9001" # Console
-    volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
     healthcheck:
@@ -233,7 +230,7 @@ services:
 
   # MinIO client - create initial buckets
   minio-init:
-    image: minio/mc:RELEASE.2024-01-01T16-36-33Z
+    image: minio/mc:latest
     container_name: minio-init
     depends_on:
       minio:
