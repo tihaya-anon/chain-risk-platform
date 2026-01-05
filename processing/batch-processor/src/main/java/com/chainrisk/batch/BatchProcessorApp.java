@@ -1,22 +1,83 @@
 package com.chainrisk.batch;
 
-import com.chainrisk.batch.job.TransferCorrectionJob;
+import com.chainrisk.batch.job.ArchiveToHudiJob;
+import com.chainrisk.batch.job.HudiBatchCorrectionJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Batch Processor Application Entry Point
  * Lambda Architecture - Batch Layer
+ * 
+ * Unified entry point for all batch processing jobs:
+ * - archive: Archive cold data from PostgreSQL to Hudi
+ * - correct: Apply batch corrections to Hudi historical data
+ * 
+ * Usage:
+ *   java -jar batch-processor.jar <job-name> [options]
+ * 
+ * Jobs:
+ *   archive  - Archive PostgreSQL data to Hudi data lake
+ *   correct  - Run batch correction on Hudi historical data
+ * 
+ * Examples:
+ *   java -jar batch-processor.jar archive
+ *   java -jar batch-processor.jar correct
  */
 public class BatchProcessorApp {
     private static final Logger LOG = LoggerFactory.getLogger(BatchProcessorApp.class);
 
     public static void main(String[] args) {
-        LOG.info("Starting Batch Processor Application");
+        LOG.info("=== Batch Processor Application ===");
         LOG.info("Lambda Architecture - Batch Layer");
-        
-        // For now, only run TransferCorrectionJob
-        // In future, can dispatch to different jobs based on arguments
-        TransferCorrectionJob.main(args);
+
+        if (args.length == 0) {
+            printUsage();
+            System.exit(1);
+        }
+
+        String jobName = args[0].toLowerCase();
+        String[] jobArgs = new String[args.length - 1];
+        System.arraycopy(args, 1, jobArgs, 0, jobArgs.length);
+
+        try {
+            switch (jobName) {
+                case "archive":
+                    LOG.info("Running Archive to Hudi Job...");
+                    ArchiveToHudiJob.main(jobArgs);
+                    break;
+                    
+                case "correct":
+                    LOG.info("Running Hudi Batch Correction Job...");
+                    HudiBatchCorrectionJob.main(jobArgs);
+                    break;
+                    
+                default:
+                    LOG.error("Unknown job: {}", jobName);
+                    printUsage();
+                    System.exit(1);
+            }
+            
+            LOG.info("=== Job {} completed successfully ===", jobName);
+            
+        } catch (Exception e) {
+            LOG.error("Job {} failed", jobName, e);
+            System.exit(1);
+        }
+    }
+
+    private static void printUsage() {
+        System.out.println("Usage: java -jar batch-processor.jar <job-name> [options]");
+        System.out.println();
+        System.out.println("Available jobs:");
+        System.out.println("  archive  - Archive PostgreSQL cold data to Hudi data lake");
+        System.out.println("  correct  - Run batch correction on Hudi historical data");
+        System.out.println();
+        System.out.println("Environment variables:");
+        System.out.println("  POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD");
+        System.out.println("  MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY");
+        System.out.println("  HUDI_BASE_PATH, HIVE_METASTORE_URI, SPARK_MASTER");
+        System.out.println("  RETENTION_DAYS (for archive job)");
+        System.out.println("  START_DATE, END_DATE (for correct job, optional)");
     }
 }
