@@ -8,16 +8,17 @@ data:
     host: localhost
     port: 18080
     catalog: hudi
-    schema: chain_data
+    schema: chainrisk
   
   postgres:
     host: localhost
     port: 15432
-    database: chain_risk
-    user: postgres
-    password: postgres
+    database: chainrisk
+    user: chainrisk
+    password: chainrisk123
   
   parquet:
+    training_path: data/training/training_dataset.parquet
     features_path: data/features/address_features.parquet
     labels_path: data/labels/
 
@@ -66,9 +67,9 @@ training:
 
 registry:
   type: minio
-  endpoint: localhost:9000
+  endpoint: localhost:19000
   access_key: minioadmin
-  secret_key: minioadmin
+  secret_key: minioadmin123
   bucket: ml-models
   secure: false
 
