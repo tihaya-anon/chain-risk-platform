@@ -1,0 +1,77 @@
+# ML Training Configuration
+
+data:
+  # Data source: trino, postgres, parquet
+  source: trino
+  
+  trino:
+    host: localhost
+    port: 18080
+    catalog: hudi
+    schema: chain_data
+  
+  postgres:
+    host: localhost
+    port: 15432
+    database: chain_risk
+    user: postgres
+    password: postgres
+  
+  parquet:
+    features_path: data/features/address_features.parquet
+    labels_path: data/labels/
+
+features:
+  version: v1
+  list:
+    - tx_count
+    - sent_count
+    - received_count
+    - unique_counterparties
+    - avg_tx_value
+    - max_tx_value
+    - tx_value_stddev
+    - address_age_days
+    - sent_ratio
+    - round_amount_ratio
+    - small_tx_ratio
+    - large_tx_ratio
+    - in_degree
+    - out_degree
+    - in_out_ratio
+    - unique_in_neighbors
+
+models:
+  supervised:
+    type: xgboost
+    params:
+      n_estimators: 100
+      max_depth: 6
+      learning_rate: 0.1
+      objective: binary:logistic
+      eval_metric: auc
+      early_stopping_rounds: 10
+    
+  unsupervised:
+    type: isolation_forest
+    params:
+      n_estimators: 100
+      contamination: 0.1
+      random_state: 42
+
+training:
+  test_size: 0.2
+  random_state: 42
+  cv_folds: 5
+
+registry:
+  type: minio
+  endpoint: localhost:9000
+  access_key: minioadmin
+  secret_key: minioadmin
+  bucket: ml-models
+  secure: false
+
+output:
+  models_dir: models/
+  metrics_dir: models/metrics/
