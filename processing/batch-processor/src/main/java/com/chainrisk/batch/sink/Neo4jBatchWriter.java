@@ -11,13 +11,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.neo4j.driver.Values.parameters;
-
 /**
  * Neo4j Batch Writer for Spark
  * 
- * Writes corrected transfers to Neo4j with source='batch'
- * Overwrites stream data using MERGE
+ * Writes corrected transfers to Neo4j with risk scoring data.
+ * Used by HudiBatchCorrectionJob to sync risk scores to graph database.
  */
 public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
     private static final Logger LOG = LoggerFactory.getLogger(Neo4jBatchWriter.class);
@@ -34,7 +32,6 @@ public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
 
     @Override
     public void call(Iterator<Row> partition) throws Exception {
-        // Create Neo4j driver per partition
         Driver driver = null;
         Session session = null;
         
@@ -67,7 +64,6 @@ public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
                 } catch (Exception e) {
                     LOG.error("Failed to write transfer {}: {}", 
                             row.getAs("tx_hash"), e.getMessage());
-                    // Continue processing other transfers
                 }
             }
             
@@ -83,9 +79,6 @@ public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
         }
     }
 
-    /**
-     * Write a single transfer to Neo4j
-     */
     private void writeTransfer(Session session, Row row) {
         String cypher = buildCypherQuery();
         Map<String, Object> params = buildParameters(row);
@@ -97,41 +90,50 @@ public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
     }
 
     /**
-     * Build Cypher query for batch correction
-     * Uses MERGE to create or update nodes and relationships
-     * Marks with source='batch' to overwrite stream data
+     * Build Cypher query for batch correction with risk scoring.
+     * Updates addresses with risk scores and transfer relationships.
      */
     private String buildCypherQuery() {
         return """
-            // Create or update FROM address
+            // Create or update FROM address with risk data
             MERGE (from:Address {address: $fromAddr, network: $network})
             ON CREATE SET 
                 from.first_seen = timestamp(),
-                from.risk_score = 0.0,
+                from.risk_score = $riskScore,
+                from.risk_category = $riskCategory,
+                from.is_exchange = $isExchange,
                 from.tags = [],
                 from.source = 'batch',
                 from.created_at = timestamp()
             ON MATCH SET 
+                from.risk_score = $riskScore,
+                from.risk_category = $riskCategory,
+                from.is_exchange = $isExchange,
                 from.source = 'batch',
                 from.corrected_at = timestamp(),
                 from.last_seen = timestamp(),
                 from.updated_at = timestamp()
             
-            // Create or update TO address
+            // Create or update TO address with risk data
             MERGE (to:Address {address: $toAddr, network: $network})
             ON CREATE SET 
                 to.first_seen = timestamp(),
-                to.risk_score = 0.0,
+                to.risk_score = $riskScore,
+                to.risk_category = $riskCategory,
+                to.is_exchange = $isExchange,
                 to.tags = [],
                 to.source = 'batch',
                 to.created_at = timestamp()
             ON MATCH SET 
+                to.risk_score = $riskScore,
+                to.risk_category = $riskCategory,
+                to.is_exchange = $isExchange,
                 to.source = 'batch',
                 to.corrected_at = timestamp(),
                 to.last_seen = timestamp(),
                 to.updated_at = timestamp()
             
-            // Create or update TRANSFER relationship
+            // Create or update TRANSFER relationship with risk score
             MERGE (from)-[r:TRANSFER {tx_hash: $txHash, log_index: $logIndex}]->(to)
             ON CREATE SET 
                 r.block_number = $blockNumber,
@@ -140,6 +142,8 @@ public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
                 r.token_address = $tokenAddress,
                 r.token_symbol = $tokenSymbol,
                 r.transfer_type = $transferType,
+                r.risk_score = $riskScore,
+                r.risk_category = $riskCategory,
                 r.source = 'batch',
                 r.created_at = timestamp()
             ON MATCH SET 
@@ -149,6 +153,8 @@ public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
                 r.token_address = $tokenAddress,
                 r.token_symbol = $tokenSymbol,
                 r.transfer_type = $transferType,
+                r.risk_score = $riskScore,
+                r.risk_category = $riskCategory,
                 r.source = 'batch',
                 r.corrected_at = timestamp(),
                 r.updated_at = timestamp()
@@ -156,7 +162,8 @@ public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
     }
 
     /**
-     * Build parameters for Cypher query from Spark Row
+     * Build parameters for Cypher query from Spark Row.
+     * Handles both old schema (without risk fields) and new schema (with risk fields).
      */
     private Map<String, Object> buildParameters(Row row) {
         Map<String, Object> params = new HashMap<>();
@@ -174,22 +181,43 @@ public class Neo4jBatchWriter implements ForeachPartitionFunction<Row> {
         
         params.put("blockNumber", row.getAs("block_number"));
         
-        // Convert BigDecimal to String for Neo4j
+        // Convert BigDecimal/String to String for Neo4j
         Object value = row.getAs("value");
-        if (value != null) {
-            params.put("amount", value.toString());
-        } else {
-            params.put("amount", "0");
-        }
+        params.put("amount", value != null ? value.toString() : "0");
         
         // Convert Timestamp to epoch seconds
-        Timestamp timestamp = row.getAs("timestamp");
-        params.put("timestamp", timestamp != null ? timestamp.getTime() / 1000 : System.currentTimeMillis() / 1000);
+        Object timestamp = row.getAs("timestamp");
+        if (timestamp instanceof Timestamp) {
+            params.put("timestamp", ((Timestamp) timestamp).getTime() / 1000);
+        } else if (timestamp instanceof Long) {
+            params.put("timestamp", timestamp);
+        } else {
+            params.put("timestamp", System.currentTimeMillis() / 1000);
+        }
         
         params.put("tokenAddress", row.getAs("token_address"));
         params.put("tokenSymbol", row.getAs("token_symbol"));
         params.put("transferType", row.getAs("transfer_type"));
         
+        // Risk scoring fields (with defaults for backward compatibility)
+        params.put("riskScore", getFieldOrDefault(row, "risk_score", 0));
+        params.put("riskCategory", getFieldOrDefault(row, "risk_category", "UNKNOWN"));
+        params.put("isExchange", getFieldOrDefault(row, "is_exchange", false));
+        
         return params;
+    }
+
+    /**
+     * Safely get field value with default if not present or null.
+     */
+    private Object getFieldOrDefault(Row row, String fieldName, Object defaultValue) {
+        try {
+            int idx = row.fieldIndex(fieldName);
+            Object value = row.get(idx);
+            return value != null ? value : defaultValue;
+        } catch (IllegalArgumentException e) {
+            // Field doesn't exist in schema
+            return defaultValue;
+        }
     }
 }

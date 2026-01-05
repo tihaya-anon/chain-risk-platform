@@ -118,10 +118,12 @@ help:
 	@echo "  make flink-test        Run tests"
 	@echo "  make flink-clean       Clean artifacts"
 	@echo ""
-	@echo "📊 Batch Processor (Java/Spark):"
+	@echo "📊 Batch Processor (Java/Spark + Hudi):"
 	@echo "  make batch-init        Initialize dependencies"
 	@echo "  make batch-build       Build service"
-	@echo "  make batch-run         Run service"
+	@echo "  make batch-archive     Run archive job (PostgreSQL → Hudi)"
+	@echo "  make batch-correct     Run batch correction job (Hudi)"
+	@echo "  make batch-run         Run full batch pipeline (archive + correct)"
 	@echo "  make batch-test        Run tests"
 	@echo "  make batch-clean       Clean artifacts"
 	@echo ""
@@ -455,7 +457,7 @@ flink-logs: ## View stream-processor logs (tmux or file)
 	fi
 
 # ============================================
-# Batch Processor (Java/Spark)
+# Batch Processor (Java/Spark + Hudi)
 # ============================================
 
 DIR_BATCH := processing/batch-processor
@@ -470,8 +472,15 @@ batch-build: ## Build batch-processor
 	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) -Plocal $(MVN_QUIET)'
 	@echo "✅ batch-processor built"
 
-batch-run: ## Run batch-processor
-	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh'
+batch-archive: ## Run archive job (PostgreSQL → Hudi)
+	@echo "📦 Running archive job..."
+	@bash -c '$(LOAD_ENV) ./scripts/run-archive-job.sh'
+
+batch-correct: ## Run batch correction job (Hudi)
+	@echo "🔧 Running batch correction job..."
+	@bash -c '$(LOAD_ENV) ./scripts/run-batch-correction.sh'
+
+batch-run: batch-archive batch-correct ## Run full batch pipeline (archive + correct)
 
 batch-test: ## Test batch-processor
 	@echo "🧪 Testing batch-processor..."
@@ -482,24 +491,15 @@ batch-clean: ## Clean batch-processor artifacts
 	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 	@echo "✅ batch-processor cleaned"
 
-batch-stop: ## Stop batch-processor (tmux or pkill)
+batch-stop: ## Stop batch-processor (pkill)
 	@echo "🛑 Stopping batch-processor..."
-	@if command -v tmux >/dev/null 2>&1 && tmux has-session -t spark-batch 2>/dev/null; then \
-		tmux kill-session -t spark-batch; \
-		echo "✅ Stopped tmux session 'spark-batch'"; \
-	else \
-		pkill -f "batch-processor.*\.jar" 2>/dev/null || true; \
-		sleep 1; \
-		pkill -9 -f "batch-processor.*\.jar" 2>/dev/null || true; \
-		echo "✅ batch-processor stopped"; \
-	fi
+	@pkill -f "batch-processor.*\.jar" 2>/dev/null || true
+	@pkill -f "ArchiveToHudiJob" 2>/dev/null || true
+	@pkill -f "HudiBatchCorrectionJob" 2>/dev/null || true
+	@echo "✅ batch-processor stopped"
 
-batch-logs: ## View batch-processor logs (tmux or file)
-	@if command -v tmux >/dev/null 2>&1 && tmux has-session -t spark-batch 2>/dev/null; then \
-		tmux attach -t spark-batch; \
-	else \
-		tail -f $(DIR_BATCH)/logs/batch-processor.log 2>/dev/null || echo "❌ No logs found"; \
-	fi
+batch-logs: ## View batch-processor logs
+	@tail -f $(DIR_BATCH)/logs/*.log 2>/dev/null || echo "❌ No logs found. Jobs output to stdout."
 
 # ============================================
 # Frontend (React)

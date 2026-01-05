@@ -252,11 +252,11 @@ enable.kafka.producer=false
 
 ## 🚀 Next Steps
 
-### Phase 2: Spark Batch Processor
-- [ ] Implement `TransferCorrectionJob.scala`
-- [ ] Overwrite stream data with `source='batch'`
-- [ ] Configure Airflow DAG (daily schedule)
-- [ ] Integration test (stream + batch)
+### Phase 2: Spark Batch Processor ✅ COMPLETED
+- [x] Implement `ArchiveToHudiJob.java` - Archive PostgreSQL to Hudi
+- [x] Implement `HudiBatchCorrectionJob.java` - Risk scoring on Hudi
+- [x] Configure run scripts (run-archive-job.sh, run-batch-correction.sh)
+- [x] Trino integration for Hudi queries
 
 ### Phase 3: Graph Engine Optimization
 - [ ] Remove PostgreSQL sync logic
@@ -268,10 +268,12 @@ enable.kafka.producer=false
 
 ## 📚 Related Documentation
 
-- [Lambda Architecture Overview](../docs/architecture/LAMBDA_ARCHITECTURE.md)
-- [Project Overview](../docs/architecture/PROJECT_OVERVIEW.md)
-- [Technical Decisions](../docs/architecture/TECH_DECISIONS.md)
-- [Stream Processor README](../processing/stream-processor/README.md)
+- [Lambda Architecture Overview](../architecture/LAMBDA_ARCHITECTURE.md)
+- [Hudi Batch Layer](./HUDI_BATCH_LAYER.md)
+- [Project Overview](../architecture/PROJECT_OVERVIEW.md)
+- [Technical Decisions](../architecture/TECH_DECISIONS.md)
+- [Stream Processor README](../../processing/stream-processor/README.md)
+- [Batch Processor README](../../processing/batch-processor/README.md)
 
 ---
 

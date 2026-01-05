@@ -2,11 +2,7 @@
 
 > 多语言微服务架构的链上风险分析系统（Lambda 架构）
 
-[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org/)
-[![Java](https://img.shields.io/badge/Java-17+-ED8B00?style=flat&logo=openjdk)](https://openjdk.org/)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python)](https://python.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat&logo=typescript)](https://typescriptlang.org/)
-[![Scala](https://img.shields.io/badge/Scala-2.12+-DC322F?style=flat&logo=scala)](https://scala-lang.org/)
+[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org/) [![Java](https://img.shields.io/badge/Java-17+-ED8B00?style=flat&logo=openjdk)](https://openjdk.org/) [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python)](https://python.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat&logo=typescript)](https://typescriptlang.org/) [![Scala](https://img.shields.io/badge/Scala-2.12+-DC322F?style=flat&logo=scala)](https://scala-lang.org/)
 
 ## 🎯 项目简介
 
@@ -91,17 +87,17 @@
 
 ## 🛠️ 技术栈
 
-| 层级             | 技术                                     | 说明                     |
-| ---------------- | ---------------------------------------- | ------------------------ |
-| **Frontend**     | React, TypeScript, Vite                  | 风险仪表盘               |
-| **Orchestrator** | Java, Spring Cloud Gateway, Resilience4j | API 网关 + 编排          |
-| **BFF**          | Nest.js, TypeScript                      | 业务聚合层               |
-| **Services**     | Go (Gin), Python (FastAPI)               | 微服务（查询、风险、告警）|
-| **Speed Layer**  | Apache Flink, Kafka                      | 实时流处理               |
-| **Batch Layer**  | Apache Spark, Scala                      | 批处理覆盖               |
-| **Graph**        | Java, Spring Boot, Neo4j                 | 图分析服务               |
-| **Storage**      | PostgreSQL, Neo4j, Redis                 | 数据存储                 |
-| **Infra**        | Docker, Kubernetes                       | 基础设施                 |
+| 层级             | 技术                                     | 说明                       |
+| ---------------- | ---------------------------------------- | -------------------------- |
+| **Frontend**     | React, TypeScript, Vite                  | 风险仪表盘                 |
+| **Orchestrator** | Java, Spring Cloud Gateway, Resilience4j | API 网关 + 编排            |
+| **BFF**          | Nest.js, TypeScript                      | 业务聚合层                 |
+| **Services**     | Go (Gin), Python (FastAPI)               | 微服务（查询、风险、告警） |
+| **Speed Layer**  | Apache Flink, Kafka                      | 实时流处理                 |
+| **Batch Layer**  | Apache Spark, Scala                      | 批处理覆盖                 |
+| **Graph**        | Java, Spring Boot, Neo4j                 | 图分析服务                 |
+| **Storage**      | PostgreSQL, Neo4j, Redis                 | 数据存储                   |
+| **Infra**        | Docker, Kubernetes                       | 基础设施                   |
 
 ## 📁 项目结构
 
@@ -119,9 +115,10 @@ chain-risk-platform/
 │   │   ├── Transfer 解析
 │   │   └── 双写 PostgreSQL + Neo4j
 │   │
-│   ├── batch-processor/    # Scala/Spark - 批处理覆盖
-│   │   ├── 完整解析逻辑
-│   │   └── 覆盖写入 PostgreSQL + Neo4j
+│   ├── batch-processor/    # Java/Spark + Hudi - 批处理层
+│   │   ├── ArchiveToHudiJob - PostgreSQL → Hudi 归档
+│   │   ├── HudiBatchCorrectionJob - 风险评分修正
+│   │   └── 写入 Hudi 数据湖 (MinIO)
 │   │
 │   └── graph-engine/       # Java/Spring Boot + Neo4j
 │       ├── 地址聚类（Common Input Heuristic）
@@ -172,20 +169,20 @@ make infra-check
 
 ### 服务端口
 
-| 服务              | 端口 | 说明                     |
-| ----------------- | ---- | ------------------------ |
-| Orchestrator      | 8080 | API 网关                 |
-| BFF               | 3001 | 业务聚合层               |
-| Query Service     | 8081 | 查询服务                 |
-| Risk ML Service   | 8082 | 风险评分服务             |
-| Alert Service     | 8083 | 告警服务                 |
-| Graph Engine      | 8084 | 图分析服务               |
-| Frontend          | 5173 | 前端仪表盘               |
-| PostgreSQL        | 5432 | 关系型数据库             |
-| Neo4j             | 7474 | 图数据库（HTTP）         |
-| Neo4j Bolt        | 7687 | 图数据库（Bolt）         |
-| Redis             | 6379 | 缓存                     |
-| Kafka             | 9092 | 消息队列                 |
+| 服务            | 端口 | 说明             |
+| --------------- | ---- | ---------------- |
+| Orchestrator    | 8080 | API 网关         |
+| BFF             | 3001 | 业务聚合层       |
+| Query Service   | 8081 | 查询服务         |
+| Risk ML Service | 8082 | 风险评分服务     |
+| Alert Service   | 8083 | 告警服务         |
+| Graph Engine    | 8084 | 图分析服务       |
+| Frontend        | 5173 | 前端仪表盘       |
+| PostgreSQL      | 5432 | 关系型数据库     |
+| Neo4j           | 7474 | 图数据库（HTTP） |
+| Neo4j Bolt      | 7687 | 图数据库（Bolt） |
+| Redis           | 6379 | 缓存             |
+| Kafka           | 9092 | 消息队列         |
 
 ## 📚 文档
 
@@ -216,20 +213,20 @@ make infra-check
 
 ### 1. Lambda 架构 - 流批一体
 
-| 特性 | Speed Layer (Flink) | Batch Layer (Spark) |
-|-----|---------------------|---------------------|
-| **延迟** | 秒级 | T+1 天 |
-| **准确性** | 中等（可能有错） | 高（完整解析） |
-| **数据源** | Kafka 实时消息 | 全节点 RPC 重新扫描 |
+| 特性         | Speed Layer (Flink)     | Batch Layer (Spark)  |
+| ------------ | ----------------------- | -------------------- |
+| **延迟**     | 秒级                    | T+1 天               |
+| **准确性**   | 中等（可能有错）        | 高（完整解析）       |
+| **数据源**   | Kafka 实时消息          | 全节点 RPC 重新扫描  |
 | **写入策略** | 双写 PostgreSQL + Neo4j | 覆盖修正 stream 数据 |
-| **应用场景** | 实时查询、快速告警 | 数据修正、复杂分析 |
+| **应用场景** | 实时查询、快速告警      | 数据修正、复杂分析   |
 
 ### 2. 图分析 - 增量 + 批量
 
-| 分析类型 | 触发方式 | 分析范围 | 算法 |
-|---------|---------|---------|------|
-| **增量分析** | Kafka 消息触发 | 局部子图 | 增量聚类、增量标签传播 |
-| **批量分析** | 定时任务（每日） | 全图 | PageRank、Louvain、社区发现 |
+| 分析类型     | 触发方式         | 分析范围 | 算法                        |
+| ------------ | ---------------- | -------- | --------------------------- |
+| **增量分析** | Kafka 消息触发   | 局部子图 | 增量聚类、增量标签传播      |
+| **批量分析** | 定时任务（每日） | 全图     | PageRank、Louvain、社区发现 |
 
 ### 3. 数据质量保证
 
