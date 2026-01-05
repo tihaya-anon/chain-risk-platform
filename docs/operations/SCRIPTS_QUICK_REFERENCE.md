@@ -1,90 +1,115 @@
-# 🚀 Scripts 快速参考
+# Scripts Quick Reference
 
-## 常用命令速查
+## Common Commands
 
-### 基础设施管理
+### Infrastructure
 ```bash
-make infra-up          # 启动基础设施
-make infra-down        # 停止基础设施
-make infra-check       # 检查基础设施状态
+make infra-up          # Start infrastructure
+make infra-down        # Stop infrastructure
+make infra-check       # Check infrastructure status
 ```
 
-### 服务启动（推荐：后台运行）
+### Services (Background)
 ```bash
-make run-svc           # 启动所有服务（后台）
-make logs-all          # 查看所有日志
-make logs-query        # 查看 query 服务日志
-make logs-risk         # 查看 risk 服务日志
-make stop-svc          # 停止所有服务
+make run-svc           # Start all services (background)
+make logs-all          # View all logs
+make logs-query        # View query service logs
+make logs-risk         # View risk service logs
+make stop-svc          # Stop all services
 ```
 
-### 单独服务管理
+### Individual Services
 ```bash
-# 启动
+# Start
 make query-run         # Query Service
 make risk-run          # Risk ML Service
 make bff-run           # BFF Service
 make graph-run         # Graph Engine
 make flink-run         # Flink Processor
 
-# 停止
-make stop-query        # 停止 Query Service
-make stop-risk         # 停止 Risk ML Service
-make stop-bff          # 停止 BFF Service
-make graph-stop        # 停止 Graph Engine
-make flink-stop        # 停止 Flink Processor
+# Stop
+make stop-query
+make stop-risk
+make stop-bff
+make graph-stop
+make flink-stop
 ```
 
-### 测试
+### Batch Processing (Hudi)
 ```bash
-make test-integration  # 集成测试
-make test-all          # 所有单元测试
-./scripts/test-e2e.sh  # 端到端测试
+make batch-build       # Build batch processor
+make batch-archive     # Archive cold data (PostgreSQL → Hudi)
+make batch-correct     # Run batch correction job
+make batch-run         # Run full pipeline (archive + correct)
+make batch-stop        # Stop batch processor
+make batch-logs        # View batch logs
 ```
 
-### 构建和清理
+### Testing
 ```bash
-make init-all          # 初始化所有服务
-make build-all         # 构建所有服务
-make clean-all         # 清理所有构建产物
+make test-integration  # Integration test
+make test-all          # All unit tests
+./scripts/test-e2e.sh  # End-to-end test
 ```
 
-### API 文档
+### Build & Clean
 ```bash
-make api-update        # 更新所有 API 规范
-make api-update-query  # 更新 Query Service API
-make api-update-bff    # 更新 BFF API
+make init-all          # Initialize all services
+make build-all         # Build all services
+make clean-all         # Clean all build artifacts
 ```
 
-## 脚本直接调用
-
-### 基础设施检查
+### API Documentation
 ```bash
-./scripts/check-infra.sh              # 本地检查
-./scripts/check-infra.sh 192.168.1.100  # 远程检查
+make api-update        # Update all API specs
+make api-update-query  # Update Query Service API
+make api-update-bff    # Update BFF API
 ```
 
-### 服务启动
+## Script Direct Calls
+
+### Infrastructure Check
 ```bash
-./scripts/run-graph-engine.sh         # 启动 Graph Engine
-./scripts/run-graph-engine.sh --build # 强制重新构建
-./scripts/run-flink.sh                # 启动 Flink
+./scripts/check-infra.sh              # Local check
+./scripts/check-infra.sh 192.168.1.100  # Remote check
 ```
 
-### 测试
+### Service Startup
 ```bash
-./scripts/run-integration-test.sh     # 集成测试
-./scripts/test-e2e.sh                 # 端到端测试
-./scripts/test-e2e.sh --remote-ip     # 远程 Docker 测试
+./scripts/run-graph-engine.sh         # Start Graph Engine
+./scripts/run-graph-engine.sh --build # Force rebuild
+./scripts/run-flink.sh                # Start Flink
 ```
 
-### API 规范更新
+### Batch Jobs
 ```bash
-./scripts/update-api-specs.sh --all   # 更新所有
-./scripts/update-api-specs.sh --query # 更新 Query Service
+# Archive job
+./scripts/run-archive-job.sh
+RETENTION_DAYS=0 ./scripts/run-archive-job.sh  # Archive all
+
+# Correction job
+./scripts/run-batch-correction.sh
+START_DATE=2026-01-01 END_DATE=2026-01-03 ./scripts/run-batch-correction.sh
+
+# Query Hudi data
+./scripts/trino-query.sh "SELECT count(*) FROM hudi.chainrisk.transfers"
+./scripts/trino-query.sh "SELECT risk_category, count(*) FROM hudi.chainrisk.transfers GROUP BY risk_category"
 ```
 
-## 编写新脚本模板
+### Testing
+```bash
+./scripts/run-integration-test.sh     # Integration test
+./scripts/test-e2e.sh                 # E2E test
+./scripts/test-e2e.sh --remote-ip     # Remote Docker test
+```
+
+### API Specs
+```bash
+./scripts/update-api-specs.sh --all   # Update all
+./scripts/update-api-specs.sh --query # Update Query Service
+```
+
+## New Script Template
 
 ```bash
 #!/bin/bash
@@ -99,13 +124,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Load common utilities
 source "$SCRIPT_DIR/common.sh"
-
-# Load environment
 load_env "$PROJECT_ROOT" || exit 1
 
-# Main logic
 log_info "Starting process..."
 
 # Your code here
@@ -113,86 +134,86 @@ log_info "Starting process..."
 log_success "Process completed"
 ```
 
-## 常用工具函数
+## Common Utility Functions
 
 ```bash
-# 加载 common.sh
 source scripts/common.sh
 
-# 日志
+# Logging
 log_info "Information message"
 log_success "Success message"
 log_warn "Warning message"
 log_error "Error message"
 log_section "Section Title"
 
-# 环境
-load_env                              # 加载 .env.local
-setup_java17                          # 设置 Java 17
+# Environment
+load_env                              # Load .env.local
+setup_java17                          # Set Java 17
 
-# 工具
-command_exists mvn                    # 检查命令是否存在
-check_port localhost 8080             # 检查端口
-wait_for_service "API" "http://..."   # 等待服务就绪
-kill_by_pattern "my-service"          # 停止进程
+# Utilities
+command_exists mvn                    # Check command exists
+check_port localhost 8080             # Check port
+wait_for_service "API" "http://..."   # Wait for service
+kill_by_pattern "my-service"          # Stop process
 
-# 构建
-build_go_service "path" "binary"      # 构建 Go 服务
-build_java_service "path"             # 构建 Java 服务
+# Build
+build_go_service "path" "binary"      # Build Go service
+build_java_service "path"             # Build Java service
 ```
 
-## 故障排查
+## Troubleshooting
 
-### 服务无法启动
+### Service Won't Start
 ```bash
-# 1. 检查基础设施
+# 1. Check infrastructure
 make infra-check
 
-# 2. 检查环境配置
+# 2. Check environment config
 cat .env.local
 
-# 3. 查看服务日志
+# 3. View service logs
 make logs-query
 make logs-risk
 make logs-bff
 ```
 
-### 端口被占用
+### Port In Use
 ```bash
-# 查看端口占用
+# Check port usage
 lsof -i :8081  # Query Service
 lsof -i :8082  # Risk Service
 lsof -i :3001  # BFF Service
+lsof -i :8084  # Graph Engine
 
-# 停止服务
+# Stop services
 make stop-svc
 ```
 
-### 清理并重启
+### Clean Restart
 ```bash
-# 1. 停止所有服务
+# 1. Stop all services
 make stop-svc
 make infra-down
 
-# 2. 清理构建产物
+# 2. Clean build artifacts
 make clean-all
 
-# 3. 重新启动
+# 3. Restart
 make infra-up
 make infra-check
 make run-svc
 ```
 
-## 环境变量
+## Environment Variables
 
-必需的环境变量（在 .env.local 中设置）：
+Required in `.env.local`:
 
 ```bash
-DOCKER_HOST_IP=192.168.1.100    # Docker 主机 IP
-ETHERSCAN_API_KEY=your-key      # Etherscan API Key（可选）
+DOCKER_HOST_IP=192.168.1.100    # Docker host IP
+ETHERSCAN_API_KEY=your-key      # Etherscan API Key (optional)
 ```
 
-自动设置的环境变量：
+Auto-configured:
 
 ```bash
 POSTGRES_HOST=$DOCKER_HOST_IP
@@ -201,42 +222,44 @@ REDIS_HOST=$DOCKER_HOST_IP
 REDIS_PORT=16379
 KAFKA_BROKERS=$DOCKER_HOST_IP:19092
 NEO4J_URI=bolt://$DOCKER_HOST_IP:17687
+MINIO_ENDPOINT=http://$DOCKER_HOST_IP:19000
+HIVE_METASTORE_URI=thrift://$DOCKER_HOST_IP:19083
 ```
 
-## 文档链接
+## Documentation Links
 
-- 📖 [完整脚本指南](scripts/README.md)
-- 📊 [整理对比](docs/SCRIPTS_COMPARISON.md)
-- 📝 [整理总结](docs/SCRIPTS_REFACTORING.md)
-- 📋 [更新日志](docs/CHANGELOG_SCRIPTS.md)
-- 📦 [归档脚本](scripts/archive/README.md)
+- 📖 [Full Scripts Guide](../../scripts/README.md)
+- 📦 [Hudi Batch Layer](../development/HUDI_BATCH_LAYER.md)
+- 📝 [Scripts Refactoring](./SCRIPTS_REFACTORING.md)
+- 📋 [Changelog](../changelog/CHANGELOG_SCRIPTS.md)
+- 📦 [Archived Scripts](../../scripts/archive/README.md)
 
-## 快速开始
+## Quick Start
 
 ```bash
-# 1. 配置环境
+# 1. Configure environment
 cp .env.example .env.local
-# 编辑 .env.local
+# Edit .env.local
 
-# 2. 启动基础设施
+# 2. Start infrastructure
 make infra-up && make infra-check
 
-# 3. 初始化服务
+# 3. Initialize services
 make init-all
 
-# 4. 启动服务
+# 4. Start services
 make run-svc
 
-# 5. 查看日志
+# 5. View logs
 make logs-all
 
-# 6. 运行测试
+# 6. Run tests
 make test-integration
 
-# 7. 停止服务
+# 7. Stop services
 make stop-svc
 ```
 
 ---
 
-💡 **提示**: 使用 `make help` 查看所有可用命令
+💡 **Tip**: Use `make help` to view all available commands

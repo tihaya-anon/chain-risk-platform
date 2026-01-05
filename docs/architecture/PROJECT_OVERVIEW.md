@@ -1,30 +1,30 @@
-# Chain Risk Platform - 项目总览
+# Chain Risk Platform - Project Overview
 
-> 多语言微服务架构的链上风险分析系统（Lambda 架构）
+> Multi-language microservice blockchain risk analysis system (Lambda Architecture)
 
-## 🎯 项目目标
+## Project Goals
 
-### 双重目标
-1. **新加坡 Crypto 合规岗位**: 展示区块链数据处理 + 合规分析能力
-2. **线上后端接单**: 展示多语言技术栈，方便复用
-
----
-
-## 📊 个人技术栈
-
-| 领域           | 技术栈                            | 熟练度 |
-| -------------- | --------------------------------- | ------ |
-| **核心竞争力** | Java/Flink/Kafka + 区块链数据处理 | ⭐⭐⭐⭐⭐  |
-| **后端开发**   | SpringBoot, Go Gin/GORM           | ⭐⭐⭐⭐   |
-| **AI/ML**      | PyTorch, Pandas, ML/RL, Agent     | ⭐⭐⭐⭐   |
-| **前端**       | Vue, React (Hook 不熟)            | ⭐⭐⭐    |
-| **DevOps**     | Docker, K8s                       | ⭐⭐⭐    |
+### Dual Purpose
+1. **Singapore Crypto Compliance**: Demonstrate blockchain data processing + compliance analysis capability
+2. **Backend Freelancing**: Showcase multi-language tech stack for reuse
 
 ---
 
-## 🏗️ 系统架构（Lambda 架构）
+## Tech Stack Summary
 
-### 整体架构图
+| Domain         | Technology                          | Proficiency |
+| -------------- | ----------------------------------- | ----------- |
+| **Core**       | Java/Flink/Kafka + Blockchain Data  | ⭐⭐⭐⭐⭐       |
+| **Backend**    | SpringBoot, Go Gin/GORM             | ⭐⭐⭐⭐        |
+| **AI/ML**      | PyTorch, Pandas, ML/RL, Agent       | ⭐⭐⭐⭐        |
+| **Frontend**   | Vue, React                          | ⭐⭐⭐         |
+| **DevOps**     | Docker, K8s                         | ⭐⭐⭐         |
+
+---
+
+## System Architecture (Lambda)
+
+### Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -33,22 +33,18 @@
                                   │
 ┌─────────────────────────────────▼───────────────────────────────────┐
 │              Orchestrator (Java/Spring Cloud Gateway)               │
-│        JWT认证 / 路由 / 限流 / 熔断 / Fallback / API编排            │
+│         JWT Auth / Routing / Rate Limiting / Circuit Breaker        │
 └─────────────────────────────────┬───────────────────────────────────┘
-                                  │ X-User-Id
-                                  │ X-User-Username
-                                  │ X-User-Role
+                                  │ X-User-Id/Username/Role
 ┌─────────────────────────────────▼───────────────────────────────────┐
 │                      BFF Layer (TypeScript/Nest.js)                 │
-│                业务聚合 / 数据转换 / 信任Gateway用户上下文          │
+│              Business Aggregation / Data Transform                  │
 └───────────┬─────────────────────┬─────────────────────┬─────────────┘
             │                     │                     │
 ┌───────────▼───────────┐ ┌───────▼───────┐ ┌───────────▼───────────┐
 │    Query Service      │ │ Risk Service  │ │    Alert Service      │
 │        (Go)           │ │   (Python)    │ │        (Go)           │
-│      Gin + GORM       │ │   FastAPI     │ │        Gin            │
 └───────────┬───────────┘ └───────┬───────┘ └───────────┬───────────┘
-            │                     │                     │
             └──────────┬──────────┴──────────┬──────────┘
                        │                     │
 ┌──────────────────────▼─────────────────────▼────────────────────────┐
@@ -56,7 +52,7 @@
 │                                                                     │
 │  ┌────────────────────────────────────────────────────────┐         │
 │  │              Data Ingestion (Go)                       │         │
-│  │          链上数据采集 → Kafka Producer                 │         │
+│  │          On-chain data → Kafka Producer                │         │
 │  └─────────────────────────┬──────────────────────────────┘         │
 │                            │                                        │
 │                            ▼                                        │
@@ -69,293 +65,279 @@
 │                        ▼                                            │
 │                 ┌──────────────┐                                    │
 │                 │ Flink Stream │                                    │
-│                 │ (实时流处理) │                                    │
+│                 │ (real-time)  │                                    │
 │                 └────┬─────┬───┘                                    │
 │                      │     │                                        │
 │                      ▼     ▼                                        │
 │  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐         │
 │  │ PostgreSQL   │     │    Neo4j     │     │ Graph Engine │         │
-│  │ (热数据 7天) │     │   (图数据)   │     │  (图分析)    │         │
+│  │ (hot, 7 days)│     │   (graph)    │     │  (analysis)  │         │
 │  └──────┬───────┘     └──────────────┘     └──────────────┘         │
 │         │                                                           │
-│         │ 每日归档 (02:00)                                          │
+│         │ Daily archive (02:00)                                     │
 │         ▼                                                           │
 │  ┌─────────────────────────────────────────────────────────┐        │
 │  │                  Hudi (Data Lake)                       │        │
-│  │                   全量历史数据                          │        │
+│  │                   Historical data                       │        │
 │  │              ┌─────────────────────┐                    │        │
 │  │              │  transfers (MOR)    │                    │        │
-│  │              │  按 network/dt 分区 │                    │        │
+│  │              │  partition: dt      │                    │        │
 │  │              └──────────┬──────────┘                    │        │
 │  │                         ↑                               │        │
 │  │                  Spark Batch (03:00)                    │        │
-│  │                  (全节点 RPC → UPSERT 修正)             │        │
+│  │                  (Full RPC → UPSERT correction)         │        │
 │  │                         │                               │        │
 │  │                         ↓                               │        │
-│  │              近期修正数据回写 PostgreSQL                │        │
+│  │              Correction writeback to PostgreSQL         │        │
 │  └─────────────────────────────────────────────────────────┘        │
 │                                                                     │
-│  Query Service 查询路由:                                            │
-│    - 近 7 天 → PostgreSQL                                           │
-│    - 历史数据 → Hudi (Trino)                                        │
+│  Query Service routing:                                             │
+│    - Recent 7 days → PostgreSQL                                     │
+│    - Historical → Hudi (Trino)                                      │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔄 数据流详解
+## Data Flow Details
 
-### 1️⃣ 实时流处理（Flink Stream）
+### 1️⃣ Real-time Stream Processing (Flink)
 
-**目标**: 秒级数据处理，快速响应
+**Goal**: Sub-second data processing, fast response
 
 ```
-链上数据 → Kafka (raw-blocks)
-              ↓
-        Flink Stream Processor
-              ↓
-    ┌─────────┴─────────┐
-    ↓                   ↓
-PostgreSQL          Neo4j
-(source='stream')   (source='stream')
-    ↓                   ↓
-Query Service      Graph Engine
-                   (增量图分析)
+On-chain data → Kafka (raw-blocks)
+                    ↓
+              Flink Stream Processor
+                    ↓
+          ┌─────────┴─────────┐
+          ↓                   ↓
+    PostgreSQL              Neo4j
+    (source='stream')      (source='stream')
+          ↓                   ↓
+    Query Service        Graph Engine
+                        (incremental analysis)
 ```
 
-**处理逻辑**:
-- 消费 Kafka `raw-blocks` Topic
-- 解析 Transfer（Native + ERC20）
-- **双写策略**:
-  - PostgreSQL: 用于 OLTP 查询（Query Service）
-  - Neo4j: 用于实时图分析（Graph Engine）
-- 发送到 Kafka `transfers` Topic 触发下游服务
-- 简单实时风险规则（黑名单检查）
+**Processing Logic**:
+- Consume Kafka `raw-blocks` Topic
+- Parse Transfer (Native + ERC20)
+- **Dual-write strategy**:
+  - PostgreSQL: For OLTP queries (Query Service)
+  - Neo4j: For real-time graph analysis (Graph Engine)
+- Send to Kafka `transfers` Topic for downstream
+- Simple real-time risk rules (blacklist check)
 
-**特点**:
-- ✅ 实时性好（秒级延迟）
-- ⚠️ 可能有数据丢失或解析错误
-- ⚠️ 无法处理复杂合约或区块重组
+**Characteristics**:
+- ✅ Good real-time performance (sub-second latency)
+- ⚠️ May have data loss or parsing errors
+- ⚠️ Cannot handle complex contracts or block reorgs
 
 ---
 
-### 2️⃣ 数据归档与批处理（Hudi + Spark Batch）
+### 2️⃣ Data Archival & Batch Processing (Hudi + Spark)
 
-**目标**: 冷热分离，数据准确性，最终一致性
+**Goal**: Hot-cold separation, data accuracy, eventual consistency
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    冷数据归档 (每日 02:00)                  │
+│                    Cold Data Archive (Daily 02:00)          │
 │                                                             │
-│  PostgreSQL (7天前数据) ──归档──→ Hudi (全量历史)           │
+│  PostgreSQL (>7 days) ──archive──→ Hudi (full history)      │
 │         │                                                   │
-│         └── 删除已归档数据                                  │
+│         └── Delete archived data                            │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│                    批处理修正 (每日 03:00)                  │
+│                    Batch Correction (Daily 03:00)           │
 │                                                             │
-│  全节点 RPC ──→ Spark Batch ──→ Hudi (UPSERT 覆盖)          │
-│                                      │                      │
-│                                      ↓                      │
-│                        近期修正数据回写 PostgreSQL          │
+│  Full Node RPC ──→ Spark Batch ──→ Hudi (UPSERT override)   │
+│                                         │                   │
+│                                         ↓                   │
+│                        Recent corrections → PostgreSQL      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**处理逻辑**:
+**Processing Logic**:
 
-1. **冷数据归档** (02:00)
-   - 从 PostgreSQL 读取 7 天前的数据
-   - 写入 Hudi (UPSERT)
-   - 从 PostgreSQL 删除已归档数据
+1. **Cold Data Archive** (02:00)
+   - Read data older than 7 days from PostgreSQL
+   - Write to Hudi (UPSERT)
+   - Delete archived data from PostgreSQL
 
-2. **批处理修正** (03:00)
-   - 从全节点 RPC 重新扫描昨天的区块
-   - 使用完整解析逻辑
-   - UPSERT 到 Hudi (自动覆盖 stream 数据)
-   - 近期被修正的数据回写 PostgreSQL
+2. **Batch Correction** (03:00)
+   - Rescan yesterday's blocks from full node RPC
+   - Use complete parsing logic
+   - UPSERT to Hudi (auto-override stream data)
+   - Writeback recent corrected data to PostgreSQL
 
-**特点**:
-- ✅ PostgreSQL 体积可控（只保留 7 天）
-- ✅ 批处理无锁竞争（在 Hudi 上操作）
-- ✅ 存储成本低（冷数据在对象存储）
-- ✅ 支持 Time Travel（审计需求）
+**Characteristics**:
+- ✅ PostgreSQL size controlled (only 7 days)
+- ✅ Batch processing no lock contention (operates on Hudi)
+- ✅ Low storage cost (cold data on object storage)
+- ✅ Time Travel support (audit requirements)
 
 ---
 
-### 3️⃣ 图分析服务（Graph Engine）
+### 3️⃣ Graph Analysis Service (Graph Engine)
 
-**目标**: 地址关系分析，风险传播
+**Goal**: Address relationship analysis, risk propagation
 
 ```
-Neo4j 图数据
+Neo4j Graph Data
     ↓
 ┌───┴────────────────┐
 │                    │
 ↓                    ↓
-实时增量分析         每日批量分析
-(Kafka 触发)         (定时任务)
-│                    │
-├─ 增量聚类          ├─ 全图聚类
-│  (Common Input)    │  (Common Input)
-│                    │
-├─ 增量标签传播      ├─ 全图标签传播
-│  (BFS)             │  (BFS)
-│                    │
-└─ 实时图查询        └─ PageRank
-                        Community Detection
+Real-time Incremental    Daily Batch Analysis
+(Kafka triggered)        (Scheduled task)
+│                        │
+├─ Incremental Clustering├─ Full Graph Clustering
+│  (Common Input)        │  (Common Input)
+│                        │
+├─ Incremental Tag Prop  ├─ Full Graph Tag Prop
+│  (BFS)                 │  (BFS)
+│                        │
+└─ Real-time Graph Query └─ PageRank
+                            Community Detection
 ```
 
-**处理逻辑**:
-- **实时增量分析**:
-  - 监听 Kafka `transfers` Topic
-  - 检测新交易是否触发聚类条件
-  - 从高风险地址传播标签
-- **批量分析**（每日凌晨 3 点）:
-  - 全图聚类（Union-Find 算法）
-  - 全图标签传播（BFS 多跳传播）
-  - PageRank 识别重要节点
-  - Community Detection 社区发现
-
-**特点**:
-- ✅ 实时性好（秒级增量分析）
-- ✅ 准确性高（批量全图分析）
-- ✅ 无需从 PostgreSQL 同步数据（Flink/Spark 直接写入 Neo4j）
+**Characteristics**:
+- ✅ Good real-time (sub-second incremental analysis)
+- ✅ High accuracy (batch full graph analysis)
+- ✅ No PostgreSQL sync needed (Flink/Spark write directly to Neo4j)
 
 ---
 
-## 📦 项目结构
+## Project Structure
 
 ```
 chain-risk-platform/
 │
 ├── services/
 │   ├── orchestrator/          # Java (Spring Cloud Gateway)
-│   │   └── API网关、JWT认证、路由、限流、熔断、API编排
+│   │   └── API Gateway, JWT Auth, Routing, Circuit Breaker
 │   │
 │   ├── bff/                   # TypeScript (Nest.js)
-│   │   └── 业务聚合、数据转换、信任Gateway用户上下文
+│   │   └── Business Aggregation, Data Transform
 │   │
 │   ├── query-service/         # Go (Gin + GORM)
-│   │   └── 地址/交易查询、分页、缓存
+│   │   └── Address/Transaction Query, Pagination, Cache
 │   │
 │   ├── alert-service/         # Go (Gin)
-│   │   └── 告警规则引擎、通知推送
+│   │   └── Alert Rule Engine, Notification Push
 │   │
 │   └── risk-ml-service/       # Python (FastAPI)
-│       └── 风险评分模型、特征工程
+│       └── Risk Score Model, Feature Engineering
 │
 ├── processing/
 │   ├── stream-processor/      # Java (Flink)
-│   │   ├── 实时交易流处理
-│   │   ├── Transfer 解析
-│   │   └── 双写 PostgreSQL + Neo4j
+│   │   ├── Real-time transaction processing
+│   │   ├── Transfer parsing
+│   │   └── Dual-write PostgreSQL + Neo4j
 │   │
-│   ├── batch-processor/       # Scala (Spark)
-│   │   ├── 每日批处理覆盖
-│   │   ├── 完整解析逻辑
-│   │   └── 覆盖写入 PostgreSQL + Neo4j
+│   ├── batch-processor/       # Java (Spark + Hudi)
+│   │   ├── Daily batch processing
+│   │   ├── Complete parsing logic
+│   │   └── Override write to Hudi data lake
 │   │
 │   └── graph-engine/          # Java (Spring Boot + Neo4j)
-│       ├── 地址聚类（Common Input Heuristic）
-│       ├── Tag Propagation（BFS）
-│       ├── 图查询 REST API
-│       └── 增量 + 批量图分析
+│       ├── Address Clustering (Common Input Heuristic)
+│       ├── Tag Propagation (BFS)
+│       ├── Graph Query REST API
+│       └── Incremental + Batch graph analysis
 │
 ├── data-ingestion/            # Go
-│   └── 链上数据采集、Kafka Producer
+│   └── On-chain data collection, Kafka Producer
 │
 ├── frontend/                  # React + TypeScript
-│   └── 风险仪表盘
+│   └── Risk Dashboard
 │
 ├── infra/
 │   ├── docker-compose.yml
 │   ├── k8s/
+│   ├── hive/                  # Hive Metastore
+│   ├── trino/                 # Trino query engine
 │   └── terraform/
 │
 └── docs/
-    ├── PROJECT_OVERVIEW.md    # 本文件
-    ├── DEVELOPMENT_PLAN.md    # 开发计划
-    ├── TECH_DECISIONS.md      # 技术决策
-    ├── LAMBDA_ARCHITECTURE.md # Lambda 架构详解
-    ├── GATEWAY_BFF_ARCHITECTURE.md  # Gateway+BFF架构
-    ├── ORCHESTRATOR_ARCHITECTURE.md # Orchestrator架构
+    ├── PROJECT_OVERVIEW.md
+    ├── DEVELOPMENT_PLAN.md
+    ├── TECH_DECISIONS.md
+    ├── LAMBDA_ARCHITECTURE.md
+    ├── GATEWAY_BFF_ARCHITECTURE.md
+    ├── ORCHESTRATOR_ARCHITECTURE.md
     └── api-specs/
 ```
 
 ---
 
-## 🔧 语言职责与接单映射
+## Language Responsibilities & Freelancing Mapping
 
-| 模块             | 语言               | 职责                            | 接单可复用场景         |
-| ---------------- | ------------------ | ------------------------------- | ---------------------- |
-| **Orchestrator** | Java/Spring Cloud  | API网关、认证、限流、熔断、编排 | 企业级网关、微服务架构 |
-| **BFF**          | TypeScript/Nest.js | 业务聚合、数据转换              | 任何需要BFF的项目      |
-| **Query/Alert**  | Go/Gin             | 高性能微服务                    | CRUD类后端、工具类服务 |
-| **Risk ML**      | Python/FastAPI     | ML推理服务                      | AI相关项目、数据分析   |
-| **Flink Stream** | Java/Flink         | 实时流处理、双写数据库          | 实时数据处理项目       |
-| **Spark Batch**  | Scala/Spark        | 批处理、数据修正                | 大数据批处理项目       |
-| **Graph Engine** | Java/Spring+Neo4j  | 图分析、聚类、标签传播          | 图数据库应用、关系分析 |
-| **Ingestion**    | Go                 | 高并发采集                      | 爬虫、数据同步         |
-
----
-
-## 🎯 Lambda 架构优势
-
-| 维度           | 传统架构               | Lambda 架构（本项目）              |
-| -------------- | ---------------------- | ---------------------------------- |
-| **实时性**     | 中等（需定时同步）     | 优秀（Flink 直接写入 Neo4j，秒级） |
-| **准确性**     | 中等（流处理可能有错） | 优秀（Spark 批处理覆盖修正）       |
-| **数据完整性** | 弱（同步可能失败）     | 强（批处理保证最终一致性）         |
-| **系统复杂度** | 低                     | 中等（流批分离）                   |
-| **资源利用率** | 低（重复计算）         | 高（各司其职，无重复）             |
-| **可扩展性**   | 中等                   | 优秀（流批独立扩展）               |
+| Module           | Language           | Responsibility                  | Reuse Scenario           |
+| ---------------- | ------------------ | ------------------------------- | ------------------------ |
+| **Orchestrator** | Java/Spring Cloud  | API Gateway, Auth, Rate Limit   | Enterprise Gateway       |
+| **BFF**          | TypeScript/Nest.js | Business Aggregation            | Any BFF project          |
+| **Query/Alert**  | Go/Gin             | High-performance microservices  | CRUD backend, tools      |
+| **Risk ML**      | Python/FastAPI     | ML inference service            | AI projects, analytics   |
+| **Flink Stream** | Java/Flink         | Real-time stream, dual-write    | Real-time data projects  |
+| **Spark Batch**  | Java/Spark         | Batch processing, correction    | Big data batch projects  |
+| **Graph Engine** | Java/Spring+Neo4j  | Graph analysis, clustering      | Graph DB apps, relations |
+| **Ingestion**    | Go                 | High-concurrency collection     | Crawlers, data sync      |
 
 ---
 
-## 📊 应用场景示例
+## Lambda Architecture Benefits
 
-### 场景 1: Transfer 数据提取与修正
-
-| 阶段     | 处理方式     | 数据源     | 准确性           | 实时性 |
-| -------- | ------------ | ---------- | ---------------- | ------ |
-| **实时** | Flink 流处理 | Kafka      | 中等（可能有错） | 秒级   |
-| **修正** | Spark 批处理 | 全节点 RPC | 高（完整解析）   | T+1 天 |
-
-**覆盖原因**: 流处理可能丢失数据、解析错误、区块重组
-
----
-
-### 场景 2: 地址风险评分
-
-| 阶段     | 处理方式     | 特征工程     | 模型复杂度   | 实时性 |
-| -------- | ------------ | ------------ | ------------ | ------ |
-| **实时** | Flink 流处理 | 简单窗口特征 | 轻量规则引擎 | 秒级   |
-| **修正** | Spark 批处理 | 全局历史特征 | 复杂 ML 模型 | T+1 天 |
-
-**覆盖原因**: 批处理可以计算全局特征、使用复杂模型
+| Dimension      | Traditional             | Lambda (This Project)                |
+| -------------- | ----------------------- | ------------------------------------ |
+| **Real-time**  | Medium (needs sync)     | Excellent (Flink direct to Neo4j)    |
+| **Accuracy**   | Medium (stream errors)  | Excellent (Spark batch correction)   |
+| **Integrity**  | Weak (sync may fail)    | Strong (batch ensures consistency)   |
+| **Complexity** | Low                     | Medium (stream-batch separation)     |
+| **Efficiency** | Low (duplicate compute) | High (each layer specialized)        |
+| **Scalability**| Medium                  | Excellent (stream-batch independent) |
 
 ---
 
-### 场景 3: 地址聚类与标签传播
+## Application Scenarios
 
-| 阶段     | 处理方式          | 分析范围 | 算法复杂度         | 实时性 |
-| -------- | ----------------- | -------- | ------------------ | ------ |
-| **实时** | Graph Engine 增量 | 局部子图 | 简单聚类           | 秒级   |
-| **修正** | Graph Engine 批量 | 全图     | PageRank、社区发现 | 每日   |
+### Scenario 1: Transfer Data Extraction & Correction
 
-**覆盖原因**: 批量分析可以运行复杂图算法、获得全局视图
-
----
-
-## 📚 相关文档
-
-- [开发计划](./DEVELOPMENT_PLAN.md)
-- [技术决策记录](./TECH_DECISIONS.md)
-- [Lambda 架构详解](./LAMBDA_ARCHITECTURE.md)
-- [API 规范](./api-specs/)
+| Phase      | Processing     | Data Source    | Accuracy         | Latency |
+| ---------- | -------------- | -------------- | ---------------- | ------- |
+| **Real-time** | Flink stream | Kafka          | Medium           | Seconds |
+| **Correction**| Spark batch  | Full Node RPC  | High             | T+1 day |
 
 ---
 
-**最后更新**: 2026-01-03
+### Scenario 2: Address Risk Scoring
+
+| Phase      | Processing     | Features         | Model Complexity | Latency |
+| ---------- | -------------- | ---------------- | ---------------- | ------- |
+| **Real-time** | Flink stream | Simple window    | Light rules      | Seconds |
+| **Correction**| Spark batch  | Global history   | Complex ML       | T+1 day |
+
+---
+
+### Scenario 3: Address Clustering & Tag Propagation
+
+| Phase      | Processing         | Scope      | Algorithm          | Latency |
+| ---------- | ------------------ | ---------- | ------------------ | ------- |
+| **Real-time** | Graph Engine Inc | Local graph| Simple clustering  | Seconds |
+| **Correction**| Graph Engine Batch| Full graph | PageRank, Community| Daily   |
+
+---
+
+## Related Documentation
+
+- [Development Plan](../development/DEVELOPMENT_PLAN.md)
+- [Tech Decisions](./TECH_DECISIONS.md)
+- [Lambda Architecture](./LAMBDA_ARCHITECTURE.md)
+- [Hudi Batch Layer](../development/HUDI_BATCH_LAYER.md)
+- [API Specs](../api-specs/)
+
+---
+
+**Last Updated**: 2026-01-05

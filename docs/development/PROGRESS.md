@@ -1,294 +1,224 @@
-# 开发进度追踪
+# Development Progress
 
-> 最后更新: 2026-01-04
+> Last Updated: 2026-01-05
 
-## 📊 总体进度
+## Overall Progress
 
-| Phase                   | 状态     | 进度 | 说明                                  |
-| ----------------------- | -------- | ---- | ------------------------------------- |
-| Phase 1: 核心数据流     | ✅ 已完成 | 100% | 端到端数据流验证通过，监控已配置      |
-| Phase 2: 查询与风险服务 | 🔶 进行中 | 95%  | Redis缓存已完成，仅缺少单元测试       |
-| Phase 3: BFF与前端      | 🔶 进行中 | 80%  | 基础功能已完成，待完善图表和响应式    |
-| Phase 4: 高级功能       | 🔶 进行中 | 50%  | Graph Engine + Batch Processor 已完成 |
+| Phase                   | Status    | Progress | Notes                                 |
+| ----------------------- | --------- | -------- | ------------------------------------- |
+| Phase 1: Core Data Flow | ✅ Done    | 100%     | E2E validated, monitoring configured  |
+| Phase 2: Query & Risk   | 🔶 Active | 95%      | Redis cache done, unit tests pending  |
+| Phase 3: BFF & Frontend | 🔶 Active | 80%      | Basic done, charts & responsive pending|
+| Phase 4: Advanced       | 🔶 Active | 60%      | Graph Engine + Batch Processor done   |
 
-状态图例: 🔲 未开始 | 🔶 进行中 | ✅ 已完成 | ⏸️ 暂停
-
-### Phase 1 完成标准
-参见 [Phase 1 测试计划](./PHASE1_TEST_PLAN.md)
-
-**核心验收标准：**
-1. ✅ 代码骨架完成
-2. ✅ Docker Compose 基础设施可正常启动
-3. ✅ data-ingestion 能从 Etherscan 获取数据并发送到 Kafka
-4. ✅ stream-processor 能消费 Kafka 并写入 PostgreSQL
-5. ✅ 端到端数据流验证通过 (9000+ transfers 已入库)
+Legend: 🔲 Not Started | 🔶 In Progress | ✅ Done | ⏸️ Paused
 
 ---
 
-## Phase 1: 核心数据流
+## Phase 1: Core Data Flow
 
-### 1.1 基础设施搭建
-| 任务                  | 状态 | 备注                                    |
-| --------------------- | ---- | --------------------------------------- |
-| Docker Compose 配置   | ✅    | docker-compose.yml                      |
-| PostgreSQL 初始化脚本 | ✅    | infra/init-scripts/postgres/01-init.sql |
-| Prometheus 配置       | ✅    | infra/prometheus/prometheus.yml         |
-| Grafana 配置          | ✅    | infra/grafana/provisioning/             |
-| 项目目录结构          | ✅    | scripts/init-project.sh                 |
-| Kafka Exporter        | ✅    | 监控 Kafka broker/topic/consumer lag    |
-| PostgreSQL Exporter   | ✅    | 监控 PostgreSQL 性能指标                |
-| Grafana Dashboard     | ✅    | Data Pipeline Overview 仪表盘           |
-| Sparse Clone 脚本     | ✅    | scripts/sparse-clone.sh 轻量部署        |
+### 1.1 Infrastructure
+| Task                    | Status | Notes                                   |
+| ----------------------- | ------ | --------------------------------------- |
+| Docker Compose          | ✅      | docker-compose.yml                      |
+| PostgreSQL Init Scripts | ✅      | infra/init-scripts/postgres/01-init.sql |
+| Prometheus Config       | ✅      | infra/prometheus/prometheus.yml         |
+| Grafana Config          | ✅      | infra/grafana/provisioning/             |
+| Kafka Exporter          | ✅      | Monitors broker/topic/consumer lag      |
+| PostgreSQL Exporter     | ✅      | Monitors PostgreSQL metrics             |
+| MinIO                   | ✅      | S3-compatible object storage            |
+| Hive Metastore          | ✅      | Table metadata for Hudi                 |
+| Trino                   | ✅      | SQL query engine                        |
 
-### 1.2 数据采集服务 (Go)
-| 任务                  | 状态 | 备注                          |
-| --------------------- | ---- | ----------------------------- |
-| Go modules 初始化     | ✅    | data-ingestion/go.mod         |
-| 配置管理 (Viper)      | ✅    | internal/config/config.go     |
-| 数据模型定义          | ✅    | internal/model/transaction.go |
-| BlockchainClient 接口 | ✅    | internal/client/client.go     |
-| Etherscan API 客户端  | ✅    | internal/client/etherscan.go  |
-| Kafka Producer        | ✅    | internal/producer/kafka.go    |
-| Ingestion Service     | ✅    | internal/service/ingestion.go |
-| 主程序入口            | ✅    | cmd/ingestion/main.go         |
-| Dockerfile            | ✅    | data-ingestion/Dockerfile     |
-| 环境变量覆盖          | ✅    | 支持 KAFKA_BROKERS 等环境变量 |
-| 单元测试              | 🔲    | 待补充                        |
+### 1.2 Data Ingestion (Go)
+| Task                  | Status | Notes                         |
+| --------------------- | ------ | ----------------------------- |
+| Go modules init       | ✅      | data-ingestion/go.mod         |
+| Config (Viper)        | ✅      | internal/config/config.go     |
+| Data Model            | ✅      | internal/model/transaction.go |
+| BlockchainClient      | ✅      | internal/client/client.go     |
+| Etherscan Client      | ✅      | internal/client/etherscan.go  |
+| Kafka Producer        | ✅      | internal/producer/kafka.go    |
+| Ingestion Service     | ✅      | internal/service/ingestion.go |
+| Unit Tests            | 🔲      | Pending                       |
 
-### 1.3 流处理服务 (Java/Flink)
-| 任务                                         | 状态 | 备注                                |
-| -------------------------------------------- | ---- | ----------------------------------- |
-| Maven 父模块配置                             | ✅    | processing/pom.xml                  |
-| stream-processor pom.xml                     | ✅    | processing/stream-processor/pom.xml |
-| 数据模型 (ChainEvent, Transaction, Transfer) | ✅    | model/*.java                        |
-| Kafka 反序列化器                             | ✅    | parser/ChainEventDeserializer.java  |
-| Transfer 解析器                              | ✅    | parser/TransferParser.java          |
-| Transaction 解析器                           | ✅    | parser/TransactionParser.java       |
-| JDBC Sink 工厂                               | ✅    | sink/JdbcSinkFactory.java           |
-| Transaction Sink                             | ✅    | 写入 chain_data.transactions        |
-| Processing State Tracker                     | ✅    | 写入 chain_data.processing_state    |
-| TransferExtractionJob                        | ✅    | job/TransferExtractionJob.java      |
-| 主程序入口                                   | ✅    | StreamProcessorApp.java             |
-| 配置文件                                     | ✅    | application.properties, logback.xml |
-| batch-processor pom.xml                      | ✅    | 骨架已创建                          |
-| graph-engine pom.xml                         | ✅    | 骨架已创建                          |
-| 单元测试                                     | 🔲    | 待补充                              |
-
-### 1.4 监控与可观测性
-| 任务                    | 状态 | 备注                            |
-| ----------------------- | ---- | ------------------------------- |
-| kafka-exporter 部署     | ✅    | 监控 consumer lag, message rate |
-| postgres-exporter 部署  | ✅    | 监控 TPS, connections, DB size  |
-| Prometheus scrape 配置  | ✅    | infra/prometheus/prometheus.yml |
-| Grafana Datasource 配置 | ✅    | 配置 uid 确保 dashboard 正常    |
-| Data Pipeline Dashboard | ✅    | Kafka + PostgreSQL 核心指标     |
-| Go 服务 metrics         | ⏸️    | 待容器化后添加                  |
-| Flink metrics           | ⏸️    | 待容器化后添加                  |
+### 1.3 Stream Processor (Java/Flink)
+| Task                 | Status | Notes                                |
+| -------------------- | ------ | ------------------------------------ |
+| Maven Parent Config  | ✅      | processing/pom.xml                   |
+| Data Models          | ✅      | model/*.java                         |
+| Kafka Deserializer   | ✅      | parser/ChainEventDeserializer.java   |
+| Transfer Parser      | ✅      | parser/TransferParser.java           |
+| JDBC Sink Factory    | ✅      | sink/JdbcSinkFactory.java            |
+| TransferExtractionJob| ✅      | job/TransferExtractionJob.java       |
+| Unit Tests           | 🔲      | Pending                              |
 
 ---
 
-## Phase 2: 查询与风险服务
+## Phase 2: Query & Risk Services
 
 ### 2.1 Query Service (Go/Gin)
-| 任务              | 状态 | 备注                                               |
-| ----------------- | ---- | -------------------------------------------------- |
-| 项目初始化        | ✅    | go.mod 已配置                                      |
-| GORM 模型         | ✅    | internal/model/ 已完成                             |
-| 地址查询 API      | ✅    | GET /addresses/:address                            |
-| 交易查询 API      | ✅    | GET /addresses/:address/transfers                  |
-| 地址统计 API      | ✅    | GET /addresses/:address/stats                      |
-| Transfer 查询 API | ✅    | GET /transfers, GET /transfers/:id                 |
-| Redis 缓存        | ✅    | 地址信息/交易记录/统计数据缓存                     |
-| 缓存管理 API      | ✅    | GET /cache/stats, DELETE /cache/addresses/:address |
-| Swagger 文档      | ✅    | godoc 注释已添加                                   |
-| 单元测试          | 🔲    | 待补充                                             |
+| Task              | Status | Notes                                              |
+| ----------------- | ------ | -------------------------------------------------- |
+| Project Init      | ✅      | go.mod configured                                  |
+| GORM Models       | ✅      | internal/model/ done                               |
+| Address Query API | ✅      | GET /addresses/:address                            |
+| Transfer Query API| ✅      | GET /addresses/:address/transfers                  |
+| Stats API         | ✅      | GET /addresses/:address/stats                      |
+| Redis Cache       | ✅      | Address/transfer/stats caching                     |
+| Cache Management  | ✅      | GET /cache/stats, DELETE /cache/addresses/:address |
+| Swagger Docs      | ✅      | godoc annotations added                            |
+| Unit Tests        | 🔲      | Pending                                            |
 
 ### 2.2 Risk ML Service (Python/FastAPI)
-| 任务         | 状态 | 备注                            |
-| ------------ | ---- | ------------------------------- |
-| 项目初始化   | ✅    | pyproject.toml 已配置           |
-| FastAPI 结构 | ✅    | app/ 目录结构完整               |
-| 规则引擎     | ✅    | 5种风险规则已实现               |
-| 风险评分 API | ✅    | POST /api/v1/risk/score         |
-| 批量评分 API | ✅    | POST /api/v1/risk/batch         |
-| 规则列表 API | ✅    | GET /api/v1/risk/rules          |
-| Query 客户端 | ✅    | 调用 query-service 获取地址数据 |
-| ML 模型集成  | 🔲    | 待实现                          |
-| 单元测试     | 🔲    | 待补充                          |
+| Task           | Status | Notes                           |
+| -------------- | ------ | ------------------------------- |
+| Project Init   | ✅      | pyproject.toml configured       |
+| FastAPI Setup  | ✅      | app/ structure complete         |
+| Rule Engine    | ✅      | 5 risk rules implemented        |
+| Risk Score API | ✅      | POST /api/v1/risk/score         |
+| Batch Score API| ✅      | POST /api/v1/risk/batch         |
+| Rules API      | ✅      | GET /api/v1/risk/rules          |
+| Query Client   | ✅      | Calls query-service             |
+| ML Model       | 🔲      | Pending                         |
+| Unit Tests     | 🔲      | Pending                         |
 
 ### 2.3 Orchestrator (Java/Spring Cloud Gateway)
-| 任务                  | 状态 | 备注                           |
-| --------------------- | ---- | ------------------------------ |
-| Spring Cloud 搭建     | ✅    | pom.xml 已配置                 |
-| API Gateway 路由      | ✅    | Spring Cloud Gateway 路由配置  |
-| JWT 认证过滤器        | ✅    | AuthenticationFilter 已实现    |
-| 用户上下文注入        | ✅    | X-User-Id/Username/Role 请求头 |
-| 熔断器 (Resilience4j) | ✅    | Circuit Breaker 已配置         |
-| 限流 (Rate Limiting)  | ✅    | Rate Limiter 已配置            |
-| 请求日志              | ✅    | LoggingFilter 已实现           |
-| Fallback 降级         | ✅    | FallbackController 已实现      |
-| API 编排              | ✅    | OrchestrationController 已实现 |
-| Nacos 服务注册        | ⏸️    | 代码已准备，待配置启用         |
-| 配置中心              | ⏸️    | 代码已准备，待配置启用         |
-| 单元测试              | 🔲    | 待补充                         |
+| Task                | Status | Notes                          |
+| ------------------- | ------ | ------------------------------ |
+| Spring Cloud Setup  | ✅      | pom.xml configured             |
+| API Gateway Routes  | ✅      | Spring Cloud Gateway routing   |
+| JWT Auth Filter     | ✅      | AuthenticationFilter           |
+| User Context        | ✅      | X-User-Id/Username/Role headers|
+| Circuit Breaker     | ✅      | Resilience4j configured        |
+| Rate Limiting       | ✅      | Rate Limiter configured        |
+| Logging Filter      | ✅      | LoggingFilter implemented      |
+| Fallback            | ✅      | FallbackController             |
+| API Orchestration   | ✅      | OrchestrationController        |
+| Unit Tests          | 🔲      | Pending                        |
 
 ---
 
-## Phase 3: BFF与前端
+## Phase 3: BFF & Frontend
 
 ### 3.1 BFF (TypeScript/Nest.js)
-| 任务             | 状态 | 备注                               |
-| ---------------- | ---- | ---------------------------------- |
-| Nest.js 初始化   | ✅    | 项目结构完整                       |
-| Gateway 信任模式 | ✅    | 信任 Orchestrator 注入的用户上下文 |
-| GatewayAuthGuard | ✅    | 从请求头提取用户信息               |
-| API 聚合         | ✅    | AddressModule, RiskModule          |
-| 限流中间件       | ✅    | ThrottlerModule 已配置 (备用)      |
-| OpenAPI 文档     | ✅    | Swagger UI 已集成                  |
-| CORS 配置        | ✅    | 已配置                             |
-| Dockerfile       | ✅    | 已创建                             |
-| 单元测试         | 🔲    | 待补充                             |
-
-**注意**: JWT 认证已移至 Orchestrator (Java)，BFF 完全信任 Gateway 转发的用户上下文。
+| Task              | Status | Notes                              |
+| ----------------- | ------ | ---------------------------------- |
+| Nest.js Init      | ✅      | Project structure complete         |
+| Gateway Trust     | ✅      | Trusts Orchestrator user context   |
+| GatewayAuthGuard  | ✅      | Extracts user info from headers    |
+| API Aggregation   | ✅      | AddressModule, RiskModule          |
+| Rate Limiting     | ✅      | ThrottlerModule (backup)           |
+| OpenAPI Docs      | ✅      | Swagger UI integrated              |
+| CORS Config       | ✅      | Configured                         |
+| Dockerfile        | ✅      | Created                            |
+| Unit Tests        | 🔲      | Pending                            |
 
 ### 3.2 Frontend (React)
-| 任务                | 状态 | 备注                      |
-| ------------------- | ---- | ------------------------- |
-| Vite + React 初始化 | ✅    | TypeScript 配置完整       |
-| 路由配置            | ✅    | react-router-dom 已配置   |
-| 状态管理            | ✅    | Zustand (auth store)      |
-| API 服务层          | ✅    | services/ 目录已实现      |
-| 登录页面            | ✅    | LoginPage                 |
-| Dashboard 页面      | ✅    | DashboardPage             |
-| 地址查询页          | ✅    | AddressPage               |
-| 风险分析页          | ✅    | RiskPage                  |
-| Layout 组件         | ✅    | 已实现                    |
-| Mock 数据           | ✅    | MSW (Mock Service Worker) |
-| 图表组件            | 🔲    | 待完善                    |
-| 响应式设计          | 🔲    | 待完善                    |
-
-### 3.3 部署
-| 任务     | 状态 | 备注   |
-| -------- | ---- | ------ |
-| K8s YAML | 🔲    | 待实现 |
-| Ingress  | 🔲    | 待实现 |
-| 监控配置 | 🔲    | 待实现 |
+| Task              | Status | Notes                     |
+| ----------------- | ------ | ------------------------- |
+| Vite + React      | ✅      | TypeScript configured     |
+| Routing           | ✅      | react-router-dom          |
+| State Management  | ✅      | Zustand (auth store)      |
+| API Service Layer | ✅      | services/ implemented     |
+| Login Page        | ✅      | LoginPage                 |
+| Dashboard Page    | ✅      | DashboardPage             |
+| Address Page      | ✅      | AddressPage               |
+| Risk Page         | ✅      | RiskPage                  |
+| Layout Component  | ✅      | Implemented               |
+| Mock Data         | ✅      | MSW (Mock Service Worker) |
+| Charts            | 🔲      | Pending                   |
+| Responsive Design | 🔲      | Pending                   |
 
 ---
 
-## Phase 4: 高级功能
+## Phase 4: Advanced Features
 
 ### 4.1 Graph Engine (Java/Spring Boot + Neo4j)
-| 任务                | 状态 | 备注                                              |
-| ------------------- | ---- | ------------------------------------------------- |
-| Neo4j 集成          | ✅    | Neo4jConfig, Neo4jConverters 已配置               |
-| 地址聚类算法        | ✅    | CommonInputClusteringService (Union-Find)         |
-| Tag Propagation     | ✅    | BfsTagPropagationService (BFS + 置信度衰减)       |
-| 图查询服务          | ✅    | GraphQueryServiceImpl 已实现                      |
-| PostgreSQL 数据同步 | ✅    | GraphSyncServiceImpl 已实现                       |
-| REST API            | ✅    | GraphController 完整API                           |
-| - 地址信息查询      | ✅    | GET /api/graph/address/{address}                  |
-| - 邻居查询          | ✅    | GET /api/graph/address/{address}/neighbors        |
-| - 集群查询          | ✅    | GET /api/graph/address/{address}/cluster          |
-| - 最短路径查询      | ✅    | GET /api/graph/path/{from}/{to}                   |
-| - Tag 管理          | ✅    | GET/POST/DELETE /api/graph/address/{address}/tags |
-| - 高风险地址搜索    | ✅    | GET /api/graph/search/high-risk                   |
-| - Tag 搜索          | ✅    | GET /api/graph/search/tag/{tag}                   |
-| - 聚类触发          | ✅    | POST /api/graph/cluster/run                       |
-| - 传播触发          | ✅    | POST /api/graph/propagate                         |
-| - 同步状态/触发     | ✅    | GET/POST /api/graph/sync                          |
-| OpenAPI 文档        | ✅    | Swagger 注解已添加                                |
-| 单元测试            | 🔲    | 待补充                                            |
+| Task                | Status | Notes                                             |
+| ------------------- | ------ | ------------------------------------------------- |
+| Neo4j Integration   | ✅      | Neo4jConfig, Neo4jConverters                      |
+| Address Clustering  | ✅      | CommonInputClusteringService (Union-Find)         |
+| Tag Propagation     | ✅      | BfsTagPropagationService (BFS + decay)            |
+| Graph Query Service | ✅      | GraphQueryServiceImpl                             |
+| PostgreSQL Sync     | ✅      | GraphSyncServiceImpl                              |
+| REST API            | ✅      | GraphController complete                          |
+| OpenAPI Docs        | ✅      | Swagger annotations                               |
+| Unit Tests          | 🔲      | Pending                                           |
 
-### 4.2 ML 风险模型
-| 任务         | 状态 | 备注 |
-| ------------ | ---- | ---- |
-| 特征工程     | 🔲    |      |
-| XGBoost 模型 | 🔲    |      |
-| 模型服务化   | 🔲    |      |
+### 4.2 Batch Processor (Java/Spark + Hudi)
+| Task               | Status | Notes                                          |
+| ------------------ | ------ | ---------------------------------------------- |
+| Project Setup      | ✅      | pom.xml with Spark 3.5.0, Hudi 0.15.0          |
+| Unified Entry Point| ✅      | BatchProcessorApp.java                         |
+| Archive Job        | ✅      | ArchiveToHudiJob (PostgreSQL → Hudi)           |
+| Correction Job     | ✅      | HudiBatchCorrectionJob (risk scoring)          |
+| Neo4j Writer       | ✅      | Neo4jBatchWriter (optional sync)               |
+| Run Scripts        | ✅      | run-archive-job.sh, run-batch-correction.sh    |
+| Makefile Commands  | ✅      | batch-init/build/archive/correct/run           |
+| Trino Query Script | ✅      | trino-query.sh                                 |
+| Unit Tests         | 🔲      | Pending                                        |
 
-### 4.3 批处理 (Java/Spark)
-| 任务             | 状态 | 备注                                           |
-| ---------------- | ---- | ---------------------------------------------- |
-| 项目骨架         | ✅    | pom.xml 已创建                                 |
-| Spark 批处理作业 | ✅    | BatchProcessorApp 已实现                       |
-| Transfer 校正    | ✅    | Lambda 架构批处理层                            |
-| Neo4j 同步       | ✅    | 批量同步到图数据库                             |
-| 独立运行脚本     | ✅    | scripts/run-batch-processor.sh                 |
-| Makefile 集成    | ✅    | batch-init/build/run/test/clean/stop/logs 命令 |
-| log4j2 日志配置  | ✅    | 与 stream-processor 格式一致                   |
-| 单元测试         | 🔲    | 待补充                                         |
+### 4.3 ML Risk Model
+| Task           | Status | Notes   |
+| -------------- | ------ | ------- |
+| Feature Eng    | 🔲      | Pending |
+| XGBoost Model  | 🔲      | Pending |
+| Model Serving  | 🔲      | Pending |
 
 ### 4.4 Alert Service (Go/Gin)
-| 任务     | 状态 | 备注             |
-| -------- | ---- | ---------------- |
-| 项目骨架 | ✅    | 目录结构已创建   |
-| 规则引擎 | 🔲    | internal/ 待实现 |
-| 通知推送 | 🔲    | notifier/ 待实现 |
+| Task        | Status | Notes             |
+| ----------- | ------ | ----------------- |
+| Project Setup| ✅     | Directory created |
+| Rule Engine | 🔲      | Pending           |
+| Notification| 🔲      | Pending           |
 
 ---
 
-## 📝 开发日志
+## Development Log
+
+### 2026-01-05
+- ✅ Documentation audit and update
+  - Fixed batch-processor language description (Java, not Scala)
+  - Updated README.md with Hudi data lake info
+  - Updated PROJECT_OVERVIEW.md
+  - Updated scripts/README.md with batch scripts
+  - Updated SCRIPTS_QUICK_REFERENCE.md
+  - Updated docs/README.md
 
 ### 2026-01-04
-- ✅ 重构 Batch Processor 运行方式
-  - 从 test-integration-phase3.sh 中提取独立运行脚本
-  - 添加 scripts/run-batch-processor.sh (支持 tmux 后台运行)
-  - Makefile 添加 batch-init/build/run/test/clean/stop/logs 命令
-  - 集成到 init-all/build-all/test-all/clean-all/stop-svc
-- ✅ 修复 Batch Processor 日志配置
-  - Spark 使用 log4j2，通过 extraJavaOptions 指定配置文件
-  - 日志格式与 stream-processor 保持一致
-- ✅ 修复 tmux 会话启动问题
-  - 数组参数在 tmux 中展开有问题，改用字符串命令
+- ✅ Batch Processor refactoring
+  - Extracted standalone run scripts from integration tests
+  - Added run-archive-job.sh, run-batch-correction.sh
+  - Makefile batch commands integrated
+- ✅ Fixed Spark log4j2 configuration
+- ✅ Fixed tmux session startup issues
 
 ### 2025-12-31
-- 📝 全面更新开发进度文档，反映各微服务实际完成状态
-- ✅ 确认 Graph Engine 已完成（聚类、传播、查询、同步）
-- 📊 更新总体进度：Phase 2 (85%), Phase 3 (80%), Phase 4 (40%)
-
-### 2025-12-30
-- 📝 更新开发进度文档，反映 Phase 2/3 实际完成状态
-- ✅ Phase 4B: Flink 添加 Transaction Sink
-- ✅ Phase 4B: Flink 添加 Processing State Tracker
-- 🔶 开始 Phase 4C: Graph Engine
+- 📝 Full progress document update
+- ✅ Confirmed Graph Engine completion
 
 ### 2025-12-29
-- ✅ 添加 kafka-exporter 和 postgres-exporter 监控
-- ✅ 配置 Prometheus scrape targets
-- ✅ 创建 Grafana Data Pipeline Overview Dashboard
-- ✅ 修复 Grafana datasource uid 配置问题
-- ✅ 修复 Kafka advertised.listeners 配置（需要设置 DOCKER_HOST_IP）
-- ✅ 端到端数据流验证通过（9000+ transfers 入库）
-- ✅ 添加 sparse-clone.sh 轻量部署脚本
-- ✅ 添加 DEPLOY_FILES.txt 部署文件清单
-- ✅ **Phase 1 完成！**
-
-### 2025-12-26
-- ✅ 完成项目规划
-- ✅ 创建项目文档结构
-- ✅ 创建 Docker Compose 配置
-- ✅ 创建项目初始化脚本
-- ✅ 创建 Git 管理配置 (CI/CD, Makefile, .gitignore)
-- ✅ 完成 data-ingestion (Go) 服务骨架
-- ✅ 完成 stream-processor (Java/Flink) 服务骨架
-- ✅ 更新数据库初始化脚本
+- ✅ Added kafka-exporter and postgres-exporter
+- ✅ Created Grafana Data Pipeline Dashboard
+- ✅ E2E data flow validated (9000+ transfers)
+- ✅ **Phase 1 Complete!**
 
 ---
 
-## 🐛 已知问题
+## Known Issues
 
-| ID  | 描述                                     | 优先级 | 状态   |
-| --- | ---------------------------------------- | ------ | ------ |
-| 1   | Flink checkpoint 偶尔超时                | 低     | 待优化 |
-| 2   | Go/Flink 服务 metrics 待容器化后添加监控 | 低     | 待处理 |
+| ID  | Description                              | Priority | Status  |
+| --- | ---------------------------------------- | -------- | ------- |
+| 1   | Flink checkpoint occasional timeout      | Low      | Pending |
+| 2   | Go/Flink metrics pending containerization| Low      | Pending |
 
 ---
 
-## 💡 待办想法
+## Future Ideas
 
-- [ ] 考虑添加 GraphQL 支持
-- [ ] 研究 GNN 模型用于风险评分
-- [ ] 添加 Telegram Bot 告警通道
-- [ ] 添加 ERC20 Transfer 事件日志解析
-- [ ] 容器化 data-ingestion 和 stream-processor
+- [ ] GraphQL support
+- [ ] GNN model for risk scoring
+- [ ] Telegram Bot alerts
+- [ ] ERC20 Transfer event log parsing
+- [ ] Containerize data-ingestion and stream-processor

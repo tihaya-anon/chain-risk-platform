@@ -1,108 +1,110 @@
-# Chain Risk Platform - 文档中心
+# Chain Risk Platform - Documentation Center
 
-> 本文档中心包含项目的所有技术文档，按照不同类别进行组织
+> This documentation center contains all technical documentation for the project.
 
-## 📚 文档导航
+## Documentation Navigation
 
-### 🏗️ 架构设计 (Architecture)
+### 🏗️ Architecture Design
 
-系统架构、技术选型和设计决策相关文档
+System architecture, technology choices, and design decisions.
 
-- **[项目总览](./architecture/PROJECT_OVERVIEW.md)** - 项目目标、技术栈、Lambda 架构总览
-- **[Lambda 架构详解](./architecture/LAMBDA_ARCHITECTURE.md)** - 流批一体处理设计与实现（⭐ 新增）
-- **[网关与BFF架构](./architecture/GATEWAY_BFF_ARCHITECTURE.md)** - Orchestrator和BFF的职责划分与请求流程
-- **[Orchestrator架构](./architecture/ORCHESTRATOR_ARCHITECTURE.md)** - API网关与编排服务的统一架构设计
-- **[技术决策记录](./architecture/TECH_DECISIONS.md)** - 重要技术决策及其原因（TDR）
+- **[Project Overview](./architecture/PROJECT_OVERVIEW.md)** - Project goals, tech stack, Lambda architecture
+- **[Lambda Architecture](./architecture/LAMBDA_ARCHITECTURE.md)** - Stream-batch unified processing design
+- **[Gateway & BFF Architecture](./architecture/GATEWAY_BFF_ARCHITECTURE.md)** - Orchestrator and BFF responsibilities
+- **[Orchestrator Architecture](./architecture/ORCHESTRATOR_ARCHITECTURE.md)** - API Gateway unified architecture
+- **[Tech Decisions](./architecture/TECH_DECISIONS.md)** - Technical decision records (TDR)
 
-### 📅 开发计划 (Development)
+### 📅 Development Plans
 
-项目开发计划、进度追踪和测试计划
+Project development plans, progress tracking, and test plans.
 
-- **[开发计划](./development/DEVELOPMENT_PLAN.md)** - MVP分阶段开发计划和任务清单
-- **[开发进度](./development/PROGRESS.md)** - 实时更新的开发进度追踪
-- **[Phase 1 测试计划](./development/PHASE1_TEST_PLAN.md)** - 核心数据流的测试验证计划
+- **[Development Plan](./development/DEVELOPMENT_PLAN.md)** - MVP phased development plan
+- **[Progress](./development/PROGRESS.md)** - Real-time progress tracking
+- **[Phase 1 Test Plan](./development/PHASE1_TEST_PLAN.md)** - Core data flow test plan
+- **[Hudi Batch Layer](./development/HUDI_BATCH_LAYER.md)** - Batch processing with Hudi data lake
 
-### 🛠️ 操作手册 (Operations)
+### 🛠️ Operations Guides
 
-日常开发和运维操作指南
+Daily development and operations guides.
 
-- **[脚本快速参考](./operations/SCRIPTS_QUICK_REFERENCE.md)** - 常用命令和脚本的快速查询手册
-- **[脚本重构说明](./operations/SCRIPTS_REFACTORING.md)** - 脚本和Makefile的整理总结
-- **[脚本整理对比](./operations/SCRIPTS_COMPARISON.md)** - 脚本整理前后的详细对比
-- **[Git工作流指南](./operations/GIT_WORKFLOW.md)** - 分支策略、提交规范和发布流程
-- **[Nacos集成指南](./operations/NACOS_INTEGRATION.md)** - 配置中心和服务注册与发现的使用指南
+- **[Scripts Quick Reference](./operations/SCRIPTS_QUICK_REFERENCE.md)** - Common commands quick lookup
+- **[Scripts Refactoring](./operations/SCRIPTS_REFACTORING.md)** - Scripts and Makefile summary
+- **[Scripts Comparison](./operations/SCRIPTS_COMPARISON.md)** - Before/after comparison
+- **[Git Workflow](./operations/GIT_WORKFLOW.md)** - Branch strategy, commit conventions
+- **[Nacos Integration](./operations/NACOS_INTEGRATION.md)** - Config center and service discovery
 
-### 📡 API文档 (API Specs)
+### 📡 API Documentation
 
-API规范管理和OpenAPI文档
+API specification management and OpenAPI documents.
 
-- **[API规范管理指南](./api-specs/API_SPECS_GUIDE.md)** - 如何生成和更新各服务的API规范
-- **[API规范快速参考](./api-specs/API_SPECS_QUICK_REF.md)** - API文档访问地址和快速命令
-- **[OpenAPI规范文件](./api-specs/)** - 各微服务的OpenAPI JSON文件
+- **[API Specs Guide](./api-specs/API_SPECS_GUIDE.md)** - How to generate and update API specs
+- **[API Quick Reference](./api-specs/API_SPECS_QUICK_REF.md)** - API docs access and quick commands
+- **[OpenAPI Spec Files](./api-specs/)** - Microservice OpenAPI JSON files
   - `query-service.openapi.json` - Query Service (Go)
   - `bff.openapi.json` - BFF (NestJS)
   - `risk-ml-service.openapi.json` - Risk ML Service (FastAPI)
   - `orchestrator.openapi.json` - Orchestrator (Spring Boot)
   - `graph-engine.openapi.json` - Graph Engine (Spring Boot)
 
-### 📝 变更记录 (Changelog)
+### 📝 Changelog
 
-项目变更历史和版本记录
+Project change history and version records.
 
-- **[脚本变更日志](./changelog/CHANGELOG_SCRIPTS.md)** - 脚本和Makefile的变更历史
-- **[文档重组变更日志](./changelog/CHANGELOG_DOCS_RESTRUCTURE.md)** - 文档目录结构重组记录
+- **[Scripts Changelog](./changelog/CHANGELOG_SCRIPTS.md)** - Scripts and Makefile change history
+- **[Docs Restructure Changelog](./changelog/CHANGELOG_DOCS_RESTRUCTURE.md)** - Documentation restructure record
 
-### 📦 归档文档 (Archive)
+### 📦 Archive
 
-历史会话记录和过时文档
+Historical session records and outdated documents.
 
-- **[会话归档 2024-12-30](./archive/SESSION_ARCHIVE_20241230.md)** - 集成测试框架搭建会话记录
-
----
-
-## 🚀 快速开始
-
-### 新手入门
-1. 阅读 [项目总览](./architecture/PROJECT_OVERVIEW.md) 了解项目背景和架构
-2. 阅读 [Lambda 架构详解](./architecture/LAMBDA_ARCHITECTURE.md) 理解流批一体处理
-3. 查看 [开发计划](./development/DEVELOPMENT_PLAN.md) 了解当前开发阶段
-4. 参考 [脚本快速参考](./operations/SCRIPTS_QUICK_REFERENCE.md) 启动开发环境
-
-### 开发人员
-1. 遵循 [Git工作流指南](./operations/GIT_WORKFLOW.md) 进行代码提交
-2. 使用 [API规范快速参考](./api-specs/API_SPECS_QUICK_REF.md) 更新API文档
-3. 查看 [开发进度](./development/PROGRESS.md) 了解当前任务状态
-
-### 架构师/技术负责人
-1. 查阅 [技术决策记录](./architecture/TECH_DECISIONS.md) 了解技术选型依据（特别是 TDR-007）
-2. 深入理解 [Lambda 架构详解](./architecture/LAMBDA_ARCHITECTURE.md) 的流批分离设计
-3. 参考 [Orchestrator架构](./architecture/ORCHESTRATOR_ARCHITECTURE.md) 了解网关设计
-4. 阅读 [网关与BFF架构](./architecture/GATEWAY_BFF_ARCHITECTURE.md) 了解职责划分
+- **[Session Archive 2024-12-30](./archive/SESSION_ARCHIVE_20241230.md)** - Integration test framework setup
 
 ---
 
-## 📂 目录结构
+## Quick Start
+
+### New Users
+1. Read [Project Overview](./architecture/PROJECT_OVERVIEW.md) for background
+2. Read [Lambda Architecture](./architecture/LAMBDA_ARCHITECTURE.md) for stream-batch design
+3. Check [Development Plan](./development/DEVELOPMENT_PLAN.md) for current phase
+4. Reference [Scripts Quick Reference](./operations/SCRIPTS_QUICK_REFERENCE.md) to start environment
+
+### Developers
+1. Follow [Git Workflow](./operations/GIT_WORKFLOW.md) for commits
+2. Use [API Quick Reference](./api-specs/API_SPECS_QUICK_REF.md) for API docs
+3. Check [Progress](./development/PROGRESS.md) for current tasks
+
+### Architects/Tech Leads
+1. Review [Tech Decisions](./architecture/TECH_DECISIONS.md) for rationale
+2. Deep dive [Lambda Architecture](./architecture/LAMBDA_ARCHITECTURE.md)
+3. Reference [Orchestrator Architecture](./architecture/ORCHESTRATOR_ARCHITECTURE.md)
+4. Read [Gateway & BFF Architecture](./architecture/GATEWAY_BFF_ARCHITECTURE.md)
+
+---
+
+## Directory Structure
 
 ```
 docs/
-├── README.md                    # 本文件 - 文档导航索引
-├── architecture/                # 架构设计文档
-│   ├── PROJECT_OVERVIEW.md      # 项目总览（Lambda 架构）
-│   ├── LAMBDA_ARCHITECTURE.md   # Lambda 架构详解 ⭐ 新增
+├── README.md                    # This file - documentation index
+├── architecture/                # Architecture design
+│   ├── PROJECT_OVERVIEW.md      # Project overview (Lambda)
+│   ├── LAMBDA_ARCHITECTURE.md   # Lambda architecture details
 │   ├── GATEWAY_BFF_ARCHITECTURE.md
 │   ├── ORCHESTRATOR_ARCHITECTURE.md
-│   └── TECH_DECISIONS.md        # 技术决策（TDR-007 已更新）
-├── development/                 # 开发计划文档
+│   └── TECH_DECISIONS.md        # Technical decisions
+├── development/                 # Development plans
 │   ├── DEVELOPMENT_PLAN.md
 │   ├── PROGRESS.md
-│   └── PHASE1_TEST_PLAN.md
-├── operations/                  # 操作手册文档
+│   ├── PHASE1_TEST_PLAN.md
+│   └── HUDI_BATCH_LAYER.md      # Hudi batch processing
+├── operations/                  # Operations guides
 │   ├── SCRIPTS_QUICK_REFERENCE.md
 │   ├── SCRIPTS_REFACTORING.md
 │   ├── SCRIPTS_COMPARISON.md
 │   ├── GIT_WORKFLOW.md
 │   └── NACOS_INTEGRATION.md
-├── api-specs/                   # API文档
+├── api-specs/                   # API documentation
 │   ├── API_SPECS_GUIDE.md
 │   ├── API_SPECS_QUICK_REF.md
 │   ├── query-service.openapi.json
@@ -110,68 +112,36 @@ docs/
 │   ├── risk-ml-service.openapi.json
 │   ├── orchestrator.openapi.json
 │   └── graph-engine.openapi.json
-├── changelog/                   # 变更记录
-│   └── CHANGELOG_SCRIPTS.md
-└── archive/                     # 归档文档
+├── changelog/                   # Change records
+│   ├── CHANGELOG_SCRIPTS.md
+│   └── CHANGELOG_DOCS_RESTRUCTURE.md
+└── archive/                     # Archived documents
     └── SESSION_ARCHIVE_20241230.md
 ```
 
 ---
 
-## 🎯 文档更新亮点（2026-01-03）
+## Documentation Maintenance
 
-### ⭐ Lambda 架构重构
-- **新增文档**: [Lambda 架构详解](./architecture/LAMBDA_ARCHITECTURE.md)
-  - 详细说明 Speed Layer（Flink）、Batch Layer（Spark）、Serving Layer 的职责
-  - 提供完整的代码示例和实现方案
-  - 包含数据表设计、监控指标、应用场景对比
+### Update Principles
+- **Architecture docs**: Update on major changes, requires team review
+- **Development plans**: Update at phase start/end
+- **Progress**: Real-time updates, daily/weekly recommended
+- **Operations guides**: Update on script/process changes
+- **API docs**: Auto-generate after API changes
+- **Changelog**: Append on significant changes
 
-- **更新文档**: [项目总览](./architecture/PROJECT_OVERVIEW.md)
-  - 架构图更新为 Lambda 架构
-  - 新增数据流详解（实时流、批处理、图分析）
-  - 明确 Flink、Spark、Graph Engine 的职责分工
-
-- **更新文档**: [技术决策记录](./architecture/TECH_DECISIONS.md)
-  - TDR-007 重大更新：从"流批一体"改为"Lambda 架构"
-  - 详细说明为什么需要 Flink 双写 + Spark 覆盖
-  - 对比传统架构与 Lambda 架构的优势
-
-- **更新文档**: [README.md](../README.md)
-  - 主页同步 Lambda 架构说明
-  - 新增技术栈（Scala/Spark）
-  - 更新项目结构和核心特性
-
-### 🔧 架构优化要点
-1. **Flink Stream Processor**: 从单写 PostgreSQL 改为**双写 PostgreSQL + Neo4j**
-2. **Spark Batch Processor**: 新增**覆盖写入 Neo4j** 的逻辑
-3. **Graph Engine**: 
-   - ❌ 移除定时从 PostgreSQL 同步的逻辑
-   - ✅ 新增监听 Kafka `transfers` Topic 的增量分析
-   - ✅ 保留每日批量图分析
+### Archive Strategy
+- Outdated session records move to `archive/`
+- Archived docs retained but not maintained
+- Archive filename format: `<TYPE>_ARCHIVE_<DATE>.md`
 
 ---
 
-## 🔄 文档维护
+## Contact
 
-### 文档更新原则
-- **架构文档**: 重大架构变更时更新，需要团队review
-- **开发计划**: 每个Phase开始和结束时更新
-- **开发进度**: 实时更新，建议每日或每周更新
-- **操作手册**: 脚本或流程变更时更新
-- **API文档**: 每次API变更后自动生成更新
-- **变更记录**: 重要变更时追加记录
-
-### 归档策略
-- 过时的会话记录移至 `archive/`
-- 归档文档保留但不再维护
-- 归档文件命名格式: `<TYPE>_ARCHIVE_<DATE>.md`
+For documentation issues or suggestions, contact project maintainers or submit an Issue.
 
 ---
 
-## 📞 联系方式
-
-如有文档问题或建议，请联系项目维护者或提交Issue。
-
----
-
-**最后更新**: 2026-01-03
+**Last Updated**: 2026-01-05
