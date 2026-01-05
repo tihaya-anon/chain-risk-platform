@@ -54,7 +54,7 @@ public class BatchProcessorApp {
                     
                 case "features":
                     LOG.info("Running Feature Compute Job...");
-                    FeatureComputeJob.main(jobArgs);
+                    // FeatureComputeJob.main(jobArgs);
                     break;
                     
                 case "labels":

@@ -1,32 +1,25 @@
 # ============================================
 # Chain Risk Platform - Monorepo Makefile
 # ============================================
-# 按服务类型组织的统一构建入口
 SHELL := /bin/bash
 .PHONY: help
 
-# Export all variables to sub-makes and shell commands
 export
 
 # ============================================
 # Common Variables
 # ============================================
 
-# Log directory for background services
 LOGS_DIR := .logs
 
-# Java 17 setup (required for all Java services)
 JAVA17_HOME := $(shell /usr/libexec/java_home -v 17 2>/dev/null)
 JAVA17_ENV := export JAVA_HOME=$(JAVA17_HOME) &&
 
-# Maven common flags
 MVN_QUIET := -q
 MVN_SKIP_TESTS := -DskipTests
 
-# Environment loading command
 LOAD_ENV := set -a && source .env.local && source ./scripts/load-env.sh > /dev/null &&
 
-# Service directories
 DIR_INGESTION := data-ingestion
 DIR_QUERY := services/query-service
 DIR_ALERT := services/alert-service
@@ -35,6 +28,7 @@ DIR_BFF := services/bff
 DIR_ORCHESTRATOR := services/orchestrator
 DIR_GRAPH := processing/graph-engine
 DIR_FLINK := processing/stream-processor
+DIR_BATCH := processing/batch-processor
 DIR_FRONTEND := frontend
 
 # ============================================
@@ -121,11 +115,14 @@ help:
 	@echo "📊 Batch Processor (Java/Spark + Hudi):"
 	@echo "  make batch-init        Initialize dependencies"
 	@echo "  make batch-build       Build service"
-	@echo "  make batch-archive     Run archive job (PostgreSQL → Hudi)"
-	@echo "  make batch-correct     Run batch correction job (Hudi)"
-	@echo "  make batch-run         Run full batch pipeline (archive + correct)"
 	@echo "  make batch-test        Run tests"
 	@echo "  make batch-clean       Clean artifacts"
+	@echo "  make batch-archive     Run archive job (PostgreSQL → Hudi)"
+	@echo "  make batch-correct     Run batch correction job"
+	@echo "  make batch-features    Compute ML features from transfers"
+	@echo "  make batch-labels      Ingest label data (OFAC, Tornado, Exchange)"
+	@echo "  make batch-training    Prepare training dataset"
+	@echo "  make batch-stop        Stop running batch job"
 	@echo ""
 	@echo "🖥️  Frontend (React):"
 	@echo "  make frontend-init     Initialize dependencies"
@@ -163,69 +160,60 @@ help:
 	@echo "  make logs-graph        Tail graph service logs"
 	@echo "  make logs-all          Tail all service logs"
 	@echo ""
-	@echo "🛑 Stop Services:"
-	@echo "  make stop-svc          Stop all backend services"
-	@echo "  make stop-query        Stop query service"
-	@echo "  make stop-risk         Stop risk service"
-	@echo "  make stop-bff          Stop bff service"
-	@echo "  make stop-graph        Stop graph engine"
-	@echo "  make stop-flink        Stop flink processor"
-	@echo "  make stop-batch        Stop batch processor"
-	@echo ""
 
 # ============================================
 # Infrastructure
 # ============================================
 
-infra-up: ## Start infrastructure (docker-compose)
+infra-up:
 	@echo "🚀 Starting infrastructure..."
 	@docker-compose up -d
 	@echo "✅ Infrastructure started"
 
-infra-down: ## Stop infrastructure
+infra-down:
 	@echo "🛑 Stopping infrastructure..."
 	@docker-compose down
 	@echo "✅ Infrastructure stopped"
 
-infra-check: ## Check infrastructure status
+infra-check:
 	@bash -c '$(LOAD_ENV) ./scripts/check-infra.sh'
 
 # ============================================
 # Data Ingestion (Go)
 # ============================================
 
-ingestion-init: ## Initialize data-ingestion dependencies
+ingestion-init:
 	@echo "📦 Initializing data-ingestion..."
 	@cd data-ingestion && go mod tidy
 	@echo "✅ data-ingestion initialized"
 
-ingestion-build: ## Build data-ingestion (production mode)
+ingestion-build:
 	@echo "🔨 Building data-ingestion (production)..."
 	@cd data-ingestion && go build -o bin/ingestion ./cmd/ingestion
 	@cd data-ingestion && go build -o bin/fixture-gen ./cmd/fixture-gen
 	@echo "✅ data-ingestion built"
 
-ingestion-build-test: ## Build data-ingestion (test mode - no Kafka)
+ingestion-build-test:
 	@echo "🔨 Building data-ingestion (test mode)..."
 	@cd data-ingestion && go build -tags test_mode -o bin/ingestion-test ./cmd/ingestion
 	@cd data-ingestion && go build -o bin/fixture-gen ./cmd/fixture-gen
 	@echo "✅ data-ingestion built (test mode - Kafka disabled)"
 
-ingestion-run: ## Run data-ingestion (production mode)
+ingestion-run:
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd data-ingestion && ./bin/ingestion'
 
-ingestion-run-test: ## Run data-ingestion (test mode - no Kafka)
+ingestion-run-test:
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd data-ingestion && ./bin/ingestion-test'
 
-ingestion-test: ## Test data-ingestion
+ingestion-test:
 	@echo "🧪 Testing data-ingestion..."
 	@cd data-ingestion && go test ./...
 
-ingestion-lint: ## Lint data-ingestion
+ingestion-lint:
 	@echo "🔍 Linting data-ingestion..."
 	@cd data-ingestion && golangci-lint run
 
-ingestion-clean: ## Clean data-ingestion artifacts
+ingestion-clean:
 	@echo "🧹 Cleaning data-ingestion..."
 	@rm -rf data-ingestion/bin
 	@echo "✅ data-ingestion cleaned"
@@ -234,28 +222,28 @@ ingestion-clean: ## Clean data-ingestion artifacts
 # Query Service (Go)
 # ============================================
 
-query-init: ## Initialize query-service dependencies
+query-init:
 	@echo "📦 Initializing query-service..."
 	@cd services/query-service && go mod tidy
 	@echo "✅ query-service initialized"
 
-query-build: ## Build query-service
+query-build:
 	@echo "🔨 Building query-service..."
 	@cd services/query-service && go build -o bin/query ./cmd/...
 	@echo "✅ query-service built"
 
-query-run: ## Run query-service
+query-run:
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/query-service && go run ./cmd/...'
 
-query-test: ## Test query-service
+query-test:
 	@echo "🧪 Testing query-service..."
 	@cd services/query-service && go test ./...
 
-query-lint: ## Lint query-service
+query-lint:
 	@echo "🔍 Linting query-service..."
 	@cd services/query-service && golangci-lint run
 
-query-clean: ## Clean query-service artifacts
+query-clean:
 	@echo "🧹 Cleaning query-service..."
 	@rm -rf services/query-service/bin
 	@echo "✅ query-service cleaned"
@@ -264,28 +252,28 @@ query-clean: ## Clean query-service artifacts
 # Alert Service (Go)
 # ============================================
 
-alert-init: ## Initialize alert-service dependencies
+alert-init:
 	@echo "📦 Initializing alert-service..."
 	@cd services/alert-service && go mod tidy
 	@echo "✅ alert-service initialized"
 
-alert-build: ## Build alert-service
+alert-build:
 	@echo "🔨 Building alert-service..."
 	@cd services/alert-service && go build -o bin/alert ./cmd/...
 	@echo "✅ alert-service built"
 
-alert-run: ## Run alert-service
+alert-run:
 	@cd services/alert-service && go run ./cmd/...
 
-alert-test: ## Test alert-service
+alert-test:
 	@echo "🧪 Testing alert-service..."
 	@cd services/alert-service && go test ./...
 
-alert-lint: ## Lint alert-service
+alert-lint:
 	@echo "🔍 Linting alert-service..."
 	@cd services/alert-service && golangci-lint run
 
-alert-clean: ## Clean alert-service artifacts
+alert-clean:
 	@echo "🧹 Cleaning alert-service..."
 	@rm -rf services/alert-service/bin
 	@echo "✅ alert-service cleaned"
@@ -294,28 +282,28 @@ alert-clean: ## Clean alert-service artifacts
 # Risk ML Service (Python)
 # ============================================
 
-risk-init: ## Initialize risk-ml-service dependencies
+risk-init:
 	@echo "📦 Initializing risk-ml-service..."
 	@cd services/risk-ml-service && uv sync
 	@echo "✅ risk-ml-service initialized"
 
-risk-build: ## Build risk-ml-service
+risk-build:
 	@echo "🔨 Building risk-ml-service..."
 	@cd services/risk-ml-service && uv build
 	@echo "✅ risk-ml-service built"
 
-risk-run: ## Run risk-ml-service
+risk-run:
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/risk-ml-service && uv run uvicorn app.main:app --reload --port 8082'
 
-risk-test: ## Test risk-ml-service
+risk-test:
 	@echo "🧪 Testing risk-ml-service..."
 	@cd services/risk-ml-service && uv run pytest
 
-risk-lint: ## Lint risk-ml-service
+risk-lint:
 	@echo "🔍 Linting risk-ml-service..."
 	@cd services/risk-ml-service && uv run ruff check .
 
-risk-clean: ## Clean risk-ml-service artifacts
+risk-clean:
 	@echo "🧹 Cleaning risk-ml-service..."
 	@find services/risk-ml-service -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@rm -rf services/risk-ml-service/dist
@@ -326,28 +314,28 @@ risk-clean: ## Clean risk-ml-service artifacts
 # BFF Service (TypeScript)
 # ============================================
 
-bff-init: ## Initialize bff dependencies
+bff-init:
 	@echo "📦 Initializing bff..."
 	@cd services/bff && npm install
 	@echo "✅ bff initialized"
 
-bff-build: ## Build bff
+bff-build:
 	@echo "🔨 Building bff..."
 	@cd services/bff && npm run build
 	@echo "✅ bff built"
 
-bff-run: ## Run bff
+bff-run:
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && cd services/bff && npm run start:dev'
 
-bff-test: ## Test bff
+bff-test:
 	@echo "🧪 Testing bff..."
 	@cd services/bff && npm test
 
-bff-lint: ## Lint bff
+bff-lint:
 	@echo "🔍 Linting bff..."
 	@cd services/bff && npm run lint
 
-bff-clean: ## Clean bff artifacts
+bff-clean:
 	@echo "🧹 Cleaning bff..."
 	@rm -rf services/bff/dist
 	@echo "✅ bff cleaned"
@@ -356,24 +344,24 @@ bff-clean: ## Clean bff artifacts
 # Orchestrator (Java)
 # ============================================
 
-orchestrator-init: ## Initialize orchestrator dependencies
+orchestrator-init:
 	@echo "📦 Initializing orchestrator..."
 	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn clean install $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ orchestrator initialized"
 
-orchestrator-build: ## Build orchestrator
+orchestrator-build:
 	@echo "🔨 Building orchestrator..."
 	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ orchestrator built"
 
-orchestrator-run: ## Run orchestrator
+orchestrator-run:
 	@bash -c '$(LOAD_ENV) cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn spring-boot:run'
 
-orchestrator-test: ## Test orchestrator
+orchestrator-test:
 	@echo "🧪 Testing orchestrator..."
 	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn test'
 
-orchestrator-clean: ## Clean orchestrator artifacts
+orchestrator-clean:
 	@echo "🧹 Cleaning orchestrator..."
 	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 	@echo "✅ orchestrator cleaned"
@@ -382,29 +370,29 @@ orchestrator-clean: ## Clean orchestrator artifacts
 # Graph Engine (Java)
 # ============================================
 
-graph-init: ## Initialize graph-engine dependencies
+graph-init:
 	@echo "📦 Initializing graph-engine..."
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn clean install $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ graph-engine initialized"
 
-graph-build: ## Build graph-engine
+graph-build:
 	@echo "🔨 Building graph-engine..."
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ graph-engine built"
 
-graph-run: ## Run graph-engine
+graph-run:
 	@bash -c '$(LOAD_ENV) ./scripts/run-graph-engine.sh'
 
-graph-test: ## Test graph-engine
+graph-test:
 	@echo "🧪 Testing graph-engine..."
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn test'
 
-graph-clean: ## Clean graph-engine artifacts
+graph-clean:
 	@echo "🧹 Cleaning graph-engine..."
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 	@echo "✅ graph-engine cleaned"
 
-graph-stop: ## Stop graph-engine
+graph-stop:
 	@echo "🛑 Stopping graph-engine..."
 	@-pkill -f "graph-engine.*\.jar" 2>/dev/null || true
 	@sleep 1
@@ -415,29 +403,29 @@ graph-stop: ## Stop graph-engine
 # Stream Processor (Java/Flink)
 # ============================================
 
-flink-init: ## Initialize stream-processor dependencies
+flink-init:
 	@echo "📦 Initializing stream-processor..."
 	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn clean install $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ stream-processor initialized"
 
-flink-build: ## Build stream-processor
+flink-build:
 	@echo "🔨 Building stream-processor..."
 	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ stream-processor built"
 
-flink-run: ## Run stream-processor
+flink-run:
 	@bash -c '$(LOAD_ENV) ./scripts/run-flink.sh'
 
-flink-test: ## Test stream-processor
+flink-test:
 	@echo "🧪 Testing stream-processor..."
 	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn test'
 
-flink-clean: ## Clean stream-processor artifacts
+flink-clean:
 	@echo "🧹 Cleaning stream-processor..."
 	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 	@echo "✅ stream-processor cleaned"
 
-flink-stop: ## Stop stream-processor (tmux or pkill)
+flink-stop:
 	@echo "🛑 Stopping stream-processor..."
 	@if command -v tmux >/dev/null 2>&1 && tmux has-session -t flink-stream 2>/dev/null; then \
 		tmux kill-session -t flink-stream; \
@@ -449,7 +437,7 @@ flink-stop: ## Stop stream-processor (tmux or pkill)
 		echo "✅ stream-processor stopped"; \
 	fi
 
-flink-logs: ## View stream-processor logs (tmux or file)
+flink-logs:
 	@if command -v tmux >/dev/null 2>&1 && tmux has-session -t flink-stream 2>/dev/null; then \
 		tmux attach -t flink-stream; \
 	else \
@@ -460,73 +448,77 @@ flink-logs: ## View stream-processor logs (tmux or file)
 # Batch Processor (Java/Spark + Hudi)
 # ============================================
 
-DIR_BATCH := processing/batch-processor
-
-batch-init: ## Initialize batch-processor dependencies
+batch-init:
 	@echo "📦 Initializing batch-processor..."
 	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn clean install $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 	@echo "✅ batch-processor initialized"
 
-batch-build: ## Build batch-processor
+batch-build:
 	@echo "🔨 Building batch-processor..."
 	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) -Plocal $(MVN_QUIET)'
 	@echo "✅ batch-processor built"
 
-batch-archive: ## Run archive job (PostgreSQL → Hudi)
-	@echo "📦 Running archive job..."
-	@bash -c '$(LOAD_ENV) ./scripts/run-archive-job.sh'
-
-batch-correct: ## Run batch correction job (Hudi)
-	@echo "🔧 Running batch correction job..."
-	@bash -c '$(LOAD_ENV) ./scripts/run-batch-correction.sh'
-
-batch-run: batch-archive batch-correct ## Run full batch pipeline (archive + correct)
-
-batch-test: ## Test batch-processor
+batch-test:
 	@echo "🧪 Testing batch-processor..."
 	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn test'
 
-batch-clean: ## Clean batch-processor artifacts
+batch-clean:
 	@echo "🧹 Cleaning batch-processor..."
 	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 	@echo "✅ batch-processor cleaned"
 
-batch-stop: ## Stop batch-processor (pkill)
+batch-archive:
+	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh archive'
+
+batch-correct:
+	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh correct'
+
+batch-features:
+	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh features'
+
+batch-labels:
+	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh labels'
+
+batch-training:
+	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh training'
+
+batch-run: batch-archive batch-correct
+
+batch-stop:
 	@echo "🛑 Stopping batch-processor..."
-	@pkill -f "batch-processor.*\.jar" 2>/dev/null || true
-	@pkill -f "ArchiveToHudiJob" 2>/dev/null || true
-	@pkill -f "HudiBatchCorrectionJob" 2>/dev/null || true
+	@-pkill -f "batch-processor.*\.jar" 2>/dev/null || true
+	@-pkill -f "BatchProcessorApp" 2>/dev/null || true
 	@echo "✅ batch-processor stopped"
 
-batch-logs: ## View batch-processor logs
-	@tail -f $(DIR_BATCH)/logs/*.log 2>/dev/null || echo "❌ No logs found. Jobs output to stdout."
+batch-logs:
+	@tail -f logs/batch-processor-*.log 2>/dev/null || echo "❌ No logs found"
 
 # ============================================
 # Frontend (React)
 # ============================================
 
-frontend-init: ## Initialize frontend dependencies
+frontend-init:
 	@echo "📦 Initializing frontend..."
 	@cd frontend && npm install
 	@echo "✅ frontend initialized"
 
-frontend-build: ## Build frontend
+frontend-build:
 	@echo "🔨 Building frontend..."
 	@cd frontend && npm run build
 	@echo "✅ frontend built"
 
-frontend-run: ## Run frontend
+frontend-run:
 	@cd frontend && npm run dev
 
-frontend-test: ## Test frontend
+frontend-test:
 	@echo "🧪 Testing frontend..."
 	@cd frontend && npm test
 
-frontend-lint: ## Lint frontend
+frontend-lint:
 	@echo "🔍 Linting frontend..."
 	@cd frontend && npm run lint
 
-frontend-clean: ## Clean frontend artifacts
+frontend-clean:
 	@echo "🧹 Cleaning frontend..."
 	@rm -rf frontend/dist
 	@echo "✅ frontend cleaned"
@@ -535,7 +527,7 @@ frontend-clean: ## Clean frontend artifacts
 # Batch Operations
 # ============================================
 
-init-all: ## Initialize all services
+init-all:
 	@echo "📦 Initializing all services..."
 	@$(MAKE) ingestion-init || true
 	@$(MAKE) query-init || true
@@ -549,7 +541,7 @@ init-all: ## Initialize all services
 	@$(MAKE) frontend-init || true
 	@echo "✅ All services initialized"
 
-build-all: ## Build all services
+build-all:
 	@echo "🔨 Building all services..."
 	@$(MAKE) ingestion-build || echo "⏭️  ingestion: skipped"
 	@$(MAKE) query-build || echo "⏭️  query: skipped"
@@ -563,7 +555,7 @@ build-all: ## Build all services
 	@$(MAKE) frontend-build || echo "⏭️  frontend: skipped"
 	@echo "✅ All services built"
 
-test-all: ## Test all services
+test-all:
 	@echo "🧪 Testing all services..."
 	@$(MAKE) ingestion-test || echo "⏭️  ingestion: skipped"
 	@$(MAKE) query-test || echo "⏭️  query: skipped"
@@ -577,7 +569,7 @@ test-all: ## Test all services
 	@$(MAKE) frontend-test || echo "⏭️  frontend: skipped"
 	@echo "✅ All tests completed"
 
-lint-all: ## Lint all services
+lint-all:
 	@echo "🔍 Linting all services..."
 	@$(MAKE) ingestion-lint || echo "⏭️  ingestion: skipped"
 	@$(MAKE) query-lint || echo "⏭️  query: skipped"
@@ -587,7 +579,7 @@ lint-all: ## Lint all services
 	@$(MAKE) frontend-lint || echo "⏭️  frontend: skipped"
 	@echo "✅ All linting completed"
 
-clean-all: ## Clean all artifacts
+clean-all:
 	@echo "🧹 Cleaning all artifacts..."
 	@$(MAKE) ingestion-clean || true
 	@$(MAKE) query-clean || true
@@ -605,7 +597,7 @@ clean-all: ## Clean all artifacts
 # Combined Service Commands
 # ============================================
 
-run-svc: ## Run query, risk, bff, graph in background (logs in .logs/)
+run-svc:
 	@mkdir -p $(LOGS_DIR)
 	@echo "🚀 Starting services in background..."
 	@echo "   Logs: $(LOGS_DIR)/"
@@ -621,14 +613,10 @@ run-svc: ## Run query, risk, bff, graph in background (logs in .logs/)
 	@echo "   - Graph Engine:   http://localhost:8084 (log: $(LOGS_DIR)/graph.log)"
 	@echo ""
 	@echo "📋 Commands:"
-	@echo "   make logs-query   # Tail query service logs"
-	@echo "   make logs-risk    # Tail risk service logs"
-	@echo "   make logs-bff     # Tail bff service logs"
-	@echo "   make logs-graph   # Tail graph service logs"
 	@echo "   make logs-all     # Tail all service logs"
 	@echo "   make stop-svc     # Stop all services"
 
-run-svc-tmux: ## Run query, risk, bff, graph in tmux split panes
+run-svc-tmux:
 	@command -v tmux >/dev/null 2>&1 || { echo "❌ tmux not installed. Run: brew install tmux"; exit 1; }
 	@if tmux has-session -t chain-risk 2>/dev/null; then \
 		echo "✅ tmux session 'chain-risk' already exists"; \
@@ -658,7 +646,7 @@ run-svc-tmux: ## Run query, risk, bff, graph in tmux split panes
 		fi \
 	fi
 
-run-svc-iterm: ## Run query, risk, bff, graph in iTerm2 tabs (macOS only)
+run-svc-iterm:
 	@osascript -e 'tell application "iTerm2"' \
 		-e 'tell current window' \
 		-e 'create tab with default profile' \
@@ -687,7 +675,7 @@ run-svc-iterm: ## Run query, risk, bff, graph in iTerm2 tabs (macOS only)
 		-e 'end tell'
 	@echo "✅ Services started in iTerm2 tabs"
 
-stop-svc: ## Stop all background services (including tmux session)
+stop-svc:
 	@echo "🛑 Stopping services..."
 	@-pkill -f "query-service" 2>/dev/null || true
 	@-pkill -f "uvicorn app.main:app" 2>/dev/null || true
@@ -706,47 +694,29 @@ stop-svc: ## Stop all background services (including tmux session)
 			echo "   tmux session kept. Run manually: tmux kill-session -t chain-risk"; \
 		fi \
 	fi
-	@if tmux has-session -t flink-stream 2>/dev/null; then \
-		read -p "🗑️  Kill tmux session 'flink-stream'? [y/N] " answer; \
-		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
-			tmux kill-session -t flink-stream; \
-			echo "✅ tmux session killed"; \
-		else \
-			echo "   tmux session kept. Run manually: tmux kill-session -t flink-stream"; \
-		fi \
-	fi
-	@if tmux has-session -t spark-batch 2>/dev/null; then \
-		read -p "🗑️  Kill tmux session 'spark-batch'? [y/N] " answer; \
-		if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
-			tmux kill-session -t spark-batch; \
-			echo "✅ tmux session killed"; \
-		else \
-			echo "   tmux session kept. Run manually: tmux kill-session -t spark-batch"; \
-		fi \
-	fi
 
-stop-query: ## Stop query service
+stop-query:
 	@echo "🛑 Stopping query service..."
 	@-pkill -f "query-service" 2>/dev/null || true
 	@echo "✅ query service stopped"
 
-stop-risk: ## Stop risk service
+stop-risk:
 	@echo "🛑 Stopping risk service..."
 	@-pkill -f "uvicorn app.main:app" 2>/dev/null || true
 	@echo "✅ risk service stopped"
 
-stop-bff: ## Stop bff service
+stop-bff:
 	@echo "🛑 Stopping bff service..."
 	@-pkill -f "nest start" 2>/dev/null || true
 	@-pkill -f "ts-node" 2>/dev/null || true
 	@echo "✅ bff service stopped"
 
-stop-alert: ## Stop alert service
+stop-alert:
 	@echo "🛑 Stopping alert service..."
 	@-pkill -f "alert-service" 2>/dev/null || true
 	@echo "✅ alert service stopped"
 
-stop-ingestion: ## Stop data ingestion service
+stop-ingestion:
 	@echo "🛑 Stopping data ingestion..."
 	@-pkill -f "data-ingestion" 2>/dev/null || true
 	@echo "✅ data ingestion stopped"
@@ -755,74 +725,74 @@ stop-ingestion: ## Stop data ingestion service
 # Logs
 # ============================================
 
-logs-query: ## Tail query service logs
+logs-query:
 	@tail -f $(LOGS_DIR)/query.log
 
-logs-risk: ## Tail risk service logs
+logs-risk:
 	@tail -f $(LOGS_DIR)/risk.log
 
-logs-bff: ## Tail bff service logs
+logs-bff:
 	@tail -f $(LOGS_DIR)/bff.log
 
-logs-graph: ## Tail graph service logs
+logs-graph:
 	@tail -f $(LOGS_DIR)/graph.log
 
-logs-all: ## Tail all service logs
+logs-all:
 	@tail -f $(LOGS_DIR)/*.log
 
 # ============================================
 # API Documentation
 # ============================================
 
-api-update: ## Update all API specifications
+api-update:
 	@./scripts/update-api-specs.sh --all
 
-api-update-query: ## Update Query Service API spec
+api-update-query:
 	@./scripts/update-api-specs.sh --query
 
-api-update-bff: ## Update BFF API spec
+api-update-bff:
 	@./scripts/update-api-specs.sh --bff
 
-api-update-risk: ## Update Risk ML Service API spec
+api-update-risk:
 	@./scripts/update-api-specs.sh --risk
 
-api-update-orch: ## Update Orchestrator API spec
+api-update-orch:
 	@./scripts/update-api-specs.sh --orchestrator
 
-api-update-graph: ## Update Graph Engine API spec
+api-update-graph:
 	@./scripts/update-api-specs.sh --graph
 
 # ============================================
 # Integration Test
 # ============================================
 
-test-integration: ## Run integration test (mock server + data pipeline)
+test-integration:
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/run-integration-test.sh'
 
-test-integration-phase1: ## Run integration test Phase 1 (data ingestion to Kafka only)
+test-integration-phase1:
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/test-integration-phase1.sh'
 
-test-integration-phase2: ## Run integration test Phase 2 (Flink processing only, reusable)
+test-integration-phase2:
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/test-integration-phase2.sh'
 
-test-integration-phase3: ## Run integration test Phase 3 (Spark batch processing, correct stream data)
+test-integration-phase3:
 	@bash -c 'set -a && source .env.local && source ./scripts/load-env.sh > /dev/null && ./scripts/test-integration-phase3.sh'
 
-mock-server-build: ## Build mock Etherscan server
+mock-server-build:
 	@echo "🔨 Building mock server..."
 	@cd tests/integration/mock_server && mkdir -p bin && go build -o bin/mock_server .
 	@echo "✅ Mock server built: tests/integration/mock_server/bin/mock_server"
 
-mock-server-run: mock-server-build ## Run mock server with fixtures
+mock-server-run: mock-server-build
 	@echo "🚀 Starting mock server..."
 	@cd tests/integration/mock_server && ./bin/mock_server -fixtures ../fixtures/ethereum -port 8545
 
-fixture-gen-build: ## Build fixture generator tool
+fixture-gen-build:
 	@echo "🔨 Building fixture-gen..."
 	@cd data-ingestion && go build -o bin/fixture-gen ./cmd/fixture-gen
 	@echo "✅ fixture-gen built: data-ingestion/bin/fixture-gen"
 
-fixture-gen: fixture-gen-build ## Generate test fixtures (requires ETHERSCAN_API_KEY)
+fixture-gen: fixture-gen-build
 	@echo "📥 Generating test fixtures..."
 	@bash -c 'set -a && source .env.local && cd data-ingestion && ./bin/fixture-gen \
 		-network ethereum \
