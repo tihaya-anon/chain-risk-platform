@@ -8,7 +8,6 @@ import com.chainrisk.stream.parser.TransactionParser;
 import com.chainrisk.stream.parser.TransferParser;
 import com.chainrisk.stream.serializer.TransferKafkaSerializer;
 import com.chainrisk.stream.sink.JdbcSinkFactory;
-import com.chainrisk.stream.sink.Neo4jTransferSink;
 import com.chainrisk.stream.sink.ProcessingStateTracker;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -26,61 +25,50 @@ import java.time.Duration;
 /**
  * Main Flink job for Lambda Architecture Speed Layer
  * 
- * Processes raw blockchain data from Kafka and implements dual-write strategy:
+ * Processes raw blockchain data from Kafka:
  * 1. PostgreSQL - for OLTP queries (Query Service)
- * 2. Neo4j - for real-time graph analysis (Graph Engine)
- * 3. Kafka - notify downstream consumers (Graph Engine incremental analysis)
+ * 2. Kafka - notify downstream consumers
  * 
- * All data is marked with source='stream' for later batch correction by Spark
+ * Neo4j sync is handled by batch processor (Neo4jSyncJob) for consistency.
+ * All data is marked with source='stream' for later batch correction.
  */
 public class TransferExtractionJob {
     private static final Logger LOG = LoggerFactory.getLogger(TransferExtractionJob.class);
 
     public static void main(String[] args) throws Exception {
-        // Parse parameters
         ParameterTool params = ParameterTool.fromArgs(args);
         
-        // Kafka source configuration
+        // Kafka source
         String kafkaBrokers = params.get("kafka.brokers", "localhost:19092");
         String kafkaTopic = params.get("kafka.topic", "chain-transactions");
         String kafkaGroupId = params.get("kafka.group.id", "stream-processor");
 
-        // Kafka sink configuration (for transfers topic)
+        // Kafka sink (transfers topic)
         String transfersKafkaBrokers = params.get("kafka.transfers.brokers", kafkaBrokers);
         String transfersTopic = params.get("kafka.transfers.topic", "transfers");
 
-        // PostgreSQL configuration
+        // PostgreSQL
         String jdbcUrl = params.get("jdbc.url", "jdbc:postgresql://localhost:15432/chainrisk");
         String jdbcUser = params.get("jdbc.user", "chainrisk");
         String jdbcPassword = params.get("jdbc.password", "chainrisk123");
 
-        // Neo4j configuration
-        String neo4jUri = params.get("neo4j.uri", "bolt://localhost:17687");
-        String neo4jUser = params.get("neo4j.user", "neo4j");
-        String neo4jPassword = params.get("neo4j.password", "chainrisk123");
-
         // Feature flags
-        boolean enableNeo4jSink = params.getBoolean("enable.neo4j.sink", true);
         boolean enableKafkaProducer = params.getBoolean("enable.kafka.producer", true);
         boolean enableStateTracking = params.getBoolean("enable.state.tracking", true);
 
-        LOG.info("=== Starting Lambda Architecture Speed Layer ===");
-        LOG.info("Kafka source - brokers: {}, topic: {}", kafkaBrokers, kafkaTopic);
-        LOG.info("PostgreSQL sink - url: {}", jdbcUrl);
-        LOG.info("Neo4j sink - uri: {}, enabled: {}", neo4jUri, enableNeo4jSink);
-        LOG.info("Kafka producer - brokers: {}, topic: {}, enabled: {}", 
-                transfersKafkaBrokers, transfersTopic, enableKafkaProducer);
-        LOG.info("State tracking enabled: {}", enableStateTracking);
+        LOG.info("=== Lambda Architecture Speed Layer ===");
+        LOG.info("Kafka source: {}:{}", kafkaBrokers, kafkaTopic);
+        LOG.info("PostgreSQL: {}", jdbcUrl);
+        LOG.info("Kafka producer: {} (enabled={})", transfersTopic, enableKafkaProducer);
 
-        // Create execution environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // Enable checkpointing for fault tolerance
-        env.enableCheckpointing(60000); // Checkpoint every 60 seconds
+        // Checkpointing
+        env.enableCheckpointing(60000);
         env.getCheckpointConfig().setMinPauseBetweenCheckpoints(30000);
         env.getCheckpointConfig().setCheckpointTimeout(120000);
 
-        // Create Kafka source for raw block data
+        // Kafka source
         KafkaSource<RawBlockData> kafkaSource = KafkaSource.<RawBlockData>builder()
                 .setBootstrapServers(kafkaBrokers)
                 .setTopics(kafkaTopic)
@@ -89,26 +77,22 @@ public class TransferExtractionJob {
                 .setValueOnlyDeserializer(new RawBlockDataDeserializer())
                 .build();
 
-        // Create watermark strategy with bounded out-of-orderness
         WatermarkStrategy<RawBlockData> watermarkStrategy = WatermarkStrategy
                 .<RawBlockData>forBoundedOutOfOrderness(Duration.ofMinutes(1))
                 .withTimestampAssigner((event, timestamp) -> 
                         event.getTimestamp() != null ? event.getTimestamp() * 1000 : timestamp);
 
-        // Read from Kafka
         DataStream<RawBlockData> rawBlockStream = env
                 .fromSource(kafkaSource, watermarkStrategy, "Kafka Source")
                 .name("Raw Block Data");
 
-        // Filter out null and invalid blocks
         DataStream<RawBlockData> validBlocks = rawBlockStream
                 .filter(block -> block != null && block.isValid())
                 .name("Filter Valid Blocks");
 
-        // Create JDBC sink factory
         JdbcSinkFactory sinkFactory = new JdbcSinkFactory(jdbcUrl, jdbcUser, jdbcPassword);
 
-        // ============== Processing State Tracking ==============
+        // Processing state tracking
         if (enableStateTracking) {
             validBlocks
                     .map(block -> new org.apache.flink.api.java.tuple.Tuple2<>(
@@ -120,11 +104,9 @@ public class TransferExtractionJob {
                     .keyBy(tuple -> tuple.f0)
                     .process(new ProcessingStateTracker(jdbcUrl, jdbcUser, jdbcPassword, "stream-processor"))
                     .name("Processing State Tracker");
-
-            LOG.info("Processing state tracker configured");
         }
 
-        // ============== Transaction Stream ==============
+        // Transaction stream -> PostgreSQL
         DataStream<Transaction> transactions = validBlocks
                 .flatMap(new TransactionParser())
                 .name("Parse Transactions");
@@ -137,9 +119,7 @@ public class TransferExtractionJob {
                 .addSink(sinkFactory.createTransactionSink())
                 .name("Transaction PostgreSQL Sink");
 
-        LOG.info("Transaction sink configured");
-
-        // ============== Transfer Stream (Dual-Write) ==============
+        // Transfer stream -> PostgreSQL + Kafka
         DataStream<Transfer> transfers = validBlocks
                 .flatMap(new TransferParser())
                 .name("Parse Transfers");
@@ -150,21 +130,10 @@ public class TransferExtractionJob {
                         transfer.getToAddress() != null)
                 .name("Filter Valid Transfers");
 
-        // Sink 1: PostgreSQL (OLTP queries)
         validTransfers
                 .addSink(sinkFactory.createTransferSink())
                 .name("Transfer PostgreSQL Sink");
-        LOG.info("PostgreSQL sink configured");
 
-        // Sink 2: Neo4j (Real-time graph analysis)
-        if (enableNeo4jSink) {
-            validTransfers
-                    .addSink(new Neo4jTransferSink(neo4jUri, neo4jUser, neo4jPassword))
-                    .name("Transfer Neo4j Sink");
-            LOG.info("Neo4j sink configured");
-        }
-
-        // Sink 3: Kafka (Notify Graph Engine for incremental analysis)
         if (enableKafkaProducer) {
             KafkaSink<Transfer> transferKafkaSink = KafkaSink.<Transfer>builder()
                     .setBootstrapServers(transfersKafkaBrokers)
@@ -177,11 +146,9 @@ public class TransferExtractionJob {
             validTransfers
                     .sinkTo(transferKafkaSink)
                     .name("Transfer Kafka Producer");
-            LOG.info("Kafka producer configured");
         }
 
-        // Execute the job
-        LOG.info("=== Executing Lambda Speed Layer Job ===");
-        env.execute("Lambda Architecture - Speed Layer (Flink Stream)");
+        LOG.info("=== Executing Speed Layer ===");
+        env.execute("Lambda Architecture - Speed Layer");
     }
 }

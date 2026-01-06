@@ -1,10 +1,6 @@
 package com.chainrisk.batch;
 
-import com.chainrisk.batch.job.ArchiveToHudiJob;
-import com.chainrisk.batch.job.FeatureComputeJob;
-import com.chainrisk.batch.job.HudiBatchCorrectionJob;
-import com.chainrisk.batch.job.LabelIngestionJob;
-import com.chainrisk.batch.job.TrainingDataPrepareJob;
+import com.chainrisk.batch.job.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,17 +8,16 @@ import org.slf4j.LoggerFactory;
  * Batch Processor Application Entry Point
  * Lambda Architecture - Batch Layer
  * 
- * Unified entry point for all batch processing jobs.
- * 
  * Usage:
  *   java -jar batch-processor.jar <job-name> [options]
  * 
  * Jobs:
- *   archive   - Archive PostgreSQL data to Hudi data lake
- *   correct   - Run batch correction on Hudi historical data
+ *   archive   - Archive PostgreSQL data to Hudi
+ *   correct   - Batch correction on Hudi data
  *   features  - Compute ML features from transfers
  *   labels    - Ingest label data from public sources
- *   training  - Prepare training dataset (features + labels)
+ *   training  - Prepare training dataset
+ *   neo4j     - Sync transfers to Neo4j graph database
  */
 public class BatchProcessorApp {
     private static final Logger LOG = LoggerFactory.getLogger(BatchProcessorApp.class);
@@ -67,6 +62,11 @@ public class BatchProcessorApp {
                     TrainingDataPrepareJob.main(jobArgs);
                     break;
                     
+                case "neo4j":
+                    LOG.info("Running Neo4j Sync Job...");
+                    Neo4jSyncJob.main(jobArgs);
+                    break;
+                    
                 default:
                     LOG.error("Unknown job: {}", jobName);
                     printUsage();
@@ -85,19 +85,18 @@ public class BatchProcessorApp {
         System.out.println("Usage: java -jar batch-processor.jar <job-name> [options]");
         System.out.println();
         System.out.println("Available jobs:");
-        System.out.println("  archive   - Archive PostgreSQL cold data to Hudi data lake");
-        System.out.println("  correct   - Run batch correction on Hudi historical data");
+        System.out.println("  archive   - Archive PostgreSQL cold data to Hudi");
+        System.out.println("  correct   - Batch correction on Hudi historical data");
         System.out.println("  features  - Compute ML features from transfers");
-        System.out.println("  labels    - Ingest label data from public sources (OFAC, Tornado Cash)");
-        System.out.println("  training  - Prepare training dataset (join features + labels)");
+        System.out.println("  labels    - Ingest label data (OFAC, Tornado Cash, Exchange)");
+        System.out.println("  training  - Prepare training dataset (features + labels)");
+        System.out.println("  neo4j     - Sync transfers to Neo4j graph database");
         System.out.println();
         System.out.println("Environment variables:");
         System.out.println("  POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD");
         System.out.println("  MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY");
         System.out.println("  HUDI_BASE_PATH, HIVE_METASTORE_URI, SPARK_MASTER");
-        System.out.println("  RETENTION_DAYS (for archive job)");
-        System.out.println("  START_DATE, END_DATE (for correct job)");
-        System.out.println("  NETWORK (for features/training job)");
-        System.out.println("  LABEL_SOURCES (for labels job, comma-separated: ofac,tornado,exchange)");
+        System.out.println("  NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD");
+        System.out.println("  NETWORK, RETENTION_DAYS, FULL_SYNC");
     }
 }

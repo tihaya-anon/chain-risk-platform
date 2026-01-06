@@ -122,6 +122,7 @@ help:
 	@echo "  make batch-features    Compute ML features from transfers"
 	@echo "  make batch-labels      Ingest label data (OFAC, Tornado, Exchange)"
 	@echo "  make batch-training    Prepare training dataset"
+	@echo "  make batch-neo4j      Sync transfers to Neo4j graph"
 	@echo "  make batch-stop        Stop running batch job"
 	@echo ""
 	@echo "🖥️  Frontend (React):"
@@ -478,6 +479,9 @@ batch-features:
 
 batch-labels:
 	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh labels'
+
+batch-neo4j:
+	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh neo4j'
 
 batch-training:
 	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh training'
