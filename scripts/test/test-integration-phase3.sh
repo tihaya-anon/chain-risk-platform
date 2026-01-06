@@ -70,10 +70,10 @@ run_batch_job "neo4j" "[5/5] Neo4j: Sync transfers to graph"
 log_info ""
 log_info "=== Hudi Table Summary ==="
 ./scripts/trino-query.sh "
-SELECT 'transfers' as tbl, COUNT(*) as cnt FROM hudi.datalake.transfers
-UNION ALL SELECT 'address_features', COUNT(*) FROM hudi.datalake.address_features
-UNION ALL SELECT 'address_labels', COUNT(*) FROM hudi.datalake.address_labels
-UNION ALL SELECT 'training_dataset', COUNT(*) FROM hudi.datalake.training_dataset
+SELECT 'transfers' as tbl, COUNT(*) as cnt FROM hudi.chainrisk.transfers
+UNION ALL SELECT 'address_features', COUNT(*) FROM hudi.chainrisk.address_features
+UNION ALL SELECT 'address_labels', COUNT(*) FROM hudi.chainrisk.address_labels
+UNION ALL SELECT 'training_dataset', COUNT(*) FROM hudi.chainrisk.training_dataset
 " 2>/dev/null | grep -E "transfers|features|labels|training" || log_warn "Trino query failed"
 
 # Verify Neo4j
