@@ -69,6 +69,7 @@ class DataLoader:
         return connect(
             host=cfg["host"],
             port=cfg["port"],
+            user=cfg.get("user", "admin"),
             catalog=cfg["catalog"],
             schema=cfg["schema"],
         )
@@ -76,12 +77,12 @@ class DataLoader:
     def _load_training_from_trino(self) -> pd.DataFrame:
         conn = self._get_trino_connection()
         feature_cols = ", ".join(self.config["features"]["list"])
-        
+
         query = f"""
         SELECT address, network, {feature_cols}, label, label_type, label_source
         FROM training_dataset
         """
-        
+
         df = pd.read_sql(query, conn)
         log.info(f"Loaded {len(df)} records from training_dataset")
         return df
@@ -89,7 +90,7 @@ class DataLoader:
     def _load_features_from_trino(self) -> pd.DataFrame:
         conn = self._get_trino_connection()
         feature_cols = ", ".join(self.config["features"]["list"])
-        
+
         query = f"SELECT address, network, {feature_cols} FROM address_features"
         df = pd.read_sql(query, conn)
         log.info(f"Loaded {len(df)} feature records")
@@ -97,7 +98,7 @@ class DataLoader:
 
     def _load_labels_from_trino(self) -> pd.DataFrame:
         conn = self._get_trino_connection()
-        
+
         query = "SELECT address, label_type, label, source, confidence FROM address_labels"
         df = pd.read_sql(query, conn)
         log.info(f"Loaded {len(df)} label records")
@@ -171,19 +172,19 @@ class DataLoader:
         import numpy as np
 
         feature_cols = self.get_feature_columns()
-        
+
         if not include_unlabeled:
             df = df[df["label"].notna()]
-        
+
         if len(df) == 0:
             raise ValueError("No data available for training")
-        
+
         X = df[feature_cols].fillna(0).values
         y = df["label"].values
         addresses = df["address"].values
-        
+
         X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
-        
+
         log.debug(f"Prepared arrays: X={X.shape}, y={y.shape}")
         return X, y, addresses
 

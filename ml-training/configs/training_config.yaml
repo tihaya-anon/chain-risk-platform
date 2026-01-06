@@ -3,20 +3,21 @@
 data:
   # Data source: trino, postgres, parquet
   source: trino
-  
+
   trino:
     host: localhost
-    port: 18080
+    port: 18081
+    user: admin
     catalog: hudi
     schema: chainrisk
-  
+
   postgres:
     host: localhost
     port: 15432
     database: chainrisk
     user: chainrisk
     password: chainrisk123
-  
+
   parquet:
     training_path: data/training/training_dataset.parquet
     features_path: data/features/address_features.parquet
@@ -52,7 +53,7 @@ models:
       objective: binary:logistic
       eval_metric: auc
       early_stopping_rounds: 10
-    
+
   unsupervised:
     type: isolation_forest
     params:
