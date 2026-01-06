@@ -26,7 +26,7 @@ DIR_ALERT := services/alert-service
 DIR_RISK := services/risk-ml-service
 DIR_BFF := services/bff
 DIR_ORCHESTRATOR := services/orchestrator
-DIR_GRAPH := processing/graph-engine
+DIR_GRAPH := services/graph-service
 DIR_FLINK := processing/stream-processor
 DIR_BATCH := processing/batch-processor
 DIR_FRONTEND := frontend
@@ -56,7 +56,7 @@ help:
 	@echo "🤖 Risk ML Service (Py):   risk-{build,run,test,clean}"
 	@echo "🌐 BFF Service (TS):       bff-{build,run,test,clean}"
 	@echo "🚪 Orchestrator (Java):    orchestrator-{build,run,test,clean}"
-	@echo "🔗 Graph Engine (Java):    graph-{build,run,test,clean}"
+	@echo "🔗 Graph Service (Java):   graph-{build,run,test,clean}"
 	@echo ""
 	@echo "⚡ Stream Processor (Flink):"
 	@echo "  make flink-build     Build stream processor"
@@ -212,16 +212,16 @@ orchestrator-clean:
 	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 
 # ============================================
-# Graph Engine (Java)
+# Graph Service (Java)
 # ============================================
 
 graph-build:
-	@echo "🔨 Building graph-engine..."
+	@echo "🔨 Building graph-service..."
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
-	@echo "✅ graph-engine built"
+	@echo "✅ graph-service built"
 
 graph-run:
-	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java -jar target/graph-engine-1.0.0-SNAPSHOT.jar'
+	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java -jar target/graph-service-1.0.0-SNAPSHOT.jar'
 
 graph-test:
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn test'
@@ -339,7 +339,7 @@ run-svc:
 	@bash -c '$(LOAD_ENV) cd $(DIR_QUERY) && go run ./cmd/... > ../../$(LOGS_DIR)/query.log 2>&1 &'
 	@bash -c '$(LOAD_ENV) cd $(DIR_RISK) && uv run uvicorn app.main:app --port 8082 > ../../$(LOGS_DIR)/risk.log 2>&1 &'
 	@cd $(DIR_BFF) && npm run start:dev > ../../$(LOGS_DIR)/bff.log 2>&1 &
-	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java -jar target/graph-engine-1.0.0-SNAPSHOT.jar > ../../$(LOGS_DIR)/graph.log 2>&1 &'
+	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java -jar target/graph-service-1.0.0-SNAPSHOT.jar > ../../$(LOGS_DIR)/graph.log 2>&1 &'
 	@sleep 2
 	@echo "✅ Services: Query(:8081) Risk(:8082) BFF(:3001) Graph(:8084)"
 	@echo "   Logs: $(LOGS_DIR)/"
@@ -349,7 +349,7 @@ stop-svc:
 	@pkill -f "query-service" 2>/dev/null || true
 	@pkill -f "uvicorn app.main:app" 2>/dev/null || true
 	@pkill -f "nest start" 2>/dev/null || true
-	@pkill -f "graph-engine" 2>/dev/null || true
+	@pkill -f "graph-service" 2>/dev/null || true
 	@echo "✅ Services stopped"
 
 logs-all:

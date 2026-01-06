@@ -206,26 +206,26 @@ update_orchestrator() {
 }
 
 # ============================================
-# 5. Graph Engine (Java + springdoc-openapi)
+# 5. Graph Service (Java + springdoc-openapi)
 # ============================================
-update_graph_engine() {
-    log_section "Updating Graph Engine API Spec"
+update_graph_service() {
+    log_section "Updating Graph Service API Spec"
     
-    cd "$PROJECT_ROOT/processing/graph-engine"
+    cd "$PROJECT_ROOT/services/graph-service"
     
     # Check if service is running
     if curl -s http://localhost:8084/actuator/health > /dev/null 2>&1; then
-        log_info "Graph Engine is running, fetching API spec..."
+        log_info "Graph Service is running, fetching API spec..."
         
         # Fetch OpenAPI spec from running service
-        if curl -s http://localhost:8084/api-docs > "$API_SPECS_DIR/graph-engine.openapi.json"; then
-            log_info "✅ Graph Engine API spec updated: docs/api-specs/graph-engine.openapi.json"
+        if curl -s http://localhost:8084/api-docs > "$API_SPECS_DIR/graph-service.openapi.json"; then
+            log_info "✅ Graph Service API spec updated: docs/api-specs/graph-service.openapi.json"
         else
-            log_error "❌ Failed to fetch Graph Engine API spec"
+            log_error "❌ Failed to fetch Graph Service API spec"
             return 1
         fi
     else
-        log_warn "Graph Engine is not running. Please start it manually and run this script again."
+        log_warn "Graph Service is not running. Please start it manually and run this script again."
         log_warn "Run: make graph-run"
         return 1
     fi
@@ -266,10 +266,10 @@ main() {
         RESULTS+=("❌ Orchestrator (not running)")
     fi
     
-    if update_graph_engine; then
-        RESULTS+=("✅ Graph Engine")
+    if update_graph_service; then
+        RESULTS+=("✅ Graph Service")
     else
-        RESULTS+=("❌ Graph Engine (not running)")
+        RESULTS+=("❌ Graph Service (not running)")
     fi
     
     # Print summary
@@ -323,7 +323,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --bff              Update BFF only"
             echo "  --risk             Update Risk ML Service only"
             echo "  --orchestrator     Update Orchestrator only"
-            echo "  --graph            Update Graph Engine only"
+            echo "  --graph            Update Graph Service only"
             echo "  --help, -h         Show this help message"
             echo ""
             echo "Examples:"
@@ -382,10 +382,10 @@ for service in "${SERVICES[@]}"; do
             fi
             ;;
         graph)
-            if update_graph_engine; then
-                RESULTS+=("✅ Graph Engine")
+            if update_graph_service; then
+                RESULTS+=("✅ Graph Service")
             else
-                RESULTS+=("❌ Graph Engine (not running)")
+                RESULTS+=("❌ Graph Service (not running)")
             fi
             ;;
     esac

@@ -12,9 +12,9 @@
     </parent>
 
     <groupId>com.chainrisk</groupId>
-    <artifactId>graph-engine</artifactId>
+    <artifactId>graph-service</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <name>Chain Risk Platform - Graph Engine</name>
+    <name>Chain Risk Platform - Graph Service</name>
     <description>Address clustering and tag propagation service using Neo4j</description>
 
     <properties>
@@ -43,19 +43,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-neo4j</artifactId>
-        </dependency>
-
-        <!-- Spring JDBC for PostgreSQL -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
-        </dependency>
-
-        <!-- PostgreSQL Driver -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
         </dependency>
 
         <!-- Nacos Config -->
@@ -119,12 +106,6 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>neo4j</artifactId>
-            <version>1.19.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
             <version>1.19.3</version>
             <scope>test</scope>
         </dependency>

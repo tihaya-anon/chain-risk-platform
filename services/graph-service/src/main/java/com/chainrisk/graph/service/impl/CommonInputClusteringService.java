@@ -11,6 +11,7 @@ import com.chainrisk.graph.repository.GraphRepositoryImpl.CommonInputPair;
 import com.chainrisk.graph.service.ClusteringService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,9 @@ public class CommonInputClusteringService implements ClusteringService {
     private final ClusterRepository clusterRepository;
     private final GraphRepositoryImpl graphRepository;
     private final GraphProperties graphProperties;
+
+    @Value("${graph.network:ethereum}")
+    private String network;
 
     private static final int MIN_COMMON_BLOCKS = 2; // Minimum common blocks to consider clustering
     private static final int PAIR_LIMIT = 10000;    // Maximum pairs to process per run
@@ -90,7 +94,7 @@ public class CommonInputClusteringService implements ClusteringService {
                         .tags(new ArrayList<>())
                         .createdAt(Instant.now())
                         .updatedAt(Instant.now())
-                        .network(graphProperties.getSync().getNetwork())
+                        .network(network)
                         .build();
 
                 clusterRepository.save(clusterNode);
@@ -160,7 +164,7 @@ public class CommonInputClusteringService implements ClusteringService {
                     .tags(new ArrayList<>())
                     .createdAt(Instant.now())
                     .updatedAt(Instant.now())
-                    .network(graphProperties.getSync().getNetwork())
+                    .network(network)
                     .build();
 
             clusterRepository.save(clusterNode);

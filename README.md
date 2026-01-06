@@ -40,15 +40,15 @@ A Lambda Architecture-based on-chain transaction analysis and address risk asses
 └───────────┬─────────────────────┬─────────────────────┬─────────────┘
             │                     │                     │
 ┌───────────▼───────────┐ ┌───────▼───────┐ ┌─────────────▼───────────┐
-│    Query Service      │ │ Risk Service  │ │      Alert Service      │
-│        (Go)           │ │   (Python)    │ │          (Go)           │
-└───────────┬───────────┘ └───────┬───────┘ └───────────┬───────────┘
+│    Query Service      │ │ Graph Service │ │      Risk Service       │
+│        (Go)           │ │    (Java)     │ │        (Python)         │
+└───────────┬───────────┘ └───────┬───────┘ └───────────┬─────────────┘
             │                     │                     │
             └──────────┬──────────┴──────────┬──────────┘
                        │                     │
 ┌──────────────────────▼─────────────────────▼────────────────────────┐
 │                  Data & Processing Layer (Lambda)                   │
-│                                                                      │
+│                                                                     │
 │  ┌────────────────────────────────────────────────────────┐         │
 │  │         Data Ingestion (Go) → Kafka Topics             │         │
 │  └─────────────────────────┬──────────────────────────────┘         │
@@ -56,17 +56,17 @@ A Lambda Architecture-based on-chain transaction analysis and address risk asses
 │       ┌────────────────────┴────────────────┐                       │
 │       │                                     │                       │
 │       ▼                                     ▼                       │
-│  ┌──────────────┐                     ┌──────────────┐             │
-│  │ Speed Layer  │                     │ Batch Layer  │             │
-│  │ Flink Stream │                     │ Spark + Hudi │             │
-│  │ (real-time)  │                     │ (daily batch)│             │
-│  └────┬─────┬───┘                     └────┬─────┬───┘             │
-│       │     │                              │     │                 │
-│       ▼     ▼                              ▼     ▼                 │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐       │
-│  │ PostgreSQL   │     │    Neo4j     │     │ Hudi (MinIO) │       │
-│  │ (hot, 7 days)│     │  (graph)     │     │ (cold data)  │       │
-│  └──────────────┘     └──────────────┘     └──────────────┘       │
+│  ┌──────────────┐                     ┌──────────────┐              │
+│  │ Speed Layer  │                     │ Batch Layer  │              │
+│  │ Flink Stream │                     │ Spark + Hudi │              │
+│  │ (real-time)  │                     │ (daily batch)│              │
+│  └────┬─────┬───┘                     └────┬─────┬───┘              │
+│       │     │                              │     │                  │
+│       ▼     ▼                              ▼     ▼                  │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐         │
+│  │ PostgreSQL   │     │    Neo4j     │     │ Hudi (MinIO) │         │
+│  │ (hot, 7 days)│     │   (graph)    │     │ (cold data)  │         │
+│  └──────────────┘     └──────────────┘     └──────────────┘         │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -77,17 +77,17 @@ See detailed architecture at:
 
 ## Tech Stack
 
-| Layer            | Technology                               | Description                |
-| ---------------- | ---------------------------------------- | -------------------------- |
-| **Frontend**     | React, TypeScript, Vite                  | Risk Dashboard             |
-| **Orchestrator** | Java, Spring Cloud Gateway, Resilience4j| API Gateway + Orchestration|
-| **BFF**          | Nest.js, TypeScript                      | Business Aggregation       |
-| **Services**     | Go (Gin), Python (FastAPI)               | Microservices              |
-| **Speed Layer**  | Apache Flink, Kafka                      | Real-time Stream           |
-| **Batch Layer**  | Apache Spark, Hudi                       | Batch Processing           |
-| **Graph**        | Java, Spring Boot, Neo4j                 | Graph Analysis Service     |
-| **Storage**      | PostgreSQL, Neo4j, Redis, MinIO          | Data Storage               |
-| **Infra**        | Docker, Kubernetes                       | Infrastructure             |
+| Layer            | Technology                                | Description                 |
+| ---------------- | ----------------------------------------- | --------------------------- |
+| **Frontend**     | React, TypeScript, Vite                   | Risk Dashboard              |
+| **Orchestrator** | Java, Spring Cloud Gateway, Resilience4j  | API Gateway + Orchestration |
+| **BFF**          | Nest.js, TypeScript                       | Business Aggregation        |
+| **Services**     | Go (Gin), Java (Spring), Python (FastAPI) | Microservices               |
+| **Speed Layer**  | Apache Flink, Kafka                       | Real-time Stream            |
+| **Batch Layer**  | Apache Spark, Hudi                        | Batch Processing            |
+| **Graph**        | Java, Spring Boot, Neo4j                  | Graph Analysis Service      |
+| **Storage**      | PostgreSQL, Neo4j, Redis, MinIO           | Data Storage                |
+| **Infra**        | Docker, Kubernetes                        | Infrastructure              |
 
 ## Project Structure
 
@@ -96,26 +96,23 @@ chain-risk-platform/
 ├── services/               # Microservices (Serving Layer)
 │   ├── orchestrator/       # Java/Spring Cloud Gateway - API Gateway
 │   ├── bff/                # TypeScript/Nest.js - Business Aggregation
-│   ├── query-service/      # Go/Gin - Query Service
-│   ├── alert-service/      # Go/Gin - Alert Service
-│   └── risk-ml-service/    # Python/FastAPI - Risk Scoring
+│   ├── query-service/      # Go/Gin - Address/Transaction Query
+│   ├── graph-service/      # Java/Spring Boot + Neo4j - Graph Analysis
+│   ├── risk-ml-service/    # Python/FastAPI - Risk Scoring
+│   └── alert-service/      # Go/Gin - Alert Service
 │
 ├── processing/             # Data Processing (Speed + Batch Layer)
 │   ├── stream-processor/   # Java/Flink - Real-time Stream Processing
 │   │   ├── Transfer parsing
 │   │   └── Dual-write PostgreSQL + Neo4j
 │   │
-│   ├── batch-processor/    # Java/Spark + Hudi - Batch Layer
-│   │   ├── ArchiveToHudiJob - PostgreSQL → Hudi archival
-│   │   ├── HudiBatchCorrectionJob - Risk score correction
-│   │   └── Writes to Hudi data lake (MinIO)
-│   │
-│   └── graph-engine/       # Java/Spring Boot + Neo4j
-│       ├── Address clustering (Common Input Heuristic)
-│       ├── Tag Propagation (BFS)
-│       └── Incremental + batch graph analysis
+│   └── batch-processor/    # Java/Spark + Hudi - Batch Layer
+│       ├── ArchiveToHudiJob - PostgreSQL → Hudi archival
+│       ├── HudiBatchCorrectionJob - Risk score correction
+│       └── Writes to Hudi data lake (MinIO)
 │
 ├── data-ingestion/         # Go - On-chain Data Collection
+├── ml-training/            # Python - ML Model Training
 ├── frontend/               # React - Risk Dashboard
 ├── infra/                  # Infrastructure Config
 │   ├── docker-compose.yml
@@ -166,7 +163,7 @@ make infra-check
 | Query Service   | 8081  | Query Service        |
 | Risk ML Service | 8082  | Risk Scoring Service |
 | Alert Service   | 8083  | Alert Service        |
-| Graph Engine    | 8084  | Graph Analysis       |
+| Graph Service   | 8084  | Graph Analysis       |
 | Frontend        | 5173  | Frontend Dashboard   |
 | PostgreSQL      | 15432 | RDBMS                |
 | Neo4j           | 17474 | Graph DB (HTTP)      |
@@ -231,7 +228,6 @@ make test-all          # Run all tests
 make batch-build       # Build batch processor
 make batch-archive     # Run archive job (PostgreSQL → Hudi)
 make batch-correct     # Run batch correction job
-make batch-run         # Run full batch pipeline
 ```
 
 See [Scripts Quick Reference](./docs/operations/SCRIPTS_QUICK_REFERENCE.md) for details.
@@ -240,20 +236,20 @@ See [Scripts Quick Reference](./docs/operations/SCRIPTS_QUICK_REFERENCE.md) for 
 
 ### 1. Lambda Architecture - Stream-Batch Unified
 
-| Feature      | Speed Layer (Flink)     | Batch Layer (Spark)  |
-| ------------ | ----------------------- | -------------------- |
-| **Latency**  | Sub-second              | T+1 day              |
-| **Accuracy** | Medium (may have errors)| High (complete parse)|
-| **Source**   | Kafka real-time         | Full node RPC rescan |
-| **Strategy** | Dual-write PG + Neo4j   | Override with Hudi   |
-| **Use Case** | Real-time query, alerts | Data correction      |
+| Feature      | Speed Layer (Flink)      | Batch Layer (Spark)   |
+| ------------ | ------------------------ | --------------------- |
+| **Latency**  | Sub-second               | T+1 day               |
+| **Accuracy** | Medium (may have errors) | High (complete parse) |
+| **Source**   | Kafka real-time          | Full node RPC rescan  |
+| **Strategy** | Dual-write PG + Neo4j    | Override with Hudi    |
+| **Use Case** | Real-time query, alerts  | Data correction       |
 
 ### 2. Graph Analysis - Incremental + Batch
 
-| Analysis     | Trigger           | Scope      | Algorithm               |
-| ------------ | ----------------- | ---------- | ----------------------- |
-| **Incremental** | Kafka message  | Local graph| Incremental clustering  |
-| **Batch**    | Daily scheduler   | Full graph | PageRank, Louvain       |
+| Analysis        | Trigger         | Scope       | Algorithm              |
+| --------------- | --------------- | ----------- | ---------------------- |
+| **Incremental** | Kafka message   | Local graph | Incremental clustering |
+| **Batch**       | Daily scheduler | Full graph  | PageRank, Louvain      |
 
 ### 3. Data Lake (Hudi)
 
@@ -269,7 +265,7 @@ See [Scripts Quick Reference](./docs/operations/SCRIPTS_QUICK_REFERENCE.md) for 
 - [x] Phase 3: BFF and Frontend (basic)
 - [x] Lambda architecture design
 - [x] Phase 4: Spark + Hudi batch processing
-- [ ] Phase 5: Graph Engine optimization
+- [ ] Phase 5: Graph Service optimization
 - [ ] Phase 6: Advanced features (ML models)
 
 ## Contributing
@@ -282,4 +278,4 @@ MIT License
 
 ---
 
-**Last Updated**: 2026-01-05
+**Last Updated**: 2026-01-06

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Result;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,9 @@ public class BfsTagPropagationService implements TagPropagationService {
     private final GraphRepositoryImpl graphRepository;
     private final GraphProperties graphProperties;
     private final Driver neo4jDriver;
+
+    @Value("${graph.network:ethereum}")
+    private String network;
 
     private static final double HIGH_RISK_THRESHOLD = 0.6;
 
@@ -200,7 +204,7 @@ public class BfsTagPropagationService implements TagPropagationService {
                         .txCount(0L)
                         .riskScore(0.0)
                         .tags(new ArrayList<>(tags))
-                        .network(graphProperties.getSync().getNetwork())
+                        .network(network)
                         .build();
                 addressRepository.save(newAddress);
             } else {

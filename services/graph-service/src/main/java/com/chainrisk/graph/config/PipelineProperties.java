@@ -21,11 +21,6 @@ public class PipelineProperties {
     private boolean enabled = true;
 
     /**
-     * Graph sync configuration
-     */
-    private GraphSyncConfig graphSync = new GraphSyncConfig();
-
-    /**
      * Clustering configuration
      */
     private ClusteringConfig clustering = new ClusteringConfig();
@@ -34,13 +29,6 @@ public class PipelineProperties {
      * Tag propagation configuration
      */
     private PropagationConfig propagation = new PropagationConfig();
-
-    @Data
-    public static class GraphSyncConfig {
-        private boolean enabled = true;
-        private long intervalMs = 300000;
-        private int batchSize = 1000;
-    }
 
     @Data
     public static class ClusteringConfig {

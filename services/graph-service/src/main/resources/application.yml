@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: graph-engine
+    name: graph-service
 
   # Import Nacos configuration
   config:
@@ -16,17 +16,6 @@ spring:
       username: ${NEO4J_USERNAME:neo4j}
       password: ${NEO4J_PASSWORD:chainrisk123}
 
-  # PostgreSQL Configuration (for reading transfers)
-  datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:15432}/${POSTGRES_DB:chainrisk}
-    username: ${POSTGRES_USER:chainrisk}
-    password: ${POSTGRES_PASSWORD:chainrisk123}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 5
-      minimum-idle: 2
-      connection-timeout: 30000
-
   # MVC Configuration
   mvc:
     static-path-pattern: /**
@@ -34,16 +23,10 @@ spring:
     resources:
       add-mappings: true
 
-# Graph Engine Configuration (defaults, can be overridden by Nacos)
+# Graph Service Configuration (defaults, can be overridden by Nacos)
 graph:
-  sync:
-    enabled: ${pipeline.graph-sync.enabled:true}
-    # Sync interval in milliseconds (5 minutes)
-    interval: ${pipeline.graph-sync.intervalMs:300000}
-    # Batch size for syncing transfers
-    batch-size: ${pipeline.graph-sync.batchSize:1000}
-    # Network to sync
-    network: ethereum
+  # Network (ethereum, bsc, etc.)
+  network: ${GRAPH_NETWORK:ethereum}
 
   clustering:
     # Minimum cluster size to persist

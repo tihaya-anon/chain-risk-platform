@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * REST Controller for Graph Engine API
+ * REST Controller for Graph Service API
  */
 @Slf4j
 @RestController
@@ -28,7 +28,6 @@ import java.util.List;
 public class GraphController {
 
     private final GraphQueryService graphQueryService;
-    private final GraphSyncService graphSyncService;
     private final ClusteringService clusteringService;
     private final TagPropagationService tagPropagationService;
 
@@ -186,23 +185,6 @@ public class GraphController {
             @PathVariable String address) {
         
         PropagationResultResponse result = tagPropagationService.propagateFromAddress(address);
-        return ResponseEntity.ok(result);
-    }
-
-    // ==================== Sync Operations ====================
-
-    @GetMapping("/sync/status")
-    @Operation(summary = "Get sync status", description = "Get current synchronization status between PostgreSQL and Neo4j")
-    public ResponseEntity<SyncStatusResponse> getSyncStatus() {
-        SyncStatusResponse status = graphSyncService.getSyncStatus();
-        return ResponseEntity.ok(status);
-    }
-
-    @PostMapping("/sync")
-    @Operation(summary = "Trigger sync", description = "Manually trigger data synchronization from PostgreSQL to Neo4j")
-    public ResponseEntity<SyncStatusResponse> triggerSync() {
-        log.info("Sync triggered via API");
-        SyncStatusResponse result = graphSyncService.triggerSync();
         return ResponseEntity.ok(result);
     }
 
