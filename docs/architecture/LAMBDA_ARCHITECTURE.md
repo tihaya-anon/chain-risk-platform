@@ -51,8 +51,9 @@ Lambda Architecture combines **stream processing** (fast, approximate) with **ba
               │   Serving Layer     │
               │                     │
               │   - Query Service   │
-              │   - Trino (Hudi)    │
+              │   - Graph Service   │
               │   - Risk Service    │
+              │   - Trino (Hudi)    │
               └─────────────────────┘
 ```
 
@@ -170,11 +171,14 @@ transfers (COPY_ON_WRITE)
 
 **Purpose**: Unified query interface for hot and cold data
 
-**Technology**:
-- Query Service (Go) - query routing
-- Trino - Hudi SQL queries
-- Risk Service (Python) - risk scoring API
-- Graph Engine (Java) - graph analysis
+**Components**:
+
+| Service | Technology | Purpose |
+|---------|------------|---------|
+| Query Service | Go/Gin | Address/transfer queries, query routing |
+| Graph Service | Java/Spring Boot | Neo4j graph analysis, clustering, tag propagation |
+| Risk Service | Python/FastAPI | Risk scoring API |
+| Trino | - | Hudi SQL queries |
 
 **Query Routing**:
 ```go
@@ -209,29 +213,24 @@ func GetTransfers(addr string, startTime, endTime int64) ([]Transfer, error) {
 
 ## Scheduling
 
+### Makefile Commands
+
+```bash
+make batch-archive     # Archive PostgreSQL → Hudi
+make batch-correct     # Batch correction on Hudi
+make batch-features    # Compute ML features
+make batch-labels      # Ingest label data
+make batch-training    # Prepare training dataset
+```
+
 ### Cron
 
 ```bash
 # Archive: Daily at 02:00
-0 2 * * * ./scripts/run-archive-job.sh
+0 2 * * * cd /path/to/project && make batch-archive
 
 # Correction: Daily at 03:00
-0 3 * * * ./scripts/run-batch-correction.sh
-```
-
-### Airflow
-
-```python
-with DAG('lambda_batch_layer', schedule='0 2 * * *') as dag:
-    archive = BashOperator(
-        task_id='archive',
-        bash_command='./scripts/run-archive-job.sh'
-    )
-    correct = BashOperator(
-        task_id='correct', 
-        bash_command='./scripts/run-batch-correction.sh'
-    )
-    archive >> correct
+0 3 * * * cd /path/to/project && make batch-correct
 ```
 
 ---
@@ -259,43 +258,14 @@ query_service:
   - cache_hit_rate: Query cache efficiency
 ```
 
-### Data Quality Report
-
-```sql
--- Daily stream vs batch comparison
-SELECT 
-    dt,
-    COUNT(*) as total_records,
-    AVG(risk_score) as avg_risk_score,
-    COUNT(*) FILTER (WHERE risk_category = 'HIGH') as high_risk_count
-FROM hudi.chainrisk.transfers
-WHERE dt >= current_date - interval '7' day
-GROUP BY dt
-ORDER BY dt DESC;
-```
-
----
-
-## Benefits
-
-| Dimension    | Lambda Architecture Advantage        |
-| ------------ | ------------------------------------ |
-| Real-time    | Flink provides sub-second latency    |
-| Accuracy     | Spark batch corrects errors          |
-| Completeness | Eventual consistency guaranteed      |
-| Decoupling   | Stream and batch scale independently |
-| Cost         | Cold data in cheap object storage    |
-| Scalability  | Each layer scales separately         |
-
 ---
 
 ## Related Documentation
 
 - [Project Overview](./PROJECT_OVERVIEW.md)
-- [Technical Decisions](./TECH_DECISIONS.md)
 - [Hudi Batch Layer](../development/HUDI_BATCH_LAYER.md)
-- [Batch Processor README](../../processing/batch-processor/README.md)
+- [ML Feature Pipeline](../development/ML_FEATURE_PIPELINE.md)
 
 ---
 
-**Last Updated**: 2026-01-05
+**Last Updated**: 2026-01-06
