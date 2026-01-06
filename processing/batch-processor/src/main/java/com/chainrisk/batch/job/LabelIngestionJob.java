@@ -3,6 +3,7 @@ package com.chainrisk.batch.job;
 import com.chainrisk.batch.job.fetcher.ExchangeFetcher;
 import com.chainrisk.batch.job.fetcher.LabelFetcher;
 import com.chainrisk.batch.job.fetcher.LabelFetcher.LabelRecord;
+import com.chainrisk.batch.job.fetcher.MockLabelFetcher;
 import com.chainrisk.batch.job.fetcher.OFACFetcher;
 import com.chainrisk.batch.job.fetcher.TornadoCashFetcher;
 import org.apache.spark.sql.Dataset;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
  * - OFAC SDN List (sanctioned addresses)
  * - Tornado Cash (mixer addresses)
  * - Known Exchanges (legitimate addresses for negative samples)
+ * - Mock (for testing - generates labels for existing addresses)
  */
 public class LabelIngestionJob {
     private static final Logger LOG = LoggerFactory.getLogger(LabelIngestionJob.class);
@@ -51,6 +53,7 @@ public class LabelIngestionJob {
         FETCHERS.put("ofac", new OFACFetcher());
         FETCHERS.put("tornado_cash", new TornadoCashFetcher());
         FETCHERS.put("exchange", new ExchangeFetcher());
+        // Note: mock fetcher is handled separately as it needs address list
     }
 
     public LabelIngestionJob(String hudiBasePath, String minioEndpoint,
@@ -77,15 +80,22 @@ public class LabelIngestionJob {
             Timestamp fetchedAt = Timestamp.from(Instant.now());
             
             for (String source : enabledSources) {
-                LabelFetcher fetcher = FETCHERS.get(source);
-                if (fetcher == null) {
-                    LOG.warn("Unknown source: {}, skipping", source);
-                    continue;
-                }
-                
                 try {
-                    LOG.info("Fetching from source: {}", source);
-                    List<LabelRecord> records = fetcher.fetch();
+                    List<LabelRecord> records;
+                    
+                    if ("mock".equals(source)) {
+                        // Mock source: read addresses from address_features and generate labels
+                        records = fetchMockLabels(spark);
+                    } else {
+                        LabelFetcher fetcher = FETCHERS.get(source);
+                        if (fetcher == null) {
+                            LOG.warn("Unknown source: {}, skipping", source);
+                            continue;
+                        }
+                        LOG.info("Fetching from source: {}", source);
+                        records = fetcher.fetch();
+                    }
+                    
                     allLabels.addAll(records);
                     LOG.info("Fetched {} records from {}", records.size(), source);
                 } catch (Exception e) {
@@ -113,6 +123,38 @@ public class LabelIngestionJob {
             throw new RuntimeException("Label ingestion job failed", e);
         } finally {
             spark.stop();
+        }
+    }
+    
+    /**
+     * Fetch mock labels by reading addresses from address_features table
+     */
+    private List<LabelRecord> fetchMockLabels(SparkSession spark) {
+        LOG.info("Fetching mock labels from address_features");
+        
+        try {
+            // Read existing addresses from address_features
+            Dataset<Row> features = spark.read()
+                    .format("hudi")
+                    .load(hudiBasePath + "/address_features");
+            
+            List<String> addresses = features.select("address")
+                    .distinct()
+                    .collectAsList()
+                    .stream()
+                    .map(row -> row.getString(0))
+                    .collect(Collectors.toList());
+            
+            LOG.info("Found {} unique addresses in address_features", addresses.size());
+            
+            // Generate mock labels
+            MockLabelFetcher mockFetcher = new MockLabelFetcher(addresses);
+            return mockFetcher.fetch();
+            
+        } catch (Exception e) {
+            LOG.warn("Failed to read address_features for mock labels: {}", e.getMessage());
+            LOG.warn("Make sure to run 'features' job before 'labels' with mock source");
+            return new ArrayList<>();
         }
     }
 
@@ -199,6 +241,7 @@ public class LabelIngestionJob {
         String sparkMaster = System.getenv().getOrDefault("SPARK_MASTER", "local[*]");
         
         // Parse enabled sources (comma-separated)
+        // Use "mock" for testing with synthetic labels that match test addresses
         String sourcesEnv = System.getenv().getOrDefault("LABEL_SOURCES", "ofac,tornado_cash,exchange");
         List<String> enabledSources = Arrays.asList(sourcesEnv.split(","))
                 .stream()
