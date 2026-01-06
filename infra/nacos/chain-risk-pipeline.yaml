@@ -38,13 +38,9 @@ pipeline:
       # Max records per poll
       maxPollRecords: 500
 
-  # ==================== Graph Engine (Java) ====================
-  graph-sync:
-    enabled: true
-    # Sync interval in milliseconds (5 minutes)
-    intervalMs: 300000
-    # Batch size for syncing transfers
-    batchSize: 1000
+  # ==================== Graph Service (Neo4j) ====================
+  # Note: Data is written by Flink stream processor (dual-write)
+  # Graph service only provides query APIs
 
   clustering:
     enabled: true

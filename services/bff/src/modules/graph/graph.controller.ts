@@ -27,7 +27,6 @@ import {
   AddressNeighborsResponse,
   PathResponse,
   ClusterResponse,
-  SyncStatusResponse,
   PropagationResultResponse,
   ClusteringResultResponse,
 } from "./graph.dto";
@@ -297,38 +296,6 @@ export class GraphController {
   ): Promise<AddressInfoResponse[]> {
     logger.debug("Getting high-risk addresses", { ...query, userId: user.sub });
     return this.graphService.getHighRiskAddresses(query.threshold, query.limit);
-  }
-
-  // ============== Sync Endpoints ==============
-
-  @Get("sync/status")
-  @ApiOperation({ summary: "Get sync status" })
-  @ApiResponse({
-    status: 200,
-    description: "Sync status",
-    type: SyncStatusResponse,
-  })
-  @ApiResponse({ status: 401, description: "Unauthorized" })
-  async getSyncStatus(
-    @GatewayUser() user: UserPayload,
-  ): Promise<SyncStatusResponse> {
-    logger.debug("Getting sync status", { userId: user.sub });
-    return this.graphService.getSyncStatus();
-  }
-
-  @Post("sync")
-  @ApiOperation({ summary: "Trigger data sync" })
-  @ApiResponse({
-    status: 200,
-    description: "Sync triggered",
-    type: SyncStatusResponse,
-  })
-  @ApiResponse({ status: 401, description: "Unauthorized" })
-  async triggerSync(
-    @GatewayUser() user: UserPayload,
-  ): Promise<SyncStatusResponse> {
-    logger.info("Triggering sync", { userId: user.sub });
-    return this.graphService.triggerSync();
   }
 
   // ============== Propagation Endpoints ==============

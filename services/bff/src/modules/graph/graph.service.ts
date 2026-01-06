@@ -7,7 +7,6 @@ import {
   AddressNeighborsResponse,
   PathResponse,
   ClusterResponse,
-  SyncStatusResponse,
   PropagationResultResponse,
   ClusteringResultResponse,
   AddTagRequestDto,
@@ -189,29 +188,6 @@ export class GraphService {
       return response.data;
     } catch (error) {
       this.handleError(error, "getHighRiskAddresses", { threshold, limit });
-    }
-  }
-
-  // ============== Sync Operations ==============
-
-  async getSyncStatus(): Promise<SyncStatusResponse> {
-    try {
-      const response = await this.client.get<SyncStatusResponse>(
-        "/api/graph/sync/status",
-      );
-      return response.data;
-    } catch (error) {
-      this.handleError(error, "getSyncStatus");
-    }
-  }
-
-  async triggerSync(): Promise<SyncStatusResponse> {
-    try {
-      const response =
-        await this.client.post<SyncStatusResponse>("/api/graph/sync");
-      return response.data;
-    } catch (error) {
-      this.handleError(error, "triggerSync");
     }
   }
 

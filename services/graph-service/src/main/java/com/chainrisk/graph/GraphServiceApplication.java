@@ -7,12 +7,12 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * Graph Engine Application
+ * Graph Service Application
  * 
  * Provides address clustering and tag propagation services using Neo4j.
+ * Data is written by Flink stream processor (dual-write to PostgreSQL + Neo4j).
  * 
  * Features:
- * - Sync transfers from PostgreSQL to Neo4j graph
  * - Address clustering based on common input heuristics
  * - Risk tag propagation through transaction graph
  * - REST API for graph queries
@@ -22,9 +22,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableDiscoveryClient
 @ConfigurationPropertiesScan
-public class GraphEngineApplication {
+public class GraphServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(GraphEngineApplication.class, args);
+        SpringApplication.run(GraphServiceApplication.class, args);
     }
 }

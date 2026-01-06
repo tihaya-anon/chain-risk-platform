@@ -7,15 +7,11 @@
 
 spring:
   application:
-    name: graph-engine
+    name: graph-service
   cloud:
     nacos:
       # Nacos Server address
       server-addr: ${NACOS_SERVER:localhost:18848}
-      # Note: Authentication disabled on server (auth_enabled=false)
-      # If auth is enabled later, uncomment these lines:
-      # username: ${NACOS_USERNAME:nacos}
-      # password: ${NACOS_PASSWORD:nacos}
       # Configuration Center
       config:
         enabled: true

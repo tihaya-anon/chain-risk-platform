@@ -262,34 +262,6 @@ export class ClusterResponse {
   network?: string;
 }
 
-export class SyncStatusResponse {
-  @ApiProperty({
-    description: "Sync status (IDLE, RUNNING, COMPLETED, FAILED)",
-  })
-  status: string;
-
-  @ApiPropertyOptional({ description: "Last synced block number" })
-  lastSyncedBlock?: number;
-
-  @ApiPropertyOptional({ description: "Total addresses in graph" })
-  totalAddresses?: number;
-
-  @ApiPropertyOptional({ description: "Total transfers in graph" })
-  totalTransfers?: number;
-
-  @ApiPropertyOptional({ description: "Last sync timestamp" })
-  lastSyncTime?: string;
-
-  @ApiPropertyOptional({ description: "Next scheduled sync time" })
-  nextSyncTime?: string;
-
-  @ApiPropertyOptional({ description: "Network" })
-  network?: string;
-
-  @ApiPropertyOptional({ description: "Error message if failed" })
-  errorMessage?: string;
-}
-
 export class PropagationResultResponse {
   @ApiProperty({ description: "Propagation status" })
   status: string;
