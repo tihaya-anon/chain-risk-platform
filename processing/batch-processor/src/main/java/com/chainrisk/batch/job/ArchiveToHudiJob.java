@@ -5,6 +5,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
+import org.apache.spark.sql.types.DataTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +72,13 @@ public class ArchiveToHudiJob {
 
             Dataset<Row> dataWithPartition = coldData
                     .withColumn("dt", functions.to_date(functions.from_unixtime(functions.col("timestamp"))))
-                    .withColumn("source", functions.lit("archive"));
+                    .withColumn("source", functions.lit("archive"))
+                    // Add missing fields to match Hudi table schema
+                    .withColumn("risk_score", functions.lit(null).cast(DataTypes.IntegerType))
+                    .withColumn("risk_category", functions.lit(null).cast(DataTypes.StringType))
+                    .withColumn("is_exchange", functions.lit(null).cast(DataTypes.BooleanType))
+                    .withColumn("correction_timestamp", functions.lit(null).cast(DataTypes.TimestampType))
+                    .withColumn("correction_version", functions.lit(null).cast(DataTypes.StringType));
 
             writeToHudi(dataWithPartition);
             LOG.info("Successfully wrote {} records to Hudi", count);
