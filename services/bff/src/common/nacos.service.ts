@@ -52,13 +52,14 @@ export class NacosService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const [host, portStr] = this.nacosServer.split(":");
-      const port = parseInt(portStr || "18848", 10);
+      const serverAddr = this.nacosServer.includes(":")
+        ? this.nacosServer
+        : `${this.nacosServer}:18848`;
 
       // Initialize naming client for service discovery
       this.namingClient = new NacosNamingClient({
         logger: console,
-        serverList: `${host}:${port}`,
+        serverList: serverAddr,
         namespace: process.env.NACOS_NAMESPACE || "",
       });
 
@@ -79,7 +80,7 @@ export class NacosService implements OnModuleInit, OnModuleDestroy {
 
       // Initialize config client
       this.configClient = new NacosConfigClient({
-        serverAddr: `${host}:${port}`,
+        serverAddr,
         namespace: process.env.NACOS_NAMESPACE || "",
       });
 
@@ -181,10 +182,10 @@ export class NacosService implements OnModuleInit, OnModuleDestroy {
       registered: !!this.namingClient,
       config: this.config
         ? {
-            pipelineEnabled: this.config.pipeline?.enabled,
-            cacheTtlSeconds: this.config.risk?.cacheTtlSeconds,
-            riskThresholds: this.getRiskThresholds(),
-          }
+          pipelineEnabled: this.config.pipeline?.enabled,
+          cacheTtlSeconds: this.config.risk?.cacheTtlSeconds,
+          riskThresholds: this.getRiskThresholds(),
+        }
         : null,
     };
   }
