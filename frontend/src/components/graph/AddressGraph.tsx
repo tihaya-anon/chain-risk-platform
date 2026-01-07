@@ -37,6 +37,36 @@ function getRiskBasedSize(riskScore?: number, transferCount?: number): number {
   return baseSize + riskBonus + txBonus
 }
 
+// Calculate fixed position based on direction
+function getNodePosition(direction: string | undefined, index: number, totalByType: { in: number; out: number; both: number }) {
+  const radius = 200
+  const centerX = 0
+  const centerY = 0
+
+  if (direction === "incoming") {
+    // Left side: spread from -120° to -60° (top-left quadrant)
+    const angleRange = Math.PI / 3 // 60 degrees
+    const startAngle = Math.PI - angleRange / 2 // ~150°
+    const step = totalByType.in > 1 ? angleRange / (totalByType.in - 1) : 0
+    const angle = startAngle - index * step
+    return { x: centerX + radius * Math.cos(angle), y: centerY - radius * Math.sin(angle) }
+  } else if (direction === "outgoing") {
+    // Right side: spread from 60° to -60°
+    const angleRange = Math.PI / 3
+    const startAngle = angleRange / 2 // 30°
+    const step = totalByType.out > 1 ? angleRange / (totalByType.out - 1) : 0
+    const angle = startAngle - index * step
+    return { x: centerX + radius * Math.cos(angle), y: centerY - radius * Math.sin(angle) }
+  } else {
+    // Bottom: spread from -120° to -60° (bottom)
+    const angleRange = Math.PI / 3
+    const startAngle = -Math.PI / 2 - angleRange / 2 // -120°
+    const step = totalByType.both > 1 ? angleRange / (totalByType.both - 1) : 0
+    const angle = startAngle + index * step
+    return { x: centerX + radius * Math.cos(angle), y: centerY - radius * Math.sin(angle) }
+  }
+}
+
 export function AddressGraph({
   data,
   selectedNode,
@@ -51,7 +81,6 @@ export function AddressGraph({
   const selectedNodeRef = useRef<string | null>(null)
   const dataRef = useRef<AddressNeighborsResponse | null>(null)
 
-  // Update refs when callbacks change (avoid re-creating network)
   useEffect(() => {
     callbacksRef.current = { onNodeHover, onNodeClick, onNodeDoubleClick }
   }, [onNodeHover, onNodeClick, onNodeDoubleClick])
@@ -64,18 +93,29 @@ export function AddressGraph({
     dataRef.current = data
   }, [data])
 
-  // Only recreate network when data changes
   useEffect(() => {
     if (!containerRef.current || !data) return
 
     const centerAddress = data.address || ""
     const neighbors = data.neighbors || []
 
-    // Create nodes array
+    // Count by direction type
+    const incoming = neighbors.filter(n => n.direction === "incoming")
+    const outgoing = neighbors.filter(n => n.direction === "outgoing")
+    const both = neighbors.filter(n => n.direction === "both")
+    const totalByType = { in: incoming.length, out: outgoing.length, both: both.length }
+
+    // Track index within each type
+    let inIdx = 0, outIdx = 0, bothIdx = 0
+
+    // Center node
     const nodes: any[] = [
       {
         id: centerAddress,
         label: `${centerAddress?.slice(0, 6)}...${centerAddress?.slice(-4)}`,
+        x: 0,
+        y: 0,
+        fixed: { x: true, y: true },
         color: {
           background: "#3B82F6",
           border: "#2563EB",
@@ -86,9 +126,22 @@ export function AddressGraph({
         borderWidth: 3,
         font: { color: "#1F2937", size: 11 },
       },
-      ...neighbors.map((n: NeighborInfo) => ({
+    ]
+
+    // Neighbor nodes with positions
+    neighbors.forEach((n: NeighborInfo) => {
+      let idx = 0
+      if (n.direction === "incoming") idx = inIdx++
+      else if (n.direction === "outgoing") idx = outIdx++
+      else idx = bothIdx++
+
+      const pos = getNodePosition(n.direction, idx, totalByType)
+
+      nodes.push({
         id: n.address || "",
         label: `${n.address?.slice(0, 6)}...${n.address?.slice(-4)}`,
+        x: pos.x,
+        y: pos.y,
         color: {
           background: getDirectionColor(n.direction),
           border: getDirectionColor(n.direction),
@@ -98,13 +151,14 @@ export function AddressGraph({
         size: getRiskBasedSize(n.riskScore, n.transferCount),
         borderWidth: 2,
         font: { color: "#374151", size: 10 },
-      })),
-    ]
+      })
+    })
 
-    // Create edges array
+    // Edges with consistent curve direction
     const edges: any[] = neighbors.map((n: NeighborInfo, i: number) => {
       const isIncoming = n.direction === "incoming"
       const isBoth = n.direction === "both"
+
       return {
         id: `edge-${i}`,
         from: isIncoming ? n.address || "" : centerAddress,
@@ -114,6 +168,7 @@ export function AddressGraph({
         width: Math.min(1 + (n.transferCount || 0) / 50, 4),
         label: n.transferCount ? String(n.transferCount) : "",
         font: { size: 9, color: "#6B7280", strokeWidth: 0 },
+        smooth: { enabled: true, type: "curvedCCW", roundness: 0.15 },
       }
     })
 
@@ -124,24 +179,17 @@ export function AddressGraph({
         shadow: { enabled: true, size: 5, x: 2, y: 2 },
       },
       edges: {
-        smooth: { enabled: true, type: "curvedCW", roundness: 0.2 },
+        smooth: { enabled: true, type: "curvedCCW", roundness: 0.15 },
       },
       physics: {
-        enabled: true,
-        solver: "forceAtlas2Based",
-        forceAtlas2Based: {
-          gravitationalConstant: -80,
-          centralGravity: 0.01,
-          springLength: 150,
-          springConstant: 0.08,
-        },
-        stabilization: { iterations: 80 },
+        enabled: false, // Disable physics for fixed layout
       },
       interaction: {
         hover: true,
         tooltipDelay: 0,
         zoomView: true,
         dragView: true,
+        dragNodes: true,
       },
     }
 
@@ -151,6 +199,9 @@ export function AddressGraph({
     }
 
     const network = new Network(containerRef.current, graphData, options)
+
+    // Fit view after creation
+    network.fit({ animation: { duration: 300, easingFunction: "easeInOutQuad" } })
 
     // Hover handler
     network.on("hoverNode", (params) => {
@@ -203,11 +254,6 @@ export function AddressGraph({
       }
     })
 
-    // Disable physics after stabilization
-    network.on("stabilizationIterationsDone", () => {
-      network.setOptions({ physics: { enabled: false } })
-    })
-
     networkRef.current = network
 
     return () => {
@@ -242,15 +288,15 @@ export function AddressGraphLegend() {
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-green-500 text-green-600" />
-        <span>In</span>
+        <span>In (←)</span>
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-red-500 text-red-600" />
-        <span>Out</span>
+        <span>Out (→)</span>
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-purple-500 text-purple-600" />
-        <span>Both</span>
+        <span>Both (↓)</span>
       </div>
     </div>
   )

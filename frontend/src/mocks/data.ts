@@ -168,21 +168,66 @@ export function mockAddressAnalysisResponse(address?: string) {
 }
 
 export function mockHighRiskNetworkResponse() {
-  return {
-    threshold: 0.7,
-    count: faker.number.int({ min: 5, max: 20 }),
-    highRiskAddresses: Array.from({ length: faker.number.int({ min: 5, max: 15 }) }, () => ({
+  // Generate addresses with full range of risk scores for dashboard distribution
+  const addresses = [
+    // Critical (>= 0.8)
+    ...Array.from({ length: faker.number.int({ min: 2, max: 4 }) }, () => ({
       address: mockAddress(),
       firstSeen: mockTimestamp(),
       lastSeen: mockTimestamp(),
       txCount: faker.number.int({ min: 100, max: 10000 }),
-      riskScore: faker.number.float({ min: 0.7, max: 1, fractionDigits: 2 }),
+      riskScore: faker.number.float({ min: 0.8, max: 1, fractionDigits: 2 }),
       tags: mockTags(4),
       clusterId: faker.string.uuid(),
       network: "ethereum",
       incomingCount: faker.number.int({ min: 50, max: 5000 }),
       outgoingCount: faker.number.int({ min: 50, max: 5000 }),
     })),
+    // High (0.6 - 0.8)
+    ...Array.from({ length: faker.number.int({ min: 3, max: 5 }) }, () => ({
+      address: mockAddress(),
+      firstSeen: mockTimestamp(),
+      lastSeen: mockTimestamp(),
+      txCount: faker.number.int({ min: 100, max: 10000 }),
+      riskScore: faker.number.float({ min: 0.6, max: 0.79, fractionDigits: 2 }),
+      tags: mockTags(4),
+      clusterId: faker.string.uuid(),
+      network: "ethereum",
+      incomingCount: faker.number.int({ min: 50, max: 5000 }),
+      outgoingCount: faker.number.int({ min: 50, max: 5000 }),
+    })),
+    // Medium (0.4 - 0.6)
+    ...Array.from({ length: faker.number.int({ min: 4, max: 6 }) }, () => ({
+      address: mockAddress(),
+      firstSeen: mockTimestamp(),
+      lastSeen: mockTimestamp(),
+      txCount: faker.number.int({ min: 100, max: 10000 }),
+      riskScore: faker.number.float({ min: 0.4, max: 0.59, fractionDigits: 2 }),
+      tags: mockTags(4),
+      clusterId: faker.string.uuid(),
+      network: "ethereum",
+      incomingCount: faker.number.int({ min: 50, max: 5000 }),
+      outgoingCount: faker.number.int({ min: 50, max: 5000 }),
+    })),
+    // Low (< 0.4)
+    ...Array.from({ length: faker.number.int({ min: 3, max: 5 }) }, () => ({
+      address: mockAddress(),
+      firstSeen: mockTimestamp(),
+      lastSeen: mockTimestamp(),
+      txCount: faker.number.int({ min: 100, max: 10000 }),
+      riskScore: faker.number.float({ min: 0.1, max: 0.39, fractionDigits: 2 }),
+      tags: mockTags(4),
+      clusterId: faker.string.uuid(),
+      network: "ethereum",
+      incomingCount: faker.number.int({ min: 50, max: 5000 }),
+      outgoingCount: faker.number.int({ min: 50, max: 5000 }),
+    })),
+  ]
+
+  return {
+    threshold: 0.7,
+    count: addresses.length,
+    highRiskAddresses: addresses,
     orchestratedAt: Date.now(),
   }
 }
@@ -220,11 +265,8 @@ export function mockNeighborsResponse(address?: string) {
   }
 }
 
-// ==================== Admin Generators (FIXED) ====================
+// ==================== Admin Generators ====================
 
-/**
- * PipelineStatus - matches generated type
- */
 export function mockPipelineStatus() {
   return {
     ingestion: {
@@ -257,9 +299,6 @@ export function mockPipelineStatus() {
   }
 }
 
-/**
- * ServiceInfo[] - matches generated type
- */
 export function mockServices() {
   const services = [
     { name: "address-service", groupName: "chain-risk", clusterCount: 2, instanceCount: 3, healthyInstanceCount: 3 },
@@ -272,9 +311,6 @@ export function mockServices() {
   return services
 }
 
-/**
- * RiskProperties - matches generated type
- */
 export function mockRiskConfig() {
   return {
     highThreshold: 0.7,
@@ -283,9 +319,6 @@ export function mockRiskConfig() {
   }
 }
 
-/**
- * PipelineProperties - matches generated type
- */
 export function mockPipelineConfig() {
   return {
     enabled: true,
