@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useSearchParams, Link } from "react-router-dom"
-import { Route, Search, ArrowRight } from "lucide-react"
+import { Route, Search, ArrowRight, CheckCircle, XCircle, ExternalLink, Tag, AlertTriangle } from "lucide-react"
 import { Card, Button, Input, LoadingSpinner, RiskBadge } from "@/components/common"
 import { useFindConnection } from "@/api/generated"
 
@@ -11,14 +11,7 @@ export function PathFinderPage() {
   const [queryFrom, setQueryFrom] = useState("")
   const [queryTo, setQueryTo] = useState("")
 
-  const connectionQuery = useFindConnection(
-    queryFrom,
-    queryTo,
-    { maxDepth: 5 },
-    {
-      query: { enabled: !!(queryFrom && queryTo) },
-    }
-  )
+  const connectionQuery = useFindConnection(queryFrom, queryTo, { maxDepth: 5 }, { query: { enabled: !!(queryFrom && queryTo) } })
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,37 +24,27 @@ export function PathFinderPage() {
     }
   }
 
+  const data = connectionQuery.data
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Route className="w-6 h-6 text-green-600" />
-              Path Finder
+              <Route className="w-6 h-6 text-green-600" />Path Finder
             </h1>
-            <p className="text-gray-600 mt-1">Find connections between two addresses</p>
+            <p className="text-gray-600 mt-1">Find transaction paths between addresses</p>
           </div>
 
           <Card>
             <form onSubmit={handleSearch} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="From Address"
-                  placeholder="0x..."
-                  value={fromAddress}
-                  onChange={(e) => setFromAddress(e.target.value)}
-                />
-                <Input
-                  label="To Address"
-                  placeholder="0x..."
-                  value={toAddress}
-                  onChange={(e) => setToAddress(e.target.value)}
-                />
+                <Input label="Source Address" placeholder="0x..." value={fromAddress} onChange={(e) => setFromAddress(e.target.value)} />
+                <Input label="Target Address" placeholder="0x..." value={toAddress} onChange={(e) => setToAddress(e.target.value)} />
               </div>
-              <Button type="submit" loading={connectionQuery.isLoading}>
-                <Search className="w-4 h-4 mr-1" />
-                Find Path
+              <Button type="submit" loading={connectionQuery.isLoading} disabled={!fromAddress.trim() || !toAddress.trim()}>
+                <Search className="w-4 h-4 mr-2" />Find Connection
               </Button>
             </form>
           </Card>
@@ -71,87 +54,197 @@ export function PathFinderPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {connectionQuery.isLoading && (
-            <div className="py-12">
-              <LoadingSpinner size="lg" />
-            </div>
+            <div className="py-12"><LoadingSpinner size="lg" /><p className="text-center text-gray-500 mt-4">Searching for connections...</p></div>
           )}
 
-          {connectionQuery.data && (
+          {data && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card title="Source Address">
-                  <div className="space-y-2">
-                    <p className="font-mono text-sm break-all">
-                      {connectionQuery.data.fromAddress}
-                    </p>
-                    {connectionQuery.data.fromAddressRisk && (
-                      <RiskBadge score={connectionQuery.data.fromAddressRisk.riskScore} />
-                    )}
-                    <Link
-                      to={`/address?q=${connectionQuery.data.fromAddress}`}
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      View Details →
-                    </Link>
-                  </div>
-                </Card>
-                <Card title="Target Address">
-                  <div className="space-y-2">
-                    <p className="font-mono text-sm break-all">
-                      {connectionQuery.data.toAddress}
-                    </p>
-                    {connectionQuery.data.toAddressRisk && (
-                      <RiskBadge score={connectionQuery.data.toAddressRisk.riskScore} />
-                    )}
-                    <Link
-                      to={`/address?q=${connectionQuery.data.toAddress}`}
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      View Details →
-                    </Link>
-                  </div>
-                </Card>
+              {/* Address Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <AddressCard
+                  title="Source Address"
+                  address={data.fromAddress}
+                  risk={data.fromAddressRisk}
+                  color="blue"
+                />
+                <AddressCard
+                  title="Target Address"
+                  address={data.toAddress}
+                  risk={data.toAddressRisk}
+                  color="purple"
+                />
               </div>
 
-              <Card title="Path Result">
-                {connectionQuery.data.path?.found ? (
-                  <div className="space-y-4">
-                    <p className="text-green-600 font-medium">
-                      Path found! Length: {connectionQuery.data.path.pathLength} hops
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {connectionQuery.data.path.path?.map((node, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <Link
-                            to={`/address?q=${node.address}`}
-                            className="px-3 py-2 bg-gray-100 rounded-lg font-mono text-xs hover:bg-gray-200"
-                          >
-                            {node.address?.slice(0, 8)}...
-                          </Link>
-                          {i < (connectionQuery.data.path?.path?.length || 0) - 1 && (
-                            <ArrowRight className="w-4 h-4 text-gray-400" />
-                          )}
+              {/* Path Result */}
+              <Card>
+                <div className="p-2">
+                  {data.path?.found ? (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-100 rounded-full">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
                         </div>
-                      ))}
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Connection Found</h3>
+                          <p className="text-gray-500">{data.path.pathLength} hop{data.path.pathLength !== 1 ? "s" : ""} between addresses</p>
+                        </div>
+                      </div>
+
+                      {/* Visual Path */}
+                      <div className="bg-gray-50 rounded-xl p-6 overflow-x-auto">
+                        <div className="flex items-center gap-3 min-w-max">
+                          {data.path.path?.map((node, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <PathNodeCard node={node} index={i} isLast={i === (data.path?.path?.length || 0) - 1} />
+                              {i < (data.path?.path?.length || 0) - 1 && (
+                                <div className="flex flex-col items-center">
+                                  <ArrowRight className="w-6 h-6 text-gray-400" />
+                                  <span className="text-xs text-gray-400 mt-1">tx</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Path Details Table */}
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-3">Path Details</h4>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Step</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tags</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {data.path.path?.map((node, i) => (
+                                <tr key={i} className="hover:bg-gray-50">
+                                  <td className="px-4 py-3 text-sm text-gray-500">{i + 1}</td>
+                                  <td className="px-4 py-3">
+                                    <Link to={`/address?q=${node.address}`} className="font-mono text-sm text-blue-600 hover:underline">
+                                      {node.address?.slice(0, 10)}...{node.address?.slice(-8)}
+                                    </Link>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <RiskBadge score={node.riskScore} size="sm" />
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-900">{formatValue(node.value)}</td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex flex-wrap gap-1">
+                                      {node.tags?.slice(0, 2).map((tag, j) => (
+                                        <span key={j} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{tag}</span>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No path found within max depth</p>
-                )}
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="p-3 bg-red-100 rounded-full inline-flex mb-4">
+                        <XCircle className="w-8 h-8 text-red-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">No Connection Found</h3>
+                      <p className="text-gray-500 mt-1">No path exists within {data.path?.maxDepth || 6} hops</p>
+                    </div>
+                  )}
+                </div>
               </Card>
             </div>
           )}
 
-          {!connectionQuery.isLoading && !connectionQuery.data && (
-            <div className="text-center py-12">
+          {!connectionQuery.isLoading && !data && (
+            <div className="text-center py-16">
               <Route className="w-16 h-16 text-gray-300 mx-auto" />
-              <p className="text-gray-500 mt-4">
-                Enter two addresses to find a connection
-              </p>
+              <h3 className="text-lg font-medium text-gray-900 mt-4">Find Transaction Paths</h3>
+              <p className="text-gray-500 mt-2">Enter two addresses to discover how they are connected through on-chain transactions</p>
             </div>
           )}
         </div>
       </div>
     </div>
   )
+}
+
+// Helper Components
+
+interface AddressCardProps {
+  title: string
+  address?: string
+  risk?: { riskScore?: number; riskLevel?: string; tags?: string[] }
+  color: "blue" | "purple"
+}
+
+function AddressCard({ title, address, risk, color }: AddressCardProps) {
+  const colorClasses = {
+    blue: { bg: "bg-blue-50", border: "border-blue-200", icon: "text-blue-600", accent: "bg-blue-100" },
+    purple: { bg: "bg-purple-50", border: "border-purple-200", icon: "text-purple-600", accent: "bg-purple-100" },
+  }
+  const c = colorClasses[color]
+
+  return (
+    <div className={`${c.bg} ${c.border} border rounded-xl p-5`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-gray-900">{title}</h3>
+        <Link to={`/address?q=${address}`} className={`${c.icon} hover:opacity-70`}>
+          <ExternalLink className="w-4 h-4" />
+        </Link>
+      </div>
+      <p className="font-mono text-sm text-gray-700 break-all mb-4">{address}</p>
+      <div className="flex items-center justify-between">
+        <RiskBadge score={risk?.riskScore} level={risk?.riskLevel as any} />
+        {risk?.tags && risk.tags.length > 0 && (
+          <div className="flex items-center gap-1">
+            <Tag className="w-3 h-3 text-gray-400" />
+            <span className="text-xs text-gray-500">{risk.tags.length} tags</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+interface PathNodeCardProps {
+  node: { address?: string; riskScore?: number; tags?: string[]; value?: string }
+  index: number
+  isLast: boolean
+}
+
+function PathNodeCard({ node, index, isLast }: PathNodeCardProps) {
+  const isHighRisk = (node.riskScore ?? 0) >= 0.7
+
+  return (
+    <div className={`relative p-4 bg-white rounded-xl border-2 min-w-[180px] ${isHighRisk ? "border-red-300" : "border-gray-200"} shadow-sm`}>
+      {isHighRisk && (
+        <div className="absolute -top-2 -right-2 p-1 bg-red-100 rounded-full">
+          <AlertTriangle className="w-3 h-3 text-red-600" />
+        </div>
+      )}
+      <div className="text-xs text-gray-400 mb-2">{index === 0 ? "Start" : isLast ? "End" : `Hop ${index}`}</div>
+      <Link to={`/address?q=${node.address}`} className="font-mono text-sm text-blue-600 hover:underline block truncate">
+        {node.address?.slice(0, 8)}...{node.address?.slice(-6)}
+      </Link>
+      <div className="mt-2 flex items-center gap-2">
+        <RiskBadge score={node.riskScore} size="sm" />
+      </div>
+    </div>
+  )
+}
+
+function formatValue(value?: string): string {
+  if (!value) return "-"
+  const num = parseFloat(value)
+  if (isNaN(num)) return value
+  if (num >= 1e18) return `${(num / 1e18).toFixed(4)} ETH`
+  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`
+  return num.toLocaleString()
 }
