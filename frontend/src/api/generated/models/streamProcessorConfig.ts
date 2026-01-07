@@ -5,12 +5,12 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { CheckpointConfig } from './checkpointConfig';
-import type { ConsumerConfig } from './consumerConfig';
+import type { CheckpointConfig } from "./checkpointConfig"
+import type { ConsumerConfig } from "./consumerConfig"
 
 export interface StreamProcessorConfig {
-  enabled?: boolean;
-  parallelism?: number;
-  checkpoint?: CheckpointConfig;
-  consumer?: ConsumerConfig;
+  enabled?: boolean
+  parallelism?: number
+  checkpoint?: CheckpointConfig
+  consumer?: ConsumerConfig
 }

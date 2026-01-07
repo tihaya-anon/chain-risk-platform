@@ -7,16 +7,16 @@
  */
 
 export type GetAddressAnalysisParams = {
-/**
- * Blockchain network
- */
-network?: string;
-/**
- * Neighbor search depth (1-3)
- */
-neighborDepth?: number;
-/**
- * Maximum number of neighbors to return
- */
-neighborLimit?: number;
-};
+  /**
+   * Blockchain network
+   */
+  network?: string
+  /**
+   * Neighbor search depth (1-3)
+   */
+  neighborDepth?: number
+  /**
+   * Maximum number of neighbors to return
+   */
+  neighborLimit?: number
+}

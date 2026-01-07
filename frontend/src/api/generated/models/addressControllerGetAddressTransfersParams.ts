@@ -7,28 +7,28 @@
  */
 
 export type AddressControllerGetAddressTransfersParams = {
-/**
- * Page number
- */
-page?: number;
-/**
- * Page size
- */
-pageSize?: number;
-/**
- * Network
- */
-network?: string;
-/**
- * Transfer type filter
- */
-transferType?: string;
-/**
- * Start time (RFC3339)
- */
-startTime?: string;
-/**
- * End time (RFC3339)
- */
-endTime?: string;
-};
+  /**
+   * Page number
+   */
+  page?: number
+  /**
+   * Page size
+   */
+  pageSize?: number
+  /**
+   * Network
+   */
+  network?: string
+  /**
+   * Transfer type filter
+   */
+  transferType?: string
+  /**
+   * Start time (RFC3339)
+   */
+  startTime?: string
+  /**
+   * End time (RFC3339)
+   */
+  endTime?: string
+}

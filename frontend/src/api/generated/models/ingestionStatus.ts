@@ -7,8 +7,8 @@
  */
 
 export interface IngestionStatus {
-  enabled?: boolean;
-  status?: string;
-  lastBlock?: number;
-  errorMessage?: string;
+  enabled?: boolean
+  status?: string
+  lastBlock?: number
+  errorMessage?: string
 }

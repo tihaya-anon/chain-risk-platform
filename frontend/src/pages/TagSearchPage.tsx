@@ -8,9 +8,13 @@ export function TagSearchPage() {
   const [tagInput, setTagInput] = useState("")
   const [queryTag, setQueryTag] = useState("")
 
-  const searchQuery = useGraphControllerSearchByTag(queryTag, { limit: 50 }, {
-    query: { enabled: !!queryTag }
-  })
+  const searchQuery = useGraphControllerSearchByTag(
+    queryTag,
+    { limit: 50 },
+    {
+      query: { enabled: !!queryTag },
+    }
+  )
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,7 +64,10 @@ export function TagSearchPage() {
           )}
 
           {addresses.length > 0 && (
-            <Card title={`Addresses with tag "${queryTag}"`} subtitle={`${addresses.length} results`}>
+            <Card
+              title={`Addresses with tag "${queryTag}"`}
+              subtitle={`${addresses.length} results`}
+            >
               <AddressTable addresses={addresses} showTxCount showInOut showTags />
             </Card>
           )}
@@ -68,7 +75,9 @@ export function TagSearchPage() {
           {!searchQuery.isLoading && addresses.length === 0 && queryTag && (
             <div className="text-center py-12">
               <Tag className="w-16 h-16 text-gray-300 mx-auto" />
-              <p className="text-gray-500 mt-4">No addresses found with tag "{queryTag}"</p>
+              <p className="text-gray-500 mt-4">
+                No addresses found with tag "{queryTag}"
+              </p>
             </div>
           )}
 

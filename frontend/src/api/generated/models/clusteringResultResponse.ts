@@ -8,17 +8,17 @@
 
 export interface ClusteringResultResponse {
   /** Clustering status */
-  status: string;
+  status: string
   /** Number of clusters created */
-  clustersCreated?: number;
+  clustersCreated?: number
   /** Number of addresses clustered */
-  addressesClustered?: number;
+  addressesClustered?: number
   /** Duration in milliseconds */
-  durationMs?: number;
+  durationMs?: number
   /** Start timestamp */
-  startedAt?: string;
+  startedAt?: string
   /** Completion timestamp */
-  completedAt?: string;
+  completedAt?: string
   /** Error message if failed */
-  errorMessage?: string;
+  errorMessage?: string
 }

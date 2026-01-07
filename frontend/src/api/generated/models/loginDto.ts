@@ -8,7 +8,7 @@
 
 export interface LoginDto {
   /** Username */
-  username: string;
+  username: string
   /** Password */
-  password: string;
+  password: string
 }

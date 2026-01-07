@@ -7,12 +7,12 @@
  */
 
 export type FindConnectionParams = {
-/**
- * Maximum path depth to search
- */
-maxDepth?: number;
-/**
- * Blockchain network
- */
-network?: string;
-};
+  /**
+   * Maximum path depth to search
+   */
+  maxDepth?: number
+  /**
+   * Blockchain network
+   */
+  network?: string
+}

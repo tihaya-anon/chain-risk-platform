@@ -7,14 +7,14 @@
  */
 
 export interface ClusterResponse {
-  clusterId?: string;
-  size?: number;
-  riskScore?: number;
-  label?: string;
-  category?: string;
-  tags?: string[];
-  addresses?: string[];
-  createdAt?: string;
-  updatedAt?: string;
-  network?: string;
+  clusterId?: string
+  size?: number
+  riskScore?: number
+  label?: string
+  category?: string
+  tags?: string[]
+  addresses?: string[]
+  createdAt?: string
+  updatedAt?: string
+  network?: string
 }

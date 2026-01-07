@@ -5,13 +5,13 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import type { UserProfileResponseRole } from './userProfileResponseRole';
+import type { UserProfileResponseRole } from "./userProfileResponseRole"
 
 export interface UserProfileResponse {
   /** User ID */
-  id: string;
+  id: string
   /** Username */
-  username: string;
+  username: string
   /** User role */
-  role: UserProfileResponseRole;
+  role: UserProfileResponseRole
 }

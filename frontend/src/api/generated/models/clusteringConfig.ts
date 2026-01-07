@@ -7,7 +7,7 @@
  */
 
 export interface ClusteringConfig {
-  enabled?: boolean;
-  minClusterSize?: number;
-  maxDepth?: number;
+  enabled?: boolean
+  minClusterSize?: number
+  maxDepth?: number
 }

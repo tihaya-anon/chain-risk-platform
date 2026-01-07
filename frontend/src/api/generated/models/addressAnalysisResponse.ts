@@ -5,13 +5,13 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { BasicAnalysis } from './basicAnalysis';
-import type { GraphAnalysis } from './graphAnalysis';
+import type { BasicAnalysis } from "./basicAnalysis"
+import type { GraphAnalysis } from "./graphAnalysis"
 
 export interface AddressAnalysisResponse {
-  address?: string;
-  network?: string;
-  basic?: BasicAnalysis;
-  graph?: GraphAnalysis;
-  orchestratedAt?: number;
+  address?: string
+  network?: string
+  basic?: BasicAnalysis
+  graph?: GraphAnalysis
+  orchestratedAt?: number
 }

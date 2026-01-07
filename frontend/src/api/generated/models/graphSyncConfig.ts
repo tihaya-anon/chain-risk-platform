@@ -7,7 +7,7 @@
  */
 
 export interface GraphSyncConfig {
-  enabled?: boolean;
-  intervalMs?: number;
-  batchSize?: number;
+  enabled?: boolean
+  intervalMs?: number
+  batchSize?: number
 }

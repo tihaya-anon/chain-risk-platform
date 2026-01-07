@@ -7,8 +7,8 @@
  */
 
 export type GetAddressProfileParams = {
-/**
- * Blockchain network
- */
-network?: string;
-};
+  /**
+   * Blockchain network
+   */
+  network?: string
+}

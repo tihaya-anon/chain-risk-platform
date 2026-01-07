@@ -6,13 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type RiskScoreResponseRiskLevel = typeof RiskScoreResponseRiskLevel[keyof typeof RiskScoreResponseRiskLevel];
-
+export type RiskScoreResponseRiskLevel =
+  (typeof RiskScoreResponseRiskLevel)[keyof typeof RiskScoreResponseRiskLevel]
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const RiskScoreResponseRiskLevel = {
-  low: 'low',
-  medium: 'medium',
-  high: 'high',
-  critical: 'critical',
-} as const;
+  low: "low",
+  medium: "medium",
+  high: "high",
+  critical: "critical",
+} as const

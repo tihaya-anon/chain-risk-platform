@@ -95,20 +95,22 @@ export function HighRiskNetworkPage() {
                 <div className="flex rounded-md overflow-hidden border border-gray-300">
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === "list"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
-                      }`}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
+                      viewMode === "list"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
+                    }`}
                   >
                     <List className="w-4 h-4" />
                     List
                   </button>
                   <button
                     onClick={() => setViewMode("graph")}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${viewMode === "graph"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
-                      }`}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
+                      viewMode === "graph"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
+                    }`}
                   >
                     <NetworkIcon className="w-4 h-4" />
                     Graph
@@ -210,7 +212,9 @@ export function HighRiskNetworkPage() {
                         selectedNode={selectedAddress?.address}
                         onNodeHover={handleNodeHover}
                         onNodeClick={handleNodeClick}
-                        onNodeDoubleClick={(addr) => navigate(`/graph?address=${addr}`)}
+                        onNodeDoubleClick={(addr: string) =>
+                          navigate(`/graph?address=${addr}`)
+                        }
                         height="500px"
                       />
                     </Card>

@@ -8,5 +8,5 @@
 
 export interface ManualClusterRequestDto {
   /** List of addresses to cluster */
-  addresses: string[];
+  addresses: string[]
 }

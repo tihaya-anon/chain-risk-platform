@@ -5,16 +5,16 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { RiskScoreResponseRiskLevel } from './riskScoreResponseRiskLevel';
-import type { RiskFactor } from './riskFactor';
+import type { RiskScoreResponseRiskLevel } from "./riskScoreResponseRiskLevel"
+import type { RiskFactor } from "./riskFactor"
 
 export interface RiskScoreResponse {
-  address?: string;
-  network?: string;
-  riskScore?: number;
-  riskLevel?: RiskScoreResponseRiskLevel;
-  factors?: RiskFactor[];
-  tags?: string[];
-  evaluatedAt?: string;
-  cached?: boolean;
+  address?: string
+  network?: string
+  riskScore?: number
+  riskLevel?: RiskScoreResponseRiskLevel
+  factors?: RiskFactor[]
+  tags?: string[]
+  evaluatedAt?: string
+  cached?: boolean
 }

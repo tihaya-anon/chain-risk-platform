@@ -11,9 +11,14 @@ export function PathFinderPage() {
   const [queryFrom, setQueryFrom] = useState("")
   const [queryTo, setQueryTo] = useState("")
 
-  const connectionQuery = useFindConnection(queryFrom, queryTo, { maxDepth: 5 }, {
-    query: { enabled: !!(queryFrom && queryTo) }
-  })
+  const connectionQuery = useFindConnection(
+    queryFrom,
+    queryTo,
+    { maxDepth: 5 },
+    {
+      query: { enabled: !!(queryFrom && queryTo) },
+    }
+  )
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,22 +81,32 @@ export function PathFinderPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card title="Source Address">
                   <div className="space-y-2">
-                    <p className="font-mono text-sm break-all">{connectionQuery.data.fromAddress}</p>
+                    <p className="font-mono text-sm break-all">
+                      {connectionQuery.data.fromAddress}
+                    </p>
                     {connectionQuery.data.fromAddressRisk && (
                       <RiskBadge score={connectionQuery.data.fromAddressRisk.riskScore} />
                     )}
-                    <Link to={`/address?q=${connectionQuery.data.fromAddress}`} className="text-blue-600 text-sm hover:underline">
+                    <Link
+                      to={`/address?q=${connectionQuery.data.fromAddress}`}
+                      className="text-blue-600 text-sm hover:underline"
+                    >
                       View Details →
                     </Link>
                   </div>
                 </Card>
                 <Card title="Target Address">
                   <div className="space-y-2">
-                    <p className="font-mono text-sm break-all">{connectionQuery.data.toAddress}</p>
+                    <p className="font-mono text-sm break-all">
+                      {connectionQuery.data.toAddress}
+                    </p>
                     {connectionQuery.data.toAddressRisk && (
                       <RiskBadge score={connectionQuery.data.toAddressRisk.riskScore} />
                     )}
-                    <Link to={`/address?q=${connectionQuery.data.toAddress}`} className="text-blue-600 text-sm hover:underline">
+                    <Link
+                      to={`/address?q=${connectionQuery.data.toAddress}`}
+                      className="text-blue-600 text-sm hover:underline"
+                    >
                       View Details →
                     </Link>
                   </div>
@@ -130,7 +145,9 @@ export function PathFinderPage() {
           {!connectionQuery.isLoading && !connectionQuery.data && (
             <div className="text-center py-12">
               <Route className="w-16 h-16 text-gray-300 mx-auto" />
-              <p className="text-gray-500 mt-4">Enter two addresses to find a connection</p>
+              <p className="text-gray-500 mt-4">
+                Enter two addresses to find a connection
+              </p>
             </div>
           )}
         </div>

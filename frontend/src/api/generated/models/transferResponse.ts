@@ -7,20 +7,20 @@
  */
 
 export interface TransferResponse {
-  id: number;
-  txHash: string;
-  blockNumber: number;
-  logIndex: number;
-  fromAddress: string;
-  toAddress: string;
-  value: string;
-  timestamp: string;
-  transferType: string;
-  network: string;
+  id: number
+  txHash: string
+  blockNumber: number
+  logIndex: number
+  fromAddress: string
+  toAddress: string
+  value: string
+  timestamp: string
+  transferType: string
+  network: string
   /** Token contract address (for ERC20 transfers) */
-  tokenAddress?: string;
+  tokenAddress?: string
   /** Token symbol (for ERC20 transfers) */
-  tokenSymbol?: string;
+  tokenSymbol?: string
   /** Token decimal places (for ERC20 transfers) */
-  tokenDecimal?: number;
+  tokenDecimal?: number
 }

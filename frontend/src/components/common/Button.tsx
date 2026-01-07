@@ -39,35 +39,35 @@ export function Button({
   // Process children to replace the first icon with loader when loading
   const processedChildren = loading
     ? (() => {
-      const childArray = Children.toArray(children)
-      let iconReplaced = false
+        const childArray = Children.toArray(children)
+        let iconReplaced = false
 
-      return childArray.map((child, index) => {
-        // Check if this is a React element (likely an icon)
-        if (!iconReplaced && isValidElement(child)) {
-          // Type assertion to access props
-          const element = child as ReactElement<any>
-          const childClassName = element.props?.className
+        return childArray.map((child, index) => {
+          // Check if this is a React element (likely an icon)
+          if (!iconReplaced && isValidElement(child)) {
+            // Type assertion to access props
+            const element = child as ReactElement<any>
+            const childClassName = element.props?.className
 
-          // Check if it looks like a lucide icon (has w- and h- classes)
-          if (
-            typeof childClassName === "string" &&
-            childClassName.includes("w-") &&
-            childClassName.includes("h-")
-          ) {
-            iconReplaced = true
-            // Replace with Loader2, keeping the same className and adding animate-spin
-            return (
-              <Loader2
-                key={`loader-${index}`}
-                className={`${childClassName} animate-spin`}
-              />
-            )
+            // Check if it looks like a lucide icon (has w- and h- classes)
+            if (
+              typeof childClassName === "string" &&
+              childClassName.includes("w-") &&
+              childClassName.includes("h-")
+            ) {
+              iconReplaced = true
+              // Replace with Loader2, keeping the same className and adding animate-spin
+              return (
+                <Loader2
+                  key={`loader-${index}`}
+                  className={`${childClassName} animate-spin`}
+                />
+              )
+            }
           }
-        }
-        return child
-      })
-    })()
+          return child
+        })
+      })()
     : children
 
   return (

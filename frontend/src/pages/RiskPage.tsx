@@ -1,7 +1,10 @@
 import { useState } from "react"
 import { ShieldCheck, Search, AlertTriangle } from "lucide-react"
 import { Card, Button, Input, LoadingSpinner, RiskBadge } from "@/components/common"
-import { useRiskControllerScoreAddress, useRiskControllerListRules } from "@/api/generated"
+import {
+  useRiskControllerScoreAddress,
+  useRiskControllerListRules,
+} from "@/api/generated"
 
 export function RiskPage() {
   const [address, setAddress] = useState("")
@@ -54,22 +57,33 @@ export function RiskPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="font-mono text-sm">{scoreMutation.data.address}</p>
-                  <RiskBadge level={scoreMutation.data.riskLevel} score={scoreMutation.data.riskScore} size="lg" />
+                  <RiskBadge
+                    level={scoreMutation.data.riskLevel}
+                    score={scoreMutation.data.riskScore}
+                    size="lg"
+                  />
                 </div>
 
                 {scoreMutation.data.factors && scoreMutation.data.factors.length > 0 && (
                   <div>
                     <h4 className="font-medium text-gray-700 mb-2">Risk Factors</h4>
                     <div className="space-y-2">
-                      {scoreMutation.data.factors.filter(f => f.triggered).map((factor, i) => (
-                        <div key={i} className="flex items-center justify-between p-2 bg-red-50 rounded">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-red-500" />
-                            <span className="text-sm">{factor.name}</span>
+                      {scoreMutation.data.factors
+                        .filter((f) => f.triggered)
+                        .map((factor, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between p-2 bg-red-50 rounded"
+                          >
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4 text-red-500" />
+                              <span className="text-sm">{factor.name}</span>
+                            </div>
+                            <span className="text-sm font-medium">
+                              {factor.score?.toFixed(2)}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium">{factor.score?.toFixed(2)}</span>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}
@@ -79,7 +93,10 @@ export function RiskPage() {
                     <h4 className="font-medium text-gray-700 mb-2">Tags</h4>
                     <div className="flex flex-wrap gap-2">
                       {scoreMutation.data.tags.map((tag, i) => (
-                        <span key={i} className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded">
+                        <span
+                          key={i}
+                          className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded"
+                        >
                           {tag}
                         </span>
                       ))}
@@ -96,13 +113,18 @@ export function RiskPage() {
             ) : rulesQuery.data && rulesQuery.data.length > 0 ? (
               <div className="space-y-2">
                 {rulesQuery.data.map((rule) => (
-                  <div key={rule.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div
+                    key={rule.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
                     <div>
                       <p className="font-medium text-gray-900">{rule.name}</p>
                       <p className="text-sm text-gray-500">{rule.description}</p>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded ${rule.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {rule.enabled ? 'Enabled' : 'Disabled'}
+                    <span
+                      className={`px-2 py-1 text-xs rounded ${rule.enabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                    >
+                      {rule.enabled ? "Enabled" : "Disabled"}
                     </span>
                   </div>
                 ))}

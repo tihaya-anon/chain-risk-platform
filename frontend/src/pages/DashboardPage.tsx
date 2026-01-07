@@ -16,16 +16,24 @@ import { useGraphControllerGetHighRiskAddresses } from "@/api/generated"
 import type { GraphAddressInfo } from "@/api/generated"
 
 export function DashboardPage() {
-  const highRiskQuery = useGraphControllerGetHighRiskAddresses({ threshold: 0.7, limit: 10 }, {
-    query: { refetchInterval: 60000 }
-  })
+  const highRiskQuery = useGraphControllerGetHighRiskAddresses(
+    { threshold: 0.7, limit: 10 },
+    {
+      query: { refetchInterval: 60000 },
+    }
+  )
 
   const highRiskAddresses: GraphAddressInfo[] = highRiskQuery.data || []
 
   const riskDistribution = {
-    critical: highRiskAddresses.filter((a: GraphAddressInfo) => (a.riskScore ?? 0) >= 0.8).length,
-    high: highRiskAddresses.filter((a: GraphAddressInfo) => (a.riskScore ?? 0) >= 0.6 && (a.riskScore ?? 0) < 0.8).length,
-    medium: highRiskAddresses.filter((a: GraphAddressInfo) => (a.riskScore ?? 0) >= 0.4 && (a.riskScore ?? 0) < 0.6).length,
+    critical: highRiskAddresses.filter((a: GraphAddressInfo) => (a.riskScore ?? 0) >= 0.8)
+      .length,
+    high: highRiskAddresses.filter(
+      (a: GraphAddressInfo) => (a.riskScore ?? 0) >= 0.6 && (a.riskScore ?? 0) < 0.8
+    ).length,
+    medium: highRiskAddresses.filter(
+      (a: GraphAddressInfo) => (a.riskScore ?? 0) >= 0.4 && (a.riskScore ?? 0) < 0.6
+    ).length,
   }
 
   return (
@@ -43,7 +51,9 @@ export function DashboardPage() {
             onClick={() => highRiskQuery.refetch()}
             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <RefreshCw className={`w-4 h-4 ${highRiskQuery.isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-4 h-4 ${highRiskQuery.isFetching ? "animate-spin" : ""}`}
+            />
             Refresh
           </button>
         </div>
@@ -78,7 +88,9 @@ export function DashboardPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">High Risk</p>
-                <p className="text-2xl font-bold text-red-600">{highRiskAddresses.length}</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {highRiskAddresses.length}
+                </p>
               </div>
             </div>
           </Card>
@@ -109,30 +121,42 @@ export function DashboardPage() {
                 <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-red-500 rounded-full transition-all duration-500"
-                    style={{ width: `${(riskDistribution.critical / Math.max(highRiskAddresses.length, 1)) * 100}%` }}
+                    style={{
+                      width: `${(riskDistribution.critical / Math.max(highRiskAddresses.length, 1)) * 100}%`,
+                    }}
                   />
                 </div>
-                <div className="w-12 text-sm font-medium text-right">{riskDistribution.critical}</div>
+                <div className="w-12 text-sm font-medium text-right">
+                  {riskDistribution.critical}
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="w-24 text-sm text-gray-500">High</div>
                 <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-orange-500 rounded-full transition-all duration-500"
-                    style={{ width: `${(riskDistribution.high / Math.max(highRiskAddresses.length, 1)) * 100}%` }}
+                    style={{
+                      width: `${(riskDistribution.high / Math.max(highRiskAddresses.length, 1)) * 100}%`,
+                    }}
                   />
                 </div>
-                <div className="w-12 text-sm font-medium text-right">{riskDistribution.high}</div>
+                <div className="w-12 text-sm font-medium text-right">
+                  {riskDistribution.high}
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="w-24 text-sm text-gray-500">Medium</div>
                 <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-yellow-500 rounded-full transition-all duration-500"
-                    style={{ width: `${(riskDistribution.medium / Math.max(highRiskAddresses.length, 1)) * 100}%` }}
+                    style={{
+                      width: `${(riskDistribution.medium / Math.max(highRiskAddresses.length, 1)) * 100}%`,
+                    }}
                   />
                 </div>
-                <div className="w-12 text-sm font-medium text-right">{riskDistribution.medium}</div>
+                <div className="w-12 text-sm font-medium text-right">
+                  {riskDistribution.medium}
+                </div>
               </div>
             </div>
           </Card>
@@ -143,19 +167,35 @@ export function DashboardPage() {
               <Clock className="w-5 h-5 text-gray-400" />
             </div>
             <div className="space-y-2">
-              <Link to="/address" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <Link
+                to="/address"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 <Database className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-900">Address Analysis</span>
+                <span className="text-sm font-medium text-gray-900">
+                  Address Analysis
+                </span>
               </Link>
-              <Link to="/high-risk" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <Link
+                to="/high-risk"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 <ShieldAlert className="w-5 h-5 text-red-600" />
-                <span className="text-sm font-medium text-gray-900">High Risk Network</span>
+                <span className="text-sm font-medium text-gray-900">
+                  High Risk Network
+                </span>
               </Link>
-              <Link to="/graph" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <Link
+                to="/graph"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 <Network className="w-5 h-5 text-purple-600" />
                 <span className="text-sm font-medium text-gray-900">Graph Explorer</span>
               </Link>
-              <Link to="/path-finder" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <Link
+                to="/path-finder"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 <Users className="w-5 h-5 text-green-600" />
                 <span className="text-sm font-medium text-gray-900">Path Finder</span>
               </Link>
@@ -163,15 +203,26 @@ export function DashboardPage() {
           </Card>
         </div>
 
-        <Card title="Recent High-Risk Addresses" subtitle="Addresses with risk score ≥ 0.7">
+        <Card
+          title="Recent High-Risk Addresses"
+          subtitle="Addresses with risk score ≥ 0.7"
+        >
           {highRiskQuery.isLoading ? (
             <div className="py-8">
               <LoadingSpinner />
             </div>
           ) : highRiskAddresses.length > 0 ? (
-            <AddressTable addresses={highRiskAddresses} showTxCount showInOut showTags maxTagsDisplay={2} />
+            <AddressTable
+              addresses={highRiskAddresses}
+              showTxCount
+              showInOut
+              showTags
+              maxTagsDisplay={2}
+            />
           ) : (
-            <div className="text-center py-8 text-gray-500">No high-risk addresses found</div>
+            <div className="text-center py-8 text-gray-500">
+              No high-risk addresses found
+            </div>
           )}
         </Card>
       </div>

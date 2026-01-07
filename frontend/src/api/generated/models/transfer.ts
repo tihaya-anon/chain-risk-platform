@@ -7,13 +7,13 @@
  */
 
 export interface Transfer {
-  id?: number;
-  txHash?: string;
-  blockNumber?: number;
-  fromAddress?: string;
-  toAddress?: string;
-  value?: string;
-  timestamp?: string;
-  transferType?: string;
-  network?: string;
+  id?: number
+  txHash?: string
+  blockNumber?: number
+  fromAddress?: string
+  toAddress?: string
+  value?: string
+  timestamp?: string
+  transferType?: string
+  network?: string
 }

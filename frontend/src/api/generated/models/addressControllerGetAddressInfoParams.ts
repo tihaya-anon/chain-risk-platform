@@ -7,8 +7,8 @@
  */
 
 export type AddressControllerGetAddressInfoParams = {
-/**
- * Network
- */
-network?: string;
-};
+  /**
+   * Network
+   */
+  network?: string
+}

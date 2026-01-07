@@ -5,70 +5,167 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import {
-  faker
-} from '@faker-js/faker';
+import { faker } from "@faker-js/faker"
 
-import {
-  HttpResponse,
-  delay,
-  http
-} from 'msw';
-import type {
-  RequestHandlerOptions
-} from 'msw';
+import { HttpResponse, delay, http } from "msw"
+import type { RequestHandlerOptions } from "msw"
 
-import type {
-  BatchRiskScoreResponse,
-  RiskRule,
-  RiskScoreResponse
-} from '../../models';
+import type { BatchRiskScoreResponse, RiskRule, RiskScoreResponse } from "../../models"
 
+export const getRiskControllerScoreAddressResponseMock = (
+  overrideResponse: Partial<RiskScoreResponse> = {}
+): RiskScoreResponse => ({
+  address: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  network: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  riskScore: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+  riskLevel: faker.helpers.arrayElement(["low", "medium", "high", "critical"] as const),
+  factors: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1
+  ).map(() => ({
+    name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    score: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    weight: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    description: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    triggered: faker.datatype.boolean(),
+  })),
+  tags: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  evaluatedAt: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  cached: faker.datatype.boolean(),
+  ...overrideResponse,
+})
 
-export const getRiskControllerScoreAddressResponseMock = (overrideResponse: Partial< RiskScoreResponse > = {}): RiskScoreResponse => ({address: faker.string.alpha({length: {min: 10, max: 20}}), network: faker.string.alpha({length: {min: 10, max: 20}}), riskScore: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), riskLevel: faker.helpers.arrayElement(['low','medium','high','critical'] as const), factors: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({name: faker.string.alpha({length: {min: 10, max: 20}}), score: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), weight: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), description: faker.string.alpha({length: {min: 10, max: 20}}), triggered: faker.datatype.boolean()})), tags: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), evaluatedAt: faker.string.alpha({length: {min: 10, max: 20}}), cached: faker.datatype.boolean(), ...overrideResponse})
+export const getRiskControllerScoreAddressesBatchResponseMock = (
+  overrideResponse: Partial<BatchRiskScoreResponse> = {}
+): BatchRiskScoreResponse => ({
+  results: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1
+  ).map(() => ({
+    address: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    network: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    riskScore: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    riskLevel: faker.helpers.arrayElement(["low", "medium", "high", "critical"] as const),
+    factors: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1
+    ).map(() => ({
+      name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      score: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+      weight: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+      description: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      triggered: faker.datatype.boolean(),
+    })),
+    tags: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    evaluatedAt: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    cached: faker.datatype.boolean(),
+  })),
+  total: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+  failed: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+  ...overrideResponse,
+})
 
-export const getRiskControllerScoreAddressesBatchResponseMock = (overrideResponse: Partial< BatchRiskScoreResponse > = {}): BatchRiskScoreResponse => ({results: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({address: faker.string.alpha({length: {min: 10, max: 20}}), network: faker.string.alpha({length: {min: 10, max: 20}}), riskScore: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), riskLevel: faker.helpers.arrayElement(['low','medium','high','critical'] as const), factors: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({name: faker.string.alpha({length: {min: 10, max: 20}}), score: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), weight: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), description: faker.string.alpha({length: {min: 10, max: 20}}), triggered: faker.datatype.boolean()})), tags: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), evaluatedAt: faker.string.alpha({length: {min: 10, max: 20}}), cached: faker.datatype.boolean()})), total: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), failed: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), ...overrideResponse})
+export const getRiskControllerListRulesResponseMock = (): RiskRule[] =>
+  Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+    () => ({
+      id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      description: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      enabled: faker.datatype.boolean(),
+    })
+  )
 
-export const getRiskControllerListRulesResponseMock = (): RiskRule[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.string.alpha({length: {min: 10, max: 20}}), description: faker.string.alpha({length: {min: 10, max: 20}}), enabled: faker.datatype.boolean()})))
+export const getRiskControllerScoreAddressMockHandler = (
+  overrideResponse?:
+    | RiskScoreResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0]
+      ) => Promise<RiskScoreResponse> | RiskScoreResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.post(
+    "*/api/v1/risk/score",
+    async (info) => {
+      await delay(1000)
 
-
-export const getRiskControllerScoreAddressMockHandler = (overrideResponse?: RiskScoreResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<RiskScoreResponse> | RiskScoreResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/api/v1/risk/score', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRiskControllerScoreAddressResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getRiskControllerScoreAddressResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getRiskControllerScoreAddressesBatchMockHandler = (overrideResponse?: BatchRiskScoreResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<BatchRiskScoreResponse> | BatchRiskScoreResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/api/v1/risk/score/batch', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRiskControllerScoreAddressesBatchResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getRiskControllerScoreAddressesBatchMockHandler = (
+  overrideResponse?:
+    | BatchRiskScoreResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0]
+      ) => Promise<BatchRiskScoreResponse> | BatchRiskScoreResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.post(
+    "*/api/v1/risk/score/batch",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getRiskControllerScoreAddressesBatchResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getRiskControllerListRulesMockHandler = (overrideResponse?: RiskRule[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<RiskRule[]> | RiskRule[]), options?: RequestHandlerOptions) => {
-  return http.get('*/api/v1/risk/rules', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRiskControllerListRulesResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getRiskControllerListRulesMockHandler = (
+  overrideResponse?:
+    | RiskRule[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<RiskRule[]> | RiskRule[]),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    "*/api/v1/risk/rules",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getRiskControllerListRulesResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 export const getRiskMock = () => [
   getRiskControllerScoreAddressMockHandler(),
   getRiskControllerScoreAddressesBatchMockHandler(),
-  getRiskControllerListRulesMockHandler()
+  getRiskControllerListRulesMockHandler(),
 ]
