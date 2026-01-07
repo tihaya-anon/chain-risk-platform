@@ -37,33 +37,52 @@ function getRiskBasedSize(riskScore?: number, transferCount?: number): number {
   return baseSize + riskBonus + txBonus
 }
 
-// Calculate fixed position based on direction
-function getNodePosition(direction: string | undefined, index: number, totalByType: { in: number; out: number; both: number }) {
+// Convert degrees to radians
+function degToRad(deg: number): number {
+  return (deg * Math.PI) / 180
+}
+
+// Calculate position in polar coordinates (mathematical: 0°=right, 90°=up, counterclockwise)
+// Screen coordinates: y is inverted
+function getNodePosition(
+  direction: string | undefined,
+  index: number,
+  totalByType: { in: number; out: number; both: number }
+) {
   const radius = 200
-  const centerX = 0
-  const centerY = 0
+
+  // Angle ranges (in degrees, mathematical polar coordinates)
+  // incoming: 90° - 210° (left side, from top to bottom-left)
+  // both: 210° - 330° (bottom)
+  // outgoing: 330° - 450° (i.e., 330° - 90°, right side)
+
+  let startDeg: number, endDeg: number, count: number
 
   if (direction === "incoming") {
-    // Left side: spread from -120° to -60° (top-left quadrant)
-    const angleRange = Math.PI / 3 // 60 degrees
-    const startAngle = Math.PI - angleRange / 2 // ~150°
-    const step = totalByType.in > 1 ? angleRange / (totalByType.in - 1) : 0
-    const angle = startAngle - index * step
-    return { x: centerX + radius * Math.cos(angle), y: centerY - radius * Math.sin(angle) }
-  } else if (direction === "outgoing") {
-    // Right side: spread from 60° to -60°
-    const angleRange = Math.PI / 3
-    const startAngle = angleRange / 2 // 30°
-    const step = totalByType.out > 1 ? angleRange / (totalByType.out - 1) : 0
-    const angle = startAngle - index * step
-    return { x: centerX + radius * Math.cos(angle), y: centerY - radius * Math.sin(angle) }
+    startDeg = 90
+    endDeg = 210
+    count = totalByType.in
+  } else if (direction === "both") {
+    startDeg = 210
+    endDeg = 330
+    count = totalByType.both
   } else {
-    // Bottom: spread from -120° to -60° (bottom)
-    const angleRange = Math.PI / 3
-    const startAngle = -Math.PI / 2 - angleRange / 2 // -120°
-    const step = totalByType.both > 1 ? angleRange / (totalByType.both - 1) : 0
-    const angle = startAngle + index * step
-    return { x: centerX + radius * Math.cos(angle), y: centerY - radius * Math.sin(angle) }
+    // outgoing: 330° to 450° (90° + 360°)
+    startDeg = 330
+    endDeg = 450
+    count = totalByType.out
+  }
+
+  // Distribute nodes evenly within the range
+  const angle = count > 1
+    ? startDeg + (index / (count - 1)) * (endDeg - startDeg)
+    : (startDeg + endDeg) / 2
+
+  const rad = degToRad(angle)
+  // Mathematical to screen: x = cos, y = -sin (invert y)
+  return {
+    x: radius * Math.cos(rad),
+    y: -radius * Math.sin(rad),
   }
 }
 
@@ -154,7 +173,7 @@ export function AddressGraph({
       })
     })
 
-    // Edges with consistent curve direction
+    // Edges
     const edges: any[] = neighbors.map((n: NeighborInfo, i: number) => {
       const isIncoming = n.direction === "incoming"
       const isBoth = n.direction === "both"
@@ -182,7 +201,7 @@ export function AddressGraph({
         smooth: { enabled: true, type: "curvedCCW", roundness: 0.15 },
       },
       physics: {
-        enabled: false, // Disable physics for fixed layout
+        enabled: false,
       },
       interaction: {
         hover: true,
@@ -199,11 +218,8 @@ export function AddressGraph({
     }
 
     const network = new Network(containerRef.current, graphData, options)
-
-    // Fit view after creation
     network.fit({ animation: { duration: 300, easingFunction: "easeInOutQuad" } })
 
-    // Hover handler
     network.on("hoverNode", (params) => {
       if (selectedNodeRef.current) return
       const nodeId = params.node as string
@@ -224,7 +240,6 @@ export function AddressGraph({
       }
     })
 
-    // Click handler
     network.on("click", (params) => {
       const currentData = dataRef.current
       if (!currentData) return
@@ -246,7 +261,6 @@ export function AddressGraph({
       }
     })
 
-    // Double click handler
     network.on("doubleClick", (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
@@ -288,15 +302,15 @@ export function AddressGraphLegend() {
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-green-500 text-green-600" />
-        <span>In (←)</span>
+        <span>In</span>
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-red-500 text-red-600" />
-        <span>Out (→)</span>
+        <span>Out</span>
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-purple-500 text-purple-600" />
-        <span>Both (↓)</span>
+        <span>Both</span>
       </div>
     </div>
   )
