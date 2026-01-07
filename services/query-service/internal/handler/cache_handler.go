@@ -49,14 +49,14 @@ func (h *CacheHandler) RegisterRoutes() RouteGroup {
 // @Tags cache
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.APIResponse
+// @Success 200 {object} model.APIResponse{data=model.CacheStatsResponse}
 // @Failure 500 {object} model.APIResponse
 // @Router /api/v1/cache/stats [get]
 func (h *CacheHandler) GetCacheStats(c *gin.Context) {
 	if !h.service.IsCacheEnabled() {
-		c.JSON(http.StatusOK, model.NewSuccessResponse(gin.H{
-			"enabled": false,
-			"message": "Cache is not enabled",
+		c.JSON(http.StatusOK, model.NewSuccessResponse(model.CacheStatsResponse{
+			Enabled: false,
+			Message: "Cache is not enabled",
 		}, nil))
 		return
 	}
@@ -68,9 +68,9 @@ func (h *CacheHandler) GetCacheStats(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, model.NewSuccessResponse(gin.H{
-		"enabled": true,
-		"stats":   stats,
+	c.JSON(http.StatusOK, model.NewSuccessResponse(model.CacheStatsResponse{
+		Enabled: true,
+		Stats:   stats,
 	}, nil))
 }
 
@@ -82,7 +82,7 @@ func (h *CacheHandler) GetCacheStats(c *gin.Context) {
 // @Produce json
 // @Param address path string true "Blockchain Address"
 // @Param network query string false "Network" default(ethereum)
-// @Success 200 {object} model.APIResponse
+// @Success 200 {object} model.APIResponse{data=model.InvalidateCacheResponse}
 // @Failure 400 {object} model.APIResponse
 // @Failure 500 {object} model.APIResponse
 // @Router /api/v1/cache/addresses/{address} [delete]
@@ -96,8 +96,8 @@ func (h *CacheHandler) InvalidateAddressCache(c *gin.Context) {
 	network := c.DefaultQuery("network", "ethereum")
 
 	if !h.service.IsCacheEnabled() {
-		c.JSON(http.StatusOK, model.NewSuccessResponse(gin.H{
-			"message": "Cache is not enabled, nothing to invalidate",
+		c.JSON(http.StatusOK, model.NewSuccessResponse(model.InvalidateCacheResponse{
+			Message: "Cache is not enabled, nothing to invalidate",
 		}, nil))
 		return
 	}
@@ -111,9 +111,9 @@ func (h *CacheHandler) InvalidateAddressCache(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, model.NewSuccessResponse(gin.H{
-		"message": "Cache invalidated successfully",
-		"address": address,
-		"network": network,
+	c.JSON(http.StatusOK, model.NewSuccessResponse(model.InvalidateCacheResponse{
+		Message: "Cache invalidated successfully",
+		Address: address,
+		Network: network,
 	}, nil))
 }

@@ -212,7 +212,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        " meta": {
+                                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.PaginationResponse"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.TransferResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -263,7 +281,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.InvalidateCacheResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -298,7 +328,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.CacheStatsResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "500": {
@@ -392,7 +434,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        " meta": {
+                                            "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.PaginationResponse"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.TransferResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "500": {
@@ -600,6 +660,51 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_0ksks_chain-risk-platform_query-service_internal_model.CacheStatsResponse": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/github_com_0ksks_chain-risk-platform_query-service_pkg_cache.CacheStats"
+                }
+            }
+        },
+        "github_com_0ksks_chain-risk-platform_query-service_internal_model.InvalidateCacheResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "network": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_0ksks_chain-risk-platform_query-service_internal_model.PaginationResponse": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalItems": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_0ksks_chain-risk-platform_query-service_internal_model.TransferResponse": {
             "type": "object",
             "properties": {
@@ -641,6 +746,26 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_0ksks_chain-risk-platform_query-service_pkg_cache.CacheStats": {
+            "type": "object",
+            "properties": {
+                "hitRate": {
+                    "type": "string"
+                },
+                "hits": {
+                    "type": "integer"
+                },
+                "keys": {
+                    "type": "integer"
+                },
+                "memoryUsed": {
+                    "type": "string"
+                },
+                "misses": {
+                    "type": "integer"
                 }
             }
         }

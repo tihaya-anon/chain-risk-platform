@@ -47,6 +47,35 @@ definitions:
       totalValueSent:
         type: string
     type: object
+  github_com_0ksks_chain-risk-platform_query-service_internal_model.CacheStatsResponse:
+    properties:
+      enabled:
+        type: boolean
+      message:
+        type: string
+      stats:
+        $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_pkg_cache.CacheStats'
+    type: object
+  github_com_0ksks_chain-risk-platform_query-service_internal_model.InvalidateCacheResponse:
+    properties:
+      address:
+        type: string
+      message:
+        type: string
+      network:
+        type: string
+    type: object
+  github_com_0ksks_chain-risk-platform_query-service_internal_model.PaginationResponse:
+    properties:
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
   github_com_0ksks_chain-risk-platform_query-service_internal_model.TransferResponse:
     properties:
       blockNumber:
@@ -75,6 +104,19 @@ definitions:
         type: string
       value:
         type: string
+    type: object
+  github_com_0ksks_chain-risk-platform_query-service_pkg_cache.CacheStats:
+    properties:
+      hitRate:
+        type: string
+      hits:
+        type: integer
+      keys:
+        type: integer
+      memoryUsed:
+        type: string
+      misses:
+        type: integer
     type: object
 info:
   contact: {}
@@ -205,7 +247,16 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse'
+            allOf:
+            - $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse'
+            - properties:
+                ' meta':
+                  $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.PaginationResponse'
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.TransferResponse'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -239,7 +290,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse'
+            allOf:
+            - $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.InvalidateCacheResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -263,7 +319,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse'
+            allOf:
+            - $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.CacheStatsResponse'
+              type: object
         "500":
           description: Internal Server Error
           schema:
@@ -326,7 +387,16 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse'
+            allOf:
+            - $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.APIResponse'
+            - properties:
+                ' meta':
+                  $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.PaginationResponse'
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_0ksks_chain-risk-platform_query-service_internal_model.TransferResponse'
+                  type: array
+              type: object
         "500":
           description: Internal Server Error
           schema:

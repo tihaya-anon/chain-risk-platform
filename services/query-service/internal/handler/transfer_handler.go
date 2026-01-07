@@ -131,7 +131,7 @@ func (h *TransferHandler) GetTransfersByTxHash(c *gin.Context) {
 // @Param network query string false "Filter by network" default(ethereum)
 // @Param startTime query string false "Filter by start time (RFC3339)"
 // @Param endTime query string false "Filter by end time (RFC3339)"
-// @Success 200 {object} model.APIResponse
+// @Success 200 {object} model.APIResponse{data=[]model.TransferResponse, meta=model.PaginationResponse}
 // @Failure 500 {object} model.APIResponse
 // @Router /api/v1/transfers [get]
 func (h *TransferHandler) ListTransfers(c *gin.Context) {
