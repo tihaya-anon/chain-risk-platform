@@ -1,238 +1,273 @@
-# Orchestrator + BFF Architecture
+# Gateway + Orchestrator + BFF Architecture
 
-## 架构概览
+## Overview
 
 ```
-┌─────────┐
-│ Frontend│
-│  :5173  │
-└────┬────┘
-     │
-     ▼
-┌──────────────────┐
-│   Orchestrator        │  ← JWT 认证、路由、添加用户上下文
-│   (Java)         │
-│   Port: 8080     │
-└────┬─────────────┘
-     │ X-User-Id
-     │ X-User-Username
-     │ X-User-Role
-     ▼
-┌──────────────────┐
-│      BFF         │  ← 业务聚合、数据转换
-│   (NestJS)       │
-│   Port: 3001     │
-└────┬─────────────┘
-     │
-     ├──────────────────┬──────────────────┐
-     ▼                  ▼                  ▼
-┌─────────┐      ┌─────────┐      ┌─────────┐
-│ Address │      │  Risk   │      │  Other  │
-│ Service │      │ Service │      │ Services│
-└─────────┘      └─────────┘      └─────────┘
+┌─────────────┐
+│   Frontend  │  ← Only one entry point: orchestrator:8080
+│    :5173    │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        Java Orchestrator (:8080)                        │
+│                                                                         │
+│  ┌─────────────────────────────────┐  ┌──────────────────────────────┐  │
+│  │         Gateway Layer           │  │     Orchestration Layer      │  │
+│  │                                 │  │                              │  │
+│  │  • JWT Authentication           │  │  • Complex Aggregation       │  │
+│  │  • Rate Limiting                │  │  • Resilience4j              │  │
+│  │  • Circuit Breaker              │  │    - Circuit Breaker         │  │
+│  │  • Request Routing              │  │    - Retry                   │  │
+│  │  • User Context Injection       │  │    - Timeout                 │  │
+│  │  • CORS                         │  │  • Parallel API Calls        │  │
+│  └─────────────────────────────────┘  └──────────────────────────────┘  │
+│                                                                         │
+│  /api/v1/orchestration/*  → Self-handled (aggregation + resilience)     │
+│  /api/v1/**               → Route to BFF (with user context headers)    │
+└───────────┬─────────────────────────────────────┬───────────────────────┘
+            │                                     │
+            │ Direct call (aggregation)           │ Passthrough
+            ▼                                     ▼
+┌─────────────────────────┐             ┌─────────────────────────┐
+│   Backend Services      │             │     NestJS BFF (:3001)  │
+│                         │             │                         │
+│   • query-service       │             │  • API Transformation   │
+│   • risk-ml-service     │             │  • DTO Validation       │
+│   • graph-service       │             │  • Service Aggregation  │
+│                         │             │  • Native TS Types      │
+└─────────────────────────┘             └───────────┬─────────────┘
+                                                    │
+                                                    ▼
+                                        ┌─────────────────────────┐
+                                        │   Backend Services      │
+                                        └─────────────────────────┘
 ```
 
-## 职责划分
+## Request Flow
 
-### Orchestrator (Java + Spring Cloud Orchestrator)
-**端口**: 8080  
-**职责**:
-- ✅ JWT Token 验证
-- ✅ 请求路由到 BFF
-- ✅ 添加用户上下文请求头
-  - `X-User-Id`: 用户ID
-  - `X-User-Username`: 用户名
-  - `X-User-Role`: 用户角色
-- ✅ 限流、熔断
-- ✅ 请求日志记录
-- ✅ CORS 配置
-
-**不负责**:
-- ❌ 业务逻辑
-- ❌ 数据聚合
-- ❌ 数据转换
-
-### BFF (NestJS)
-**端口**: 3001  
-**职责**:
-- ✅ 业务逻辑聚合
-- ✅ 调用后端微服务
-- ✅ 数据格式转换
-- ✅ 接收 Orchestrator 转发的用户上下文
-- ✅ 为前端提供定制化 API
-
-**不负责**:
-- ❌ JWT 验证 (Orchestrator 已处理)
-- ❌ 限流熔断 (Orchestrator 已处理)
-
-## 请求流程
-
-### 1. 登录流程 (无需认证)
+### Simple Query (via BFF)
 ```
-Frontend → Orchestrator → BFF → Auth Service
-         (直接转发)  (生成JWT)
+Frontend → Orchestrator → BFF → Service
+              │
+              └─ JWT verify, add X-User-* headers, passthrough
 ```
 
-### 2. 认证请求流程
+### Complex Aggregation (via Orchestrator)
 ```
-Frontend 
-  ↓ (携带 JWT Token)
-Orchestrator
-  ↓ (验证 JWT)
-  ↓ (提取用户信息)
-  ↓ (添加请求头: X-User-Id, X-User-Username, X-User-Role)
-BFF
-  ↓ (从请求头获取用户信息)
-  ↓ (调用后端服务)
-Backend Services
+Frontend → Orchestrator ──┬──→ query-service
+              │           ├──→ risk-ml-service    (parallel calls)
+              │           └──→ graph-service
+              │
+              └─ JWT verify, Resilience4j, aggregate results
 ```
 
-## 用户上下文传递
+## Responsibilities
 
-### Orchestrator 添加的请求头
+### Java Orchestrator
+**Port**: 8080
+
+| Category | Responsibilities |
+|----------|------------------|
+| **Gateway** | JWT validation, Rate limiting, Circuit breaker, CORS, Request logging |
+| **Routing** | Route `/api/v1/**` to BFF, Inject user context headers |
+| **Orchestration** | Complex aggregation APIs, Resilience4j (retry/timeout/circuit breaker) |
+
+**Tech Stack Showcase**:
+- Spring Cloud Gateway
+- Resilience4j
+- WebFlux (Reactive)
+- Spring Security
+
+### NestJS BFF
+**Port**: 3001
+
+| Category | Responsibilities |
+|----------|------------------|
+| **API** | Transform service responses, DTO validation, OpenAPI generation |
+| **Aggregation** | Simple service composition, Data formatting |
+| **Types** | Native TypeScript types → Frontend code generation |
+
+**Tech Stack Showcase**:
+- NestJS modules/guards/interceptors
+- Class-validator / class-transformer
+- @nestjs/swagger (OpenAPI)
+- Axios HTTP client
+
+### Backend Services
+- `query-service`: Address/transaction queries
+- `risk-ml-service`: Risk scoring
+- `graph-service`: Graph analysis
+
+## Orchestration APIs
+
+Orchestrator provides aggregated endpoints that combine multiple service calls:
+
+| Endpoint | Description | Services Called |
+|----------|-------------|-----------------|
+| `GET /api/v1/orchestration/address-profile/{address}` | Address overview | query + risk |
+| `GET /api/v1/orchestration/address-analysis/{address}` | Full analysis | query + risk + graph |
+| `GET /api/v1/orchestration/connection/{from}/{to}` | Path finding | graph + risk |
+| `GET /api/v1/orchestration/high-risk-network` | Risk network | graph |
+
+## User Context Headers
+
+Orchestrator injects user context after JWT validation:
+
 ```http
-GET /api/v1/addresses/0x123... HTTP/1.1
+GET /api/v1/addresses/0x123 HTTP/1.1
 Host: bff:3001
-Authorization: Bearer eyJhbGc...  (保留原始 JWT)
+Authorization: Bearer eyJhbGc...
 X-User-Id: 1
 X-User-Username: admin
 X-User-Role: admin
 ```
 
-### BFF 接收方式
+### BFF Reception
 
-#### 方式1: 使用 OrchestratorAuthGuard (推荐)
 ```typescript
-@Get(':address')
+// Option 1: Guard (recommended)
 @UseGuards(OrchestratorAuthGuard, JwtAuthGuard)
-async getAddressInfo(@Request() req: any) {
-  const user = req.user; // { sub, username, role, fromOrchestrator }
-  // ...
-}
-```
-
-#### 方式2: 使用自定义装饰器
-```typescript
 @Get(':address')
-async getAddressInfo(@OrchestratorUser() user: UserInfo) {
+async getAddress(@Request() req) {
+  const user = req.user;  // { sub, username, role, fromOrchestrator }
+}
+
+// Option 2: Decorator
+@Get(':address')
+async getAddress(@OrchestratorUser() user: UserInfo) {
   // user: { sub, username, role }
-  // ...
 }
 ```
 
-## 双模式支持
+## Dual Access Mode
 
-BFF 支持两种访问模式:
+BFF supports both access patterns:
 
-### 模式1: 通过 Orchestrator (生产环境)
+| Mode | Path | Use Case |
+|------|------|----------|
+| **Production** | Frontend → Orchestrator → BFF | Full auth flow |
+| **Development** | Frontend → BFF directly | Skip gateway, faster iteration |
+
+## Frontend API Client Generation
+
 ```
-Frontend → Orchestrator (8080) → BFF (3001)
-           [JWT验证]         [用户上下文]
+BFF (NestJS @nestjs/swagger)
+         │
+         ▼ Auto-generate
+   bff.openapi.json
+         │
+         ▼ orval
+┌─────────────────────────┐
+│  frontend/src/api/      │
+│  ├── models/            │  ← TypeScript DTOs
+│  ├── bff.ts             │  ← API client
+│  └── bff.msw.ts         │  ← Mock handlers
+└─────────────────────────┘
 ```
 
-### 模式2: 直接访问 BFF (开发/测试)
-```
-Frontend → BFF (3001)
-           [JWT验证]
-```
+## Configuration
 
-**实现原理**:
-- `OrchestratorAuthGuard` 优先检查 Orchestrator 请求头
-- 如果没有 Orchestrator 请求头,`JwtAuthGuard` 验证 JWT
-- 两种方式都能正确获取用户信息
-
-## 配置
-
-### Orchestrator 配置 (application.yml)
+### Orchestrator (application.yml)
 ```yaml
 spring:
   cloud:
-    orchestrator:
+    gateway:
       routes:
         - id: auth-route
           uri: http://bff:3001
           predicates:
             - Path=/api/v1/auth/**
-          # 不需要认证
+          # No authentication required
         
-        - id: protected-route
+        - id: bff-route
           uri: http://bff:3001
           predicates:
             - Path=/api/v1/**
           filters:
-            - AuthenticationFilter  # 添加用户上下文
+            - AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: bff-circuit
+                fallbackUri: forward:/fallback
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      query-service:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+      risk-service:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+  retry:
+    instances:
+      query-service:
+        maxAttempts: 3
+        waitDuration: 500ms
 ```
 
-### BFF 配置 (config.ts)
+### BFF (config)
 ```typescript
 export const config = {
-  server: {
-    port: 3001,
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET,
-  },
-  // 后端服务地址
+  server: { port: 3001 },
+  jwt: { secret: process.env.JWT_SECRET },
   services: {
-    address: process.env.ADDRESS_SERVICE_URL,
+    query: process.env.QUERY_SERVICE_URL,
     risk: process.env.RISK_SERVICE_URL,
-  }
-}
+    graph: process.env.GRAPH_SERVICE_URL,
+  },
+};
 ```
 
-## 环境变量
+## Environment Variables
 
 ### Orchestrator
 ```bash
-JWT_SECRET=your-secret-key-change-this-in-production-min-256-bits
+JWT_SECRET=your-secret-key-min-256-bits
 BFF_URL=http://bff:3001
+QUERY_SERVICE_URL=http://query-service:8081
+RISK_SERVICE_URL=http://risk-service:8082
+GRAPH_SERVICE_URL=http://graph-service:8083
 ```
 
 ### BFF
 ```bash
-JWT_SECRET=your-secret-key-change-this-in-production-min-256-bits
-ADDRESS_SERVICE_URL=http://address-service:8081
+JWT_SECRET=your-secret-key-min-256-bits  # Must match Orchestrator
+QUERY_SERVICE_URL=http://query-service:8081
 RISK_SERVICE_URL=http://risk-service:8082
+GRAPH_SERVICE_URL=http://graph-service:8083
 ```
 
-**注意**: Orchestrator 和 BFF 的 JWT_SECRET 必须一致!
+## Startup Order
 
-## 启动顺序
+1. Infrastructure (PostgreSQL, Neo4j, Redis, Kafka)
+2. Backend Services (query-service, risk-ml-service, graph-service)
+3. BFF (:3001)
+4. Orchestrator (:8080)
+5. Frontend (:5173)
 
-1. 基础设施 (Redis, Postgres, etc.)
-2. 后端微服务 (Address Service, Risk Service, etc.)
-3. **BFF** (端口 3001)
-4. **Orchestrator** (端口 8080)
-5. Frontend (端口 5173)
+## Security
 
-## 开发建议
+| Layer | Security Measure |
+|-------|------------------|
+| **Orchestrator** | JWT validation, Rate limiting, CORS |
+| **BFF** | Internal network only (not exposed), Request header validation |
+| **Services** | Internal network only |
 
-### 本地开发
-- 直接访问 BFF (http://localhost:3001)
-- 跳过 Orchestrator,减少复杂度
+## Monitoring
 
-### 集成测试
-- 通过 Orchestrator 访问 (http://localhost:8080)
-- 测试完整的认证流程
+| Service | Endpoints |
+|---------|-----------|
+| Orchestrator | `/actuator/health`, `/actuator/metrics`, `/actuator/circuitbreakers` |
+| BFF | `/health` |
+| Services | `/actuator/health` |
 
-### 生产环境
-- 只暴露 Orchestrator (端口 8080)
-- BFF 不对外暴露
+## Why This Architecture?
 
-## 安全考虑
-
-1. **JWT Secret**: 生产环境必须使用强密钥
-2. **内网隔离**: BFF 只接受来自 Orchestrator 的请求
-3. **请求头验证**: BFF 可选择性验证请求来源
-4. **HTTPS**: 生产环境使用 HTTPS
-
-## 监控
-
-- Orchestrator: `/actuator/health`, `/actuator/metrics`
-- BFF: `/api/v1/health` (需添加)
-
-## 扩展性
-
-- Orchestrator 和 BFF 都是无状态的,可水平扩展
-- 使用 Redis 做分布式限流
-- 使用 Nacos 做服务发现
+| Concern | Solution |
+|---------|----------|
+| Java too heavy for just Gateway? | Orchestrator also handles complex aggregation with Resilience4j |
+| Frontend needs native TS types? | BFF generates OpenAPI → orval → TS client |
+| Want to showcase both Java & TS? | Java: Spring Cloud + Resilience4j, TS: NestJS ecosystem |
+| Simple vs Complex queries? | Simple → BFF passthrough, Complex → Orchestrator aggregation |
