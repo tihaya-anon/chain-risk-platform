@@ -1,6 +1,6 @@
 import { Server } from "lucide-react"
 import { Card } from "@/components/common"
-import type { ServiceInfo } from "@/types"
+import type { ServiceInfo } from "@/api/generated"
 
 interface ServicesTabProps {
   services: ServiceInfo[]
@@ -38,7 +38,7 @@ export function ServicesTab({ services, isLoading }: ServicesTabProps) {
                       className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                         service.healthyInstanceCount === service.instanceCount
                           ? "bg-green-100 text-green-800"
-                          : service.healthyInstanceCount > 0
+                          : (service.healthyInstanceCount ?? 0) > 0
                             ? "bg-yellow-100 text-yellow-800"
                             : "bg-red-100 text-red-800"
                       }`}
@@ -50,21 +50,15 @@ export function ServicesTab({ services, isLoading }: ServicesTabProps) {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Group</span>
-                      <span className="font-medium text-gray-900">
-                        {service.groupName}
-                      </span>
+                      <span className="font-medium text-gray-900">{service.groupName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Clusters</span>
-                      <span className="font-medium text-gray-900">
-                        {service.clusterCount}
-                      </span>
+                      <span className="font-medium text-gray-900">{service.clusterCount}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Instances</span>
-                      <span className="font-medium text-gray-900">
-                        {service.instanceCount}
-                      </span>
+                      <span className="font-medium text-gray-900">{service.instanceCount}</span>
                     </div>
                   </div>
                 </div>
