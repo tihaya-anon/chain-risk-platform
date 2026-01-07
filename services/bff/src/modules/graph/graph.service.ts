@@ -31,7 +31,7 @@ export class GraphService {
   async getAddressInfo(address: string): Promise<AddressInfoResponse> {
     try {
       const response = await this.client.get<AddressInfoResponse>(
-        `/api/graph/address/${address}`,
+        `/api/v1/graph/address/${address}`,
       );
       return response.data;
     } catch (error) {
@@ -46,7 +46,7 @@ export class GraphService {
   ): Promise<AddressNeighborsResponse> {
     try {
       const response = await this.client.get<AddressNeighborsResponse>(
-        `/api/graph/address/${address}/neighbors`,
+        `/api/v1/graph/address/${address}/neighbors`,
         { params: { depth, limit } },
       );
       return response.data;
@@ -58,7 +58,7 @@ export class GraphService {
   async getAddressTags(address: string): Promise<string[]> {
     try {
       const response = await this.client.get<string[]>(
-        `/api/graph/address/${address}/tags`,
+        `/api/v1/graph/address/${address}/tags`,
       );
       return response.data;
     } catch (error) {
@@ -72,7 +72,7 @@ export class GraphService {
   ): Promise<AddressInfoResponse> {
     try {
       const response = await this.client.post<AddressInfoResponse>(
-        `/api/graph/address/${address}/tags`,
+        `/api/v1/graph/address/${address}/tags`,
         request,
       );
       return response.data;
@@ -86,7 +86,7 @@ export class GraphService {
 
   async removeAddressTag(address: string, tag: string): Promise<void> {
     try {
-      await this.client.delete(`/api/graph/address/${address}/tags/${tag}`);
+      await this.client.delete(`/api/v1/graph/address/${address}/tags/${tag}`);
     } catch (error) {
       this.handleError(error, "removeAddressTag", { address, tag });
     }
@@ -95,7 +95,7 @@ export class GraphService {
   async getAddressCluster(address: string): Promise<ClusterResponse> {
     try {
       const response = await this.client.get<ClusterResponse>(
-        `/api/graph/address/${address}/cluster`,
+        `/api/v1/graph/address/${address}/cluster`,
       );
       return response.data;
     } catch (error) {
@@ -112,7 +112,7 @@ export class GraphService {
   ): Promise<PathResponse> {
     try {
       const response = await this.client.get<PathResponse>(
-        `/api/graph/path/${fromAddress}/${toAddress}`,
+        `/api/v1/graph/path/${fromAddress}/${toAddress}`,
         { params: { maxDepth } },
       );
       return response.data;
@@ -126,7 +126,7 @@ export class GraphService {
   async getCluster(clusterId: string): Promise<ClusterResponse> {
     try {
       const response = await this.client.get<ClusterResponse>(
-        `/api/graph/cluster/${clusterId}`,
+        `/api/v1/graph/cluster/${clusterId}`,
       );
       return response.data;
     } catch (error) {
@@ -137,7 +137,7 @@ export class GraphService {
   async runClustering(): Promise<ClusteringResultResponse> {
     try {
       const response = await this.client.post<ClusteringResultResponse>(
-        "/api/graph/cluster/run",
+        "/api/v1/graph/cluster/run",
       );
       return response.data;
     } catch (error) {
@@ -148,7 +148,7 @@ export class GraphService {
   async manualCluster(addresses: string[]): Promise<ClusteringResultResponse> {
     try {
       const response = await this.client.post<ClusteringResultResponse>(
-        "/api/graph/cluster/manual",
+        "/api/v1/graph/cluster/manual",
         addresses,
       );
       return response.data;
@@ -167,7 +167,7 @@ export class GraphService {
   ): Promise<AddressInfoResponse[]> {
     try {
       const response = await this.client.get<AddressInfoResponse[]>(
-        `/api/graph/search/tag/${tag}`,
+        `/api/v1/graph/search/tag/${tag}`,
         { params: { limit } },
       );
       return response.data;
@@ -182,7 +182,7 @@ export class GraphService {
   ): Promise<AddressInfoResponse[]> {
     try {
       const response = await this.client.get<AddressInfoResponse[]>(
-        "/api/graph/search/high-risk",
+        "/api/v1/graph/search/high-risk",
         { params: { threshold, limit } },
       );
       return response.data;
@@ -196,7 +196,7 @@ export class GraphService {
   async propagateTags(): Promise<PropagationResultResponse> {
     try {
       const response = await this.client.post<PropagationResultResponse>(
-        "/api/graph/propagate",
+        "/api/v1/graph/propagate",
       );
       return response.data;
     } catch (error) {
@@ -209,7 +209,7 @@ export class GraphService {
   ): Promise<PropagationResultResponse> {
     try {
       const response = await this.client.post<PropagationResultResponse>(
-        `/api/graph/propagate/${address}`,
+        `/api/v1/graph/propagate/${address}`,
       );
       return response.data;
     } catch (error) {

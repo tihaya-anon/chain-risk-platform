@@ -5,6 +5,7 @@ import { AddressModule } from "./modules/address/address.module";
 import { RiskModule } from "./modules/risk/risk.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { GraphModule } from "./modules/graph/graph.module";
+import { TransfersModule } from "./modules/transfers/transfers.module";
 import { NacosService } from "./common/nacos.service";
 import { getConfig } from "./config/config";
 
@@ -22,6 +23,7 @@ const config = getConfig();
     // Feature modules
     AuthModule,
     AddressModule,
+    TransfersModule,
     RiskModule,
     GraphModule,
   ],

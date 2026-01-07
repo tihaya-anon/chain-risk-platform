@@ -22,7 +22,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/graph")
+@RequestMapping("/api/v1/graph")
 @RequiredArgsConstructor
 @Tag(name = "Graph API", description = "Address graph analysis and clustering operations")
 public class GraphController {
