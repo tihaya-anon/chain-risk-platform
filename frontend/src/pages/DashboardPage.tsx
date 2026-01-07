@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { LayoutDashboard, RefreshCw, Network, Clock, TrendingUp, Search, Route, Tag } from "lucide-react"
+import { LayoutDashboard, RefreshCw, Network, ChartNoAxesColumn, Search, Route, Tag, MousePointer2 } from "lucide-react"
 import { Card, LoadingSpinner } from "@/components/common"
 import { AddressTable } from "@/components/table"
 import { StatCard, RiskDistributionChart, TagDistribution, RecentAlerts, DashboardIcons } from "@/components/dashboard/DashboardWidgets"
@@ -72,7 +72,7 @@ export function DashboardPage() {
                 <h3 className="text-lg font-semibold text-gray-900">Risk Distribution</h3>
                 <p className="text-sm text-gray-500">By severity level</p>
               </div>
-              <TrendingUp className="w-5 h-5 text-gray-400" />
+              <ChartNoAxesColumn className="w-5 h-5 text-gray-400" />
             </div>
             <RiskDistributionChart {...riskDistribution} />
           </Card>
@@ -81,7 +81,7 @@ export function DashboardPage() {
           <Card>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Quick Access</h3>
-              <Clock className="w-5 h-5 text-gray-400" />
+              <MousePointer2 className="w-5 h-5 text-gray-400" />
             </div>
             <div className="space-y-2">
               <QuickLink to="/address" icon={Search} color="blue" label="Address Analysis" />

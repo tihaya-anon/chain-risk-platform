@@ -92,18 +92,21 @@ export function PathFinderPage() {
 
                       {/* Visual Path */}
                       <div className="bg-gray-50 rounded-xl p-6 overflow-x-auto">
-                        <div className="flex items-center justify-around gap-3">
-                          {data.path.path?.map((node, i) => (
-                            <div key={i} className="flex items-center gap-3">
-                              <PathNodeCard node={node} index={i} isLast={i === (data.path?.path?.length || 0) - 1} />
-                              {i < (data.path?.path?.length || 0) - 1 && (
-                                <div className="flex flex-col items-center">
+                        <div className="flex items-center justify-around">
+                          {data.path.path?.flatMap((node, i) => {
+                            const elements = [
+                              <PathNodeCard key={`node-${i}`} node={node} index={i} isLast={i === (data.path?.path?.length || 0) - 1} />
+                            ]
+                            if (i < (data.path?.path?.length || 0) - 1) {
+                              elements.push(
+                                <div key={`arrow-${i}`} className="flex flex-col items-center px-2">
                                   <ArrowRight className="w-6 h-6 text-gray-400" />
                                   <span className="text-xs text-gray-400 mt-1">tx</span>
                                 </div>
-                              )}
-                            </div>
-                          ))}
+                              )
+                            }
+                            return elements
+                          })}
                         </div>
                       </div>
 
