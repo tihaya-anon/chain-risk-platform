@@ -1,6 +1,7 @@
 export {
   StatCard,
   RecentAlerts,
-  RiskDistribution,
+  RiskDistributionChart,
+  TagDistribution,
   DashboardIcons,
 } from "./DashboardWidgets"

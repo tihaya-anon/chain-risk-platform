@@ -1,16 +1,7 @@
-import {
-  LayoutDashboard,
-  Database,
-  CheckCircle,
-  AlertTriangle,
-  ShieldAlert,
-  Clock,
-  Tag,
-  Activity,
-} from "lucide-react"
+import { Database, ShieldAlert, AlertTriangle, Tag, Shuffle } from "lucide-react"
 import { Card } from "@/components/common"
 
-// Stats Card Component
+// Stat Card
 interface StatCardProps {
   icon: React.ElementType
   iconBgColor: string
@@ -18,112 +9,128 @@ interface StatCardProps {
   label: string
   value: string | number
   valueColor?: string
+  subtitle?: string
 }
 
-export function StatCard({
-  icon: Icon,
-  iconBgColor,
-  iconColor,
-  label,
-  value,
-  valueColor = "text-gray-900",
-}: StatCardProps) {
+export function StatCard({ icon: Icon, iconBgColor, iconColor, label, value, valueColor = "text-gray-900", subtitle }: StatCardProps) {
   return (
-    <Card className="!p-6">
-      <div className="flex items-center">
-        <div className={`p-3 ${iconBgColor} rounded-lg`}>
+    <Card>
+      <div className="flex items-center gap-4">
+        <div className={`p-3 ${iconBgColor} rounded-xl`}>
           <Icon className={`w-6 h-6 ${iconColor}`} />
         </div>
-        <div className="ml-4">
+        <div>
           <p className="text-sm text-gray-500">{label}</p>
           <p className={`text-2xl font-bold ${valueColor}`}>{value}</p>
+          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
         </div>
       </div>
     </Card>
   )
 }
 
-// Recent Alerts Component
+// Risk Distribution Bar Chart
+interface RiskDistributionProps {
+  critical: number
+  high: number
+  medium: number
+  low: number
+}
+
+export function RiskDistributionChart({ critical, high, medium, low }: RiskDistributionProps) {
+  const total = critical + high + medium + low || 1
+  const items = [
+    { label: "Critical", count: critical, color: "bg-red-500", textColor: "text-red-600" },
+    { label: "High", count: high, color: "bg-orange-500", textColor: "text-orange-600" },
+    { label: "Medium", count: medium, color: "bg-yellow-500", textColor: "text-yellow-600" },
+    { label: "Low", count: low, color: "bg-green-500", textColor: "text-green-600" },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-center gap-4">
+          <div className="w-20 text-sm text-gray-600">{item.label}</div>
+          <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full ${item.color} rounded-full transition-all duration-500`}
+              style={{ width: `${(item.count / total) * 100}%` }}
+            />
+          </div>
+          <div className={`w-16 text-sm font-semibold text-right ${item.textColor}`}>
+            {item.count.toLocaleString()}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Tag Distribution
+interface TagCount {
+  tag: string
+  count: number
+}
+
+export function TagDistribution({ tags }: { tags: TagCount[] }) {
+  const maxCount = Math.max(...tags.map((t) => t.count), 1)
+
+  return (
+    <div className="space-y-3">
+      {tags.slice(0, 6).map((item) => (
+        <div key={item.tag} className="flex items-center gap-3">
+          <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm text-gray-700 truncate">{item.tag}</span>
+              <span className="text-sm font-medium text-gray-900 ml-2">{item.count}</span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-indigo-500 rounded-full"
+                style={{ width: `${(item.count / maxCount) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Recent Alerts
 interface Alert {
   address: string
-  level: "critical" | "high" | "medium"
+  riskScore: number
+  tag: string
   time: string
 }
 
 export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "critical":
-        return "bg-red-500"
-      case "high":
-        return "bg-orange-500"
-      default:
-        return "bg-yellow-500"
-    }
+  const getRiskColor = (score: number) => {
+    if (score >= 0.8) return "bg-red-500"
+    if (score >= 0.6) return "bg-orange-500"
+    return "bg-yellow-500"
   }
 
   return (
-    <Card title="Recent Risk Alerts" subtitle="Last 24 hours">
-      <div className="space-y-4">
-        {alerts.map((alert, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-          >
-            <div className="flex items-center space-x-3">
-              <span className={`w-2 h-2 rounded-full ${getLevelColor(alert.level)}`} />
-              <span className="font-mono text-sm">{alert.address}</span>
-            </div>
-            <span className="text-xs text-gray-500 flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {alert.time}
-            </span>
+    <div className="space-y-3">
+      {alerts.map((alert, i) => (
+        <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getRiskColor(alert.riskScore)}`} />
+          <div className="flex-1 min-w-0">
+            <p className="font-mono text-sm text-gray-900 truncate">{alert.address}</p>
+            <p className="text-xs text-gray-500">{alert.tag}</p>
           </div>
-        ))}
-      </div>
-    </Card>
+          <div className="text-right flex-shrink-0">
+            <p className="text-sm font-medium text-gray-900">{(alert.riskScore * 100).toFixed(0)}%</p>
+            <p className="text-xs text-gray-400">{alert.time}</p>
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 
-// Risk Distribution Component
-interface RiskCategory {
-  label: string
-  count: number
-  color: string
-  icon: React.ElementType
-}
-
-export function RiskDistribution({ categories }: { categories: RiskCategory[] }) {
-  return (
-    <Card title="Risk Distribution" subtitle="By category">
-      <div className="space-y-4">
-        {categories.map((item, i) => {
-          const Icon = item.icon
-          return (
-            <div key={i} className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <span className={`w-3 h-3 rounded ${item.color}`} />
-                <Icon className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-700">{item.label}</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900">
-                {item.count.toLocaleString()}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-    </Card>
-  )
-}
-
-// Export icons for use in page
-export const DashboardIcons = {
-  LayoutDashboard,
-  Database,
-  CheckCircle,
-  AlertTriangle,
-  ShieldAlert,
-  Tag,
-  Activity,
-}
+// Export common icons
+export const DashboardIcons = { Database, ShieldAlert, AlertTriangle, Shuffle }
