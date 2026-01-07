@@ -4,44 +4,40 @@
 
 import { faker } from "@faker-js/faker"
 
-// Generate realistic Ethereum address
+// ==================== Basic Generators ====================
+
 export function mockAddress(): string {
   return "0x" + faker.string.hexadecimal({ length: 40, casing: "lower" }).slice(2)
 }
 
-// Generate realistic transaction hash
 export function mockTxHash(): string {
   return "0x" + faker.string.hexadecimal({ length: 64, casing: "lower" }).slice(2)
 }
 
-// Generate ETH value in wei
 export function mockEthValue(): string {
   return faker.number.bigInt({ min: 1000000000000000n, max: 100000000000000000000n }).toString()
 }
 
-// Generate ISO timestamp within last year
 export function mockTimestamp(): string {
   return faker.date.recent({ days: 365 }).toISOString()
 }
 
-// Risk level generator
 export function mockRiskLevel(): "low" | "medium" | "high" | "critical" {
   return faker.helpers.arrayElement(["low", "medium", "high", "critical"])
 }
 
-// Risk score (0-1)
 export function mockRiskScore(): number {
   return faker.number.float({ min: 0, max: 1, fractionDigits: 2 })
 }
 
-// Common risk tags
 const RISK_TAGS = ["mixer", "exchange", "gambling", "scam", "darknet", "sanctioned", "high-volume", "smart-contract", "dex", "defi"]
 
 export function mockTags(count: number = 3): string[] {
-  return faker.helpers.arrayElements(RISK_TAGS, { min: 0, max: count })
+  return faker.helpers.arrayElements(RISK_TAGS, { min: 1, max: count })
 }
 
-// Risk factor
+// ==================== Risk & Address Generators ====================
+
 export function mockRiskFactor() {
   return {
     name: faker.helpers.arrayElement(["High Transaction Volume", "Mixer Interaction", "Sanctioned Entity", "New Address", "Unusual Pattern"]),
@@ -52,11 +48,9 @@ export function mockRiskFactor() {
   }
 }
 
-// Address info for basic analysis
 export function mockAddressInfo(address?: string) {
-  const addr = address || mockAddress()
   return {
-    address: addr,
+    address: address || mockAddress(),
     network: "ethereum",
     firstSeen: mockTimestamp(),
     lastSeen: mockTimestamp(),
@@ -67,7 +61,6 @@ export function mockAddressInfo(address?: string) {
   }
 }
 
-// Risk score response
 export function mockRiskScoreResponse(address?: string) {
   return {
     address: address || mockAddress(),
@@ -81,11 +74,9 @@ export function mockRiskScoreResponse(address?: string) {
   }
 }
 
-// Graph address info
 export function mockGraphAddressInfo(address?: string) {
-  const addr = address || mockAddress()
   return {
-    address: addr,
+    address: address || mockAddress(),
     firstSeen: mockTimestamp(),
     lastSeen: mockTimestamp(),
     txCount: faker.number.int({ min: 10, max: 10000 }),
@@ -98,7 +89,6 @@ export function mockGraphAddressInfo(address?: string) {
   }
 }
 
-// Neighbor info
 export function mockNeighborInfo() {
   return {
     address: mockAddress(),
@@ -111,7 +101,6 @@ export function mockNeighborInfo() {
   }
 }
 
-// Cluster response
 export function mockClusterResponse() {
   return {
     clusterId: faker.string.uuid(),
@@ -127,7 +116,6 @@ export function mockClusterResponse() {
   }
 }
 
-// Transfer
 export function mockTransfer() {
   return {
     id: faker.number.int({ min: 1, max: 1000000 }),
@@ -142,7 +130,6 @@ export function mockTransfer() {
   }
 }
 
-// Path node
 export function mockPathNode() {
   return {
     address: mockAddress(),
@@ -154,7 +141,8 @@ export function mockPathNode() {
   }
 }
 
-// Full address analysis response
+// ==================== Orchestration Response Generators ====================
+
 export function mockAddressAnalysisResponse(address?: string) {
   const addr = address || mockAddress()
   return {
@@ -179,7 +167,6 @@ export function mockAddressAnalysisResponse(address?: string) {
   }
 }
 
-// High risk network response
 export function mockHighRiskNetworkResponse() {
   return {
     threshold: 0.7,
@@ -200,7 +187,6 @@ export function mockHighRiskNetworkResponse() {
   }
 }
 
-// Connection response
 export function mockConnectionResponse(fromAddress?: string, toAddress?: string) {
   const from = fromAddress || mockAddress()
   const to = toAddress || mockAddress()
@@ -224,7 +210,6 @@ export function mockConnectionResponse(fromAddress?: string, toAddress?: string)
   }
 }
 
-// Neighbors response
 export function mockNeighborsResponse(address?: string) {
   const addr = address || mockAddress()
   return {
@@ -235,73 +220,110 @@ export function mockNeighborsResponse(address?: string) {
   }
 }
 
-// Pipeline status
+// ==================== Admin Generators (FIXED) ====================
+
+/**
+ * PipelineStatus - matches generated type
+ */
 export function mockPipelineStatus() {
   return {
     ingestion: {
+      enabled: true,
       status: faker.helpers.arrayElement(["RUNNING", "IDLE", "PAUSED"]),
-      lastProcessedBlock: faker.number.int({ min: 18000000, max: 19000000 }),
-      blocksPerMinute: faker.number.float({ min: 10, max: 60, fractionDigits: 1 }),
-      lastUpdateTime: mockTimestamp(),
-    },
-    graphSync: {
-      status: faker.helpers.arrayElement(["RUNNING", "IDLE", "PAUSED"]),
-      syncedAddresses: faker.number.int({ min: 100000, max: 1000000 }),
-      syncedTransfers: faker.number.int({ min: 500000, max: 5000000 }),
-      lastSyncTime: mockTimestamp(),
+      lastBlock: faker.number.int({ min: 18000000, max: 19000000 }),
+      errorMessage: faker.helpers.arrayElement([null, null, null, "Connection timeout"]),
     },
     streamProcessor: {
-      status: faker.helpers.arrayElement(["RUNNING", "IDLE", "ERROR"]),
-      messagesPerSecond: faker.number.float({ min: 100, max: 1000, fractionDigits: 0 }),
-      lag: faker.number.int({ min: 0, max: 1000 }),
+      enabled: true,
+      status: faker.helpers.arrayElement(["RUNNING", "IDLE"]),
+      processedCount: faker.number.int({ min: 100000, max: 10000000 }),
+      errorCount: faker.number.int({ min: 0, max: 100 }),
+    },
+    graphSync: {
+      enabled: true,
+      status: faker.helpers.arrayElement(["RUNNING", "IDLE", "PAUSED"]),
+      lastSyncTime: mockTimestamp(),
+    },
+    clustering: {
+      enabled: true,
+      status: "IDLE",
+      lastRunTime: mockTimestamp(),
+    },
+    propagation: {
+      enabled: true,
+      status: "IDLE",
+      lastRunTime: mockTimestamp(),
     },
   }
 }
 
-// Services list
+/**
+ * ServiceInfo[] - matches generated type
+ */
 export function mockServices() {
-  const services = ["address-service", "risk-service", "graph-service", "transfer-service", "orchestrator"]
-  return services.map(name => ({
-    name,
-    status: faker.helpers.arrayElement(["UP", "UP", "UP", "DOWN"]),
-    instances: faker.number.int({ min: 1, max: 3 }),
-    version: `1.${faker.number.int({ min: 0, max: 5 })}.${faker.number.int({ min: 0, max: 20 })}`,
-    lastHeartbeat: mockTimestamp(),
-  }))
+  const services = [
+    { name: "address-service", groupName: "chain-risk", clusterCount: 2, instanceCount: 3, healthyInstanceCount: 3 },
+    { name: "risk-service", groupName: "chain-risk", clusterCount: 2, instanceCount: 2, healthyInstanceCount: 2 },
+    { name: "graph-service", groupName: "chain-risk", clusterCount: 1, instanceCount: 2, healthyInstanceCount: 2 },
+    { name: "transfer-service", groupName: "chain-risk", clusterCount: 2, instanceCount: 3, healthyInstanceCount: 2 },
+    { name: "orchestrator", groupName: "chain-risk", clusterCount: 1, instanceCount: 2, healthyInstanceCount: 2 },
+    { name: "bff", groupName: "chain-risk", clusterCount: 1, instanceCount: 2, healthyInstanceCount: 2 },
+  ]
+  return services
 }
 
-// Risk config
+/**
+ * RiskProperties - matches generated type
+ */
 export function mockRiskConfig() {
   return {
-    defaultThreshold: 0.7,
-    rules: [
-      { name: "mixer_interaction", weight: 0.3, enabled: true },
-      { name: "sanctioned_entity", weight: 0.5, enabled: true },
-      { name: "high_volume", weight: 0.2, enabled: true },
-      { name: "new_address", weight: 0.1, enabled: false },
-    ],
-    cacheEnabled: true,
+    highThreshold: 0.7,
+    mediumThreshold: 0.4,
     cacheTtlSeconds: 3600,
   }
 }
 
-// Pipeline config
+/**
+ * PipelineProperties - matches generated type
+ */
 export function mockPipelineConfig() {
   return {
+    enabled: true,
     ingestion: {
-      batchSize: 100,
-      pollIntervalMs: 1000,
       enabled: true,
+      network: "ethereum",
+      polling: {
+        intervalMs: 1000,
+        batchSize: 100,
+      },
+      rateLimit: {
+        requestsPerSecond: 50,
+      },
+    },
+    streamProcessor: {
+      enabled: true,
+      parallelism: 4,
+      checkpoint: {
+        intervalMs: 60000,
+      },
+      consumer: {
+        maxPollRecords: 500,
+      },
     },
     graphSync: {
-      syncIntervalMs: 60000,
-      batchSize: 500,
       enabled: true,
+      intervalMs: 60000,
+      batchSize: 500,
     },
     clustering: {
+      enabled: true,
       algorithm: "common-input",
       minClusterSize: 2,
+    },
+    propagation: {
       enabled: true,
+      maxDepth: 3,
+      decayFactor: 0.5,
     },
   }
 }
