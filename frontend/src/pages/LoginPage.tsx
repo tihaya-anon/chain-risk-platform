@@ -1,8 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useMutation } from "@tanstack/react-query"
 import { Button, Input } from "@/components/common"
-import { authService } from "@/services"
+import { useAuthControllerLogin } from "@/api/generated"
 import { useAuthStore } from "@/store/auth"
 
 export function LoginPage() {
@@ -12,29 +11,28 @@ export function LoginPage() {
   const [password, setPassword] = useState("admin123")
   const [error, setError] = useState("")
 
-  const loginMutation = useMutation({
-    mutationFn: authService.login,
-    onSuccess: async (data) => {
-      // Get user profile
-      const token = data.accessToken
-      // Decode JWT to get user info (simple decode, not verify)
-      const payload = JSON.parse(atob(token.split(".")[1]))
-      setAuth(token, {
-        sub: payload.sub,
-        username: payload.username,
-        role: payload.role,
-      })
-      navigate("/")
-    },
-    onError: () => {
-      setError("Invalid username or password")
+  const loginMutation = useAuthControllerLogin({
+    mutation: {
+      onSuccess: async (data) => {
+        const token = data.accessToken
+        const payload = JSON.parse(atob(token.split(".")[1]))
+        setAuth(token, {
+          sub: payload.sub,
+          username: payload.username,
+          role: payload.role,
+        })
+        navigate("/")
+      },
+      onError: () => {
+        setError("Invalid username or password")
+      },
     },
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    loginMutation.mutate({ username, password })
+    loginMutation.mutate({ data: { username, password } })
   }
 
   return (

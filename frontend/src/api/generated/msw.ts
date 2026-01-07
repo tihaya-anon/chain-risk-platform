@@ -19,7 +19,7 @@ import { getAuthMock } from "./bff/auth/auth.msw"
 import { getGraphMock } from "./bff/graph/graph.msw"
 import { getRiskMock } from "./bff/risk/risk.msw"
 import { getTransfersMock } from "./bff/transfers/transfers.msw"
-import { getAdminAPIMock } from "./orchestrator/admin-api/admin-api.msw"
+import { getAdminApiMock } from "./orchestrator/admin-api/admin-api.msw"
 import { getOrchestrationMock } from "./orchestrator/orchestration/orchestration.msw"
 
 export const getAllMockHandlers = () => [
@@ -29,5 +29,5 @@ export const getAllMockHandlers = () => [
   ...getRiskMock(),
   ...getGraphMock(),
   ...getOrchestrationMock(),
-  ...getAdminAPIMock(),
+  ...getAdminApiMock(),
 ]

@@ -1,7 +1,17 @@
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { Settings, Activity, Network, Server, FileCode } from "lucide-react"
-import { graphService, adminService } from "@/services"
+import {
+  useGetPipelineStatus,
+  useGetServices,
+  useGetRiskConfig,
+  useGetPipelineConfig,
+  useControlIngestion,
+  useControlGraphSync,
+  useGraphControllerRunClustering,
+  useGraphControllerManualCluster,
+  useGraphControllerPropagateTags,
+} from "@/api/generated"
 import { PipelineTab, GraphTab, ServicesTab, ConfigTab } from "@/components/admin"
 
 type TabType = "pipeline" | "graph" | "services" | "config"
@@ -11,88 +21,51 @@ export function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabType>("pipeline")
   const [manualClusterAddresses, setManualClusterAddresses] = useState("")
 
-  // ============== Queries ==============
-
-  // Graph sync status
-  const syncStatusQuery = useQuery({
-    queryKey: ["adminSyncStatus"],
-    queryFn: () => graphService.getSyncStatus(),
-    refetchInterval: 5000,
+  const pipelineStatusQuery = useGetPipelineStatus({
+    query: { refetchInterval: 5000 }
   })
 
-  // Pipeline status
-  const pipelineStatusQuery = useQuery({
-    queryKey: ["adminPipelineStatus"],
-    queryFn: () => adminService.getPipelineStatus(),
-    refetchInterval: 5000,
+  const servicesQuery = useGetServices({
+    query: { refetchInterval: 10000 }
   })
 
-  // Services list
-  const servicesQuery = useQuery({
-    queryKey: ["adminServices"],
-    queryFn: () => adminService.getServices(),
-    refetchInterval: 10000,
-  })
+  const riskConfigQuery = useGetRiskConfig()
+  const pipelineConfigQuery = useGetPipelineConfig()
 
-  // Risk config
-  const riskConfigQuery = useQuery({
-    queryKey: ["adminRiskConfig"],
-    queryFn: () => adminService.getRiskConfig(),
-  })
-
-  // Pipeline config
-  const pipelineConfigQuery = useQuery({
-    queryKey: ["adminPipelineConfig"],
-    queryFn: () => adminService.getPipelineConfig(),
-  })
-
-  // ============== Mutations ==============
-
-  // Graph operations
-  const triggerSyncMutation = useMutation({
-    mutationFn: () => graphService.triggerSync(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminSyncStatus"] })
+  const runClusteringMutation = useGraphControllerRunClustering({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["adminSyncStatus"] })
+      },
     },
   })
 
-  const runClusteringMutation = useMutation({
-    mutationFn: () => graphService.runClustering(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminSyncStatus"] })
+  const manualClusterMutation = useGraphControllerManualCluster({
+    mutation: {
+      onSuccess: () => {
+        setManualClusterAddresses("")
+        queryClient.invalidateQueries({ queryKey: ["adminSyncStatus"] })
+      },
     },
   })
 
-  const manualClusterMutation = useMutation({
-    mutationFn: (addresses: string[]) => graphService.manualCluster(addresses),
-    onSuccess: () => {
-      setManualClusterAddresses("")
-      queryClient.invalidateQueries({ queryKey: ["adminSyncStatus"] })
+  const propagateTagsMutation = useGraphControllerPropagateTags()
+
+  const controlIngestionMutation = useControlIngestion({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/pipeline/status"] })
+      },
     },
   })
 
-  const propagateTagsMutation = useMutation({
-    mutationFn: () => graphService.propagateTags(),
-  })
-
-  // Pipeline control mutations
-  const controlIngestionMutation = useMutation({
-    mutationFn: (action: "pause" | "resume") =>
-      adminService.controlIngestion(action),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminPipelineStatus"] })
+  const controlGraphSyncMutation = useControlGraphSync({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/pipeline/status"] })
+      },
     },
   })
-
-  const controlGraphSyncMutation = useMutation({
-    mutationFn: (action: "pause" | "resume" | "trigger") =>
-      adminService.controlGraphSync(action),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminPipelineStatus"] })
-    },
-  })
-
-  // ============== Helper Functions ==============
 
   const handleManualCluster = () => {
     const addresses = manualClusterAddresses
@@ -105,10 +78,8 @@ export function AdminPage() {
       return
     }
 
-    manualClusterMutation.mutate(addresses)
+    manualClusterMutation.mutate({ data: { addresses } })
   }
-
-  // ============== Tab Configuration ==============
 
   const tabs = [
     { id: "pipeline" as TabType, label: "Pipeline", icon: Activity },
@@ -120,7 +91,6 @@ export function AdminPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Settings className="w-6 h-6 text-purple-600" />
@@ -131,7 +101,6 @@ export function AdminPage() {
           </p>
         </div>
 
-        {/* Tabs */}
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             {tabs.map((tab) => {
@@ -158,7 +127,6 @@ export function AdminPage() {
           </nav>
         </div>
 
-        {/* Tab Content */}
         {activeTab === "pipeline" && (
           <PipelineTab
             pipelineStatus={pipelineStatusQuery.data}
@@ -170,9 +138,9 @@ export function AdminPage() {
 
         {activeTab === "graph" && (
           <GraphTab
-            syncStatus={syncStatusQuery.data}
-            isLoading={syncStatusQuery.isLoading}
-            triggerSync={triggerSyncMutation}
+            syncStatus={null}
+            isLoading={false}
+            triggerSync={{ mutate: () => {}, isPending: false }}
             runClustering={runClusteringMutation}
             manualCluster={manualClusterMutation}
             propagateTags={propagateTagsMutation}

@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
 import {
   ShieldAlert,
   RefreshCw,
@@ -17,8 +16,8 @@ import {
   HighRiskTable,
   SelectedAddressPanel,
 } from "@/components/risk"
-import { orchestrationService } from "@/services"
-import type { GraphAddressInfo } from "@/types"
+import { useGetHighRiskNetwork } from "@/api/generated"
+import type { GraphAddressInfo } from "@/api/generated"
 import { Select } from "@/components/common/Select"
 
 export function HighRiskNetworkPage() {
@@ -30,27 +29,19 @@ export function HighRiskNetworkPage() {
   const [selectedAddress, setSelectedAddress] = useState<GraphAddressInfo | null>(null)
   const [viewMode, setViewMode] = useState<"list" | "graph">("list")
 
-  // Fetch high risk network
-  const highRiskQuery = useQuery({
-    queryKey: ["highRiskNetwork", threshold, limit],
-    queryFn: () => orchestrationService.getHighRiskNetwork(threshold, limit),
-  })
+  const highRiskQuery = useGetHighRiskNetwork({ threshold, limit })
 
   const addresses = highRiskQuery.data?.highRiskAddresses || []
-
-  // Display selected node if available, otherwise show hovered node
   const displayAddress = selectedAddress || hoveredAddress
 
   const handleNodeClick = (address: GraphAddressInfo | null) => {
     setSelectedAddress(address)
-    // Clear hover state when selecting
     if (address) {
       setHoveredAddress(null)
     }
   }
 
   const handleNodeHover = (address: GraphAddressInfo | null) => {
-    // Only update hover if no node is selected
     if (!selectedAddress) {
       setHoveredAddress(address)
     }
@@ -58,7 +49,6 @@ export function HighRiskNetworkPage() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Fixed Header with Controls */}
       <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
@@ -71,7 +61,6 @@ export function HighRiskNetworkPage() {
             </p>
           </div>
 
-          {/* Controls */}
           <Card>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
@@ -138,7 +127,6 @@ export function HighRiskNetworkPage() {
             </div>
           </Card>
 
-          {/* Stats */}
           {highRiskQuery.data && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               <Card>
@@ -166,7 +154,7 @@ export function HighRiskNetworkPage() {
               <Card>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-orange-600">
-                    {addresses.filter((a) => a.riskScore >= 0.8).length}
+                    {addresses.filter((a) => (a.riskScore ?? 0) >= 0.8).length}
                   </p>
                   <p className="text-sm text-gray-500 flex items-center justify-center gap-1">
                     <Activity className="w-4 h-4" />
@@ -190,10 +178,8 @@ export function HighRiskNetworkPage() {
         </div>
       </div>
 
-      {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Loading */}
           {highRiskQuery.isLoading && (
             <div className="py-12">
               <LoadingSpinner size="lg" />
@@ -203,7 +189,6 @@ export function HighRiskNetworkPage() {
             </div>
           )}
 
-          {/* Content */}
           {!highRiskQuery.isLoading && addresses.length > 0 && (
             <>
               {viewMode === "list" ? (
@@ -246,7 +231,6 @@ export function HighRiskNetworkPage() {
             </>
           )}
 
-          {/* Empty State */}
           {!highRiskQuery.isLoading && addresses.length === 0 && (
             <div className="text-center py-12">
               <ShieldAlert className="w-16 h-16 text-green-300 mx-auto" />
