@@ -25,23 +25,23 @@
 │                                                                         │
 │  /api/v1/orchestration/*  → Self-handled (aggregation + resilience)     │
 │  /api/v1/**               → Route to BFF (with user context headers)    │
-└───────────┬─────────────────────────────────────┬───────────────────────┘
-            │                                     │
-            │ Direct call (aggregation)           │ Passthrough
-            ▼                                     ▼
-┌─────────────────────────┐             ┌─────────────────────────┐
-│   Backend Services      │             │     NestJS BFF (:3001)  │
-│                         │             │                         │
-│   • query-service       │             │  • API Transformation   │
-│   • risk-ml-service     │             │  • DTO Validation       │
-│   • graph-service       │             │  • Service Aggregation  │
-│                         │             │  • Native TS Types      │
-└─────────────────────────┘             └───────────┬─────────────┘
-                                                    │
-                                                    ▼
-                                        ┌─────────────────────────┐
-                                        │   Backend Services      │
-                                        └─────────────────────────┘
+└───────────┬─────────────────────────────────────────────────────────────┘
+            │
+            │ Passthrough (with X-User-* headers)
+            ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         NestJS BFF (:3001)                              │
+│                                                                         │
+│  • API Transformation    • DTO Validation    • Native TS Types          │
+│  • Service Aggregation   • OpenAPI Generation                           │
+└───────────┬─────────────────────────────────────────────────────────────┘
+            │
+            ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         Backend Services                                │
+│                                                                         │
+│        query-service        risk-ml-service        graph-service        │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Request Flow
@@ -73,11 +73,7 @@ Frontend → Orchestrator ──┬──→ query-service
 | **Routing** | Route `/api/v1/**` to BFF, Inject user context headers |
 | **Orchestration** | Complex aggregation APIs, Resilience4j (retry/timeout/circuit breaker) |
 
-**Tech Stack Showcase**:
-- Spring Cloud Gateway
-- Resilience4j
-- WebFlux (Reactive)
-- Spring Security
+**Tech Stack Showcase**: Spring Cloud Gateway, Resilience4j, WebFlux, Spring Security
 
 ### NestJS BFF
 **Port**: 3001
@@ -88,11 +84,7 @@ Frontend → Orchestrator ──┬──→ query-service
 | **Aggregation** | Simple service composition, Data formatting |
 | **Types** | Native TypeScript types → Frontend code generation |
 
-**Tech Stack Showcase**:
-- NestJS modules/guards/interceptors
-- Class-validator / class-transformer
-- @nestjs/swagger (OpenAPI)
-- Axios HTTP client
+**Tech Stack Showcase**: NestJS modules/guards/interceptors, class-validator, @nestjs/swagger
 
 ### Backend Services
 - `query-service`: Address/transaction queries
@@ -101,69 +93,29 @@ Frontend → Orchestrator ──┬──→ query-service
 
 ## Orchestration APIs
 
-Orchestrator provides aggregated endpoints that combine multiple service calls:
-
 | Endpoint | Description | Services Called |
 |----------|-------------|-----------------|
-| `GET /api/v1/orchestration/address-profile/{address}` | Address overview | query + risk |
-| `GET /api/v1/orchestration/address-analysis/{address}` | Full analysis | query + risk + graph |
-| `GET /api/v1/orchestration/connection/{from}/{to}` | Path finding | graph + risk |
-| `GET /api/v1/orchestration/high-risk-network` | Risk network | graph |
+| `GET /orchestration/address-profile/{address}` | Address overview | query + risk |
+| `GET /orchestration/address-analysis/{address}` | Full analysis | query + risk + graph |
+| `GET /orchestration/connection/{from}/{to}` | Path finding | graph + risk |
+| `GET /orchestration/high-risk-network` | Risk network | graph |
 
 ## User Context Headers
 
-Orchestrator injects user context after JWT validation:
+Orchestrator injects after JWT validation:
 
 ```http
 GET /api/v1/addresses/0x123 HTTP/1.1
-Host: bff:3001
 Authorization: Bearer eyJhbGc...
 X-User-Id: 1
 X-User-Username: admin
 X-User-Role: admin
 ```
 
-### BFF Reception
-
-```typescript
-// Option 1: Guard (recommended)
-@UseGuards(OrchestratorAuthGuard, JwtAuthGuard)
-@Get(':address')
-async getAddress(@Request() req) {
-  const user = req.user;  // { sub, username, role, fromOrchestrator }
-}
-
-// Option 2: Decorator
-@Get(':address')
-async getAddress(@OrchestratorUser() user: UserInfo) {
-  // user: { sub, username, role }
-}
-```
-
-## Dual Access Mode
-
-BFF supports both access patterns:
-
-| Mode | Path | Use Case |
-|------|------|----------|
-| **Production** | Frontend → Orchestrator → BFF | Full auth flow |
-| **Development** | Frontend → BFF directly | Skip gateway, faster iteration |
-
 ## Frontend API Client Generation
 
 ```
-BFF (NestJS @nestjs/swagger)
-         │
-         ▼ Auto-generate
-   bff.openapi.json
-         │
-         ▼ orval
-┌─────────────────────────┐
-│  frontend/src/api/      │
-│  ├── models/            │  ← TypeScript DTOs
-│  ├── bff.ts             │  ← API client
-│  └── bff.msw.ts         │  ← Mock handlers
-└─────────────────────────┘
+BFF (@nestjs/swagger) → bff.openapi.json → orval → frontend/src/api/
 ```
 
 ## Configuration
@@ -174,30 +126,17 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: auth-route
-          uri: http://bff:3001
-          predicates:
-            - Path=/api/v1/auth/**
-          # No authentication required
-        
         - id: bff-route
           uri: http://bff:3001
           predicates:
             - Path=/api/v1/**
           filters:
             - AuthenticationFilter
-            - name: CircuitBreaker
-              args:
-                name: bff-circuit
-                fallbackUri: forward:/fallback
 
 resilience4j:
   circuitbreaker:
     instances:
       query-service:
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-      risk-service:
         slidingWindowSize: 10
         failureRateThreshold: 50
   retry:
@@ -207,67 +146,110 @@ resilience4j:
         waitDuration: 500ms
 ```
 
-### BFF (config)
-```typescript
-export const config = {
-  server: { port: 3001 },
-  jwt: { secret: process.env.JWT_SECRET },
-  services: {
-    query: process.env.QUERY_SERVICE_URL,
-    risk: process.env.RISK_SERVICE_URL,
-    graph: process.env.GRAPH_SERVICE_URL,
-  },
-};
-```
-
-## Environment Variables
-
-### Orchestrator
-```bash
-JWT_SECRET=your-secret-key-min-256-bits
-BFF_URL=http://bff:3001
-QUERY_SERVICE_URL=http://query-service:8081
-RISK_SERVICE_URL=http://risk-service:8082
-GRAPH_SERVICE_URL=http://graph-service:8083
-```
-
-### BFF
-```bash
-JWT_SECRET=your-secret-key-min-256-bits  # Must match Orchestrator
-QUERY_SERVICE_URL=http://query-service:8081
-RISK_SERVICE_URL=http://risk-service:8082
-GRAPH_SERVICE_URL=http://graph-service:8083
-```
-
 ## Startup Order
 
 1. Infrastructure (PostgreSQL, Neo4j, Redis, Kafka)
-2. Backend Services (query-service, risk-ml-service, graph-service)
+2. Backend Services
 3. BFF (:3001)
 4. Orchestrator (:8080)
 5. Frontend (:5173)
 
-## Security
+---
 
-| Layer | Security Measure |
-|-------|------------------|
-| **Orchestrator** | JWT validation, Rate limiting, CORS |
-| **BFF** | Internal network only (not exposed), Request header validation |
-| **Services** | Internal network only |
+## Future: RBAC Design
 
-## Monitoring
+### Layered RBAC Architecture
 
-| Service | Endpoints |
-|---------|-----------|
-| Orchestrator | `/actuator/health`, `/actuator/metrics`, `/actuator/circuitbreakers` |
-| BFF | `/health` |
-| Services | `/actuator/health` |
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         RBAC Architecture                               │
+│                                                                         │
+│  ┌─────────────┐                      ┌─────────────┐                   │
+│  │ user-role   │                      │ role-access │                   │
+│  │     DB      │                      │     DB      │                   │
+│  └──────┬──────┘                      └──────┬──────┘                   │
+│         │                                    │                          │
+│         ▼                                    ▼                          │
+│  ┌─────────────────────────┐    ┌─────────────────────────┐             │
+│  │    Java Orchestrator    │    │      NestJS BFF         │             │
+│  │                         │    │                         │             │
+│  │    Coarse-grained:      │    │    Fine-grained:        │             │
+│  │    • Dept → DB access   │───▶│    • Endpoint-level     │             │
+│  │    • Orchestration      │    │    • Field filtering    │             │
+│  │      API permission     │    │    • Operation control  │             │
+│  │                         │    │                         │             │
+│  │    Inject:              │    │    Consume:             │             │
+│  │    X-User-Roles         │    │    X-User-* headers     │             │
+│  │    X-User-Department    │    │    Query role-access    │             │
+│  │    X-User-DataScope     │    │                         │             │
+│  └─────────────────────────┘    └─────────────────────────┘             │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### RBAC Responsibilities
+
+| Layer | Granularity | Examples |
+|-------|-------------|----------|
+| **Orchestrator** | Coarse | `dept:compliance` can access `risk` DB<br>`role:analyst` can use `/orchestration/*` |
+| **BFF** | Fine | `GET /addresses/:id` requires `address:read`<br>`POST /risk/batch` requires `risk:write` |
+
+### Data Model
+
+```sql
+-- user-role DB (Orchestrator)
+CREATE TABLE user_roles (
+  user_id     BIGINT,
+  role        VARCHAR(50),   -- 'analyst', 'admin', 'viewer'
+  department  VARCHAR(50),   -- 'compliance', 'trading', 'risk'
+  data_scope  VARCHAR(50)[]  -- ['ethereum', 'bsc']
+);
+
+-- role-access DB (BFF)
+CREATE TABLE role_permissions (
+  role        VARCHAR(50),
+  resource    VARCHAR(100),  -- 'address', 'risk', 'graph'
+  action      VARCHAR(20),   -- 'read', 'write', 'delete'
+  conditions  JSONB          -- {"max_batch_size": 100}
+);
+```
+
+### RBAC Request Flow
+
+```
+1. Frontend (JWT)
+        │
+        ▼
+2. Orchestrator:
+   - JWT → user_id
+   - Query user-role DB → roles, department, data_scope
+   - Coarse check: Can this department access this API?
+   - Inject headers:
+       X-User-Id: 123
+       X-User-Roles: ["analyst"]
+       X-User-Department: compliance
+       X-User-DataScope: ["ethereum","bsc"]
+        │
+        ▼
+3. BFF:
+   - Read X-User-* headers
+   - Query role-access DB (cached in Redis)
+   - Fine check: Can analyst read /addresses/:id?
+   - Field filtering based on conditions
+```
+
+### Implementation Notes
+
+1. **Caching**: Cache role-permission mappings in Redis
+2. **Inheritance**: `admin` > `analyst` > `viewer`
+3. **Data Scope**: `data_scope` controls which chains user can query
+
+---
 
 ## Why This Architecture?
 
 | Concern | Solution |
 |---------|----------|
-| Java too heavy for just Gateway? | Orchestrator also handles complex aggregation with Resilience4j |
+| Java too heavy for just Gateway? | Orchestrator handles Gateway + Aggregation + Coarse RBAC |
 | Frontend needs native TS types? | BFF generates OpenAPI → orval → TS client |
 | Want to showcase both Java & TS? | Java: Spring Cloud + Resilience4j, TS: NestJS ecosystem |
-| Simple vs Complex queries? | Simple → BFF passthrough, Complex → Orchestrator aggregation |
+| RBAC complexity? | Coarse at Gateway, Fine at BFF |
