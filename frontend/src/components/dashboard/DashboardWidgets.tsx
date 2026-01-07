@@ -1,5 +1,6 @@
 import { Database, ShieldAlert, AlertTriangle, Tag, Shuffle } from "lucide-react"
 import { Card } from "@/components/common"
+import { Link } from "react-router-dom"
 
 // Stat Card
 interface StatCardProps {
@@ -119,7 +120,12 @@ export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
         <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getRiskColor(alert.riskScore)}`} />
           <div className="flex-1 min-w-0">
-            <p className="font-mono text-sm text-gray-900 truncate">{alert.address}</p>
+            <Link
+              to={`/address?q=${alert.address}`}
+              className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              {alert.address}
+            </Link>
             <p className="text-xs text-gray-500">{alert.tag}</p>
           </div>
           <div className="text-right flex-shrink-0">

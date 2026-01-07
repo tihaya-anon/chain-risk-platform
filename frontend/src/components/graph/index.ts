@@ -1,1 +1,1 @@
-export { AddressGraph } from "./AddressGraph"
+export { AddressGraph, AddressGraphLegend } from "./AddressGraph"
