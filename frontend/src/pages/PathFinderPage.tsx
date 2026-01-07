@@ -1,141 +1,136 @@
-import { useState, useEffect } from "react"
-import { useSearchParams } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
-import { Route } from "lucide-react"
-import { LoadingSpinner } from "@/components/common"
-import {
-  PathSearchForm,
-  PathVisualization,
-  PathDetails,
-  AddressRiskCard,
-} from "@/components/pathfinder"
-import { orchestrationService } from "@/services"
+import { useState } from "react"
+import { useSearchParams, Link } from "react-router-dom"
+import { Route, Search, ArrowRight } from "lucide-react"
+import { Card, Button, Input, LoadingSpinner, RiskBadge } from "@/components/common"
+import { useFindConnection } from "@/api/generated"
 
 export function PathFinderPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const [fromAddress, setFromAddress] = useState(searchParams.get("from") || "")
+  const [toAddress, setToAddress] = useState(searchParams.get("to") || "")
+  const [queryFrom, setQueryFrom] = useState("")
+  const [queryTo, setQueryTo] = useState("")
 
-  // Sync with URL
-  const urlFrom = searchParams.get("from") || ""
-  const urlTo = searchParams.get("to") || ""
-
-  const [fromAddress, setFromAddress] = useState(urlFrom)
-  const [toAddress, setToAddress] = useState(urlTo)
-  const [maxDepth, setMaxDepth] = useState(5)
-  const [queryParams, setQueryParams] = useState<{
-    from: string
-    to: string
-    maxDepth: number
-  } | null>(null)
-
-  // Sync with URL changes
-  useEffect(() => {
-    const from = searchParams.get("from") || ""
-    const to = searchParams.get("to") || ""
-    if (from !== fromAddress) setFromAddress(from)
-    if (to !== toAddress) setToAddress(to)
-  }, [searchParams])
-
-  // Fetch connection data
-  const connectionQuery = useQuery({
-    queryKey: ["connection", queryParams?.from, queryParams?.to, queryParams?.maxDepth],
-    queryFn: () =>
-      orchestrationService.findConnection(queryParams!.from, queryParams!.to, {
-        maxDepth: queryParams!.maxDepth,
-      }),
-    enabled: !!queryParams,
+  const connectionQuery = useFindConnection(queryFrom, queryTo, { maxDepth: 5 }, {
+    query: { enabled: !!(queryFrom && queryTo) }
   })
 
-  const handleSearch = (from: string, to: string, depth: number) => {
-    setQueryParams({ from, to, maxDepth: depth })
-    setSearchParams({ from, to })
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (fromAddress.trim() && toAddress.trim()) {
+      const from = fromAddress.trim().toLowerCase()
+      const to = toAddress.trim().toLowerCase()
+      setQueryFrom(from)
+      setQueryTo(to)
+      setSearchParams({ from, to })
+    }
   }
-
-  const connection = connectionQuery.data
-  const pathFound = connection?.path?.found
 
   return (
     <div className="h-full flex flex-col">
-      {/* Fixed Header with Search Form */}
       <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          {/* Title */}
           <div className="mb-4">
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Route className="w-6 h-6 text-blue-600" />
+              <Route className="w-6 h-6 text-green-600" />
               Path Finder
             </h1>
-            <p className="text-gray-600 mt-1">
-              Find the shortest transaction path between two addresses
-            </p>
+            <p className="text-gray-600 mt-1">Find connections between two addresses</p>
           </div>
 
-          {/* Search Form */}
-          <PathSearchForm
-            fromAddress={fromAddress}
-            toAddress={toAddress}
-            maxDepth={maxDepth}
-            isLoading={connectionQuery.isLoading}
-            onFromAddressChange={setFromAddress}
-            onToAddressChange={setToAddress}
-            onMaxDepthChange={setMaxDepth}
-            onSearch={handleSearch}
-          />
+          <Card>
+            <form onSubmit={handleSearch} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="From Address"
+                  placeholder="0x..."
+                  value={fromAddress}
+                  onChange={(e) => setFromAddress(e.target.value)}
+                />
+                <Input
+                  label="To Address"
+                  placeholder="0x..."
+                  value={toAddress}
+                  onChange={(e) => setToAddress(e.target.value)}
+                />
+              </div>
+              <Button type="submit" loading={connectionQuery.isLoading}>
+                <Search className="w-4 h-4 mr-1" />
+                Find Path
+              </Button>
+            </form>
+          </Card>
         </div>
       </div>
 
-      {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Loading */}
           {connectionQuery.isLoading && (
             <div className="py-12">
               <LoadingSpinner size="lg" />
-              <p className="text-center text-gray-500 mt-4">
-                Searching for connection path...
-              </p>
             </div>
           )}
 
-          {/* Results */}
-          {connection && !connectionQuery.isLoading && (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-              {/* Path Visualization */}
-              <div className="lg:col-span-3">
-                <PathVisualization
-                  path={connection.path.path}
-                  found={!!pathFound}
-                  maxDepth={connection.path.maxDepth}
-                  message={connection.path.message}
-                />
+          {connectionQuery.data && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card title="Source Address">
+                  <div className="space-y-2">
+                    <p className="font-mono text-sm break-all">{connectionQuery.data.fromAddress}</p>
+                    {connectionQuery.data.fromAddressRisk && (
+                      <RiskBadge score={connectionQuery.data.fromAddressRisk.riskScore} />
+                    )}
+                    <Link to={`/address?q=${connectionQuery.data.fromAddress}`} className="text-blue-600 text-sm hover:underline">
+                      View Details →
+                    </Link>
+                  </div>
+                </Card>
+                <Card title="Target Address">
+                  <div className="space-y-2">
+                    <p className="font-mono text-sm break-all">{connectionQuery.data.toAddress}</p>
+                    {connectionQuery.data.toAddressRisk && (
+                      <RiskBadge score={connectionQuery.data.toAddressRisk.riskScore} />
+                    )}
+                    <Link to={`/address?q=${connectionQuery.data.toAddress}`} className="text-blue-600 text-sm hover:underline">
+                      View Details →
+                    </Link>
+                  </div>
+                </Card>
               </div>
 
-              {/* Sidebar */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Source Risk */}
-                <AddressRiskCard
-                  title="Source Address Risk"
-                  risk={connection.fromAddressRisk}
-                />
-
-                {/* Target Risk */}
-                <AddressRiskCard
-                  title="Target Address Risk"
-                  risk={connection.toAddressRisk}
-                />
-
-                {/* Path Details */}
-                {pathFound && <PathDetails path={connection.path.path} />}
-              </div>
+              <Card title="Path Result">
+                {connectionQuery.data.path?.found ? (
+                  <div className="space-y-4">
+                    <p className="text-green-600 font-medium">
+                      Path found! Length: {connectionQuery.data.path.pathLength} hops
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {connectionQuery.data.path.path?.map((node, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <Link
+                            to={`/address?q=${node.address}`}
+                            className="px-3 py-2 bg-gray-100 rounded-lg font-mono text-xs hover:bg-gray-200"
+                          >
+                            {node.address?.slice(0, 8)}...
+                          </Link>
+                          {i < (connectionQuery.data.path?.path?.length || 0) - 1 && (
+                            <ArrowRight className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No path found within max depth</p>
+                )}
+              </Card>
             </div>
           )}
 
-          {/* Empty State */}
-          {!connectionQuery.isLoading && !connection && (
+          {!connectionQuery.isLoading && !connectionQuery.data && (
             <div className="text-center py-12">
               <Route className="w-16 h-16 text-gray-300 mx-auto" />
-              <p className="text-gray-500 mt-4">
-                Enter two addresses to find the connection path between them
-              </p>
+              <p className="text-gray-500 mt-4">Enter two addresses to find a connection</p>
             </div>
           )}
         </div>

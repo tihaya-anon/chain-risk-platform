@@ -1,168 +1,116 @@
 import { useState } from "react"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { AlertTriangle, Search, Shield, Scale } from "lucide-react"
-import { Button, Card, LoadingSpinner } from "@/components/common"
-import { AddressTable } from "@/components/table"
-import { riskService } from "@/services"
-import type { RiskScore, RiskRule, GraphAddressInfo } from "@/types"
+import { ShieldCheck, Search, AlertTriangle } from "lucide-react"
+import { Card, Button, Input, LoadingSpinner, RiskBadge } from "@/components/common"
+import { useRiskControllerScoreAddress, useRiskControllerListRules } from "@/api/generated"
 
 export function RiskPage() {
-  const [addresses, setAddresses] = useState("")
-  const [results, setResults] = useState<RiskScore[]>([])
+  const [address, setAddress] = useState("")
 
-  const rulesQuery = useQuery({
-    queryKey: ["riskRules"],
-    queryFn: riskService.listRules,
-  })
+  const scoreMutation = useRiskControllerScoreAddress()
 
-  const batchMutation = useMutation({
-    mutationFn: riskService.scoreAddressesBatch,
-    onSuccess: (data) => {
-      setResults(data.results)
-    },
-  })
+  const rulesQuery = useRiskControllerListRules()
 
-  const handleAnalyze = (e: React.FormEvent) => {
+  const handleScore = (e: React.FormEvent) => {
     e.preventDefault()
-    const addressList = addresses
-      .split("\n")
-      .map((a) => a.trim())
-      .filter((a) => a.length > 0)
-
-    if (addressList.length > 0) {
-      batchMutation.mutate({
-        addresses: addressList,
-        includeFactors: true,
-      })
+    if (address.trim()) {
+      scoreMutation.mutate({ data: { address: address.trim().toLowerCase() } })
     }
   }
 
-  // Convert RiskScore to GraphAddressInfo for AddressTable
-  const convertToGraphAddressInfo = (riskScores: RiskScore[]): GraphAddressInfo[] => {
-    return riskScores.map((score) => ({
-      address: score.address,
-      network: score.network,
-      riskScore: score.riskScore,
-      tags: score.tags || [],
-      firstSeen: score.evaluatedAt,
-      lastSeen: score.evaluatedAt,
-      txCount: 0, // Not available in RiskScore
-      incomingCount: 0, // Not available in RiskScore
-      outgoingCount: 0, // Not available in RiskScore
-    }))
-  }
-
-  const tableData = convertToGraphAddressInfo(results)
-
   return (
     <div className="h-full flex flex-col">
-      {/* Fixed Header with Input Form and Rules */}
       <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          {/* Title */}
           <div className="mb-4">
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <AlertTriangle className="w-6 h-6 text-amber-600" />
-              Risk Analysis
+              <ShieldCheck className="w-6 h-6 text-orange-600" />
+              Risk Scoring
             </h1>
-            <p className="text-gray-600 mt-1">
-              Batch analyze addresses for risk assessment
-            </p>
+            <p className="text-gray-600 mt-1">Calculate risk scores for addresses</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Input Form */}
-            <Card title="Batch Analysis" className="lg:col-span-2">
-              <form onSubmit={handleAnalyze} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Addresses (one per line, max 100)
-                  </label>
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    rows={4}
-                    placeholder="0x742d35Cc6634C0532925a3b844Bc9e7595f1b7E0&#10;0x1234567890abcdef1234567890abcdef12345678&#10;..."
-                    value={addresses}
-                    onChange={(e) => setAddresses(e.target.value)}
-                  />
-                </div>
-                <Button type="submit" loading={batchMutation.isPending}>
-                  <Search className="w-4 h-4 mr-1" />
-                  Analyze Addresses
-                </Button>
-              </form>
-            </Card>
-
-            {/* Risk Rules */}
-            <Card title="Active Rules">
-              {rulesQuery.isLoading ? (
-                <LoadingSpinner />
-              ) : rulesQuery.data ? (
-                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-2">
-                  {rulesQuery.data.map((rule: RiskRule, i: number) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{rule.name}</p>
-                          <p className="text-xs text-gray-500">{rule.description}</p>
-                        </div>
-                      </div>
-                      <span className="text-sm text-gray-600 flex items-center gap-1 flex-shrink-0 ml-2">
-                        <Scale className="w-3 h-3" />
-                        {rule.weight.toFixed(1)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">Failed to load rules</p>
-              )}
-            </Card>
-          </div>
+          <Card>
+            <form onSubmit={handleScore} className="flex gap-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="Enter Ethereum address (0x...)"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </div>
+              <Button type="submit" loading={scoreMutation.isPending}>
+                <Search className="w-4 h-4 mr-1" />
+                Score
+              </Button>
+            </form>
+          </Card>
         </div>
       </div>
 
-      {/* Scrollable Results */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Loading */}
-          {batchMutation.isPending && (
-            <div className="py-12">
-              <LoadingSpinner size="lg" />
-              <p className="text-center text-gray-500 mt-4">Analyzing addresses...</p>
-            </div>
-          )}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+          {scoreMutation.data && (
+            <Card title="Risk Score Result">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="font-mono text-sm">{scoreMutation.data.address}</p>
+                  <RiskBadge level={scoreMutation.data.riskLevel} score={scoreMutation.data.riskScore} size="lg" />
+                </div>
 
-          {/* Results */}
-          {results.length > 0 && !batchMutation.isPending && (
-            <Card
-              title="Analysis Results"
-              subtitle={`${results.length} addresses analyzed`}
-            >
-              <AddressTable
-                addresses={tableData}
-                showTxCount={false}
-                showInOut={false}
-                showTags={true}
-                showLastSeen={false}
-                maxTagsDisplay={5}
-              />
+                {scoreMutation.data.factors && scoreMutation.data.factors.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">Risk Factors</h4>
+                    <div className="space-y-2">
+                      {scoreMutation.data.factors.filter(f => f.triggered).map((factor, i) => (
+                        <div key={i} className="flex items-center justify-between p-2 bg-red-50 rounded">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-red-500" />
+                            <span className="text-sm">{factor.name}</span>
+                          </div>
+                          <span className="text-sm font-medium">{factor.score?.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {scoreMutation.data.tags && scoreMutation.data.tags.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">Tags</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {scoreMutation.data.tags.map((tag, i) => (
+                        <span key={i} className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </Card>
           )}
 
-          {/* Empty State */}
-          {!batchMutation.isPending && results.length === 0 && (
-            <div className="text-center py-12">
-              <AlertTriangle className="w-16 h-16 text-gray-300 mx-auto" />
-              <p className="text-gray-500 mt-4">
-                Enter addresses above to analyze their risk
-              </p>
-            </div>
-          )}
+          <Card title="Risk Rules" subtitle="Active risk scoring rules">
+            {rulesQuery.isLoading ? (
+              <LoadingSpinner />
+            ) : rulesQuery.data && rulesQuery.data.length > 0 ? (
+              <div className="space-y-2">
+                {rulesQuery.data.map((rule) => (
+                  <div key={rule.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">{rule.name}</p>
+                      <p className="text-sm text-gray-500">{rule.description}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded ${rule.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {rule.enabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No rules found</p>
+            )}
+          </Card>
         </div>
       </div>
     </div>

@@ -1,12 +1,12 @@
 import { RefreshCw, Play, Pause, AlertTriangle } from "lucide-react"
 import { Button, Card } from "@/components/common"
-import type { PipelineStatus } from "@/types"
+import type { PipelineStatus } from "@/api/generated"
 
 interface PipelineTabProps {
   pipelineStatus?: PipelineStatus
   isLoading: boolean
-  controlIngestion: any
-  controlGraphSync: any
+  controlIngestion: { mutate: (action: string) => void; isPending: boolean }
+  controlGraphSync: { mutate: (action: string) => void; isPending: boolean }
 }
 
 export function PipelineTab({
@@ -25,7 +25,6 @@ export function PipelineTab({
 
   return (
     <div className="space-y-6">
-      {/* Ingestion Control */}
       <Card title="Data Ingestion" subtitle="Blockchain data ingestion from Ethereum">
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -104,7 +103,6 @@ export function PipelineTab({
         </div>
       </Card>
 
-      {/* Graph Sync Control */}
       <Card title="Graph Synchronization" subtitle="PostgreSQL to Neo4j sync">
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -173,7 +171,6 @@ export function PipelineTab({
         </div>
       </Card>
 
-      {/* Other Pipeline Components Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card title="Clustering" subtitle="Address clustering status">
           <div className="space-y-2">

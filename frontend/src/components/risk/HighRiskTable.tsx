@@ -1,7 +1,7 @@
 import { AddressTable } from "@/components/table"
 import { Card, Button } from "@/components/common"
 import { ExternalLink, Network, Tag } from "lucide-react"
-import type { GraphAddressInfo } from "@/types"
+import type { GraphAddressInfo } from "@/api/generated"
 
 interface HighRiskTableProps {
   addresses: GraphAddressInfo[]
@@ -20,7 +20,6 @@ export function HighRiskTable({ addresses }: HighRiskTableProps) {
   )
 }
 
-// Selected Address Panel for graph view
 interface SelectedAddressPanelProps {
   address: GraphAddressInfo | null
   isSelected?: boolean
@@ -96,7 +95,7 @@ export function SelectedAddressPanel({
           <Button
             size="sm"
             className="w-full justify-start"
-            onClick={() => onAnalyze?.(address.address)}
+            onClick={() => onAnalyze?.(address.address!)}
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Full Analysis
@@ -105,7 +104,7 @@ export function SelectedAddressPanel({
             variant="secondary"
             size="sm"
             className="w-full justify-start"
-            onClick={() => onExploreGraph?.(address.address)}
+            onClick={() => onExploreGraph?.(address.address!)}
           >
             <Network className="w-4 h-4 mr-2" />
             Explore Graph

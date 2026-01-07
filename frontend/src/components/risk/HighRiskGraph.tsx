@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react"
 import { Network, DataSet, Options } from "vis-network/standalone"
 import { Circle } from "lucide-react"
-import type { GraphAddressInfo } from "@/types"
+import type { GraphAddressInfo } from "@/api/generated"
 
 interface HighRiskGraphProps {
   addresses: GraphAddressInfo[]
@@ -12,7 +12,6 @@ interface HighRiskGraphProps {
   height?: string
 }
 
-// Color helpers
 function getRiskColor(riskScore: number | undefined): string {
   if (riskScore === undefined) return "#9CA3AF"
   if (riskScore >= 0.8) return "#F87171"
@@ -46,21 +45,16 @@ function getRiskHighlightBorderColor(riskScore: number | undefined): string {
 }
 
 function getRiskColors(riskScore: number | undefined) {
-  const baseColor = getRiskColor(riskScore)
-  const baseBorder = getRiskBorderColor(riskScore)
-  const highlightColor = getRiskHighlightColor(riskScore)
-  const highlightBorder = getRiskHighlightBorderColor(riskScore)
-
   return {
-    background: baseColor,
-    border: baseBorder,
+    background: getRiskColor(riskScore),
+    border: getRiskBorderColor(riskScore),
     highlight: {
-      background: highlightColor,
-      border: highlightBorder,
+      background: getRiskHighlightColor(riskScore),
+      border: getRiskHighlightBorderColor(riskScore),
     },
     hover: {
-      background: highlightColor,
-      border: highlightBorder,
+      background: getRiskHighlightColor(riskScore),
+      border: getRiskHighlightBorderColor(riskScore),
     },
   }
 }
@@ -78,7 +72,6 @@ export function HighRiskGraph({
   const callbacksRef = useRef({ onNodeHover, onNodeClick, onNodeDoubleClick })
   const selectedNodeRef = useRef<string | null>(null)
 
-  // Update callbacks ref without triggering re-render
   useEffect(() => {
     callbacksRef.current = { onNodeHover, onNodeClick, onNodeDoubleClick }
     selectedNodeRef.current = selectedNode || null
@@ -89,7 +82,7 @@ export function HighRiskGraph({
 
     const nodes = addresses.map((addr) => ({
       id: addr.address,
-      label: `${addr.address.slice(0, 6)}...${addr.address.slice(-4)}`,
+      label: `${addr.address?.slice(0, 6)}...${addr.address?.slice(-4)}`,
       color: getRiskColors(addr.riskScore),
       size: Math.min(30, 15 + (addr.riskScore || 0) * 15),
       borderWidth: 2,
@@ -103,7 +96,6 @@ export function HighRiskGraph({
       width: number
     }> = []
 
-    // Create edges based on shared clusters or tags
     for (let i = 0; i < addresses.length; i++) {
       for (let j = i + 1; j < addresses.length; j++) {
         const addr1 = addresses[i]
@@ -112,8 +104,8 @@ export function HighRiskGraph({
         if (addr1.clusterId && addr1.clusterId === addr2.clusterId) {
           edges.push({
             id: `edge-${i}-${j}`,
-            from: addr1.address,
-            to: addr2.address,
+            from: addr1.address!,
+            to: addr2.address!,
             color: { color: "#9CA3AF", opacity: 0.5 },
             width: 1,
           })
@@ -122,8 +114,8 @@ export function HighRiskGraph({
           if (sharedTags.length > 0) {
             edges.push({
               id: `edge-${i}-${j}`,
-              from: addr1.address,
-              to: addr2.address,
+              from: addr1.address!,
+              to: addr2.address!,
               color: { color: "#6B7280", opacity: 0.3 },
               width: 1,
             })
@@ -169,38 +161,29 @@ export function HighRiskGraph({
       options
     )
 
-    // Hover event - only trigger if no node is selected
     network.on("hoverNode", (params) => {
-      // Skip hover if a node is selected
       if (selectedNodeRef.current) return
-
       const nodeId = params.node as string
       const addr = addresses.find((a) => a.address === nodeId)
       callbacksRef.current.onNodeHover?.(addr || null)
     })
 
     network.on("blurNode", () => {
-      // Clear hover info only if no node is selected
       if (!selectedNodeRef.current) {
         callbacksRef.current.onNodeHover?.(null)
       }
     })
 
-    // Click event - toggle selection
     network.on("click", (params) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0] as string
-
-        // If clicking the same node, deselect it
         if (selectedNodeRef.current === nodeId) {
           callbacksRef.current.onNodeClick?.(null)
         } else {
-          // Select new node
           const addr = addresses.find((a) => a.address === nodeId)
           callbacksRef.current.onNodeClick?.(addr || null)
         }
       } else {
-        // Clicked on empty space - deselect
         callbacksRef.current.onNodeClick?.(null)
       }
     })
@@ -222,7 +205,7 @@ export function HighRiskGraph({
       network.destroy()
       networkRef.current = null
     }
-  }, [addresses]) // Only depend on addresses, not callbacks
+  }, [addresses])
 
   return (
     <div
@@ -233,7 +216,6 @@ export function HighRiskGraph({
   )
 }
 
-// Legend component
 export function HighRiskGraphLegend() {
   return (
     <div className="flex flex-wrap gap-4 text-sm">

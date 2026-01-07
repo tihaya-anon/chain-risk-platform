@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 import { ExternalLink, Network, Tag } from "lucide-react"
 import { RiskBadge } from "@/components/common"
-import type { GraphAddressInfo } from "@/types"
+import type { GraphAddressInfo } from "@/api/generated"
 
 interface AddressTableProps {
   addresses: GraphAddressInfo[]
@@ -74,29 +74,25 @@ export function AddressTable({
         <tbody className="bg-white divide-y divide-gray-200">
           {addresses.map((addr) => (
             <tr key={addr.address} className="hover:bg-gray-50 transition-colors">
-              {/* Address */}
               <td className="px-4 py-3">
                 <Link
                   to={`/address?q=${addr.address}`}
                   className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
                 >
-                  {addr.address.slice(0, 10)}...{addr.address.slice(-8)}
+                  {addr.address?.slice(0, 10)}...{addr.address?.slice(-8)}
                 </Link>
               </td>
 
-              {/* Risk Badge */}
               <td className="px-4 py-3">
                 <RiskBadge score={addr.riskScore} size="sm" />
               </td>
 
-              {/* TX Count */}
               {showTxCount && (
                 <td className="px-4 py-3 text-sm text-gray-700">
                   {addr.txCount?.toLocaleString() || "-"}
                 </td>
               )}
 
-              {/* In/Out */}
               {showInOut && (
                 <td className="px-4 py-3 text-sm">
                   <span className="text-green-600">{addr.incomingCount || 0}</span>
@@ -105,7 +101,6 @@ export function AddressTable({
                 </td>
               )}
 
-              {/* Tags */}
               {showTags && (
                 <td className="px-4 py-3">
                   {addr.tags && addr.tags.length > 0 ? (
@@ -131,14 +126,12 @@ export function AddressTable({
                 </td>
               )}
 
-              {/* Last Seen */}
               {showLastSeen && (
                 <td className="px-4 py-3 text-sm text-gray-500">
                   {formatTime(addr.lastSeen)}
                 </td>
               )}
 
-              {/* Actions */}
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2">
                   <Link
@@ -164,7 +157,6 @@ export function AddressTable({
         </tbody>
       </table>
 
-      {/* Empty State */}
       {addresses.length === 0 && (
         <div className="text-center py-8 text-gray-500">No addresses found</div>
       )}
