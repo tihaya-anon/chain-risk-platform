@@ -92,7 +92,7 @@ export function PathFinderPage() {
 
                       {/* Visual Path */}
                       <div className="bg-gray-50 rounded-xl p-6 overflow-x-auto">
-                        <div className="flex items-center gap-3 min-w-max">
+                        <div className="flex items-center justify-around gap-3">
                           {data.path.path?.map((node, i) => (
                             <div key={i} className="flex items-center gap-3">
                               <PathNodeCard node={node} index={i} isLast={i === (data.path?.path?.length || 0) - 1} />
