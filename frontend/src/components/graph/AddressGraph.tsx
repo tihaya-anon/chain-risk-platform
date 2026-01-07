@@ -37,24 +37,18 @@ function getRiskBasedSize(riskScore?: number, transferCount?: number): number {
   return baseSize + riskBonus + txBonus
 }
 
-// Convert degrees to radians
 function degToRad(deg: number): number {
   return (deg * Math.PI) / 180
 }
 
-// Calculate position in polar coordinates (mathematical: 0°=right, 90°=up, counterclockwise)
-// Screen coordinates: y is inverted
+// Distribute nodes evenly within range, avoiding boundaries
+// Divides range into (count+1) segments, places nodes at segment boundaries 1..count
 function getNodePosition(
   direction: string | undefined,
   index: number,
   totalByType: { in: number; out: number; both: number }
 ) {
   const radius = 200
-
-  // Angle ranges (in degrees, mathematical polar coordinates)
-  // incoming: 90° - 210° (left side, from top to bottom-left)
-  // both: 210° - 330° (bottom)
-  // outgoing: 330° - 450° (i.e., 330° - 90°, right side)
 
   let startDeg: number, endDeg: number, count: number
 
@@ -67,19 +61,15 @@ function getNodePosition(
     endDeg = 330
     count = totalByType.both
   } else {
-    // outgoing: 330° to 450° (90° + 360°)
     startDeg = 330
     endDeg = 450
     count = totalByType.out
   }
 
-  // Distribute nodes evenly within the range
-  const angle = count > 1
-    ? startDeg + (index / (count - 1)) * (endDeg - startDeg)
-    : (startDeg + endDeg) / 2
+  // Place at (index+1)/(count+1) of the range - never at boundaries
+  const angle = startDeg + ((index + 1) / (count + 1)) * (endDeg - startDeg)
 
   const rad = degToRad(angle)
-  // Mathematical to screen: x = cos, y = -sin (invert y)
   return {
     x: radius * Math.cos(rad),
     y: -radius * Math.sin(rad),
@@ -118,16 +108,13 @@ export function AddressGraph({
     const centerAddress = data.address || ""
     const neighbors = data.neighbors || []
 
-    // Count by direction type
     const incoming = neighbors.filter(n => n.direction === "incoming")
     const outgoing = neighbors.filter(n => n.direction === "outgoing")
     const both = neighbors.filter(n => n.direction === "both")
     const totalByType = { in: incoming.length, out: outgoing.length, both: both.length }
 
-    // Track index within each type
     let inIdx = 0, outIdx = 0, bothIdx = 0
 
-    // Center node
     const nodes: any[] = [
       {
         id: centerAddress,
@@ -147,7 +134,6 @@ export function AddressGraph({
       },
     ]
 
-    // Neighbor nodes with positions
     neighbors.forEach((n: NeighborInfo) => {
       let idx = 0
       if (n.direction === "incoming") idx = inIdx++
@@ -173,7 +159,6 @@ export function AddressGraph({
       })
     })
 
-    // Edges
     const edges: any[] = neighbors.map((n: NeighborInfo, i: number) => {
       const isIncoming = n.direction === "incoming"
       const isBoth = n.direction === "both"
