@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { Link, useSearchParams } from "react-router-dom"
 import { Search, Network, Route, XCircle } from "lucide-react"
 import { Button, Input, Card, LoadingSpinner } from "@/components/common"
@@ -10,7 +9,7 @@ import {
   ClusterSection,
   NeighborsSection,
 } from "@/components/address"
-import { orchestrationService } from "@/services"
+import { useGetAddressAnalysis } from "@/api/generated"
 
 export function AddressPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -19,7 +18,6 @@ export function AddressPage() {
   const [searchAddress, setSearchAddress] = useState(urlQuery)
   const [queryAddress, setQueryAddress] = useState(urlQuery)
 
-  // Sync with URL changes
   useEffect(() => {
     const q = searchParams.get("q") || ""
     if (q && q !== queryAddress) {
@@ -28,15 +26,13 @@ export function AddressPage() {
     }
   }, [searchParams, queryAddress])
 
-  // Use orchestration API for comprehensive data
-  const analysisQuery = useQuery({
-    queryKey: ["addressAnalysis", queryAddress],
-    queryFn: () =>
-      orchestrationService.getAddressAnalysis(queryAddress, {
-        neighborDepth: 1,
-        neighborLimit: 10,
-      }),
-    enabled: !!queryAddress,
+  const analysisQuery = useGetAddressAnalysis(queryAddress, {
+    neighborDepth: 1,
+    neighborLimit: 10,
+  }, {
+    query: {
+      enabled: !!queryAddress,
+    }
   })
 
   const handleSearch = (e: React.FormEvent) => {
@@ -52,7 +48,6 @@ export function AddressPage() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Fixed Header with Search */}
       <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
@@ -83,10 +78,8 @@ export function AddressPage() {
         </div>
       </div>
 
-      {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Loading */}
           {analysisQuery.isLoading && (
             <div className="py-12">
               <LoadingSpinner size="lg" />
@@ -96,7 +89,6 @@ export function AddressPage() {
             </div>
           )}
 
-          {/* Error */}
           {analysisQuery.error && (
             <Card>
               <div className="text-center py-8 text-red-500">
@@ -109,10 +101,8 @@ export function AddressPage() {
             </Card>
           )}
 
-          {/* Results */}
           {data && !analysisQuery.isLoading && (
             <div className="space-y-6">
-              {/* Quick Actions */}
               <div className="flex gap-4">
                 <Link
                   to={`/graph?address=${data.address}`}
@@ -158,7 +148,6 @@ export function AddressPage() {
             </div>
           )}
 
-          {/* Empty State */}
           {!analysisQuery.isLoading && !analysisQuery.error && !data && !queryAddress && (
             <div className="text-center py-12">
               <Search className="w-16 h-16 text-gray-300 mx-auto" />

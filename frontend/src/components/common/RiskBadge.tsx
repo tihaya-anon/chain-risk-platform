@@ -1,5 +1,7 @@
 import { clsx } from "clsx"
-import type { RiskLevel } from "@/types"
+import type { RiskScoreResponseRiskLevel } from "@/api/generated"
+
+type RiskLevel = RiskScoreResponseRiskLevel | "low" | "medium" | "high" | "critical"
 
 interface RiskBadgeProps {
   level?: RiskLevel
@@ -7,14 +9,14 @@ interface RiskBadgeProps {
   size?: "sm" | "md" | "lg"
 }
 
-const levelStyles: Record<RiskLevel, string> = {
+const levelStyles: Record<string, string> = {
   low: "bg-green-100 text-green-800 border-green-200",
   medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
   high: "bg-orange-100 text-orange-800 border-orange-200",
   critical: "bg-red-100 text-red-800 border-red-200",
 }
 
-const levelLabels: Record<RiskLevel, string> = {
+const levelLabels: Record<string, string> = {
   low: "Low",
   medium: "Medium",
   high: "High",
@@ -35,18 +37,18 @@ function scoreToLevel(score: number): RiskLevel {
 }
 
 export function RiskBadge({ level, score, size = "md" }: RiskBadgeProps) {
-  // Determine level from score if not provided
   const resolvedLevel = level ?? (score !== undefined ? scoreToLevel(score) : "low")
+  const levelKey = String(resolvedLevel)
 
   return (
     <span
       className={clsx(
         "inline-flex items-center font-medium rounded-full border",
-        levelStyles[resolvedLevel],
+        levelStyles[levelKey] || levelStyles.low,
         sizeStyles[size]
       )}
     >
-      {levelLabels[resolvedLevel]}
+      {levelLabels[levelKey] || "Unknown"}
       {score !== undefined && (
         <span className="ml-1 opacity-75">({(score * 100).toFixed(0)}%)</span>
       )}

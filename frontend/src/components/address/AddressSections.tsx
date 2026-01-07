@@ -11,14 +11,8 @@ import {
   Box,
 } from "lucide-react"
 import { RiskBadge } from "@/components/common"
-import type { AddressAnalysis } from "@/types"
+import type { AddressAnalysisResponse, RiskScoreResponseRiskLevel } from "@/api/generated"
 
-// Helper to check if response is an error
-function isError(obj: unknown): obj is { error: string } {
-  return typeof obj === "object" && obj !== null && "error" in obj
-}
-
-// Format value helper
 function formatValue(value: string | undefined): string {
   if (!value) return "N/A"
   const num = parseFloat(value)
@@ -29,9 +23,8 @@ function formatValue(value: string | undefined): string {
   return num.toLocaleString()
 }
 
-// Basic Information Section
-export function BasicInfoSection({ data }: { data: AddressAnalysis }) {
-  const info = isError(data.basic.addressInfo) ? null : data.basic.addressInfo
+export function BasicInfoSection({ data }: { data: AddressAnalysisResponse }) {
+  const info = data.basic?.addressInfo
 
   if (!info) {
     return (
@@ -111,9 +104,8 @@ export function BasicInfoSection({ data }: { data: AddressAnalysis }) {
   )
 }
 
-// Risk Assessment Section
-export function RiskSection({ data }: { data: AddressAnalysis }) {
-  const risk = isError(data.basic.riskScore) ? null : data.basic.riskScore
+export function RiskSection({ data }: { data: AddressAnalysisResponse }) {
+  const risk = data.basic?.riskScore
 
   if (!risk) {
     return (
@@ -126,9 +118,9 @@ export function RiskSection({ data }: { data: AddressAnalysis }) {
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <div className="text-4xl font-bold">{risk.riskScore.toFixed(2)}</div>
+        <div className="text-4xl font-bold">{risk.riskScore?.toFixed(2)}</div>
         <div className="mt-2">
-          <RiskBadge level={risk.riskLevel} size="lg" />
+          <RiskBadge level={risk.riskLevel as RiskScoreResponseRiskLevel} size="lg" />
         </div>
       </div>
 
@@ -141,7 +133,7 @@ export function RiskSection({ data }: { data: AddressAnalysis }) {
               .map((factor, i) => (
                 <div key={i} className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">{factor.name}</span>
-                  <span className="font-medium">{factor.score.toFixed(2)}</span>
+                  <span className="font-medium">{factor.score?.toFixed(2)}</span>
                 </div>
               ))}
           </div>
@@ -168,10 +160,9 @@ export function RiskSection({ data }: { data: AddressAnalysis }) {
   )
 }
 
-// Graph Analysis Section
-export function GraphInfoSection({ data }: { data: AddressAnalysis }) {
-  const graphInfo = isError(data.graph.graphInfo) ? null : data.graph.graphInfo
-  const tags = data.graph.tags || []
+export function GraphInfoSection({ data }: { data: AddressAnalysisResponse }) {
+  const graphInfo = data.graph?.graphInfo
+  const tags = data.graph?.tags || []
 
   return (
     <div className="space-y-4">
@@ -237,9 +228,8 @@ export function GraphInfoSection({ data }: { data: AddressAnalysis }) {
   )
 }
 
-// Cluster Section
-export function ClusterSection({ data }: { data: AddressAnalysis }) {
-  const cluster = isError(data.graph.cluster) ? null : data.graph.cluster
+export function ClusterSection({ data }: { data: AddressAnalysisResponse }) {
+  const cluster = data.graph?.cluster
 
   if (!cluster) {
     return (
@@ -302,11 +292,10 @@ export function ClusterSection({ data }: { data: AddressAnalysis }) {
   )
 }
 
-// Neighbors Section
-export function NeighborsSection({ data }: { data: AddressAnalysis }) {
-  const neighbors = isError(data.graph.neighbors) ? null : data.graph.neighbors
+export function NeighborsSection({ data }: { data: AddressAnalysisResponse }) {
+  const neighbors = data.graph?.neighbors
 
-  if (!neighbors || neighbors.neighbors.length === 0) {
+  if (!neighbors || !neighbors.neighbors || neighbors.neighbors.length === 0) {
     return (
       <div className="text-center py-8">
         <Network className="w-12 h-12 text-gray-300 mx-auto" />
@@ -353,8 +342,8 @@ export function NeighborsSection({ data }: { data: AddressAnalysis }) {
                     to={`/address?q=${neighbor.address}`}
                     className="font-mono text-sm text-blue-600 hover:underline"
                   >
-                    {neighbor.address.slice(0, 10)}...
-                    {neighbor.address.slice(-8)}
+                    {neighbor.address?.slice(0, 10)}...
+                    {neighbor.address?.slice(-8)}
                   </Link>
                 </td>
                 <td className="px-4 py-3">
@@ -410,7 +399,6 @@ export function NeighborsSection({ data }: { data: AddressAnalysis }) {
   )
 }
 
-// Risk Score Indicator
 export function RiskScoreIndicator({ score }: { score: number | undefined }) {
   if (score === undefined || score === null) {
     return <span className="text-gray-400 text-sm">N/A</span>
