@@ -42,14 +42,16 @@ export function PathFinderPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
+      <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Route className="w-6 h-6 text-green-600" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Route className="w-6 h-6 text-green-600 dark:text-green-400" />
               Path Finder
             </h1>
-            <p className="text-gray-600 mt-1">Find transaction paths between addresses</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Find transaction paths between addresses
+            </p>
           </div>
 
           <Card>
@@ -86,7 +88,7 @@ export function PathFinderPage() {
           {connectionQuery.isLoading && (
             <div className="py-12">
               <LoadingSpinner size="lg" />
-              <p className="text-center text-gray-500 mt-4">
+              <p className="text-center text-gray-500 dark:text-gray-400 mt-4">
                 Searching for connections...
               </p>
             </div>
@@ -116,14 +118,14 @@ export function PathFinderPage() {
                   {data.path?.found ? (
                     <div className="space-y-6">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-100 rounded-full">
-                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-full">
+                          <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             Connection Found
                           </h3>
-                          <p className="text-gray-500">
+                          <p className="text-gray-500 dark:text-gray-400">
                             {data.path.pathLength} hop
                             {data.path.pathLength !== 1 ? "s" : ""} between addresses
                           </p>
@@ -131,7 +133,7 @@ export function PathFinderPage() {
                       </div>
 
                       {/* Visual Path */}
-                      <div className="bg-gray-50 rounded-xl p-6 overflow-x-auto">
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 overflow-x-auto">
                         <div className="flex items-center justify-around">
                           {data.path.path?.flatMap((node, i) => {
                             const elements = [
@@ -148,8 +150,10 @@ export function PathFinderPage() {
                                   key={`arrow-${i}`}
                                   className="flex flex-col items-center px-2"
                                 >
-                                  <ArrowRight className="w-6 h-6 text-gray-400" />
-                                  <span className="text-xs text-gray-400 mt-1">tx</span>
+                                  <ArrowRight className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                    tx
+                                  </span>
                                 </div>
                               )
                             }
@@ -160,38 +164,43 @@ export function PathFinderPage() {
 
                       {/* Path Details Table */}
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-3">Path Details</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                          Path Details
+                        </h4>
                         <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gray-50 dark:bg-gray-700/50">
                               <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                   Step
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                   Address
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                   Risk
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                   Value
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                   Tags
                                 </th>
                               </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                               {data.path.path?.map((node, i) => (
-                                <tr key={i} className="hover:bg-gray-50">
-                                  <td className="px-4 py-3 text-sm text-gray-500">
+                                <tr
+                                  key={i}
+                                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                                >
+                                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                                     {i + 1}
                                   </td>
                                   <td className="px-4 py-3">
                                     <Link
                                       to={`/address?q=${node.address}`}
-                                      className="font-mono text-sm text-blue-600 hover:underline"
+                                      className="font-mono text-sm text-blue-600 dark:text-blue-400 hover:underline"
                                     >
                                       {node.address?.slice(0, 10)}...
                                       {node.address?.slice(-8)}
@@ -200,7 +209,7 @@ export function PathFinderPage() {
                                   <td className="px-4 py-3">
                                     <RiskBadge score={node.riskScore} size="sm" />
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                     {formatValue(node.value)}
                                   </td>
                                   <td className="px-4 py-3">
@@ -208,7 +217,7 @@ export function PathFinderPage() {
                                       {node.tags?.slice(0, 2).map((tag, j) => (
                                         <span
                                           key={j}
-                                          className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                                          className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded"
                                         >
                                           {tag}
                                         </span>
@@ -224,13 +233,13 @@ export function PathFinderPage() {
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <div className="p-3 bg-red-100 rounded-full inline-flex mb-4">
-                        <XCircle className="w-8 h-8 text-red-600" />
+                      <div className="p-3 bg-red-100 dark:bg-red-900/50 rounded-full inline-flex mb-4">
+                        <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                         No Connection Found
                       </h3>
-                      <p className="text-gray-500 mt-1">
+                      <p className="text-gray-500 dark:text-gray-400 mt-1">
                         No path exists within {data.path?.maxDepth || 6} hops
                       </p>
                     </div>
@@ -242,11 +251,11 @@ export function PathFinderPage() {
 
           {!connectionQuery.isLoading && !data && (
             <div className="text-center py-16">
-              <Route className="w-16 h-16 text-gray-300 mx-auto" />
-              <h3 className="text-lg font-medium text-gray-900 mt-4">
+              <Route className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-4">
                 Find Transaction Paths
               </h3>
-              <p className="text-gray-500 mt-2">
+              <p className="text-gray-500 dark:text-gray-400 mt-2">
                 Enter two addresses to discover how they are connected through on-chain
                 transactions
               </p>
@@ -270,16 +279,14 @@ interface AddressCardProps {
 function AddressCard({ title, address, risk, color }: AddressCardProps) {
   const colorClasses = {
     blue: {
-      bg: "bg-blue-50",
-      border: "border-blue-200",
-      icon: "text-blue-600",
-      accent: "bg-blue-100",
+      bg: "bg-blue-50 dark:bg-blue-900/30",
+      border: "border-blue-200 dark:border-blue-800",
+      icon: "text-blue-600 dark:text-blue-400",
     },
     purple: {
-      bg: "bg-purple-50",
-      border: "border-purple-200",
-      icon: "text-purple-600",
-      accent: "bg-purple-100",
+      bg: "bg-purple-50 dark:bg-purple-900/30",
+      border: "border-purple-200 dark:border-purple-800",
+      icon: "text-purple-600 dark:text-purple-400",
     },
   }
   const c = colorClasses[color]
@@ -287,18 +294,22 @@ function AddressCard({ title, address, risk, color }: AddressCardProps) {
   return (
     <div className={`${c.bg} ${c.border} border rounded-xl p-5`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900">{title}</h3>
+        <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
         <Link to={`/address?q=${address}`} className={`${c.icon} hover:opacity-70`}>
           <ExternalLink className="w-4 h-4" />
         </Link>
       </div>
-      <p className="font-mono text-sm text-gray-700 break-all mb-4">{address}</p>
+      <p className="font-mono text-sm text-gray-700 dark:text-gray-300 break-all mb-4">
+        {address}
+      </p>
       <div className="flex items-center justify-between">
         <RiskBadge score={risk?.riskScore} level={risk?.riskLevel as any} />
         {risk?.tags && risk.tags.length > 0 && (
           <div className="flex items-center gap-1">
-            <Tag className="w-3 h-3 text-gray-400" />
-            <span className="text-xs text-gray-500">{risk.tags.length} tags</span>
+            <Tag className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {risk.tags.length} tags
+            </span>
           </div>
         )}
       </div>
@@ -317,19 +328,19 @@ function PathNodeCard({ node, index, isLast }: PathNodeCardProps) {
 
   return (
     <div
-      className={`relative p-4 bg-white rounded-xl border-2 min-w-[180px] ${isHighRisk ? "border-red-300" : "border-gray-200"} shadow-sm`}
+      className={`relative p-4 bg-white dark:bg-gray-800 rounded-xl border-2 min-w-[180px] ${isHighRisk ? "border-red-300 dark:border-red-700" : "border-gray-200 dark:border-gray-600"} shadow-sm`}
     >
       {isHighRisk && (
-        <div className="absolute -top-2 -right-2 p-1 bg-red-100 rounded-full">
-          <AlertTriangle className="w-3 h-3 text-red-600" />
+        <div className="absolute -top-2 -right-2 p-1 bg-red-100 dark:bg-red-900/50 rounded-full">
+          <AlertTriangle className="w-3 h-3 text-red-600 dark:text-red-400" />
         </div>
       )}
-      <div className="text-xs text-gray-400 mb-2">
+      <div className="text-xs text-gray-400 dark:text-gray-500 mb-2">
         {index === 0 ? "Start" : isLast ? "End" : `Hop ${index}`}
       </div>
       <Link
         to={`/address?q=${node.address}`}
-        className="font-mono text-sm text-blue-600 hover:underline block truncate"
+        className="font-mono text-sm text-blue-600 dark:text-blue-400 hover:underline block truncate"
       >
         {node.address?.slice(0, 8)}...{node.address?.slice(-6)}
       </Link>

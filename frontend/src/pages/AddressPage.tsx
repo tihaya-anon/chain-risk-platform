@@ -45,14 +45,14 @@ export function AddressPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
+      <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Search className="w-6 h-6 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Search className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               Address Analysis
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Comprehensive blockchain address analysis with graph data
             </p>
           </div>
@@ -79,7 +79,7 @@ export function AddressPage() {
           {analysisQuery.isLoading && (
             <div className="py-12">
               <LoadingSpinner size="lg" />
-              <p className="text-center text-gray-500 mt-4">
+              <p className="text-center text-gray-500 dark:text-gray-400 mt-4">
                 Loading comprehensive analysis...
               </p>
             </div>
@@ -87,10 +87,12 @@ export function AddressPage() {
 
           {queryError && (
             <Card>
-              <div className="text-center py-8 text-red-500">
+              <div className="text-center py-8 text-red-500 dark:text-red-400">
                 <XCircle className="w-12 h-12 mx-auto" />
                 <p className="mt-4">Failed to load address analysis</p>
-                <p className="text-sm text-gray-500 mt-2">{queryError.message}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  {queryError.message}
+                </p>
               </div>
             </Card>
           )}
@@ -139,8 +141,8 @@ export function AddressPage() {
 
           {!analysisQuery.isLoading && !queryError && !data && !queryAddress && (
             <div className="text-center py-12">
-              <Search className="w-16 h-16 text-gray-300 mx-auto" />
-              <p className="text-gray-500 mt-4">
+              <Search className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto" />
+              <p className="text-gray-500 dark:text-gray-400 mt-4">
                 Enter an address to start comprehensive analysis
               </p>
             </div>

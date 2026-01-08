@@ -49,14 +49,14 @@ export function HighRiskNetworkPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
+      <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <ShieldAlert className="w-6 h-6 text-red-600" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <ShieldAlert className="w-6 h-6 text-red-600 dark:text-red-400" />
               High Risk Network
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Monitor and analyze high-risk addresses in the network
             </p>
           </div>
@@ -64,7 +64,9 @@ export function HighRiskNetworkPage() {
           <Card>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Risk Threshold:</label>
+                <label className="text-sm text-gray-600 dark:text-gray-400">
+                  Risk Threshold:
+                </label>
                 <Select
                   value={threshold}
                   onChange={(e) => setThreshold(Number(e.target.value))}
@@ -77,7 +79,7 @@ export function HighRiskNetworkPage() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Limit:</label>
+                <label className="text-sm text-gray-600 dark:text-gray-400">Limit:</label>
                 <Select
                   value={limit}
                   onChange={(e) => setLimit(Number(e.target.value))}
@@ -90,15 +92,15 @@ export function HighRiskNetworkPage() {
                   ]}
                 />
               </div>
-              <div className="flex items-center gap-2 border-l pl-4">
-                <label className="text-sm text-gray-600">View:</label>
-                <div className="flex rounded-md overflow-hidden border border-gray-300">
+              <div className="flex items-center gap-2 border-l border-gray-300 dark:border-gray-600 pl-4">
+                <label className="text-sm text-gray-600 dark:text-gray-400">View:</label>
+                <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-gray-600">
                   <button
                     onClick={() => setViewMode("list")}
                     className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
                       viewMode === "list"
                         ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:cursor-pointer"
                     }`}
                   >
                     <List className="w-4 h-4" />
@@ -109,7 +111,7 @@ export function HighRiskNetworkPage() {
                     className={`flex items-center gap-1 px-3 py-1.5 text-sm ${
                       viewMode === "graph"
                         ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:cursor-pointer"
                     }`}
                   >
                     <NetworkIcon className="w-4 h-4" />
@@ -133,10 +135,10 @@ export function HighRiskNetworkPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               <Card>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
                     {highRiskQuery.data.threshold}
                   </p>
-                  <p className="text-sm text-gray-500 flex items-center justify-center gap-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
                     <AlertTriangle className="w-4 h-4" />
                     Risk Threshold
                   </p>
@@ -144,10 +146,10 @@ export function HighRiskNetworkPage() {
               </Card>
               <Card>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-red-600">
+                  <p className="text-3xl font-bold text-red-600 dark:text-red-400">
                     {highRiskQuery.data.count}
                   </p>
-                  <p className="text-sm text-gray-500 flex items-center justify-center gap-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
                     <ShieldAlert className="w-4 h-4" />
                     High Risk Addresses
                   </p>
@@ -155,10 +157,10 @@ export function HighRiskNetworkPage() {
               </Card>
               <Card>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-orange-600">
+                  <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                     {addresses.filter((a) => (a.riskScore ?? 0) >= 0.8).length}
                   </p>
-                  <p className="text-sm text-gray-500 flex items-center justify-center gap-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
                     <Activity className="w-4 h-4" />
                     Critical Risk
                   </p>
@@ -166,10 +168,10 @@ export function HighRiskNetworkPage() {
               </Card>
               <Card>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-blue-600">
+                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                     {new Set(addresses.map((a) => a.clusterId).filter(Boolean)).size}
                   </p>
-                  <p className="text-sm text-gray-500 flex items-center justify-center gap-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
                     <Users className="w-4 h-4" />
                     Unique Clusters
                   </p>
@@ -185,7 +187,7 @@ export function HighRiskNetworkPage() {
           {highRiskQuery.isLoading && (
             <div className="py-12">
               <LoadingSpinner size="lg" />
-              <p className="text-center text-gray-500 mt-4">
+              <p className="text-center text-gray-500 dark:text-gray-400 mt-4">
                 Loading high-risk addresses...
               </p>
             </div>
@@ -237,8 +239,8 @@ export function HighRiskNetworkPage() {
 
           {!highRiskQuery.isLoading && addresses.length === 0 && (
             <div className="text-center py-12">
-              <ShieldAlert className="w-16 h-16 text-green-300 mx-auto" />
-              <p className="text-gray-500 mt-4">
+              <ShieldAlert className="w-16 h-16 text-green-300 dark:text-green-600 mx-auto" />
+              <p className="text-gray-500 dark:text-gray-400 mt-4">
                 No high-risk addresses found above threshold {threshold}
               </p>
             </div>

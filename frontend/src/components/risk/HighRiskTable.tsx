@@ -38,7 +38,7 @@ export function SelectedAddressPanel({
   if (!address) {
     return (
       <Card title="Selected Address">
-        <p className="text-gray-500 text-sm text-center py-4">
+        <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
           Click a node to see details
         </p>
       </Card>
@@ -55,40 +55,44 @@ export function SelectedAddressPanel({
           <div className="flex justify-end">
             <button
               onClick={onClearSelection}
-              className="text-xs text-gray-500 hover:text-gray-700 underline"
+              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline"
             >
               Clear selection
             </button>
           </div>
         )}
         <div>
-          <label className="text-xs text-gray-500">Address</label>
-          <p className="font-mono text-xs break-all">{address.address}</p>
+          <label className="text-xs text-gray-500 dark:text-gray-400">Address</label>
+          <p className="font-mono text-xs break-all text-gray-900 dark:text-white">
+            {address.address}
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs text-gray-500">Risk</label>
-            <p className="font-medium text-red-600">{address.riskScore?.toFixed(2)}</p>
+            <label className="text-xs text-gray-500 dark:text-gray-400">Risk</label>
+            <p className="font-medium text-red-600 dark:text-red-400">
+              {address.riskScore?.toFixed(2)}
+            </p>
           </div>
           <div>
-            <label className="text-xs text-gray-500">TX</label>
-            <p className="font-medium">{address.txCount}</p>
+            <label className="text-xs text-gray-500 dark:text-gray-400">TX</label>
+            <p className="font-medium text-gray-900 dark:text-white">{address.txCount}</p>
           </div>
         </div>
         {address.tags && address.tags.length > 0 && (
           <div>
-            <label className="text-xs text-gray-500">Tags</label>
+            <label className="text-xs text-gray-500 dark:text-gray-400">Tags</label>
             <div className="flex flex-wrap gap-1 mt-1">
               {address.tags.map((tag, i) => (
                 <span key={i} className="inline-flex items-center gap-1">
-                  <Tag className="w-3 h-3 text-red-400" />
+                  <Tag className="w-3 h-3 text-red-400 dark:text-red-500" />
                   <ClickableTag tag={tag} variant="risk" />
                 </span>
               ))}
             </div>
           </div>
         )}
-        <div className="pt-3 border-t space-y-2">
+        <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
           <Button
             size="sm"
             className="w-full justify-start"

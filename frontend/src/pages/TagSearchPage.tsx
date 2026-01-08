@@ -36,14 +36,16 @@ export function TagSearchPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
+      <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Tag className="w-6 h-6 text-indigo-600" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Tag className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               Tag Search
             </h1>
-            <p className="text-gray-600 mt-1">Find addresses by tag</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Find addresses by tag
+            </p>
           </div>
 
           <Card>
@@ -83,8 +85,8 @@ export function TagSearchPage() {
 
           {!searchQuery.isLoading && addresses.length === 0 && queryTag && (
             <div className="text-center py-12">
-              <Tag className="w-16 h-16 text-gray-300 mx-auto" />
-              <p className="text-gray-500 mt-4">
+              <Tag className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto" />
+              <p className="text-gray-500 dark:text-gray-400 mt-4">
                 No addresses found with tag "{queryTag}"
               </p>
             </div>
@@ -92,8 +94,10 @@ export function TagSearchPage() {
 
           {!queryTag && (
             <div className="text-center py-12">
-              <Tag className="w-16 h-16 text-gray-300 mx-auto" />
-              <p className="text-gray-500 mt-4">Enter a tag to search</p>
+              <Tag className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto" />
+              <p className="text-gray-500 dark:text-gray-400 mt-4">
+                Enter a tag to search
+              </p>
             </div>
           )}
         </div>
