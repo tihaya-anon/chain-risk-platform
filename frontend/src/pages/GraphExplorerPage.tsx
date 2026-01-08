@@ -6,37 +6,53 @@ import { AddressGraph, AddressGraphLegend } from "@/components/graph"
 import { useGraphControllerGetAddressNeighbors, useGraphControllerGetAddressInfo } from "@/api/generated"
 import type { GraphNode } from "@/api/generated"
 
+const DEPTH_OPTIONS = [
+  { value: 1, label: "1 hop", description: "Direct neighbors" },
+  { value: 2, label: "2 hops", description: "Extended network" },
+  { value: 3, label: "3 hops", description: "Deep analysis" },
+]
+
 export function GraphExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const addressParam = searchParams.get("address") || ""
+  const depthParam = parseInt(searchParams.get("depth") || "1", 10)
 
   const [searchAddress, setSearchAddress] = useState(addressParam)
   const [queryAddress, setQueryAddress] = useState(addressParam)
+  const [depth, setDepth] = useState(Math.min(Math.max(depthParam, 1), 3))
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null)
   const [isCenter, setIsCenter] = useState(false)
 
-  const neighborsQuery = useGraphControllerGetAddressNeighbors(queryAddress, { depth: 1, limit: 30 }, { query: { enabled: !!queryAddress } })
+  const neighborsQuery = useGraphControllerGetAddressNeighbors(
+    queryAddress,
+    { depth, limit: 50 },
+    { query: { enabled: !!queryAddress } }
+  )
   const addressInfoQuery = useGraphControllerGetAddressInfo(queryAddress, { query: { enabled: !!queryAddress } })
 
-  // Calculate edge info for selected node
   const selectedNodeEdgeInfo = useMemo(() => {
     if (!hoveredNode || !neighborsQuery.data?.edges) return null
     const edges = neighborsQuery.data.edges
     const centerAddr = neighborsQuery.data.address
 
-    const inEdges = edges.filter(e => e.from === hoveredNode.address && e.to === centerAddr)
-    const outEdges = edges.filter(e => e.from === centerAddr && e.to === hoveredNode.address)
+    const nodeEdges = edges.filter(
+      (e) => e.from === hoveredNode.address || e.to === hoveredNode.address
+    )
 
-    const totalTransfers = [...inEdges, ...outEdges].reduce((sum, e) => sum + (e.transferCount || 0), 0)
-    const totalValue = [...inEdges, ...outEdges].reduce((sum, e) => sum + parseFloat(e.totalValue || "0"), 0)
+    const totalTransfers = nodeEdges.reduce((sum, e) => sum + (e.transferCount || 0), 0)
+    const totalValue = nodeEdges.reduce((sum, e) => sum + parseFloat(e.totalValue || "0"), 0)
 
-    let direction: "incoming" | "outgoing" | "both" | undefined
+    const inEdges = edges.filter((e) => e.from === hoveredNode.address && e.to === centerAddr)
+    const outEdges = edges.filter((e) => e.from === centerAddr && e.to === hoveredNode.address)
+
+    let direction: "incoming" | "outgoing" | "both" | "indirect" | undefined
     if (inEdges.length > 0 && outEdges.length > 0) direction = "both"
     else if (inEdges.length > 0) direction = "incoming"
     else if (outEdges.length > 0) direction = "outgoing"
+    else if (nodeEdges.length > 0) direction = "indirect"
 
-    return { direction, totalTransfers, totalValue: String(totalValue) }
+    return { direction, totalTransfers, totalValue: totalValue.toFixed(4), edgeCount: nodeEdges.length }
   }, [hoveredNode, neighborsQuery.data])
 
   const handleSearch = (e: React.FormEvent) => {
@@ -44,9 +60,16 @@ export function GraphExplorerPage() {
     if (searchAddress.trim()) {
       const normalized = searchAddress.trim().toLowerCase()
       setQueryAddress(normalized)
-      setSearchParams({ address: normalized })
+      setSearchParams({ address: normalized, depth: String(depth) })
       setSelectedNode(null)
       setHoveredNode(null)
+    }
+  }
+
+  const handleDepthChange = (newDepth: number) => {
+    setDepth(newDepth)
+    if (queryAddress) {
+      setSearchParams({ address: queryAddress, depth: String(newDepth) })
     }
   }
 
@@ -55,33 +78,39 @@ export function GraphExplorerPage() {
     setIsCenter(!!center)
   }, [])
 
-  const handleNodeClick = useCallback((node: GraphNode | null, center?: boolean) => {
-    if (node) {
-      setSelectedNode(node.address || null)
-      setHoveredNode(node)
-      setIsCenter(false)
-    } else if (center) {
-      setSelectedNode(queryAddress)
-      setHoveredNode(null)
-      setIsCenter(true)
-    } else {
+  const handleNodeClick = useCallback(
+    (node: GraphNode | null, center?: boolean) => {
+      if (node) {
+        setSelectedNode(node.address || null)
+        setHoveredNode(node)
+        setIsCenter(false)
+      } else if (center) {
+        setSelectedNode(queryAddress)
+        setHoveredNode(null)
+        setIsCenter(true)
+      } else {
+        setSelectedNode(null)
+        setHoveredNode(null)
+        setIsCenter(false)
+      }
+    },
+    [queryAddress]
+  )
+
+  const handleNodeDoubleClick = useCallback(
+    (address: string) => {
+      setSearchAddress(address)
+      setQueryAddress(address)
+      setSearchParams({ address, depth: String(depth) })
       setSelectedNode(null)
       setHoveredNode(null)
-      setIsCenter(false)
-    }
-  }, [queryAddress])
+    },
+    [setSearchParams, depth]
+  )
 
-  const handleNodeDoubleClick = useCallback((address: string) => {
-    setSearchAddress(address)
-    setQueryAddress(address)
-    setSearchParams({ address })
-    setSelectedNode(null)
-    setHoveredNode(null)
-  }, [setSearchParams])
-
-  const displayNode = selectedNode ? hoveredNode : hoveredNode
+  const displayNode = hoveredNode
   const showCenterInfo = isCenter && !hoveredNode
-  const nodeCount = (neighborsQuery.data?.nodes?.length || 1) - 1 // exclude center
+  const nodeCount = (neighborsQuery.data?.nodes?.length || 1) - 1
 
   return (
     <div className="h-full flex flex-col">
@@ -90,18 +119,45 @@ export function GraphExplorerPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Network className="w-6 h-6 text-purple-600" />Graph Explorer
+              <Network className="w-6 h-6 text-purple-600" />
+              Graph Explorer
             </h1>
-            <p className="text-gray-600 mt-1">Visualize address connections • Click to select • Double-click to navigate</p>
+            <p className="text-gray-600 mt-1">
+              Radial tree visualization • Click to select • Double-click to navigate
+            </p>
           </div>
           <Card>
-            <form onSubmit={handleSearch} className="flex gap-4">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
-                <Input placeholder="Enter Ethereum address (0x...)" value={searchAddress} onChange={(e) => setSearchAddress(e.target.value)} />
+                <Input
+                  placeholder="Enter Ethereum address (0x...)"
+                  value={searchAddress}
+                  onChange={(e) => setSearchAddress(e.target.value)}
+                />
               </div>
-              <Button type="submit" loading={neighborsQuery.isLoading}>
-                <Search className="w-4 h-4 mr-2" />Explore
-              </Button>
+              <div className="flex gap-2">
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  {DEPTH_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => handleDepthChange(opt.value)}
+                      className={`px-3 py-2 text-sm font-medium transition-colors ${
+                        depth === opt.value
+                          ? "bg-purple-600 text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                      title={opt.description}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <Button type="submit" loading={neighborsQuery.isLoading}>
+                  <Search className="w-4 h-4 mr-2" />
+                  Explore
+                </Button>
+              </div>
             </form>
           </Card>
         </div>
@@ -117,6 +173,12 @@ export function GraphExplorerPage() {
             </div>
           )}
 
+          {!!neighborsQuery.error && (
+            <div className="py-12 text-center">
+              <p className="text-red-500">Failed to load graph data</p>
+            </div>
+          )}
+
           {neighborsQuery.data && (
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Graph */}
@@ -125,7 +187,10 @@ export function GraphExplorerPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="font-semibold text-gray-900">Network Graph</h3>
-                      <p className="text-sm text-gray-500">{nodeCount} connected addresses, {neighborsQuery.data.edges?.length || 0} edges</p>
+                      <p className="text-sm text-gray-500">
+                        {nodeCount} connected addresses • {neighborsQuery.data.edges?.length || 0}{" "}
+                        edges • depth {neighborsQuery.data.depth || depth}
+                      </p>
                     </div>
                     <AddressGraphLegend />
                   </div>
@@ -135,7 +200,7 @@ export function GraphExplorerPage() {
                     onNodeHover={handleNodeHover}
                     onNodeClick={handleNodeClick}
                     onNodeDoubleClick={handleNodeDoubleClick}
-                    height="500px"
+                    height="550px"
                   />
                 </Card>
               </div>
@@ -152,7 +217,9 @@ export function GraphExplorerPage() {
                     <LoadingSpinner size="sm" />
                   ) : addressInfoQuery.data ? (
                     <div className="space-y-3 text-sm">
-                      <p className="font-mono text-xs text-gray-700 break-all bg-gray-50 p-2 rounded">{addressInfoQuery.data.address}</p>
+                      <p className="font-mono text-xs text-gray-700 break-all bg-gray-50 p-2 rounded">
+                        {addressInfoQuery.data.address}
+                      </p>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-gray-500 text-xs">Risk Score</label>
@@ -160,7 +227,9 @@ export function GraphExplorerPage() {
                         </div>
                         <div>
                           <label className="text-gray-500 text-xs">TX Count</label>
-                          <p className="font-semibold">{addressInfoQuery.data.txCount?.toLocaleString() || "N/A"}</p>
+                          <p className="font-semibold">
+                            {addressInfoQuery.data.txCount?.toLocaleString() || "N/A"}
+                          </p>
                         </div>
                       </div>
                       {addressInfoQuery.data.tags && addressInfoQuery.data.tags.length > 0 && (
@@ -168,13 +237,22 @@ export function GraphExplorerPage() {
                           <label className="text-gray-500 text-xs block mb-1">Tags</label>
                           <div className="flex flex-wrap gap-1">
                             {addressInfoQuery.data.tags.slice(0, 4).map((tag, i) => (
-                              <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{tag}</span>
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                              >
+                                {tag}
+                              </span>
                             ))}
                           </div>
                         </div>
                       )}
-                      <Link to={`/address?q=${queryAddress}`} className="flex items-center gap-1 text-blue-600 hover:underline text-xs mt-2">
-                        <ExternalLink className="w-3 h-3" />Full Analysis
+                      <Link
+                        to={`/address?q=${queryAddress}`}
+                        className="flex items-center gap-1 text-blue-600 hover:underline text-xs mt-2"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Full Analysis
                       </Link>
                     </div>
                   ) : (
@@ -186,11 +264,15 @@ export function GraphExplorerPage() {
                 <Card>
                   <div className="flex items-center gap-2 mb-3">
                     <Activity className="w-4 h-4 text-purple-600" />
-                    <h3 className="font-semibold text-gray-900">{selectedNode ? "Selected" : "Hovered"} Node</h3>
+                    <h3 className="font-semibold text-gray-900">
+                      {selectedNode ? "Selected" : "Hovered"} Node
+                    </h3>
                   </div>
                   {displayNode ? (
                     <div className="space-y-3 text-sm">
-                      <p className="font-mono text-xs text-gray-700 break-all bg-gray-50 p-2 rounded">{displayNode.address}</p>
+                      <p className="font-mono text-xs text-gray-700 break-all bg-gray-50 p-2 rounded">
+                        {displayNode.address}
+                      </p>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-gray-500 text-xs">Risk Score</label>
@@ -198,13 +280,17 @@ export function GraphExplorerPage() {
                         </div>
                         <div>
                           <label className="text-gray-500 text-xs">Distance</label>
-                          <p className="font-semibold">{displayNode.distance} hop{displayNode.distance !== 1 ? "s" : ""}</p>
+                          <p className="font-semibold">
+                            {displayNode.distance} hop{displayNode.distance !== 1 ? "s" : ""}
+                          </p>
                         </div>
                         {selectedNodeEdgeInfo && (
                           <>
                             <div>
-                              <label className="text-gray-500 text-xs">Direction</label>
-                              <p className="font-semibold capitalize">{selectedNodeEdgeInfo.direction || "N/A"}</p>
+                              <label className="text-gray-500 text-xs">Relation</label>
+                              <p className="font-semibold capitalize">
+                                {selectedNodeEdgeInfo.direction || "N/A"}
+                              </p>
                             </div>
                             <div>
                               <label className="text-gray-500 text-xs">Transfers</label>
@@ -218,17 +304,30 @@ export function GraphExplorerPage() {
                           <label className="text-gray-500 text-xs block mb-1">Tags</label>
                           <div className="flex flex-wrap gap-1">
                             {displayNode.tags.slice(0, 4).map((tag, i) => (
-                              <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{tag}</span>
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                              >
+                                {tag}
+                              </span>
                             ))}
                           </div>
                         </div>
                       )}
                       <div className="flex gap-2 mt-2">
-                        <button onClick={() => handleNodeDoubleClick(displayNode.address || "")} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-100 text-purple-700 text-xs font-medium rounded hover:bg-purple-200 transition-colors">
-                          <Network className="w-3 h-3" />Explore
+                        <button
+                          onClick={() => handleNodeDoubleClick(displayNode.address || "")}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-100 text-purple-700 text-xs font-medium rounded hover:bg-purple-200 transition-colors"
+                        >
+                          <Network className="w-3 h-3" />
+                          Explore
                         </button>
-                        <Link to={`/address?q=${displayNode.address}`} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-blue-100 text-blue-700 text-xs font-medium rounded hover:bg-blue-200 transition-colors">
-                          <ExternalLink className="w-3 h-3" />Details
+                        <Link
+                          to={`/address?q=${displayNode.address}`}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-blue-100 text-blue-700 text-xs font-medium rounded hover:bg-blue-200 transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Details
                         </Link>
                       </div>
                     </div>
@@ -246,7 +345,9 @@ export function GraphExplorerPage() {
             <div className="text-center py-16">
               <Network className="w-16 h-16 text-gray-300 mx-auto" />
               <h3 className="text-lg font-medium text-gray-900 mt-4">Explore Address Connections</h3>
-              <p className="text-gray-500 mt-2">Enter an Ethereum address to visualize its transaction network</p>
+              <p className="text-gray-500 mt-2">
+                Enter an Ethereum address to visualize its transaction network
+              </p>
             </div>
           )}
         </div>
