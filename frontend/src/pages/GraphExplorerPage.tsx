@@ -53,8 +53,6 @@ export function GraphExplorerPage() {
       nodeDistances.set(node.address, node.distance ?? (node.address === centerAddr ? 0 : 1))
     })
 
-    const displayNodeDist = nodeDistances.get(displayNode.address) ?? 999
-
     // Find edges involving this node
     const nodeEdges = edges.filter(
       (e) => e.from === displayNode.address || e.to === displayNode.address
@@ -63,21 +61,21 @@ export function GraphExplorerPage() {
     const totalTransfers = nodeEdges.reduce((sum, e) => sum + (e.transferCount || 0), 0)
     const totalValue = nodeEdges.reduce((sum, e) => sum + parseFloat(e.totalValue || "0"), 0)
 
-    // Determine direction based on BFS distance
-    // outgoing: edge goes from inner (smaller distance) to outer (larger distance)
-    // incoming: edge goes from outer (larger distance) to inner (smaller distance)
+    // Determine direction based on edge's from/to distances
+    // outgoing: from.distance < to.distance (inner -> outer)
+    // incoming: from.distance > to.distance (outer -> inner)
     let hasOutgoing = false
     let hasIncoming = false
 
     nodeEdges.forEach((edge) => {
-      const otherAddr = edge.from === displayNode.address ? edge.to : edge.from
-      const otherDist = nodeDistances.get(otherAddr) ?? 999
+      const fromDist = nodeDistances.get(edge.from) ?? 999
+      const toDist = nodeDistances.get(edge.to) ?? 999
 
-      if (displayNodeDist < otherDist) {
-        // This node is inner, edge goes to outer = outgoing from this node's perspective
+      if (fromDist < toDist) {
+        // This edge goes from inner to outer = outgoing
         hasOutgoing = true
-      } else if (displayNodeDist > otherDist) {
-        // This node is outer, edge comes from inner = incoming to this node
+      } else if (fromDist > toDist) {
+        // This edge goes from outer to inner = incoming
         hasIncoming = true
       }
     })

@@ -53,7 +53,7 @@ function calculateRadialLayout(
   nodes: GraphNode[]
 ) {
   const positions = new Map<string, { x: number; y: number }>()
-  
+
   // Group nodes by distance
   const nodesByDistance = new Map<number, GraphNode[]>()
   nodes.forEach((node) => {
@@ -113,25 +113,13 @@ function determineEdgeDirections(
     // Arrow always points to target, so:
     // - outgoing: source=inner (small dist), target=outer (large dist) -> arrow points outward
     // - incoming: source=outer (large dist), target=inner (small dist) -> arrow points inward
-    let edgeDirection: "incoming" | "outgoing"
-    let source: string
-    let target: string
+    let edgeDirection: "incoming" | "outgoing" = "outgoing"
+    let source = edge.from
+    let target = edge.to
 
-    if (fromDist < toDist) {
-      // Original edge goes inner -> outer = outgoing
-      edgeDirection = "outgoing"
-      source = edge.from
-      target = edge.to
-    } else if (fromDist > toDist) {
+    if (fromDist > toDist) {
       // Original edge goes outer -> inner = incoming
       edgeDirection = "incoming"
-      source = edge.from
-      target = edge.to
-    } else {
-      // Same distance level
-      edgeDirection = "outgoing"
-      source = edge.from
-      target = edge.to
     }
 
     if (existing) {
