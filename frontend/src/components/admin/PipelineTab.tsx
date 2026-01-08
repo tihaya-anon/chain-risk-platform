@@ -1,4 +1,4 @@
-import { RefreshCw, Play, Pause, AlertTriangle } from "lucide-react"
+import { Play, Pause, AlertTriangle } from "lucide-react"
 import { Button, Card } from "@/components/common"
 import type { PipelineStatus } from "@/api/generated"
 
@@ -6,14 +6,12 @@ interface PipelineTabProps {
   pipelineStatus?: PipelineStatus
   isLoading: boolean
   controlIngestion: { mutate: (action: string) => void; isPending: boolean }
-  controlGraphSync: { mutate: (action: string) => void; isPending: boolean }
 }
 
 export function PipelineTab({
   pipelineStatus,
   isLoading,
   controlIngestion,
-  controlGraphSync,
 }: PipelineTabProps) {
   if (isLoading) {
     return (
@@ -100,74 +98,6 @@ export function PipelineTab({
               </div>
             </div>
           )}
-        </div>
-      </Card>
-
-      <Card title="Graph Synchronization" subtitle="PostgreSQL to Neo4j sync">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <p className="font-medium text-gray-900">Status</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span
-                  className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${
-                    pipelineStatus?.graphSync?.enabled
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {pipelineStatus?.graphSync?.enabled ? "Enabled" : "Disabled"}
-                </span>
-                <span
-                  className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${
-                    pipelineStatus?.graphSync?.status === "RUNNING"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {pipelineStatus?.graphSync?.status || "IDLE"}
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => controlGraphSync.mutate("pause")}
-                loading={controlGraphSync.isPending}
-                disabled={pipelineStatus?.graphSync?.status !== "RUNNING"}
-              >
-                <Pause className="w-4 h-4 mr-1" />
-                Pause
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => controlGraphSync.mutate("resume")}
-                loading={controlGraphSync.isPending}
-                disabled={pipelineStatus?.graphSync?.status === "RUNNING"}
-              >
-                <Play className="w-4 h-4 mr-1" />
-                Resume
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => controlGraphSync.mutate("trigger")}
-                loading={controlGraphSync.isPending}
-              >
-                <RefreshCw className="w-4 h-4 mr-1" />
-                Trigger
-              </Button>
-            </div>
-          </div>
-
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">Last Sync Time</p>
-            <p className="text-lg font-medium text-gray-900">
-              {pipelineStatus?.graphSync?.lastSyncTime
-                ? new Date(pipelineStatus.graphSync.lastSyncTime).toLocaleString()
-                : "-"}
-            </p>
-          </div>
         </div>
       </Card>
 

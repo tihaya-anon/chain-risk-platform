@@ -7,7 +7,6 @@ import {
   useGetRiskConfig,
   useGetPipelineConfig,
   useControlIngestion,
-  useControlGraphSync,
   useGraphControllerRunClustering,
   useGraphControllerManualCluster,
   useGraphControllerPropagateTags,
@@ -50,13 +49,6 @@ export function AdminPage() {
     },
   })
 
-  const controlGraphSyncMutation = useControlGraphSync({
-    mutation: {
-      onSuccess: () =>
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/pipeline/status"] }),
-    },
-  })
-
   const handleManualCluster = () => {
     const addresses = manualClusterAddresses
       .split(/[\n,]/)
@@ -76,21 +68,13 @@ export function AdminPage() {
     { id: "config" as TabType, label: "Configuration", icon: FileCode },
   ]
 
-  // Wrapper functions to adapt mutation types
+  // Wrapper function for ingestion control
   const ingestionWrapper = {
     mutate: (action: string) =>
       controlIngestionMutation.mutate({
-        action: action as "pause" | "resume" | "trigger",
+        action: action as "pause" | "resume",
       }),
     isPending: controlIngestionMutation.isPending,
-  }
-
-  const graphSyncWrapper = {
-    mutate: (action: string) =>
-      controlGraphSyncMutation.mutate({
-        action: action as "pause" | "resume" | "trigger",
-      }),
-    isPending: controlGraphSyncMutation.isPending,
   }
 
   return (
@@ -130,15 +114,11 @@ export function AdminPage() {
             pipelineStatus={pipelineStatusQuery.data}
             isLoading={pipelineStatusQuery.isLoading}
             controlIngestion={ingestionWrapper}
-            controlGraphSync={graphSyncWrapper}
           />
         )}
 
         {activeTab === "graph" && (
           <GraphTab
-            syncStatus={null}
-            isLoading={false}
-            triggerSync={{ mutate: () => {}, isPending: false }}
             runClustering={runClusteringMutation}
             manualCluster={manualClusterMutation}
             propagateTags={propagateTagsMutation}

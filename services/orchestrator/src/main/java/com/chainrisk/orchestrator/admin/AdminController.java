@@ -99,21 +99,18 @@ public class AdminController {
     @GetMapping("/pipeline/status")
     @Operation(summary = "Get pipeline status", description = "Returns aggregated status of all pipeline components")
     public Mono<Map<String, Object>> getPipelineStatus() {
-        // Get status from each service
+        // Get status from data-ingestion service
         Mono<Map> ingestionStatus = getServiceStatus("data-ingestion", "/admin/status");
-        Mono<Map> graphStatus = getServiceStatus("graph-engine", "/admin/status");
         
-        return Mono.zip(ingestionStatus, graphStatus)
-            .map(tuple -> {
+        return ingestionStatus
+            .map(ingestion -> {
                 Map<String, Object> status = new HashMap<>();
                 status.put("config", Map.of(
                     "pipelineEnabled", pipelineProperties.isEnabled(),
-                    "ingestionEnabled", pipelineProperties.getIngestion().isEnabled(),
-                    "graphSyncEnabled", pipelineProperties.getGraphSync().isEnabled()
+                    "ingestionEnabled", pipelineProperties.getIngestion().isEnabled()
                 ));
                 status.put("services", Map.of(
-                    "ingestion", tuple.getT1(),
-                    "graphEngine", tuple.getT2()
+                    "ingestion", ingestion
                 ));
                 status.put("timestamp", System.currentTimeMillis());
                 return status;
@@ -132,14 +129,7 @@ public class AdminController {
         String endpoint = switch (action) {
             case "pause" -> "/admin/pause";
             case "resume" -> "/admin/resume";
-            default -> {
-                Map<String, Object> error = new HashMap<>();
-                error.put("service", "data-ingestion");
-                error.put("action", action);
-                error.put("error", "Invalid action. Supported actions: pause, resume");
-                error.put("timestamp", System.currentTimeMillis());
-                yield null;
-            }
+            default -> null;
         };
         
         if (endpoint == null) {
@@ -155,27 +145,6 @@ public class AdminController {
             .map(response -> {
                 Map<String, Object> result = new HashMap<>();
                 result.put("service", "data-ingestion");
-                result.put("action", action);
-                result.put("response", response);
-                result.put("timestamp", System.currentTimeMillis());
-                return result;
-            });
-    }
-
-    @PostMapping("/pipeline/graph-sync/{action}")
-    @Operation(summary = "Control graph sync", description = "Pause, resume, or trigger graph synchronization")
-    public Mono<Map<String, Object>> controlGraphSync(@PathVariable String action) {
-        String endpoint = switch (action) {
-            case "pause" -> "/admin/sync/pause";
-            case "resume" -> "/admin/sync/resume";
-            case "trigger" -> "/admin/sync/trigger";
-            default -> "/admin/sync/" + action;
-        };
-        
-        return callServiceAction("graph-engine", endpoint)
-            .map(response -> {
-                Map<String, Object> result = new HashMap<>();
-                result.put("service", "graph-engine");
                 result.put("action", action);
                 result.put("response", response);
                 result.put("timestamp", System.currentTimeMillis());

@@ -147,7 +147,7 @@ const batchRiskAnalysisHandler = http.post(
   }
 )
 
-// ==================== BFF Graph Handlers (FIXED PATHS) ====================
+// ==================== BFF Graph Handlers ====================
 
 // GET /api/v1/graph/address/:address
 const graphGetAddressHandler = http.get(
@@ -243,13 +243,13 @@ const graphManualClusterHandler = http.post("*/api/v1/graph/cluster/manual", asy
   })
 })
 
-// GET /api/v1/graph/search/tag/:tag (FIXED: was /api/v1/graph/tags/:tag/addresses)
+// GET /api/v1/graph/search/tag/:tag
 const graphSearchByTagHandler = http.get("*/api/v1/graph/search/tag/:tag", async () => {
   await delay(300)
   return HttpResponse.json(Array.from({ length: 10 }, () => mockGraphAddressInfo()))
 })
 
-// GET /api/v1/graph/search/high-risk (FIXED: was /api/v1/graph/high-risk)
+// GET /api/v1/graph/search/high-risk
 const graphHighRiskHandler = http.get("*/api/v1/graph/search/high-risk", async () => {
   await delay(300)
   const resp = mockHighRiskNetworkResponse()
@@ -275,9 +275,9 @@ const graphPropagateAddressHandler = http.post(
   }
 )
 
-// ==================== BFF Risk Handlers (FIXED PATHS) ====================
+// ==================== BFF Risk Handlers ====================
 
-// POST /api/v1/risk/score (FIXED: was GET /api/v1/risk/:address)
+// POST /api/v1/risk/score
 const riskScoreHandler = http.post("*/api/v1/risk/score", async ({ request }) => {
   await delay(300)
   const body = (await request.json()) as { address: string; network?: string }
@@ -383,7 +383,7 @@ const listTransfersHandler = http.get("*/api/v1/transfers", async () => {
   })
 })
 
-// ==================== Admin Handlers (FIXED PATHS) ====================
+// ==================== Admin Handlers ====================
 
 // POST /api/admin/pipeline/ingestion/:action
 const adminIngestionHandler = http.post(
@@ -394,19 +394,6 @@ const adminIngestionHandler = http.post(
       success: true,
       action: params.action,
       message: `Ingestion ${params.action} successful`,
-    })
-  }
-)
-
-// POST /api/admin/pipeline/graph-sync/:action
-const adminGraphSyncHandler = http.post(
-  "*/api/admin/pipeline/graph-sync/:action",
-  async ({ params }) => {
-    await delay(300)
-    return HttpResponse.json({
-      success: true,
-      action: params.action,
-      message: `Graph sync ${params.action} successful`,
     })
   }
 )
@@ -446,7 +433,7 @@ const adminPipelineConfigHandler = http.get("*/api/admin/config/pipeline", async
   return HttpResponse.json(mockPipelineConfig())
 })
 
-// GET /api/admin/config/all (FIXED: was /api/admin/config)
+// GET /api/admin/config/all
 const adminAllConfigHandler = http.get("*/api/admin/config/all", async () => {
   await delay(200)
   return HttpResponse.json({ risk: mockRiskConfig(), pipeline: mockPipelineConfig() })
@@ -497,7 +484,6 @@ export const handlers = [
 
   // Admin
   adminIngestionHandler,
-  adminGraphSyncHandler,
   adminServicesHandler,
   adminServiceHandler,
   adminPipelineStatusHandler,
