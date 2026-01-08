@@ -20,9 +20,12 @@ export function GraphExplorerPage() {
   const [searchAddress, setSearchAddress] = useState(addressParam)
   const [queryAddress, setQueryAddress] = useState(addressParam)
   const [depth, setDepth] = useState(Math.min(Math.max(depthParam, 1), 3))
-  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  
+  // Separate hover and selected states
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null)
-  const [isCenter, setIsCenter] = useState(false)
+  const [isHoveredCenter, setIsHoveredCenter] = useState(false)
+  const [isSelectedCenter, setIsSelectedCenter] = useState(false)
 
   const neighborsQuery = useGraphControllerGetAddressNeighbors(
     queryAddress,
@@ -31,20 +34,26 @@ export function GraphExplorerPage() {
   )
   const addressInfoQuery = useGraphControllerGetAddressInfo(queryAddress, { query: { enabled: !!queryAddress } })
 
-  const selectedNodeEdgeInfo = useMemo(() => {
-    if (!hoveredNode || !neighborsQuery.data?.edges) return null
+  // Display node: selected takes priority, then hovered
+  const displayNode = selectedNode || hoveredNode
+  const isDisplaySelected = !!selectedNode
+  const showCenterInfo = (isSelectedCenter && !selectedNode) || (isHoveredCenter && !hoveredNode && !selectedNode)
+
+  // Calculate edge info for display node
+  const displayNodeEdgeInfo = useMemo(() => {
+    if (!displayNode || !neighborsQuery.data?.edges) return null
     const edges = neighborsQuery.data.edges
     const centerAddr = neighborsQuery.data.address
 
     const nodeEdges = edges.filter(
-      (e) => e.from === hoveredNode.address || e.to === hoveredNode.address
+      (e) => e.from === displayNode.address || e.to === displayNode.address
     )
 
     const totalTransfers = nodeEdges.reduce((sum, e) => sum + (e.transferCount || 0), 0)
     const totalValue = nodeEdges.reduce((sum, e) => sum + parseFloat(e.totalValue || "0"), 0)
 
-    const inEdges = edges.filter((e) => e.from === hoveredNode.address && e.to === centerAddr)
-    const outEdges = edges.filter((e) => e.from === centerAddr && e.to === hoveredNode.address)
+    const inEdges = edges.filter((e) => e.from === displayNode.address && e.to === centerAddr)
+    const outEdges = edges.filter((e) => e.from === centerAddr && e.to === displayNode.address)
 
     let direction: "incoming" | "outgoing" | "both" | "indirect" | undefined
     if (inEdges.length > 0 && outEdges.length > 0) direction = "both"
@@ -53,7 +62,7 @@ export function GraphExplorerPage() {
     else if (nodeEdges.length > 0) direction = "indirect"
 
     return { direction, totalTransfers, totalValue: totalValue.toFixed(4), edgeCount: nodeEdges.length }
-  }, [hoveredNode, neighborsQuery.data])
+  }, [displayNode, neighborsQuery.data])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,6 +72,8 @@ export function GraphExplorerPage() {
       setSearchParams({ address: normalized, depth: String(depth) })
       setSelectedNode(null)
       setHoveredNode(null)
+      setIsSelectedCenter(false)
+      setIsHoveredCenter(false)
     }
   }
 
@@ -75,27 +86,36 @@ export function GraphExplorerPage() {
 
   const handleNodeHover = useCallback((node: GraphNode | null, center?: boolean) => {
     setHoveredNode(node)
-    setIsCenter(!!center)
+    setIsHoveredCenter(!!center && !node)
   }, [])
 
-  const handleNodeClick = useCallback(
-    (node: GraphNode | null, center?: boolean) => {
-      if (node) {
-        setSelectedNode(node.address || null)
-        setHoveredNode(node)
-        setIsCenter(false)
-      } else if (center) {
-        setSelectedNode(queryAddress)
-        setHoveredNode(null)
-        setIsCenter(true)
-      } else {
+  const handleNodeClick = useCallback((node: GraphNode | null, center?: boolean) => {
+    if (center && !node) {
+      // Clicked on center
+      if (isSelectedCenter) {
+        // Deselect center
+        setIsSelectedCenter(false)
         setSelectedNode(null)
-        setHoveredNode(null)
-        setIsCenter(false)
+      } else {
+        setIsSelectedCenter(true)
+        setSelectedNode(null)
       }
-    },
-    [queryAddress]
-  )
+    } else if (node) {
+      // Clicked on a node
+      if (selectedNode?.address === node.address) {
+        // Deselect
+        setSelectedNode(null)
+        setIsSelectedCenter(false)
+      } else {
+        setSelectedNode(node)
+        setIsSelectedCenter(false)
+      }
+    } else {
+      // Clicked on empty space
+      setSelectedNode(null)
+      setIsSelectedCenter(false)
+    }
+  }, [selectedNode, isSelectedCenter])
 
   const handleNodeDoubleClick = useCallback(
     (address: string) => {
@@ -104,13 +124,14 @@ export function GraphExplorerPage() {
       setSearchParams({ address, depth: String(depth) })
       setSelectedNode(null)
       setHoveredNode(null)
+      setIsSelectedCenter(false)
+      setIsHoveredCenter(false)
     },
     [setSearchParams, depth]
   )
 
-  const displayNode = hoveredNode
-  const showCenterInfo = isCenter && !hoveredNode
   const nodeCount = (neighborsQuery.data?.nodes?.length || 1) - 1
+  const selectedAddress = selectedNode?.address || (isSelectedCenter ? queryAddress : null)
 
   return (
     <div className="h-full flex flex-col">
@@ -123,7 +144,7 @@ export function GraphExplorerPage() {
               Graph Explorer
             </h1>
             <p className="text-gray-600 mt-1">
-              Radial tree visualization • Click to select • Double-click to navigate
+              Radial graph visualization • Click to select • Double-click to navigate
             </p>
           </div>
           <Card>
@@ -196,7 +217,7 @@ export function GraphExplorerPage() {
                   </div>
                   <AddressGraph
                     data={neighborsQuery.data}
-                    selectedNode={selectedNode}
+                    selectedNode={selectedAddress}
                     onNodeHover={handleNodeHover}
                     onNodeClick={handleNodeClick}
                     onNodeDoubleClick={handleNodeDoubleClick}
@@ -260,13 +281,20 @@ export function GraphExplorerPage() {
                   )}
                 </Card>
 
-                {/* Selected/Hovered Node Info */}
+                {/* Hovered/Selected Node Info */}
                 <Card>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Activity className="w-4 h-4 text-purple-600" />
-                    <h3 className="font-semibold text-gray-900">
-                      {selectedNode ? "Selected" : "Hovered"} Node
-                    </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-purple-600" />
+                      <h3 className="font-semibold text-gray-900">
+                        {isDisplaySelected ? "Selected" : "Hovered"} Node
+                      </h3>
+                    </div>
+                    {isDisplaySelected && (
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
+                        Locked
+                      </span>
+                    )}
                   </div>
                   {displayNode ? (
                     <div className="space-y-3 text-sm">
@@ -284,17 +312,17 @@ export function GraphExplorerPage() {
                             {displayNode.distance} hop{displayNode.distance !== 1 ? "s" : ""}
                           </p>
                         </div>
-                        {selectedNodeEdgeInfo && (
+                        {displayNodeEdgeInfo && (
                           <>
                             <div>
-                              <label className="text-gray-500 text-xs">Relation</label>
+                              <label className="text-gray-500 text-xs">Direction</label>
                               <p className="font-semibold capitalize">
-                                {selectedNodeEdgeInfo.direction || "N/A"}
+                                {displayNodeEdgeInfo.direction || "N/A"}
                               </p>
                             </div>
                             <div>
                               <label className="text-gray-500 text-xs">Transfers</label>
-                              <p className="font-semibold">{selectedNodeEdgeInfo.totalTransfers}</p>
+                              <p className="font-semibold">{displayNodeEdgeInfo.totalTransfers}</p>
                             </div>
                           </>
                         )}

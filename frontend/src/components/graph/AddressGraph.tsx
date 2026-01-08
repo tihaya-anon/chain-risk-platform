@@ -1,6 +1,6 @@
 import { useMemo, useRef } from "react"
 import ReactECharts from "echarts-for-react"
-import { Circle } from "lucide-react"
+import { Circle, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-react"
 import type { AddressNeighborsResponse, GraphNode, GraphEdge } from "@/api/generated"
 
 interface AddressGraphProps {
@@ -18,18 +18,6 @@ interface NodeValue {
   tags?: string[]
   distance: number
   isCenter: boolean
-  transferCount?: number
-  totalValue?: string
-}
-
-interface TreeNode {
-  name: string
-  value: NodeValue
-  children?: TreeNode[]
-  itemStyle?: {
-    color: string
-    borderColor: string
-  }
 }
 
 function getRiskColor(riskScore?: number): string {
@@ -40,78 +28,72 @@ function getRiskColor(riskScore?: number): string {
   return "#10B981"
 }
 
-function getRiskBorderColor(riskScore?: number): string {
-  if (riskScore === undefined) return "#4B5563"
-  if (riskScore >= 0.8) return "#B91C1C"
-  if (riskScore >= 0.6) return "#C2410C"
-  if (riskScore >= 0.4) return "#B45309"
-  return "#047857"
+// Edge direction colors
+const EDGE_COLORS = {
+  incoming: "#3B82F6",  // blue - money flowing in
+  outgoing: "#F97316",  // orange - money flowing out
+  both: "#8B5CF6",      // purple - bidirectional
 }
 
-function buildRadialTree(
+/**
+ * Calculate radial layout positions for nodes
+ */
+function calculateRadialLayout(
   centerAddress: string,
   nodes: GraphNode[],
   edges: GraphEdge[]
-): TreeNode {
-  const nodeMap = new Map<string, GraphNode>()
-  nodes.forEach((node) => nodeMap.set(node.address, node))
-
-  const edgeLookup = new Map<string, { neighbor: string; edge: GraphEdge }[]>()
-  edges.forEach((edge) => {
-    if (!edgeLookup.has(edge.from)) edgeLookup.set(edge.from, [])
-    if (!edgeLookup.has(edge.to)) edgeLookup.set(edge.to, [])
-    edgeLookup.get(edge.from)!.push({ neighbor: edge.to, edge })
-    edgeLookup.get(edge.to)!.push({ neighbor: edge.from, edge })
+) {
+  const positions = new Map<string, { x: number; y: number }>()
+  
+  // Group nodes by distance
+  const nodesByDistance = new Map<number, GraphNode[]>()
+  nodes.forEach((node) => {
+    const dist = node.distance ?? (node.address === centerAddress ? 0 : 1)
+    if (!nodesByDistance.has(dist)) {
+      nodesByDistance.set(dist, [])
+    }
+    nodesByDistance.get(dist)!.push(node)
   })
 
-  const centerNode = nodeMap.get(centerAddress) || { address: centerAddress, distance: 0 }
+  // Center node at origin
+  positions.set(centerAddress, { x: 0, y: 0 })
 
-  function buildSubtree(node: GraphNode, visited: Set<string>, currentDepth: number): TreeNode {
-    visited.add(node.address)
+  // Build parent-child relationships for better angle distribution
+  const edgeLookup = new Map<string, Set<string>>()
+  edges.forEach((e) => {
+    if (!edgeLookup.has(e.from)) edgeLookup.set(e.from, new Set())
+    if (!edgeLookup.has(e.to)) edgeLookup.set(e.to, new Set())
+    edgeLookup.get(e.from)!.add(e.to)
+    edgeLookup.get(e.to)!.add(e.from)
+  })
 
-    const isCenter = node.address === centerAddress
-    const treeNode: TreeNode = {
-      name: "",
-      value: {
-        address: node.address,
-        riskScore: node.riskScore,
-        tags: node.tags,
-        distance: currentDepth,
-        isCenter,
-      },
-      itemStyle: isCenter
-        ? { color: "#3B82F6", borderColor: "#1D4ED8" }
-        : { color: getRiskColor(node.riskScore), borderColor: getRiskBorderColor(node.riskScore) },
-      children: [],
-    }
+  // Place nodes at each distance level
+  const baseRadius = 180
+  const maxDist = Math.max(...Array.from(nodesByDistance.keys()))
 
-    const connectedEdges = edgeLookup.get(node.address) || []
+  for (let dist = 1; dist <= maxDist; dist++) {
+    const nodesAtDist = nodesByDistance.get(dist) || []
+    if (nodesAtDist.length === 0) continue
 
-    connectedEdges.forEach(({ neighbor, edge }) => {
-      if (visited.has(neighbor)) return
+    const radius = baseRadius * dist
+    const angleStep = (2 * Math.PI) / nodesAtDist.length
+    const startAngle = -Math.PI / 2 // Start from top
 
-      const neighborNode = nodeMap.get(neighbor)
-      if (!neighborNode) return
-
-      const neighborDist = neighborNode.distance ?? 999
-      if (neighborDist > currentDepth) {
-        const childTree = buildSubtree(neighborNode, visited, currentDepth + 1)
-        childTree.value.transferCount = edge.transferCount
-        childTree.value.totalValue = edge.totalValue
-        treeNode.children!.push(childTree)
-      }
+    nodesAtDist.forEach((node, index) => {
+      const angle = startAngle + index * angleStep
+      positions.set(node.address, {
+        x: radius * Math.cos(angle),
+        y: radius * Math.sin(angle),
+      })
     })
-
-    if (treeNode.children!.length === 0) {
-      delete treeNode.children
-    }
-
-    return treeNode
   }
 
-  const visited = new Set<string>()
-  return buildSubtree(centerNode as GraphNode, visited, 0)
+  return positions
 }
+
+/**
+ * Determine edge direction relative to center
+ */
 
 export function AddressGraph({
   data,
@@ -125,61 +107,113 @@ export function AddressGraph({
   const dataRef = useRef(data)
   dataRef.current = data
 
-  const treeData = useMemo(() => {
-    if (!data?.address || !data.nodes) return null
-    return buildRadialTree(data.address, data.nodes, data.edges || [])
-  }, [data])
+  const { graphNodes, graphLinks } = useMemo(() => {
+    if (!data?.address || !data.nodes) {
+      return { graphNodes: [], graphLinks: [] }
+    }
+
+    const centerAddress = data.address
+    const positions = calculateRadialLayout(centerAddress, data.nodes, data.edges || [])
+
+    // Build nodes
+    const graphNodes = data.nodes.map((node) => {
+      const pos = positions.get(node.address) || { x: 0, y: 0 }
+      const isCenter = node.address === centerAddress
+      const isSelected = selectedNode === node.address
+
+      return {
+        id: node.address,
+        name: "",
+        x: pos.x,
+        y: pos.y,
+        fixed: true,
+        value: {
+          address: node.address,
+          riskScore: node.riskScore,
+          tags: node.tags,
+          distance: node.distance ?? (isCenter ? 0 : 1),
+          isCenter,
+        } as NodeValue,
+        symbolSize: isCenter ? 40 : 22 + (node.riskScore || 0) * 12,
+        itemStyle: {
+          color: isCenter ? "#3B82F6" : getRiskColor(node.riskScore),
+          borderColor: isSelected ? "#1F2937" : (isCenter ? "#1D4ED8" : getRiskColor(node.riskScore)),
+          borderWidth: isSelected ? 4 : 2,
+          shadowBlur: isSelected ? 15 : 0,
+          shadowColor: isSelected ? "rgba(0,0,0,0.4)" : "transparent",
+        },
+      }
+    })
+
+    // Build edges - deduplicate and determine direction
+    const edgePairs = new Map<string, { from: string; to: string; direction: "incoming" | "outgoing" | "both" }>()
+    
+    ;(data.edges || []).forEach((edge) => {
+      const key = [edge.from, edge.to].sort().join("-")
+      const existing = edgePairs.get(key)
+      
+      if (existing) {
+        existing.direction = "both"
+      } else {
+        edgePairs.set(key, {
+          from: edge.from,
+          to: edge.to,
+          direction: edge.from === centerAddress ? "outgoing" : "incoming",
+        })
+      }
+    })
+
+    const graphLinks = Array.from(edgePairs.values()).map((edge) => ({
+      source: edge.from,
+      target: edge.to,
+      lineStyle: {
+        color: EDGE_COLORS[edge.direction],
+        width: 2,
+        curveness: 0.2,
+        opacity: 0.7,
+      },
+      symbol: edge.direction === "both" ? ["arrow", "arrow"] : ["none", "arrow"],
+      symbolSize: [0, 8],
+    }))
+
+    return { graphNodes, graphLinks }
+  }, [data, selectedNode])
 
   const option = useMemo(() => {
-    if (!treeData) return {}
+    if (!graphNodes.length) return {}
 
     return {
       tooltip: { show: false },
       series: [
         {
-          type: "tree" as const,
-          data: [treeData],
-          layout: "radial" as const,
-          symbol: "circle",
-          symbolSize: (value: NodeValue | undefined) => {
-            if (!value) return 20
-            if (value.isCenter) return 35
-            const base = 18
-            const riskBonus = (value.riskScore || 0) * 12
-            return base + riskBonus
-          },
-          initialTreeDepth: -1,
-          itemStyle: {
-            borderWidth: 2,
-          },
-          lineStyle: {
-            color: "#94A3B8",
-            width: 1.5,
-            curveness: 0.5,
-          },
-          label: {
-            show: false,
-          },
+          type: "graph" as const,
+          layout: "none" as const,
+          data: graphNodes,
+          links: graphLinks,
+          roam: true,
+          label: { show: false },
           emphasis: {
-            focus: "ancestor" as const,
+            focus: "adjacency" as const,
             itemStyle: {
               borderWidth: 3,
-              shadowBlur: 10,
+              shadowBlur: 12,
               shadowColor: "rgba(0,0,0,0.3)",
             },
+            lineStyle: {
+              width: 3,
+            },
           },
-          expandAndCollapse: false,
-          animationDuration: 550,
-          animationDurationUpdate: 750,
+          animationDuration: 500,
+          animationEasingUpdate: "cubicOut" as const,
         },
       ],
     }
-  }, [treeData])
+  }, [graphNodes, graphLinks])
 
   const handleEvents = useMemo(() => {
     return {
       mouseover: (params: { data?: { value?: NodeValue } }) => {
-        if (!params.data?.value || selectedNode) return
+        if (!params.data?.value) return
         const value = params.data.value
         if (value.isCenter) {
           onNodeHover?.(null, true)
@@ -189,9 +223,7 @@ export function AddressGraph({
         }
       },
       mouseout: () => {
-        if (!selectedNode) {
-          onNodeHover?.(null, false)
-        }
+        onNodeHover?.(null, false)
       },
       click: (params: { data?: { value?: NodeValue } }) => {
         if (!params.data?.value) return
@@ -208,20 +240,12 @@ export function AddressGraph({
         onNodeDoubleClick?.(params.data.value.address)
       },
     }
-  }, [selectedNode, onNodeHover, onNodeClick, onNodeDoubleClick])
+  }, [onNodeHover, onNodeClick, onNodeDoubleClick])
 
   if (!data) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
         No graph data available
-      </div>
-    )
-  }
-
-  if (!treeData) {
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        Unable to build graph structure
       </div>
     )
   }
@@ -241,22 +265,34 @@ export function AddressGraph({
 
 export function AddressGraphLegend() {
   return (
-    <div className="flex flex-wrap gap-4 text-xs text-gray-600">
+    <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-600">
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-blue-500 text-blue-600" />
         <span>Center</span>
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-green-500 text-green-600" />
-        <span>Low Risk</span>
+        <span>Low</span>
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-yellow-500 text-yellow-600" />
-        <span>Medium</span>
+        <span>Med</span>
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-red-500 text-red-600" />
-        <span>High Risk</span>
+        <span>High</span>
+      </div>
+      <div className="border-l border-gray-300 pl-3 flex items-center gap-1">
+        <ArrowLeft className="w-3 h-3 text-blue-500" />
+        <span>In</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <ArrowRight className="w-3 h-3 text-orange-500" />
+        <span>Out</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <ArrowLeftRight className="w-3 h-3 text-purple-500" />
+        <span>Both</span>
       </div>
     </div>
   )

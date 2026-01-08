@@ -40,22 +40,28 @@ export function HighRiskGraph({
   addressesRef.current = addresses
 
   const { nodes, links } = useMemo(() => {
-    const graphNodes = addresses.map((addr) => ({
-      id: addr.address,
-      name: "",
-      value: {
-        address: addr.address,
-        riskScore: addr.riskScore,
-        tags: addr.tags,
-        clusterId: addr.clusterId,
-      } as NodeValue,
-      symbolSize: Math.min(35, 18 + (addr.riskScore || 0) * 17),
-      itemStyle: {
-        color: getRiskColor(addr.riskScore),
-        borderColor: getRiskColor(addr.riskScore),
-        borderWidth: 2,
-      },
-    }))
+    const graphNodes = addresses.map((addr) => {
+      const isSelected = selectedNode === addr.address
+      
+      return {
+        id: addr.address,
+        name: "",
+        value: {
+          address: addr.address,
+          riskScore: addr.riskScore,
+          tags: addr.tags,
+          clusterId: addr.clusterId,
+        } as NodeValue,
+        symbolSize: Math.min(35, 18 + (addr.riskScore || 0) * 17),
+        itemStyle: {
+          color: getRiskColor(addr.riskScore),
+          borderColor: isSelected ? "#1F2937" : getRiskColor(addr.riskScore),
+          borderWidth: isSelected ? 4 : 2,
+          shadowBlur: isSelected ? 15 : 0,
+          shadowColor: isSelected ? "rgba(0,0,0,0.4)" : "transparent",
+        },
+      }
+    })
 
     const graphLinks: Array<{
       source: string
@@ -88,7 +94,7 @@ export function HighRiskGraph({
     }
 
     return { nodes: graphNodes, links: graphLinks }
-  }, [addresses])
+  }, [addresses, selectedNode])
 
   const option = useMemo(() => {
     if (!nodes.length) return {}
@@ -103,9 +109,7 @@ export function HighRiskGraph({
           links,
           roam: true,
           draggable: true,
-          label: {
-            show: false,
-          },
+          label: { show: false },
           force: {
             repulsion: 300,
             gravity: 0.1,
@@ -133,14 +137,12 @@ export function HighRiskGraph({
   const handleEvents = useMemo(() => {
     return {
       mouseover: (params: { data?: { value?: NodeValue } }) => {
-        if (!params.data?.value || selectedNode) return
+        if (!params.data?.value) return
         const addr = addressesRef.current.find((a) => a.address === params.data?.value?.address)
         onNodeHover?.(addr || null)
       },
       mouseout: () => {
-        if (!selectedNode) {
-          onNodeHover?.(null)
-        }
+        onNodeHover?.(null)
       },
       click: (params: { data?: { value?: NodeValue } }) => {
         if (!params.data?.value) return
@@ -152,7 +154,7 @@ export function HighRiskGraph({
         onNodeDoubleClick?.(params.data.value.address)
       },
     }
-  }, [selectedNode, onNodeHover, onNodeClick, onNodeDoubleClick])
+  }, [onNodeHover, onNodeClick, onNodeDoubleClick])
 
   if (!addresses.length) {
     return (
