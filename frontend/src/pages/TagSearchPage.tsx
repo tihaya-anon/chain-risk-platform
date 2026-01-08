@@ -1,12 +1,21 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import { Tag, Search } from "lucide-react"
 import { Card, Button, Input, LoadingSpinner } from "@/components/common"
 import { AddressTable } from "@/components/table"
 import { useGraphControllerSearchByTag } from "@/api/generated"
 
 export function TagSearchPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [tagInput, setTagInput] = useState("")
-  const [queryTag, setQueryTag] = useState("")
+
+  const queryTag = searchParams.get("q") || ""
+
+  useEffect(() => {
+    if (queryTag) {
+      setTagInput(queryTag)
+    }
+  }, [queryTag])
 
   const searchQuery = useGraphControllerSearchByTag(
     queryTag,
@@ -19,7 +28,7 @@ export function TagSearchPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (tagInput.trim()) {
-      setQueryTag(tagInput.trim())
+      setSearchParams({ q: tagInput.trim() })
     }
   }
 
