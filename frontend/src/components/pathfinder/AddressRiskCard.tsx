@@ -1,5 +1,5 @@
 import { Tag } from "lucide-react"
-import { Card, RiskBadge } from "@/components/common"
+import { Card, RiskBadge, ClickableTag } from "@/components/common"
 
 interface RiskInfo {
   riskScore: number
@@ -26,12 +26,9 @@ export function AddressRiskCard({ title, risk }: AddressRiskCardProps) {
           {risk.tags && risk.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 justify-center">
               {risk.tags.map((tag, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded"
-                >
-                  <Tag className="w-3 h-3" />
-                  {tag}
+                <span key={i} className="inline-flex items-center gap-1">
+                  <Tag className="w-3 h-3 text-red-400" />
+                  <ClickableTag tag={tag} variant="risk" />
                 </span>
               ))}
             </div>

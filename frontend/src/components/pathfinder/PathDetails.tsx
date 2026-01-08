@@ -1,5 +1,5 @@
 import { Tag } from "lucide-react"
-import { Card } from "@/components/common"
+import { Card, ClickableTag } from "@/components/common"
 import { Link } from "react-router-dom"
 
 interface PathNode {
@@ -33,13 +33,10 @@ export function PathDetails({ path, maxTagsDisplay = 2 }: PathDetailsProps) {
             </div>
             {node.tags && node.tags.length > 0 && (
               <div className="flex flex-col gap-1 mt-1">
-                {node.tags.slice(0, 2).map((tag, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded"
-                  >
-                    <Tag className="w-3 h-3" />
-                    {tag}
+                {node.tags.slice(0, maxTagsDisplay).map((tag, i) => (
+                  <span key={i} className="inline-flex items-center gap-1">
+                    <Tag className="w-3 h-3 text-blue-400" />
+                    <ClickableTag tag={tag} variant="info" />
                   </span>
                 ))}
                 {node.tags.length > maxTagsDisplay && (
