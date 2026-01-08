@@ -1,6 +1,6 @@
 import { Database, ShieldAlert, AlertTriangle, Tag, Shuffle } from "lucide-react"
+import { useNavigate, Link } from "react-router-dom"
 import { Card } from "@/components/common"
-import { Link } from "react-router-dom"
 
 // Stat Card
 interface StatCardProps {
@@ -97,16 +97,27 @@ interface TagCount {
 }
 
 export function TagDistribution({ tags }: { tags: TagCount[] }) {
+  const navigate = useNavigate()
   const maxCount = Math.max(...tags.map((t) => t.count), 1)
+
+  const handleTagClick = (tag: string) => {
+    navigate(`/tags?q=${encodeURIComponent(tag)}`)
+  }
 
   return (
     <div className="space-y-3">
       {tags.slice(0, 6).map((item) => (
-        <div key={item.tag} className="flex items-center gap-3">
+        <button
+          key={item.tag}
+          onClick={() => handleTagClick(item.tag)}
+          className="w-full flex items-center gap-3 hover:bg-gray-50 rounded-lg p-1 -m-1 transition-colors text-left"
+        >
           <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-gray-700 truncate">{item.tag}</span>
+              <span className="text-sm text-gray-700 truncate hover:text-indigo-600 transition-colors">
+                {item.tag}
+              </span>
               <span className="text-sm font-medium text-gray-900 ml-2">{item.count}</span>
             </div>
             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -116,7 +127,7 @@ export function TagDistribution({ tags }: { tags: TagCount[] }) {
               />
             </div>
           </div>
-        </div>
+        </button>
       ))}
     </div>
   )
@@ -131,10 +142,18 @@ interface Alert {
 }
 
 export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
+  const navigate = useNavigate()
+
   const getRiskColor = (score: number) => {
     if (score >= 0.8) return "bg-red-500"
     if (score >= 0.6) return "bg-orange-500"
     return "bg-yellow-500"
+  }
+
+  const handleTagClick = (e: React.MouseEvent, tag: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    navigate(`/tags?q=${encodeURIComponent(tag)}`)
   }
 
   return (
@@ -154,7 +173,12 @@ export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
             >
               {alert.address}
             </Link>
-            <p className="text-xs text-gray-500">{alert.tag}</p>
+            <button
+              onClick={(e) => handleTagClick(e, alert.tag)}
+              className="block text-xs text-gray-500 hover:text-indigo-600 transition-colors"
+            >
+              {alert.tag}
+            </button>
           </div>
           <div className="text-right flex-shrink-0">
             <p className="text-sm font-medium text-gray-900">
