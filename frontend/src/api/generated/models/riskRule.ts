@@ -7,8 +7,8 @@
  */
 
 export interface RiskRule {
-  id: string;
-  name: string;
-  description: string;
-  enabled: boolean;
+  id: string
+  name: string
+  description: string
+  enabled: boolean
 }

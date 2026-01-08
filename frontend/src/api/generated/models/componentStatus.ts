@@ -7,6 +7,6 @@
  */
 
 export interface ComponentStatus {
-  enabled?: boolean;
-  lastRunTime?: string;
+  enabled?: boolean
+  lastRunTime?: string
 }

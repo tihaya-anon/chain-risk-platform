@@ -267,10 +267,11 @@ export function ClusterSection({ data }: { data: AddressAnalysisResponse }) {
       {cluster.category && (
         <div>
           <label className="text-sm text-gray-500">Category</label>
-          <p><span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
-            {cluster.category}
-          </span></p>
-
+          <p>
+            <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+              {cluster.category}
+            </span>
+          </p>
         </div>
       )}
       {cluster.tags && cluster.tags.length > 0 && (
@@ -349,12 +350,13 @@ export function NeighborsSection({ data }: { data: AddressAnalysisResponse }) {
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${neighbor.direction === "incoming"
-                      ? "bg-green-100 text-green-700"
-                      : neighbor.direction === "outgoing"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-purple-100 text-purple-700"
-                      }`}
+                    className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${
+                      neighbor.direction === "incoming"
+                        ? "bg-green-100 text-green-700"
+                        : neighbor.direction === "outgoing"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-purple-100 text-purple-700"
+                    }`}
                   >
                     {neighbor.direction === "incoming" && (
                       <ArrowDownLeft className="w-3 h-3" />
@@ -363,7 +365,10 @@ export function NeighborsSection({ data }: { data: AddressAnalysisResponse }) {
                       <ArrowUpRight className="w-3 h-3" />
                     )}
                     {neighbor.direction === "both" && (
-                      <><ArrowDownLeft className="w-3 h-3" /><ArrowUpRight className="w-3 h-3" /></>
+                      <>
+                        <ArrowDownLeft className="w-3 h-3" />
+                        <ArrowUpRight className="w-3 h-3" />
+                      </>
                     )}
                     {neighbor.direction}
                   </span>

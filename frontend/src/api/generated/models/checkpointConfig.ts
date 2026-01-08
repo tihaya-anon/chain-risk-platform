@@ -7,5 +7,5 @@
  */
 
 export interface CheckpointConfig {
-  intervalMs?: number;
+  intervalMs?: number
 }

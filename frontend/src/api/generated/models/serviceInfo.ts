@@ -7,9 +7,9 @@
  */
 
 export interface ServiceInfo {
-  name?: string;
-  groupName?: string;
-  clusterCount?: number;
-  instanceCount?: number;
-  healthyInstanceCount?: number;
+  name?: string
+  groupName?: string
+  clusterCount?: number
+  instanceCount?: number
+  healthyInstanceCount?: number
 }

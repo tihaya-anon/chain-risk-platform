@@ -7,28 +7,28 @@
  */
 
 export type TransfersControllerListTransfersParams = {
-/**
- * Page number
- */
-page?: number;
-/**
- * Page size
- */
-pageSize?: number;
-/**
- * Filter by address (from or to)
- */
-address?: string;
-/**
- * Filter by from address
- */
-fromAddress?: string;
-/**
- * Filter by to address
- */
-toAddress?: string;
-/**
- * Network
- */
-network?: string;
-};
+  /**
+   * Page number
+   */
+  page?: number
+  /**
+   * Page size
+   */
+  pageSize?: number
+  /**
+   * Filter by address (from or to)
+   */
+  address?: string
+  /**
+   * Filter by from address
+   */
+  fromAddress?: string
+  /**
+   * Filter by to address
+   */
+  toAddress?: string
+  /**
+   * Network
+   */
+  network?: string
+}

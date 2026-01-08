@@ -5,18 +5,10 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import {
-  faker
-} from '@faker-js/faker';
+import { faker } from "@faker-js/faker"
 
-import {
-  HttpResponse,
-  delay,
-  http
-} from 'msw';
-import type {
-  RequestHandlerOptions
-} from 'msw';
+import { HttpResponse, delay, http } from "msw"
+import type { RequestHandlerOptions } from "msw"
 
 import type {
   AddressInfoResponse,
@@ -24,201 +16,920 @@ import type {
   ClusterResponse,
   ClusteringResultResponse,
   PathResponse,
-  PropagationResultResponse
-} from '../../models';
+  PropagationResultResponse,
+} from "../../models"
 
+export const getGraphControllerGetAddressInfoResponseMock = (
+  overrideResponse: Partial<AddressInfoResponse> = {}
+): AddressInfoResponse => ({
+  address: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  firstSeen: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  lastSeen: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  txCount: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  riskScore: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  tags: faker.helpers.arrayElement([
+    Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => faker.string.alpha({ length: { min: 10, max: 20 } })
+    ),
+    undefined,
+  ]),
+  clusterId: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  network: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  incomingCount: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  outgoingCount: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  ...overrideResponse,
+})
 
-export const getGraphControllerGetAddressInfoResponseMock = (overrideResponse: Partial< AddressInfoResponse > = {}): AddressInfoResponse => ({address: faker.string.alpha({length: {min: 10, max: 20}}), firstSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), lastSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), txCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), riskScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), clusterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), network: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), incomingCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), outgoingCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), ...overrideResponse})
+export const getGraphControllerGetAddressNeighborsResponseMock = (
+  overrideResponse: Partial<AddressNeighborsResponse> = {}
+): AddressNeighborsResponse => ({
+  address: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  depth: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  nodes: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1
+  ).map(() => ({
+    address: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    distance: faker.helpers.arrayElement([
+      faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+      undefined,
+    ]),
+    riskScore: faker.helpers.arrayElement([
+      faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+      undefined,
+    ]),
+    tags: faker.helpers.arrayElement([
+      Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+        () => faker.string.alpha({ length: { min: 10, max: 20 } })
+      ),
+      undefined,
+    ]),
+    firstSeen: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      undefined,
+    ]),
+    lastSeen: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      undefined,
+    ]),
+  })),
+  edges: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1
+  ).map(() => ({
+    from: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    to: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    transferCount: faker.helpers.arrayElement([
+      faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+      undefined,
+    ]),
+    totalValue: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      undefined,
+    ]),
+    lastTransfer: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      undefined,
+    ]),
+  })),
+  ...overrideResponse,
+})
 
-export const getGraphControllerGetAddressNeighborsResponseMock = (overrideResponse: Partial< AddressNeighborsResponse > = {}): AddressNeighborsResponse => ({address: faker.string.alpha({length: {min: 10, max: 20}}), depth: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), nodes: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({address: faker.string.alpha({length: {min: 10, max: 20}}), distance: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), riskScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), firstSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), lastSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined])})), edges: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({from: faker.string.alpha({length: {min: 10, max: 20}}), to: faker.string.alpha({length: {min: 10, max: 20}}), transferCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), totalValue: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), lastTransfer: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined])})), ...overrideResponse})
+export const getGraphControllerGetAddressTagsResponseMock = (): string[] =>
+  Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () => faker.word.sample())
 
-export const getGraphControllerGetAddressTagsResponseMock = (): string[] => (Array.from({length: faker.number.int({min: 1,max: 10})}, () => faker.word.sample()))
+export const getGraphControllerAddAddressTagsResponseMock = (
+  overrideResponse: Partial<AddressInfoResponse> = {}
+): AddressInfoResponse => ({
+  address: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  firstSeen: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  lastSeen: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  txCount: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  riskScore: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  tags: faker.helpers.arrayElement([
+    Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => faker.string.alpha({ length: { min: 10, max: 20 } })
+    ),
+    undefined,
+  ]),
+  clusterId: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  network: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  incomingCount: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  outgoingCount: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  ...overrideResponse,
+})
 
-export const getGraphControllerAddAddressTagsResponseMock = (overrideResponse: Partial< AddressInfoResponse > = {}): AddressInfoResponse => ({address: faker.string.alpha({length: {min: 10, max: 20}}), firstSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), lastSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), txCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), riskScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), clusterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), network: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), incomingCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), outgoingCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), ...overrideResponse})
+export const getGraphControllerGetAddressClusterResponseMock = (
+  overrideResponse: Partial<ClusterResponse> = {}
+): ClusterResponse => ({
+  clusterId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  size: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  riskScore: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  label: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  category: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  tags: faker.helpers.arrayElement([
+    Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => faker.string.alpha({ length: { min: 10, max: 20 } })
+    ),
+    undefined,
+  ]),
+  addresses: faker.helpers.arrayElement([
+    Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => faker.string.alpha({ length: { min: 10, max: 20 } })
+    ),
+    undefined,
+  ]),
+  createdAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  updatedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  network: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  ...overrideResponse,
+})
 
-export const getGraphControllerGetAddressClusterResponseMock = (overrideResponse: Partial< ClusterResponse > = {}): ClusterResponse => ({clusterId: faker.string.alpha({length: {min: 10, max: 20}}), size: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), riskScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), label: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), category: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), addresses: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), updatedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), network: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), ...overrideResponse})
-
-export const getGraphControllerFindPathResponseMock = (overrideResponse: Partial< PathResponse > = {}): PathResponse => ({found: faker.datatype.boolean(), fromAddress: faker.string.alpha({length: {min: 10, max: 20}}), toAddress: faker.string.alpha({length: {min: 10, max: 20}}), pathLength: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), maxDepth: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), message: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), path: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({address: faker.string.alpha({length: {min: 10, max: 20}}), txHash: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), value: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), timestamp: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), riskScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined])})), undefined]), ...overrideResponse})
-
-export const getGraphControllerGetClusterResponseMock = (overrideResponse: Partial< ClusterResponse > = {}): ClusterResponse => ({clusterId: faker.string.alpha({length: {min: 10, max: 20}}), size: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), riskScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), label: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), category: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), addresses: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), updatedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), network: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), ...overrideResponse})
-
-export const getGraphControllerRunClusteringResponseMock = (overrideResponse: Partial< ClusteringResultResponse > = {}): ClusteringResultResponse => ({status: faker.string.alpha({length: {min: 10, max: 20}}), clustersCreated: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), addressesClustered: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), durationMs: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), startedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), completedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), errorMessage: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), ...overrideResponse})
-
-export const getGraphControllerManualClusterResponseMock = (overrideResponse: Partial< ClusteringResultResponse > = {}): ClusteringResultResponse => ({status: faker.string.alpha({length: {min: 10, max: 20}}), clustersCreated: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), addressesClustered: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), durationMs: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), startedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), completedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), errorMessage: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), ...overrideResponse})
-
-export const getGraphControllerSearchByTagResponseMock = (): AddressInfoResponse[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({address: faker.string.alpha({length: {min: 10, max: 20}}), firstSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), lastSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), txCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), riskScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), clusterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), network: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), incomingCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), outgoingCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined])})))
-
-export const getGraphControllerGetHighRiskAddressesResponseMock = (): AddressInfoResponse[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({address: faker.string.alpha({length: {min: 10, max: 20}}), firstSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), lastSeen: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), txCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), riskScore: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), clusterId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), network: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), incomingCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), outgoingCount: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined])})))
-
-export const getGraphControllerPropagateTagsResponseMock = (overrideResponse: Partial< PropagationResultResponse > = {}): PropagationResultResponse => ({status: faker.string.alpha({length: {min: 10, max: 20}}), addressesAffected: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), tagsPropagated: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), maxHops: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), decayFactor: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), durationMs: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), startedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), completedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), errorMessage: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), ...overrideResponse})
-
-export const getGraphControllerPropagateFromAddressResponseMock = (overrideResponse: Partial< PropagationResultResponse > = {}): PropagationResultResponse => ({status: faker.string.alpha({length: {min: 10, max: 20}}), addressesAffected: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), tagsPropagated: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), maxHops: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), decayFactor: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), durationMs: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined]), startedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), completedAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), errorMessage: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), ...overrideResponse})
-
-
-export const getGraphControllerGetAddressInfoMockHandler = (overrideResponse?: AddressInfoResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<AddressInfoResponse> | AddressInfoResponse), options?: RequestHandlerOptions) => {
-  return http.get('*/api/v1/graph/address/:address', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerGetAddressInfoResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
+export const getGraphControllerFindPathResponseMock = (
+  overrideResponse: Partial<PathResponse> = {}
+): PathResponse => ({
+  found: faker.datatype.boolean(),
+  fromAddress: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  toAddress: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pathLength: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  maxDepth: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  message: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  path: faker.helpers.arrayElement([
+    Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => ({
+        address: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        txHash: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          undefined,
+        ]),
+        value: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          undefined,
+        ]),
+        timestamp: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          undefined,
+        ]),
+        riskScore: faker.helpers.arrayElement([
+          faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+          undefined,
+        ]),
+        tags: faker.helpers.arrayElement([
+          Array.from(
+            { length: faker.number.int({ min: 1, max: 10 }) },
+            (_, i) => i + 1
+          ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+          undefined,
+        ]),
       })
-  }, options)
+    ),
+    undefined,
+  ]),
+  ...overrideResponse,
+})
+
+export const getGraphControllerGetClusterResponseMock = (
+  overrideResponse: Partial<ClusterResponse> = {}
+): ClusterResponse => ({
+  clusterId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  size: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  riskScore: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  label: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  category: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  tags: faker.helpers.arrayElement([
+    Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => faker.string.alpha({ length: { min: 10, max: 20 } })
+    ),
+    undefined,
+  ]),
+  addresses: faker.helpers.arrayElement([
+    Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => faker.string.alpha({ length: { min: 10, max: 20 } })
+    ),
+    undefined,
+  ]),
+  createdAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  updatedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  network: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  ...overrideResponse,
+})
+
+export const getGraphControllerRunClusteringResponseMock = (
+  overrideResponse: Partial<ClusteringResultResponse> = {}
+): ClusteringResultResponse => ({
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  clustersCreated: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  addressesClustered: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  durationMs: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  startedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  completedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  errorMessage: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  ...overrideResponse,
+})
+
+export const getGraphControllerManualClusterResponseMock = (
+  overrideResponse: Partial<ClusteringResultResponse> = {}
+): ClusteringResultResponse => ({
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  clustersCreated: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  addressesClustered: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  durationMs: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  startedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  completedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  errorMessage: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  ...overrideResponse,
+})
+
+export const getGraphControllerSearchByTagResponseMock = (): AddressInfoResponse[] =>
+  Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+    () => ({
+      address: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      firstSeen: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        undefined,
+      ]),
+      lastSeen: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        undefined,
+      ]),
+      txCount: faker.helpers.arrayElement([
+        faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+        undefined,
+      ]),
+      riskScore: faker.helpers.arrayElement([
+        faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+        undefined,
+      ]),
+      tags: faker.helpers.arrayElement([
+        Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1
+        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+        undefined,
+      ]),
+      clusterId: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        undefined,
+      ]),
+      network: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        undefined,
+      ]),
+      incomingCount: faker.helpers.arrayElement([
+        faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+        undefined,
+      ]),
+      outgoingCount: faker.helpers.arrayElement([
+        faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+        undefined,
+      ]),
+    })
+  )
+
+export const getGraphControllerGetHighRiskAddressesResponseMock =
+  (): AddressInfoResponse[] =>
+    Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+      () => ({
+        address: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        firstSeen: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          undefined,
+        ]),
+        lastSeen: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          undefined,
+        ]),
+        txCount: faker.helpers.arrayElement([
+          faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+          undefined,
+        ]),
+        riskScore: faker.helpers.arrayElement([
+          faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+          undefined,
+        ]),
+        tags: faker.helpers.arrayElement([
+          Array.from(
+            { length: faker.number.int({ min: 1, max: 10 }) },
+            (_, i) => i + 1
+          ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+          undefined,
+        ]),
+        clusterId: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          undefined,
+        ]),
+        network: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          undefined,
+        ]),
+        incomingCount: faker.helpers.arrayElement([
+          faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+          undefined,
+        ]),
+        outgoingCount: faker.helpers.arrayElement([
+          faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+          undefined,
+        ]),
+      })
+    )
+
+export const getGraphControllerPropagateTagsResponseMock = (
+  overrideResponse: Partial<PropagationResultResponse> = {}
+): PropagationResultResponse => ({
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  addressesAffected: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  tagsPropagated: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  maxHops: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  decayFactor: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  durationMs: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  startedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  completedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  errorMessage: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  ...overrideResponse,
+})
+
+export const getGraphControllerPropagateFromAddressResponseMock = (
+  overrideResponse: Partial<PropagationResultResponse> = {}
+): PropagationResultResponse => ({
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  addressesAffected: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  tagsPropagated: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  maxHops: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  decayFactor: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  durationMs: faker.helpers.arrayElement([
+    faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
+    undefined,
+  ]),
+  startedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  completedAt: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  errorMessage: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    undefined,
+  ]),
+  ...overrideResponse,
+})
+
+export const getGraphControllerGetAddressInfoMockHandler = (
+  overrideResponse?:
+    | AddressInfoResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<AddressInfoResponse> | AddressInfoResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    "*/api/v1/graph/address/:address",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerGetAddressInfoResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerGetAddressNeighborsMockHandler = (overrideResponse?: AddressNeighborsResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<AddressNeighborsResponse> | AddressNeighborsResponse), options?: RequestHandlerOptions) => {
-  return http.get('*/api/v1/graph/address/:address/neighbors', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerGetAddressNeighborsResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerGetAddressNeighborsMockHandler = (
+  overrideResponse?:
+    | AddressNeighborsResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<AddressNeighborsResponse> | AddressNeighborsResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    "*/api/v1/graph/address/:address/neighbors",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerGetAddressNeighborsResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerGetAddressTagsMockHandler = (overrideResponse?: string[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<string[]> | string[]), options?: RequestHandlerOptions) => {
-  return http.get('*/api/v1/graph/address/:address/tags', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerGetAddressTagsResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerGetAddressTagsMockHandler = (
+  overrideResponse?:
+    | string[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<string[]> | string[]),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    "*/api/v1/graph/address/:address/tags",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerGetAddressTagsResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerAddAddressTagsMockHandler = (overrideResponse?: AddressInfoResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<AddressInfoResponse> | AddressInfoResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/api/v1/graph/address/:address/tags', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerAddAddressTagsResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerAddAddressTagsMockHandler = (
+  overrideResponse?:
+    | AddressInfoResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0]
+      ) => Promise<AddressInfoResponse> | AddressInfoResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.post(
+    "*/api/v1/graph/address/:address/tags",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerAddAddressTagsResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerRemoveAddressTagMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
-  return http.delete('*/api/v1/graph/address/:address/tags/:tag', async (info) => {await delay(1000);
-  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
-    return new HttpResponse(null,
-      { status: 200,
-        
-      })
-  }, options)
+export const getGraphControllerRemoveAddressTagMockHandler = (
+  overrideResponse?:
+    | void
+    | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+  options?: RequestHandlerOptions
+) => {
+  return http.delete(
+    "*/api/v1/graph/address/:address/tags/:tag",
+    async (info) => {
+      await delay(1000)
+      if (typeof overrideResponse === "function") {
+        await overrideResponse(info)
+      }
+      return new HttpResponse(null, { status: 200 })
+    },
+    options
+  )
 }
 
-export const getGraphControllerGetAddressClusterMockHandler = (overrideResponse?: ClusterResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ClusterResponse> | ClusterResponse), options?: RequestHandlerOptions) => {
-  return http.get('*/api/v1/graph/address/:address/cluster', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerGetAddressClusterResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerGetAddressClusterMockHandler = (
+  overrideResponse?:
+    | ClusterResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<ClusterResponse> | ClusterResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    "*/api/v1/graph/address/:address/cluster",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerGetAddressClusterResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerFindPathMockHandler = (overrideResponse?: PathResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PathResponse> | PathResponse), options?: RequestHandlerOptions) => {
-  return http.get('*/api/v1/graph/path/:fromAddress/:toAddress', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerFindPathResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerFindPathMockHandler = (
+  overrideResponse?:
+    | PathResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<PathResponse> | PathResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    "*/api/v1/graph/path/:fromAddress/:toAddress",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerFindPathResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerGetClusterMockHandler = (overrideResponse?: ClusterResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ClusterResponse> | ClusterResponse), options?: RequestHandlerOptions) => {
-  return http.get('*/api/v1/graph/cluster/:clusterId', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerGetClusterResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerGetClusterMockHandler = (
+  overrideResponse?:
+    | ClusterResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<ClusterResponse> | ClusterResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    "*/api/v1/graph/cluster/:clusterId",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerGetClusterResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerRunClusteringMockHandler = (overrideResponse?: ClusteringResultResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ClusteringResultResponse> | ClusteringResultResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/api/v1/graph/cluster/run', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerRunClusteringResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerRunClusteringMockHandler = (
+  overrideResponse?:
+    | ClusteringResultResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0]
+      ) => Promise<ClusteringResultResponse> | ClusteringResultResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.post(
+    "*/api/v1/graph/cluster/run",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerRunClusteringResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerManualClusterMockHandler = (overrideResponse?: ClusteringResultResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ClusteringResultResponse> | ClusteringResultResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/api/v1/graph/cluster/manual', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerManualClusterResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerManualClusterMockHandler = (
+  overrideResponse?:
+    | ClusteringResultResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0]
+      ) => Promise<ClusteringResultResponse> | ClusteringResultResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.post(
+    "*/api/v1/graph/cluster/manual",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerManualClusterResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerSearchByTagMockHandler = (overrideResponse?: AddressInfoResponse[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<AddressInfoResponse[]> | AddressInfoResponse[]), options?: RequestHandlerOptions) => {
-  return http.get('*/api/v1/graph/search/tag/:tag', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerSearchByTagResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerSearchByTagMockHandler = (
+  overrideResponse?:
+    | AddressInfoResponse[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<AddressInfoResponse[]> | AddressInfoResponse[]),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    "*/api/v1/graph/search/tag/:tag",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerSearchByTagResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerGetHighRiskAddressesMockHandler = (overrideResponse?: AddressInfoResponse[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<AddressInfoResponse[]> | AddressInfoResponse[]), options?: RequestHandlerOptions) => {
-  return http.get('*/api/v1/graph/search/high-risk', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerGetHighRiskAddressesResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerGetHighRiskAddressesMockHandler = (
+  overrideResponse?:
+    | AddressInfoResponse[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0]
+      ) => Promise<AddressInfoResponse[]> | AddressInfoResponse[]),
+  options?: RequestHandlerOptions
+) => {
+  return http.get(
+    "*/api/v1/graph/search/high-risk",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerGetHighRiskAddressesResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerPropagateTagsMockHandler = (overrideResponse?: PropagationResultResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<PropagationResultResponse> | PropagationResultResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/api/v1/graph/propagate', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerPropagateTagsResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerPropagateTagsMockHandler = (
+  overrideResponse?:
+    | PropagationResultResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0]
+      ) => Promise<PropagationResultResponse> | PropagationResultResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.post(
+    "*/api/v1/graph/propagate",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerPropagateTagsResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 
-export const getGraphControllerPropagateFromAddressMockHandler = (overrideResponse?: PropagationResultResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<PropagationResultResponse> | PropagationResultResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/api/v1/graph/propagate/:address', async (info) => {await delay(1000);
-  
-    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGraphControllerPropagateFromAddressResponseMock()),
-      { status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-  }, options)
+export const getGraphControllerPropagateFromAddressMockHandler = (
+  overrideResponse?:
+    | PropagationResultResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0]
+      ) => Promise<PropagationResultResponse> | PropagationResultResponse),
+  options?: RequestHandlerOptions
+) => {
+  return http.post(
+    "*/api/v1/graph/propagate/:address",
+    async (info) => {
+      await delay(1000)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === "function"
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGraphControllerPropagateFromAddressResponseMock()
+        ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    },
+    options
+  )
 }
 export const getGraphMock = () => [
   getGraphControllerGetAddressInfoMockHandler(),
@@ -234,5 +945,5 @@ export const getGraphMock = () => [
   getGraphControllerSearchByTagMockHandler(),
   getGraphControllerGetHighRiskAddressesMockHandler(),
   getGraphControllerPropagateTagsMockHandler(),
-  getGraphControllerPropagateFromAddressMockHandler()
+  getGraphControllerPropagateFromAddressMockHandler(),
 ]

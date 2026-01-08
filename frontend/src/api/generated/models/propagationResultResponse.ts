@@ -8,21 +8,21 @@
 
 export interface PropagationResultResponse {
   /** Propagation status */
-  status: string;
+  status: string
   /** Number of addresses affected */
-  addressesAffected?: number;
+  addressesAffected?: number
   /** Number of tags propagated */
-  tagsPropagated?: number;
+  tagsPropagated?: number
   /** Maximum hops used */
-  maxHops?: number;
+  maxHops?: number
   /** Decay factor used */
-  decayFactor?: number;
+  decayFactor?: number
   /** Duration in milliseconds */
-  durationMs?: number;
+  durationMs?: number
   /** Start timestamp */
-  startedAt?: string;
+  startedAt?: string
   /** Completion timestamp */
-  completedAt?: string;
+  completedAt?: string
   /** Error message if failed */
-  errorMessage?: string;
+  errorMessage?: string
 }

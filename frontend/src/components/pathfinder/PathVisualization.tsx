@@ -37,7 +37,12 @@ function formatValue(value: string): string {
   return value
 }
 
-export function PathVisualization({ path, found, maxDepth, message }: PathVisualizationProps) {
+export function PathVisualization({
+  path,
+  found,
+  maxDepth,
+  message,
+}: PathVisualizationProps) {
   const option = useMemo(() => {
     if (!found || !path.length) return {}
 
@@ -100,7 +105,9 @@ export function PathVisualization({ path, found, maxDepth, message }: PathVisual
     return {
       tooltip: {
         trigger: "item" as const,
-        formatter: (params: { data?: { value?: { address: string; riskScore?: number; tags?: string[] } } }) => {
+        formatter: (params: {
+          data?: { value?: { address: string; riskScore?: number; tags?: string[] } }
+        }) => {
           const value = params.data?.value
           if (!value) return ""
           const lines = [`<strong>${value.address}</strong>`]
@@ -150,7 +157,10 @@ export function PathVisualization({ path, found, maxDepth, message }: PathVisual
     >
       {found ? (
         <>
-          <div className="border border-gray-200 rounded-lg bg-gray-50" style={{ height: "400px" }}>
+          <div
+            className="border border-gray-200 rounded-lg bg-gray-50"
+            style={{ height: "400px" }}
+          >
             <ReactECharts
               option={option}
               style={{ height: "100%", width: "100%" }}
@@ -179,7 +189,9 @@ export function PathVisualization({ path, found, maxDepth, message }: PathVisual
       ) : (
         <div className="text-center py-12">
           <AlertCircle className="w-16 h-16 text-gray-300 mx-auto" />
-          <p className="text-gray-500 mt-4">{message || "No direct or indirect connection found"}</p>
+          <p className="text-gray-500 mt-4">
+            {message || "No direct or indirect connection found"}
+          </p>
           <p className="text-sm text-gray-400 mt-2">
             Try increasing the max depth or check if the addresses are correct
           </p>

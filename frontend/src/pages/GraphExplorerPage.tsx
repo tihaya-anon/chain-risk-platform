@@ -3,7 +3,10 @@ import { useSearchParams, Link } from "react-router-dom"
 import { Network, Search, Info, ExternalLink, Activity } from "lucide-react"
 import { Card, Button, Input, LoadingSpinner, RiskBadge } from "@/components/common"
 import { AddressGraph, AddressGraphLegend, DirectionIcon } from "@/components/graph"
-import { useGraphControllerGetAddressNeighbors, useGraphControllerGetAddressInfo } from "@/api/generated"
+import {
+  useGraphControllerGetAddressNeighbors,
+  useGraphControllerGetAddressInfo,
+} from "@/api/generated"
 import type { GraphNode } from "@/api/generated"
 
 const DEPTH_OPTIONS = [
@@ -20,7 +23,7 @@ export function GraphExplorerPage() {
   const [searchAddress, setSearchAddress] = useState(addressParam)
   const [queryAddress, setQueryAddress] = useState(addressParam)
   const [depth, setDepth] = useState(Math.min(Math.max(depthParam, 1), 3))
-  
+
   // Separate hover and selected states
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null)
@@ -32,17 +35,22 @@ export function GraphExplorerPage() {
     { depth, limit: 50 },
     { query: { enabled: !!queryAddress } }
   )
-  const addressInfoQuery = useGraphControllerGetAddressInfo(queryAddress, { query: { enabled: !!queryAddress } })
+  const addressInfoQuery = useGraphControllerGetAddressInfo(queryAddress, {
+    query: { enabled: !!queryAddress },
+  })
 
   // Display node: selected takes priority, then hovered
   const displayNode = selectedNode || hoveredNode
   const isDisplaySelected = !!selectedNode
-  const showCenterInfo = (isSelectedCenter && !selectedNode) || (isHoveredCenter && !hoveredNode && !selectedNode)
+  const showCenterInfo =
+    (isSelectedCenter && !selectedNode) ||
+    (isHoveredCenter && !hoveredNode && !selectedNode)
 
   // Calculate edge info for display node based on BFS distance
   const displayNodeEdgeInfo = useMemo(() => {
-    if (!displayNode || !neighborsQuery.data?.edges || !neighborsQuery.data?.nodes) return null
-    
+    if (!displayNode || !neighborsQuery.data?.edges || !neighborsQuery.data?.nodes)
+      return null
+
     const edges = neighborsQuery.data.edges
     const nodes = neighborsQuery.data.nodes
     const centerAddr = neighborsQuery.data.address
@@ -50,7 +58,10 @@ export function GraphExplorerPage() {
     // Build distance map
     const nodeDistances = new Map<string, number>()
     nodes.forEach((node) => {
-      nodeDistances.set(node.address, node.distance ?? (node.address === centerAddr ? 0 : 1))
+      nodeDistances.set(
+        node.address,
+        node.distance ?? (node.address === centerAddr ? 0 : 1)
+      )
     })
 
     // Find edges involving this node
@@ -59,34 +70,34 @@ export function GraphExplorerPage() {
     )
 
     const totalTransfers = nodeEdges.reduce((sum, e) => sum + (e.transferCount || 0), 0)
-    const totalValue = nodeEdges.reduce((sum, e) => sum + parseFloat(e.totalValue || "0"), 0)
+    const totalValue = nodeEdges.reduce(
+      (sum, e) => sum + parseFloat(e.totalValue || "0"),
+      0
+    )
 
     // Determine direction based on edge's from/to distances
     // outgoing: from.distance < to.distance (inner -> outer)
     // incoming: from.distance > to.distance (outer -> inner)
-    let hasOutgoing = false
-    let hasIncoming = false
+    let isOutgoing = false
+    let isIncoming = false
 
     nodeEdges.forEach((edge) => {
-      const fromDist = nodeDistances.get(edge.from) ?? 999
-      const toDist = nodeDistances.get(edge.to) ?? 999
-
-      if (fromDist < toDist) {
-        // This edge goes from inner to outer = outgoing
-        hasOutgoing = true
-      } else if (fromDist > toDist) {
-        // This edge goes from outer to inner = incoming
-        hasIncoming = true
-      }
+      if (edge.from === centerAddr) isOutgoing = true
+      if (edge.to === centerAddr) isIncoming = true
     })
 
     let direction: "incoming" | "outgoing" | "both" | "indirect" | undefined
-    if (hasIncoming && hasOutgoing) direction = "both"
-    else if (hasIncoming) direction = "incoming"
-    else if (hasOutgoing) direction = "outgoing"
+    if (isIncoming && isOutgoing) direction = "both"
+    else if (isIncoming) direction = "incoming"
+    else if (isOutgoing) direction = "outgoing"
     else if (nodeEdges.length > 0) direction = "indirect"
 
-    return { direction, totalTransfers, totalValue: totalValue.toFixed(4), edgeCount: nodeEdges.length }
+    return {
+      direction,
+      totalTransfers,
+      totalValue: totalValue.toFixed(4),
+      edgeCount: nodeEdges.length,
+    }
   }, [displayNode, neighborsQuery.data])
 
   const handleSearch = (e: React.FormEvent) => {
@@ -114,33 +125,36 @@ export function GraphExplorerPage() {
     setIsHoveredCenter(!!center && !node)
   }, [])
 
-  const handleNodeClick = useCallback((node: GraphNode | null, center?: boolean) => {
-    if (center && !node) {
-      // Clicked on center
-      if (isSelectedCenter) {
-        // Deselect center
-        setIsSelectedCenter(false)
-        setSelectedNode(null)
+  const handleNodeClick = useCallback(
+    (node: GraphNode | null, center?: boolean) => {
+      if (center && !node) {
+        // Clicked on center
+        if (isSelectedCenter) {
+          // Deselect center
+          setIsSelectedCenter(false)
+          setSelectedNode(null)
+        } else {
+          setIsSelectedCenter(true)
+          setSelectedNode(null)
+        }
+      } else if (node) {
+        // Clicked on a node
+        if (selectedNode?.address === node.address) {
+          // Deselect
+          setSelectedNode(null)
+          setIsSelectedCenter(false)
+        } else {
+          setSelectedNode(node)
+          setIsSelectedCenter(false)
+        }
       } else {
-        setIsSelectedCenter(true)
-        setSelectedNode(null)
-      }
-    } else if (node) {
-      // Clicked on a node
-      if (selectedNode?.address === node.address) {
-        // Deselect
+        // Clicked on empty space
         setSelectedNode(null)
         setIsSelectedCenter(false)
-      } else {
-        setSelectedNode(node)
-        setIsSelectedCenter(false)
       }
-    } else {
-      // Clicked on empty space
-      setSelectedNode(null)
-      setIsSelectedCenter(false)
-    }
-  }, [selectedNode, isSelectedCenter])
+    },
+    [selectedNode, isSelectedCenter]
+  )
 
   const handleNodeDoubleClick = useCallback(
     (address: string) => {
@@ -156,7 +170,8 @@ export function GraphExplorerPage() {
   )
 
   const nodeCount = (neighborsQuery.data?.nodes?.length || 1) - 1
-  const selectedAddress = selectedNode?.address || (isSelectedCenter ? queryAddress : null)
+  const selectedAddress =
+    selectedNode?.address || (isSelectedCenter ? queryAddress : null)
 
   return (
     <div className="h-full flex flex-col">
@@ -234,8 +249,9 @@ export function GraphExplorerPage() {
                     <div>
                       <h3 className="font-semibold text-gray-900">Network Graph</h3>
                       <p className="text-sm text-gray-500">
-                        {nodeCount} connected addresses • {neighborsQuery.data.edges?.length || 0}{" "}
-                        edges • depth {neighborsQuery.data.depth || depth}
+                        {nodeCount} connected addresses •{" "}
+                        {neighborsQuery.data.edges?.length || 0} edges • depth{" "}
+                        {neighborsQuery.data.depth || depth}
                       </p>
                     </div>
                     <AddressGraphLegend />
@@ -278,21 +294,24 @@ export function GraphExplorerPage() {
                           </p>
                         </div>
                       </div>
-                      {addressInfoQuery.data.tags && addressInfoQuery.data.tags.length > 0 && (
-                        <div>
-                          <label className="text-gray-500 text-xs block mb-1">Tags</label>
-                          <div className="flex flex-wrap gap-1">
-                            {addressInfoQuery.data.tags.slice(0, 4).map((tag, i) => (
-                              <span
-                                key={i}
-                                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                      {addressInfoQuery.data.tags &&
+                        addressInfoQuery.data.tags.length > 0 && (
+                          <div>
+                            <label className="text-gray-500 text-xs block mb-1">
+                              Tags
+                            </label>
+                            <div className="flex flex-wrap gap-1">
+                              {addressInfoQuery.data.tags.slice(0, 4).map((tag, i) => (
+                                <span
+                                  key={i}
+                                  className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                       <Link
                         to={`/address?q=${queryAddress}`}
                         className="flex items-center gap-1 text-blue-600 hover:underline text-xs mt-2"
@@ -334,7 +353,8 @@ export function GraphExplorerPage() {
                         <div>
                           <label className="text-gray-500 text-xs">Distance</label>
                           <p className="font-semibold">
-                            {displayNode.distance} hop{displayNode.distance !== 1 ? "s" : ""}
+                            {displayNode.distance} hop
+                            {displayNode.distance !== 1 ? "s" : ""}
                           </p>
                         </div>
                         {displayNodeEdgeInfo && (
@@ -342,13 +362,19 @@ export function GraphExplorerPage() {
                             <div>
                               <label className="text-gray-500 text-xs">Direction</label>
                               <div className="flex items-center gap-1.5 font-semibold">
-                                <DirectionIcon direction={displayNodeEdgeInfo.direction} />
-                                <span className="capitalize">{displayNodeEdgeInfo.direction || "N/A"}</span>
+                                <DirectionIcon
+                                  direction={displayNodeEdgeInfo.direction}
+                                />
+                                <span className="capitalize">
+                                  {displayNodeEdgeInfo.direction || "N/A"}
+                                </span>
                               </div>
                             </div>
                             <div>
                               <label className="text-gray-500 text-xs">Transfers</label>
-                              <p className="font-semibold">{displayNodeEdgeInfo.totalTransfers}</p>
+                              <p className="font-semibold">
+                                {displayNodeEdgeInfo.totalTransfers}
+                              </p>
                             </div>
                           </>
                         )}
@@ -388,7 +414,9 @@ export function GraphExplorerPage() {
                   ) : showCenterInfo ? (
                     <p className="text-gray-500 text-sm">Center address selected</p>
                   ) : (
-                    <p className="text-gray-500 text-sm">Hover or click a node to see details</p>
+                    <p className="text-gray-500 text-sm">
+                      Hover or click a node to see details
+                    </p>
                   )}
                 </Card>
               </div>
@@ -398,7 +426,9 @@ export function GraphExplorerPage() {
           {!neighborsQuery.isLoading && !neighborsQuery.data && !queryAddress && (
             <div className="text-center py-16">
               <Network className="w-16 h-16 text-gray-300 mx-auto" />
-              <h3 className="text-lg font-medium text-gray-900 mt-4">Explore Address Connections</h3>
+              <h3 className="text-lg font-medium text-gray-900 mt-4">
+                Explore Address Connections
+              </h3>
               <p className="text-gray-500 mt-2">
                 Enter an Ethereum address to visualize its transaction network
               </p>

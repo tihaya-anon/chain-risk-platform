@@ -39,19 +39,16 @@ function getRiskBorderColor(riskScore?: number): string {
 
 // Edge direction colors - exported for use in other components
 export const EDGE_COLORS = {
-  incoming: "#3B82F6",  // blue - from outer to inner (toward center)
-  outgoing: "#F97316",  // orange - from inner to outer (away from center)
-  both: "#8B5CF6",      // purple - bidirectional
-  indirect: "#6B7280",  // gray - indirect connection
+  incoming: "#3B82F6", // blue - from outer to inner (toward center)
+  outgoing: "#F97316", // orange - from inner to outer (away from center)
+  both: "#8B5CF6", // purple - bidirectional
+  indirect: "#6B7280", // gray - indirect connection
 }
 
 /**
  * Calculate radial layout positions for nodes
  */
-function calculateRadialLayout(
-  centerAddress: string,
-  nodes: GraphNode[]
-) {
+function calculateRadialLayout(centerAddress: string, nodes: GraphNode[]) {
   const positions = new Map<string, { x: number; y: number }>()
 
   // Group nodes by distance
@@ -100,8 +97,14 @@ function calculateRadialLayout(
 function determineEdgeDirections(
   edges: GraphEdge[],
   nodeDistances: Map<string, number>
-): Map<string, { source: string; target: string; direction: "incoming" | "outgoing" | "both" }> {
-  const edgePairs = new Map<string, { source: string; target: string; direction: "incoming" | "outgoing" | "both" }>()
+): Map<
+  string,
+  { source: string; target: string; direction: "incoming" | "outgoing" | "both" }
+> {
+  const edgePairs = new Map<
+    string,
+    { source: string; target: string; direction: "incoming" | "outgoing" | "both" }
+  >()
 
   edges.forEach((edge) => {
     const fromDist = nodeDistances.get(edge.from) ?? 999
@@ -158,7 +161,10 @@ export function AddressGraph({
     // Build node distance map
     const nodeDistances = new Map<string, number>()
     data.nodes.forEach((node) => {
-      nodeDistances.set(node.address, node.distance ?? (node.address === centerAddress ? 0 : 1))
+      nodeDistances.set(
+        node.address,
+        node.distance ?? (node.address === centerAddress ? 0 : 1)
+      )
     })
 
     // Build nodes
@@ -168,7 +174,9 @@ export function AddressGraph({
       const isSelected = selectedNode === node.address
 
       const nodeColor = isCenter ? "#3B82F6" : getRiskColor(node.riskScore)
-      const selectedBorderColor = isCenter ? "#1E40AF" : getRiskBorderColor(node.riskScore)
+      const selectedBorderColor = isCenter
+        ? "#1E40AF"
+        : getRiskBorderColor(node.riskScore)
 
       return {
         id: node.address,
@@ -333,7 +341,11 @@ export function AddressGraphLegend() {
 }
 
 // Direction icon component for use in panels
-export function DirectionIcon({ direction }: { direction?: "incoming" | "outgoing" | "both" | "indirect" }) {
+export function DirectionIcon({
+  direction,
+}: {
+  direction?: "incoming" | "outgoing" | "both" | "indirect"
+}) {
   switch (direction) {
     case "incoming":
       return <ArrowLeft className="w-4 h-4" style={{ color: EDGE_COLORS.incoming }} />

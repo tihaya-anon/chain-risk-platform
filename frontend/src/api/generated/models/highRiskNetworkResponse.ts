@@ -5,11 +5,11 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { GraphAddressInfo } from './graphAddressInfo';
+import type { GraphAddressInfo } from "./graphAddressInfo"
 
 export interface HighRiskNetworkResponse {
-  threshold?: number;
-  count?: number;
-  highRiskAddresses?: GraphAddressInfo[];
-  orchestratedAt?: number;
+  threshold?: number
+  count?: number
+  highRiskAddresses?: GraphAddressInfo[]
+  orchestratedAt?: number
 }

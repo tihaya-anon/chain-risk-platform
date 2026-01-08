@@ -15,7 +15,9 @@ export function mockTxHash(): string {
 }
 
 export function mockEthValue(): string {
-  return faker.number.bigInt({ min: 1000000000000000n, max: 100000000000000000000n }).toString()
+  return faker.number
+    .bigInt({ min: 1000000000000000n, max: 100000000000000000000n })
+    .toString()
 }
 
 export function mockTimestamp(): string {
@@ -30,7 +32,18 @@ export function mockRiskScore(): number {
   return faker.number.float({ min: 0, max: 1, fractionDigits: 2 })
 }
 
-const RISK_TAGS = ["mixer", "exchange", "gambling", "scam", "darknet", "sanctioned", "high-volume", "smart-contract", "dex", "defi"]
+const RISK_TAGS = [
+  "mixer",
+  "exchange",
+  "gambling",
+  "scam",
+  "darknet",
+  "sanctioned",
+  "high-volume",
+  "smart-contract",
+  "dex",
+  "defi",
+]
 
 export function mockTags(count: number = 3): string[] {
   return faker.helpers.arrayElements(RISK_TAGS, { min: 1, max: count })
@@ -40,7 +53,13 @@ export function mockTags(count: number = 3): string[] {
 
 export function mockRiskFactor() {
   return {
-    name: faker.helpers.arrayElement(["High Transaction Volume", "Mixer Interaction", "Sanctioned Entity", "New Address", "Unusual Pattern"]),
+    name: faker.helpers.arrayElement([
+      "High Transaction Volume",
+      "Mixer Interaction",
+      "Sanctioned Entity",
+      "New Address",
+      "Unusual Pattern",
+    ]),
     score: mockRiskScore(),
     weight: faker.number.float({ min: 0.1, max: 0.5, fractionDigits: 2 }),
     description: faker.lorem.sentence(),
@@ -117,7 +136,13 @@ export function mockClusterResponse() {
     clusterId: faker.string.uuid(),
     size: faker.number.int({ min: 2, max: 50 }),
     riskScore: mockRiskScore(),
-    label: faker.helpers.arrayElement(["Exchange Hot Wallet", "Mining Pool", "DeFi Protocol", "Unknown Entity", null]),
+    label: faker.helpers.arrayElement([
+      "Exchange Hot Wallet",
+      "Mining Pool",
+      "DeFi Protocol",
+      "Unknown Entity",
+      null,
+    ]),
     category: faker.helpers.arrayElement(["exchange", "defi", "mixer", "other", null]),
     tags: mockTags(3),
     addresses: Array.from({ length: faker.number.int({ min: 2, max: 10 }) }, mockAddress),
@@ -157,7 +182,7 @@ export function mockPathNode() {
 export function mockAddressAnalysisResponse(address?: string) {
   const addr = address || mockAddress()
   const neighborsResponse = mockNeighborsResponse(addr, 1)
-  
+
   return {
     address: addr,
     network: "ethereum",
@@ -268,7 +293,7 @@ export function mockConnectionResponse(fromAddress?: string, toAddress?: string)
  */
 export function mockNeighborsResponse(address?: string, depth: number = 1) {
   const centerAddr = address || mockAddress()
-  
+
   interface NodeInfo {
     address: string
     distance: number
@@ -277,7 +302,7 @@ export function mockNeighborsResponse(address?: string, depth: number = 1) {
     firstSeen: string
     lastSeen: string
   }
-  
+
   interface EdgeInfo {
     from: string
     to: string
@@ -306,17 +331,17 @@ export function mockNeighborsResponse(address?: string, depth: number = 1) {
   for (let d = 1; d <= depth; d++) {
     const currentLevelNodes: string[] = []
     const parentNodes = levelNodes[d - 1]
-    
+
     // Each parent gets some children
     for (const parentAddr of parentNodes) {
       const childCount = faker.number.int({ min: 2, max: Math.max(2, 5 - d) }) // fewer children at deeper levels
-      
+
       for (let i = 0; i < childCount; i++) {
         const childAddr = mockAddress()
-        
+
         // Avoid duplicates
         if (nodeMap.has(childAddr)) continue
-        
+
         // Add child node
         nodeMap.set(childAddr, {
           address: childAddr,
@@ -350,7 +375,7 @@ export function mockNeighborsResponse(address?: string, depth: number = 1) {
         }
       }
     }
-    
+
     levelNodes.push(currentLevelNodes)
   }
 
@@ -398,12 +423,48 @@ export function mockPipelineStatus() {
 
 export function mockServices() {
   return [
-    { name: "address-service", groupName: "chain-risk", clusterCount: 2, instanceCount: 3, healthyInstanceCount: 3 },
-    { name: "risk-service", groupName: "chain-risk", clusterCount: 2, instanceCount: 2, healthyInstanceCount: 2 },
-    { name: "graph-service", groupName: "chain-risk", clusterCount: 1, instanceCount: 2, healthyInstanceCount: 2 },
-    { name: "transfer-service", groupName: "chain-risk", clusterCount: 2, instanceCount: 3, healthyInstanceCount: 2 },
-    { name: "orchestrator", groupName: "chain-risk", clusterCount: 1, instanceCount: 2, healthyInstanceCount: 2 },
-    { name: "bff", groupName: "chain-risk", clusterCount: 1, instanceCount: 2, healthyInstanceCount: 2 },
+    {
+      name: "address-service",
+      groupName: "chain-risk",
+      clusterCount: 2,
+      instanceCount: 3,
+      healthyInstanceCount: 3,
+    },
+    {
+      name: "risk-service",
+      groupName: "chain-risk",
+      clusterCount: 2,
+      instanceCount: 2,
+      healthyInstanceCount: 2,
+    },
+    {
+      name: "graph-service",
+      groupName: "chain-risk",
+      clusterCount: 1,
+      instanceCount: 2,
+      healthyInstanceCount: 2,
+    },
+    {
+      name: "transfer-service",
+      groupName: "chain-risk",
+      clusterCount: 2,
+      instanceCount: 3,
+      healthyInstanceCount: 2,
+    },
+    {
+      name: "orchestrator",
+      groupName: "chain-risk",
+      clusterCount: 1,
+      instanceCount: 2,
+      healthyInstanceCount: 2,
+    },
+    {
+      name: "bff",
+      groupName: "chain-risk",
+      clusterCount: 1,
+      instanceCount: 2,
+      healthyInstanceCount: 2,
+    },
   ]
 }
 

@@ -8,13 +8,13 @@
 
 export interface GraphEdge {
   /** Source address */
-  from: string;
+  from: string
   /** Target address */
-  to: string;
+  to: string
   /** Number of transfers */
-  transferCount?: number;
+  transferCount?: number
   /** Total value transferred */
-  totalValue?: string;
+  totalValue?: string
   /** Last transfer timestamp */
-  lastTransfer?: string;
+  lastTransfer?: string
 }

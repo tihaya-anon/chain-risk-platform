@@ -7,7 +7,7 @@
  */
 
 export interface PollingConfig {
-  intervalMs?: number;
-  batchSize?: number;
-  confirmations?: number;
+  intervalMs?: number
+  batchSize?: number
+  confirmations?: number
 }

@@ -7,5 +7,5 @@
  */
 
 export interface RateLimitConfig {
-  requestsPerSecond?: number;
+  requestsPerSecond?: number
 }

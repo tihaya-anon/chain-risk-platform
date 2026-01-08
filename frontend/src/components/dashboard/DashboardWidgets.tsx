@@ -13,7 +13,15 @@ interface StatCardProps {
   subtitle?: string
 }
 
-export function StatCard({ icon: Icon, iconBgColor, iconColor, label, value, valueColor = "text-gray-900", subtitle }: StatCardProps) {
+export function StatCard({
+  icon: Icon,
+  iconBgColor,
+  iconColor,
+  label,
+  value,
+  valueColor = "text-gray-900",
+  subtitle,
+}: StatCardProps) {
   return (
     <Card>
       <div className="flex items-center gap-4">
@@ -38,12 +46,27 @@ interface RiskDistributionProps {
   low: number
 }
 
-export function RiskDistributionChart({ critical, high, medium, low }: RiskDistributionProps) {
+export function RiskDistributionChart({
+  critical,
+  high,
+  medium,
+  low,
+}: RiskDistributionProps) {
   const total = critical + high + medium + low || 1
   const items = [
-    { label: "Critical", count: critical, color: "bg-red-500", textColor: "text-red-600" },
+    {
+      label: "Critical",
+      count: critical,
+      color: "bg-red-500",
+      textColor: "text-red-600",
+    },
     { label: "High", count: high, color: "bg-orange-500", textColor: "text-orange-600" },
-    { label: "Medium", count: medium, color: "bg-yellow-500", textColor: "text-yellow-600" },
+    {
+      label: "Medium",
+      count: medium,
+      color: "bg-yellow-500",
+      textColor: "text-yellow-600",
+    },
     { label: "Low", count: low, color: "bg-green-500", textColor: "text-green-600" },
   ]
 
@@ -117,8 +140,13 @@ export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
   return (
     <div className="space-y-3">
       {alerts.map((alert, i) => (
-        <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getRiskColor(alert.riskScore)}`} />
+        <div
+          key={i}
+          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          <span
+            className={`w-2 h-2 rounded-full flex-shrink-0 ${getRiskColor(alert.riskScore)}`}
+          />
           <div className="flex-1 min-w-0">
             <Link
               to={`/address?q=${alert.address}`}
@@ -129,7 +157,9 @@ export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
             <p className="text-xs text-gray-500">{alert.tag}</p>
           </div>
           <div className="text-right flex-shrink-0">
-            <p className="text-sm font-medium text-gray-900">{(alert.riskScore * 100).toFixed(0)}%</p>
+            <p className="text-sm font-medium text-gray-900">
+              {(alert.riskScore * 100).toFixed(0)}%
+            </p>
             <p className="text-xs text-gray-400">{alert.time}</p>
           </div>
         </div>

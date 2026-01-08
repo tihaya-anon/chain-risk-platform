@@ -53,7 +53,7 @@ export function HighRiskGraph({
       const isSelected = selectedNode === addr.address
       const nodeColor = getRiskColor(addr.riskScore)
       const selectedBorderColor = getRiskBorderColor(addr.riskScore)
-      
+
       return {
         id: addr.address,
         name: "",
@@ -149,7 +149,9 @@ export function HighRiskGraph({
     return {
       mouseover: (params: { data?: { value?: NodeValue } }) => {
         if (!params.data?.value) return
-        const addr = addressesRef.current.find((a) => a.address === params.data?.value?.address)
+        const addr = addressesRef.current.find(
+          (a) => a.address === params.data?.value?.address
+        )
         onNodeHover?.(addr || null)
       },
       mouseout: () => {
@@ -157,7 +159,9 @@ export function HighRiskGraph({
       },
       click: (params: { data?: { value?: NodeValue } }) => {
         if (!params.data?.value) return
-        const addr = addressesRef.current.find((a) => a.address === params.data?.value?.address)
+        const addr = addressesRef.current.find(
+          (a) => a.address === params.data?.value?.address
+        )
         onNodeClick?.(addr || null)
       },
       dblclick: (params: { data?: { value?: NodeValue } }) => {

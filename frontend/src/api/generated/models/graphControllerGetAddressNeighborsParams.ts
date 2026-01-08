@@ -7,12 +7,12 @@
  */
 
 export type GraphControllerGetAddressNeighborsParams = {
-/**
- * Search depth (1-3)
- */
-depth?: number;
-/**
- * Maximum number of neighbors to return
- */
-limit?: number;
-};
+  /**
+   * Search depth (1-3)
+   */
+  depth?: number
+  /**
+   * Maximum number of neighbors to return
+   */
+  limit?: number
+}

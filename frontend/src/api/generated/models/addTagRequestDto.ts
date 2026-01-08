@@ -8,9 +8,9 @@
 
 export interface AddTagRequestDto {
   /** Tags to add */
-  tags: string[];
+  tags: string[]
   /** Source of the tag */
-  source?: string;
+  source?: string
   /** Confidence score (0.0 - 1.0) */
-  confidence?: number;
+  confidence?: number
 }

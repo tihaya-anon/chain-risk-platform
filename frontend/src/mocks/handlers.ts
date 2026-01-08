@@ -18,19 +18,27 @@ import {
   mockClusterResponse,
   mockPathNode,
   mockTags,
-  
 } from "./data"
 
 // ==================== Auth Handlers ====================
 
-const DEMO_ACCOUNTS: Record<string, { password: string; role: "admin" | "user"; id: string }> = {
+const DEMO_ACCOUNTS: Record<
+  string,
+  { password: string; role: "admin" | "user"; id: string }
+> = {
   admin: { password: "admin123", role: "admin", id: "1" },
   user: { password: "user123", role: "user", id: "2" },
 }
 
-function generateMockToken(payload: { sub: string; username: string; role: string }): string {
+function generateMockToken(payload: {
+  sub: string
+  username: string
+  role: string
+}): string {
   const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }))
-  const body = btoa(JSON.stringify({ ...payload, iat: Date.now(), exp: Date.now() + 86400000 }))
+  const body = btoa(
+    JSON.stringify({ ...payload, iat: Date.now(), exp: Date.now() + 86400000 })
+  )
   return `${header}.${body}.${btoa("mock-signature")}`
 }
 
@@ -39,9 +47,20 @@ const loginHandler = http.post("*/api/v1/auth/login", async ({ request }) => {
   const body = (await request.json()) as { username: string; password: string }
   const account = DEMO_ACCOUNTS[body.username]
   if (!account || account.password !== body.password) {
-    return new HttpResponse(JSON.stringify({ message: "Invalid credentials" }), { status: 401, headers: { "Content-Type": "application/json" } })
+    return new HttpResponse(JSON.stringify({ message: "Invalid credentials" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    })
   }
-  return HttpResponse.json({ accessToken: generateMockToken({ sub: account.id, username: body.username, role: account.role }), tokenType: "Bearer", expiresIn: "24h" })
+  return HttpResponse.json({
+    accessToken: generateMockToken({
+      sub: account.id,
+      username: body.username,
+      role: account.role,
+    }),
+    tokenType: "Bearer",
+    expiresIn: "24h",
+  })
 })
 
 const profileHandler = http.get("*/api/v1/auth/profile", async ({ request }) => {
@@ -52,7 +71,11 @@ const profileHandler = http.get("*/api/v1/auth/profile", async ({ request }) => 
   }
   try {
     const payload = JSON.parse(atob(authHeader.slice(7).split(".")[1]))
-    return HttpResponse.json({ id: payload.sub, username: payload.username, role: payload.role })
+    return HttpResponse.json({
+      id: payload.sub,
+      username: payload.username,
+      role: payload.role,
+    })
   } catch {
     return new HttpResponse(JSON.stringify({ message: "Invalid token" }), { status: 401 })
   }
@@ -61,62 +84,90 @@ const profileHandler = http.get("*/api/v1/auth/profile", async ({ request }) => 
 // ==================== Orchestration Handlers ====================
 
 // GET /api/v1/orchestration/address-analysis/:address
-const getAddressAnalysisHandler = http.get("*/api/v1/orchestration/address-analysis/:address", async ({ params }) => {
-  await delay(400)
-  return HttpResponse.json(mockAddressAnalysisResponse(params.address as string))
-})
+const getAddressAnalysisHandler = http.get(
+  "*/api/v1/orchestration/address-analysis/:address",
+  async ({ params }) => {
+    await delay(400)
+    return HttpResponse.json(mockAddressAnalysisResponse(params.address as string))
+  }
+)
 
 // GET /api/v1/orchestration/address-profile/:address
-const getAddressProfileHandler = http.get("*/api/v1/orchestration/address-profile/:address", async ({ params }) => {
-  await delay(400)
-  const address = params.address as string
-  const analysis = mockAddressAnalysisResponse(address)
-  return HttpResponse.json({
-    address,
-    network: "ethereum",
-    addressInfo: analysis.basic?.addressInfo,
-    riskScore: analysis.basic?.riskScore,
-    recentTransfers: { items: Array.from({ length: 10 }, mockTransfer), pagination: { page: 1, pageSize: 10, total: 100, totalPages: 10 } },
-    orchestratedAt: Date.now(),
-  })
-})
+const getAddressProfileHandler = http.get(
+  "*/api/v1/orchestration/address-profile/:address",
+  async ({ params }) => {
+    await delay(400)
+    const address = params.address as string
+    const analysis = mockAddressAnalysisResponse(address)
+    return HttpResponse.json({
+      address,
+      network: "ethereum",
+      addressInfo: analysis.basic?.addressInfo,
+      riskScore: analysis.basic?.riskScore,
+      recentTransfers: {
+        items: Array.from({ length: 10 }, mockTransfer),
+        pagination: { page: 1, pageSize: 10, total: 100, totalPages: 10 },
+      },
+      orchestratedAt: Date.now(),
+    })
+  }
+)
 
 // GET /api/v1/orchestration/high-risk-network
-const getHighRiskNetworkHandler = http.get("*/api/v1/orchestration/high-risk-network", async () => {
-  await delay(400)
-  return HttpResponse.json(mockHighRiskNetworkResponse())
-})
+const getHighRiskNetworkHandler = http.get(
+  "*/api/v1/orchestration/high-risk-network",
+  async () => {
+    await delay(400)
+    return HttpResponse.json(mockHighRiskNetworkResponse())
+  }
+)
 
 // GET /api/v1/orchestration/connection/:fromAddress/:toAddress
-const findConnectionHandler = http.get("*/api/v1/orchestration/connection/:fromAddress/:toAddress", async ({ params }) => {
-  await delay(600)
-  return HttpResponse.json(mockConnectionResponse(params.fromAddress as string, params.toAddress as string))
-})
+const findConnectionHandler = http.get(
+  "*/api/v1/orchestration/connection/:fromAddress/:toAddress",
+  async ({ params }) => {
+    await delay(600)
+    return HttpResponse.json(
+      mockConnectionResponse(params.fromAddress as string, params.toAddress as string)
+    )
+  }
+)
 
 // POST /api/v1/orchestration/batch-risk-analysis
-const batchRiskAnalysisHandler = http.post("*/api/v1/orchestration/batch-risk-analysis", async ({ request }) => {
-  await delay(400)
-  const body = (await request.json()) as { addresses: string[] }
-  return HttpResponse.json({
-    results: body.addresses.map(addr => mockRiskScoreResponse(addr)),
-    total: body.addresses.length,
-    failed: 0,
-  })
-})
+const batchRiskAnalysisHandler = http.post(
+  "*/api/v1/orchestration/batch-risk-analysis",
+  async ({ request }) => {
+    await delay(400)
+    const body = (await request.json()) as { addresses: string[] }
+    return HttpResponse.json({
+      results: body.addresses.map((addr) => mockRiskScoreResponse(addr)),
+      total: body.addresses.length,
+      failed: 0,
+    })
+  }
+)
 
 // ==================== BFF Graph Handlers (FIXED PATHS) ====================
 
 // GET /api/v1/graph/address/:address
-const graphGetAddressHandler = http.get("*/api/v1/graph/address/:address", async ({ params }) => {
-  await delay(200)
-  return HttpResponse.json(mockGraphAddressInfo(params.address as string))
-})
+const graphGetAddressHandler = http.get(
+  "*/api/v1/graph/address/:address",
+  async ({ params }) => {
+    await delay(200)
+    return HttpResponse.json(mockGraphAddressInfo(params.address as string))
+  }
+)
 
 // GET /api/v1/graph/address/:address/neighbors
-const graphGetNeighborsHandler = http.get("*/api/v1/graph/address/:address/neighbors", async ({ params, request }) => {
-  await delay(300)
-  const url = new URL(request.url); const depth = parseInt(url.searchParams.get("depth") || "1", 10); return HttpResponse.json(mockNeighborsResponse(params.address as string, depth))
-})
+const graphGetNeighborsHandler = http.get(
+  "*/api/v1/graph/address/:address/neighbors",
+  async ({ params, request }) => {
+    await delay(300)
+    const url = new URL(request.url)
+    const depth = parseInt(url.searchParams.get("depth") || "1", 10)
+    return HttpResponse.json(mockNeighborsResponse(params.address as string, depth))
+  }
+)
 
 // GET /api/v1/graph/address/:address/tags
 const graphGetTagsHandler = http.get("*/api/v1/graph/address/:address/tags", async () => {
@@ -131,31 +182,40 @@ const graphAddTagHandler = http.post("*/api/v1/graph/address/:address/tags", asy
 })
 
 // DELETE /api/v1/graph/address/:address/tags/:tag
-const graphRemoveTagHandler = http.delete("*/api/v1/graph/address/:address/tags/:tag", async () => {
-  await delay(200)
-  return HttpResponse.json({ success: true, message: "Tag removed" })
-})
+const graphRemoveTagHandler = http.delete(
+  "*/api/v1/graph/address/:address/tags/:tag",
+  async () => {
+    await delay(200)
+    return HttpResponse.json({ success: true, message: "Tag removed" })
+  }
+)
 
 // GET /api/v1/graph/address/:address/cluster
-const graphGetAddressClusterHandler = http.get("*/api/v1/graph/address/:address/cluster", async () => {
-  await delay(200)
-  return HttpResponse.json(mockClusterResponse())
-})
+const graphGetAddressClusterHandler = http.get(
+  "*/api/v1/graph/address/:address/cluster",
+  async () => {
+    await delay(200)
+    return HttpResponse.json(mockClusterResponse())
+  }
+)
 
 // GET /api/v1/graph/path/:fromAddress/:toAddress
-const graphFindPathHandler = http.get("*/api/v1/graph/path/:fromAddress/:toAddress", async ({ params }) => {
-  await delay(500)
-  const pathLength = Math.floor(Math.random() * 4) + 2
-  return HttpResponse.json({
-    found: true,
-    fromAddress: params.fromAddress,
-    toAddress: params.toAddress,
-    pathLength,
-    maxDepth: 6,
-    message: "Path found",
-    path: Array.from({ length: pathLength }, mockPathNode),
-  })
-})
+const graphFindPathHandler = http.get(
+  "*/api/v1/graph/path/:fromAddress/:toAddress",
+  async ({ params }) => {
+    await delay(500)
+    const pathLength = Math.floor(Math.random() * 4) + 2
+    return HttpResponse.json({
+      found: true,
+      fromAddress: params.fromAddress,
+      toAddress: params.toAddress,
+      pathLength,
+      maxDepth: 6,
+      message: "Path found",
+      path: Array.from({ length: pathLength }, mockPathNode),
+    })
+  }
+)
 
 // GET /api/v1/graph/cluster/:clusterId
 const graphGetClusterHandler = http.get("*/api/v1/graph/cluster/:clusterId", async () => {
@@ -207,10 +267,13 @@ const graphPropagateHandler = http.post("*/api/v1/graph/propagate", async () => 
 })
 
 // POST /api/v1/graph/propagate/:address
-const graphPropagateAddressHandler = http.post("*/api/v1/graph/propagate/:address", async () => {
-  await delay(400)
-  return HttpResponse.json({ success: true, message: "Tags propagated for address" })
-})
+const graphPropagateAddressHandler = http.post(
+  "*/api/v1/graph/propagate/:address",
+  async () => {
+    await delay(400)
+    return HttpResponse.json({ success: true, message: "Tags propagated for address" })
+  }
+)
 
 // ==================== BFF Risk Handlers (FIXED PATHS) ====================
 
@@ -222,21 +285,56 @@ const riskScoreHandler = http.post("*/api/v1/risk/score", async ({ request }) =>
 })
 
 // POST /api/v1/risk/score/batch
-const riskBatchScoreHandler = http.post("*/api/v1/risk/score/batch", async ({ request }) => {
-  await delay(400)
-  const body = (await request.json()) as { addresses: string[] }
-  return HttpResponse.json({ results: body.addresses.map(addr => mockRiskScoreResponse(addr)) })
-})
+const riskBatchScoreHandler = http.post(
+  "*/api/v1/risk/score/batch",
+  async ({ request }) => {
+    await delay(400)
+    const body = (await request.json()) as { addresses: string[] }
+    return HttpResponse.json({
+      results: body.addresses.map((addr) => mockRiskScoreResponse(addr)),
+    })
+  }
+)
 
 // GET /api/v1/risk/rules
 const riskRulesHandler = http.get("*/api/v1/risk/rules", async () => {
   await delay(200)
   return HttpResponse.json([
-    { id: "1", name: "Mixer Interaction", description: "Detects interactions with known mixer services", enabled: true, weight: 0.3 },
-    { id: "2", name: "Sanctioned Entity", description: "Checks against OFAC sanctions list", enabled: true, weight: 0.5 },
-    { id: "3", name: "High Volume", description: "Flags unusually high transaction volumes", enabled: true, weight: 0.2 },
-    { id: "4", name: "New Address", description: "Recently created addresses with suspicious patterns", enabled: false, weight: 0.1 },
-    { id: "5", name: "Darknet Market", description: "Known darknet marketplace addresses", enabled: true, weight: 0.4 },
+    {
+      id: "1",
+      name: "Mixer Interaction",
+      description: "Detects interactions with known mixer services",
+      enabled: true,
+      weight: 0.3,
+    },
+    {
+      id: "2",
+      name: "Sanctioned Entity",
+      description: "Checks against OFAC sanctions list",
+      enabled: true,
+      weight: 0.5,
+    },
+    {
+      id: "3",
+      name: "High Volume",
+      description: "Flags unusually high transaction volumes",
+      enabled: true,
+      weight: 0.2,
+    },
+    {
+      id: "4",
+      name: "New Address",
+      description: "Recently created addresses with suspicious patterns",
+      enabled: false,
+      weight: 0.1,
+    },
+    {
+      id: "5",
+      name: "Darknet Market",
+      description: "Known darknet marketplace addresses",
+      enabled: true,
+      weight: 0.4,
+    },
   ])
 })
 
@@ -249,20 +347,25 @@ const addressInfoHandler = http.get("*/api/v1/addresses/:address", async ({ para
 })
 
 // GET /api/v1/addresses/:address/transfers
-const addressTransfersHandler = http.get("*/api/v1/addresses/:address/transfers", async () => {
-  await delay(300)
-  return HttpResponse.json({
-    items: Array.from({ length: 20 }, mockTransfer),
-    pagination: { page: 1, pageSize: 20, total: 200, totalPages: 10 },
-  })
-})
+const addressTransfersHandler = http.get(
+  "*/api/v1/addresses/:address/transfers",
+  async () => {
+    await delay(300)
+    return HttpResponse.json({
+      items: Array.from({ length: 20 }, mockTransfer),
+      pagination: { page: 1, pageSize: 20, total: 200, totalPages: 10 },
+    })
+  }
+)
 
 // GET /api/v1/addresses/:address/stats
 const addressStatsHandler = http.get("*/api/v1/addresses/:address/stats", async () => {
   await delay(200)
   return HttpResponse.json({
     totalValueSent: String(BigInt(Math.floor(Math.random() * 1000)) * BigInt(10 ** 18)),
-    totalValueReceived: String(BigInt(Math.floor(Math.random() * 1000)) * BigInt(10 ** 18)),
+    totalValueReceived: String(
+      BigInt(Math.floor(Math.random() * 1000)) * BigInt(10 ** 18)
+    ),
     avgTxValue: String(BigInt(Math.floor(Math.random() * 10)) * BigInt(10 ** 18)),
     maxTxValue: String(BigInt(Math.floor(Math.random() * 100)) * BigInt(10 ** 18)),
     minTxValue: String(BigInt(Math.floor(Math.random() * 1)) * BigInt(10 ** 17)),
@@ -283,16 +386,30 @@ const listTransfersHandler = http.get("*/api/v1/transfers", async () => {
 // ==================== Admin Handlers (FIXED PATHS) ====================
 
 // POST /api/admin/pipeline/ingestion/:action
-const adminIngestionHandler = http.post("*/api/admin/pipeline/ingestion/:action", async ({ params }) => {
-  await delay(300)
-  return HttpResponse.json({ success: true, action: params.action, message: `Ingestion ${params.action} successful` })
-})
+const adminIngestionHandler = http.post(
+  "*/api/admin/pipeline/ingestion/:action",
+  async ({ params }) => {
+    await delay(300)
+    return HttpResponse.json({
+      success: true,
+      action: params.action,
+      message: `Ingestion ${params.action} successful`,
+    })
+  }
+)
 
 // POST /api/admin/pipeline/graph-sync/:action
-const adminGraphSyncHandler = http.post("*/api/admin/pipeline/graph-sync/:action", async ({ params }) => {
-  await delay(300)
-  return HttpResponse.json({ success: true, action: params.action, message: `Graph sync ${params.action} successful` })
-})
+const adminGraphSyncHandler = http.post(
+  "*/api/admin/pipeline/graph-sync/:action",
+  async ({ params }) => {
+    await delay(300)
+    return HttpResponse.json({
+      success: true,
+      action: params.action,
+      message: `Graph sync ${params.action} successful`,
+    })
+  }
+)
 
 // GET /api/admin/services
 const adminServicesHandler = http.get("*/api/admin/services", async () => {
@@ -301,12 +418,15 @@ const adminServicesHandler = http.get("*/api/admin/services", async () => {
 })
 
 // GET /api/admin/services/:serviceName
-const adminServiceHandler = http.get("*/api/admin/services/:serviceName", async ({ params }) => {
-  await delay(200)
-  const services = mockServices()
-  const service = services.find(s => s.name === params.serviceName) || services[0]
-  return HttpResponse.json(service)
-})
+const adminServiceHandler = http.get(
+  "*/api/admin/services/:serviceName",
+  async ({ params }) => {
+    await delay(200)
+    const services = mockServices()
+    const service = services.find((s) => s.name === params.serviceName) || services[0]
+    return HttpResponse.json(service)
+  }
+)
 
 // GET /api/admin/pipeline/status
 const adminPipelineStatusHandler = http.get("*/api/admin/pipeline/status", async () => {

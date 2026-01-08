@@ -7,14 +7,14 @@
  */
 
 export interface GraphAddressInfo {
-  address?: string;
-  firstSeen?: string;
-  lastSeen?: string;
-  txCount?: number;
-  riskScore?: number;
-  tags?: string[];
-  clusterId?: string;
-  network?: string;
-  incomingCount?: number;
-  outgoingCount?: number;
+  address?: string
+  firstSeen?: string
+  lastSeen?: string
+  txCount?: number
+  riskScore?: number
+  tags?: string[]
+  clusterId?: string
+  network?: string
+  incomingCount?: number
+  outgoingCount?: number
 }

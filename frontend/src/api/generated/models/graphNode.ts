@@ -8,15 +8,15 @@
 
 export interface GraphNode {
   /** Address (node ID) */
-  address: string;
+  address: string
   /** Distance from center (0 = center) */
-  distance?: number;
+  distance?: number
   /** Risk score */
-  riskScore?: number;
+  riskScore?: number
   /** Tags */
-  tags?: string[];
+  tags?: string[]
   /** First seen timestamp */
-  firstSeen?: string;
+  firstSeen?: string
   /** Last seen timestamp */
-  lastSeen?: string;
+  lastSeen?: string
 }

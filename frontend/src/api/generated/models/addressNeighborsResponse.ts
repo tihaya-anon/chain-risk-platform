@@ -5,16 +5,16 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import type { GraphNode } from './graphNode';
-import type { GraphEdge } from './graphEdge';
+import type { GraphNode } from "./graphNode"
+import type { GraphEdge } from "./graphEdge"
 
 export interface AddressNeighborsResponse {
   /** Center address */
-  address: string;
+  address: string
   /** Search depth used */
-  depth?: number;
+  depth?: number
   /** Nodes in the subgraph */
-  nodes: GraphNode[];
+  nodes: GraphNode[]
   /** Edges in the subgraph */
-  edges: GraphEdge[];
+  edges: GraphEdge[]
 }

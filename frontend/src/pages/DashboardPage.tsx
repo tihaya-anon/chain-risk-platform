@@ -1,13 +1,34 @@
 import { Link } from "react-router-dom"
-import { LayoutDashboard, RefreshCw, Network, ChartNoAxesColumn, Search, Route, Tag, MousePointer2 } from "lucide-react"
+import {
+  LayoutDashboard,
+  RefreshCw,
+  Network,
+  ChartNoAxesColumn,
+  Search,
+  Route,
+  Tag,
+  MousePointer2,
+} from "lucide-react"
 import { Card, LoadingSpinner } from "@/components/common"
 import { AddressTable } from "@/components/table"
-import { StatCard, RiskDistributionChart, TagDistribution, RecentAlerts, DashboardIcons } from "@/components/dashboard/DashboardWidgets"
-import { useGraphControllerGetHighRiskAddresses, useGetPipelineStatus } from "@/api/generated"
+import {
+  StatCard,
+  RiskDistributionChart,
+  TagDistribution,
+  RecentAlerts,
+  DashboardIcons,
+} from "@/components/dashboard/DashboardWidgets"
+import {
+  useGraphControllerGetHighRiskAddresses,
+  useGetPipelineStatus,
+} from "@/api/generated"
 import type { GraphAddressInfo } from "@/api/generated"
 
 export function DashboardPage() {
-  const highRiskQuery = useGraphControllerGetHighRiskAddresses({ threshold: 0.7, limit: 20 }, { query: { refetchInterval: 60000 } })
+  const highRiskQuery = useGraphControllerGetHighRiskAddresses(
+    { threshold: 0.7, limit: 20 },
+    { query: { refetchInterval: 60000 } }
+  )
   const pipelineQuery = useGetPipelineStatus({ query: { refetchInterval: 30000 } })
 
   const highRiskAddresses: GraphAddressInfo[] = highRiskQuery.data || []
@@ -15,17 +36,25 @@ export function DashboardPage() {
   // Calculate risk distribution
   const riskDistribution = {
     critical: highRiskAddresses.filter((a) => (a.riskScore ?? 0) >= 0.8).length,
-    high: highRiskAddresses.filter((a) => (a.riskScore ?? 0) >= 0.6 && (a.riskScore ?? 0) < 0.8).length,
-    medium: highRiskAddresses.filter((a) => (a.riskScore ?? 0) >= 0.4 && (a.riskScore ?? 0) < 0.6).length,
+    high: highRiskAddresses.filter(
+      (a) => (a.riskScore ?? 0) >= 0.6 && (a.riskScore ?? 0) < 0.8
+    ).length,
+    medium: highRiskAddresses.filter(
+      (a) => (a.riskScore ?? 0) >= 0.4 && (a.riskScore ?? 0) < 0.6
+    ).length,
     low: highRiskAddresses.filter((a) => (a.riskScore ?? 0) < 0.4).length,
   }
 
   // Calculate tag distribution
   const tagCounts: Record<string, number> = {}
   highRiskAddresses.forEach((a) => {
-    a.tags?.forEach((tag) => { tagCounts[tag] = (tagCounts[tag] || 0) + 1 })
+    a.tags?.forEach((tag) => {
+      tagCounts[tag] = (tagCounts[tag] || 0) + 1
+    })
   })
-  const topTags = Object.entries(tagCounts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count)
+  const topTags = Object.entries(tagCounts)
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count)
 
   // Recent alerts (from high risk addresses)
   const recentAlerts = highRiskAddresses.slice(0, 5).map((a) => ({
@@ -37,7 +66,8 @@ export function DashboardPage() {
 
   const pipelineStatus = pipelineQuery.data
   const lastBlock = pipelineStatus?.ingestion?.lastBlock?.toLocaleString() || "-"
-  const processedCount = pipelineStatus?.streamProcessor?.processedCount?.toLocaleString() || "-"
+  const processedCount =
+    pipelineStatus?.streamProcessor?.processedCount?.toLocaleString() || "-"
 
   return (
     <div className="h-full overflow-y-auto bg-gray-50">
@@ -46,21 +76,61 @@ export function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <LayoutDashboard className="w-7 h-7 text-blue-600" />Dashboard
+              <LayoutDashboard className="w-7 h-7 text-blue-600" />
+              Dashboard
             </h1>
             <p className="text-gray-500 mt-1">Real-time on-chain risk monitoring</p>
           </div>
-          <button onClick={() => { highRiskQuery.refetch(); pipelineQuery.refetch() }} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            <RefreshCw className={`w-4 h-4 ${highRiskQuery.isFetching ? "animate-spin" : ""}`} />Refresh
+          <button
+            onClick={() => {
+              highRiskQuery.refetch()
+              pipelineQuery.refetch()
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${highRiskQuery.isFetching ? "animate-spin" : ""}`}
+            />
+            Refresh
           </button>
         </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={DashboardIcons.Database} iconBgColor="bg-blue-100" iconColor="text-blue-600" label="Last Block" value={lastBlock} subtitle="Ethereum mainnet" />
-          <StatCard icon={DashboardIcons.Shuffle} iconBgColor="bg-purple-100" iconColor="text-purple-600" label="Processed TXs" value={processedCount} subtitle="Total processed" />
-          <StatCard icon={DashboardIcons.ShieldAlert} iconBgColor="bg-red-100" iconColor="text-red-600" label="High Risk" value={highRiskAddresses.length} valueColor="text-red-600" subtitle="Score ≥ 0.7" />
-          <StatCard icon={DashboardIcons.AlertTriangle} iconBgColor="bg-orange-100" iconColor="text-orange-600" label="Critical" value={riskDistribution.critical} valueColor="text-orange-600" subtitle="Score ≥ 0.8" />
+          <StatCard
+            icon={DashboardIcons.Database}
+            iconBgColor="bg-blue-100"
+            iconColor="text-blue-600"
+            label="Last Block"
+            value={lastBlock}
+            subtitle="Ethereum mainnet"
+          />
+          <StatCard
+            icon={DashboardIcons.Shuffle}
+            iconBgColor="bg-purple-100"
+            iconColor="text-purple-600"
+            label="Processed TXs"
+            value={processedCount}
+            subtitle="Total processed"
+          />
+          <StatCard
+            icon={DashboardIcons.ShieldAlert}
+            iconBgColor="bg-red-100"
+            iconColor="text-red-600"
+            label="High Risk"
+            value={highRiskAddresses.length}
+            valueColor="text-red-600"
+            subtitle="Score ≥ 0.7"
+          />
+          <StatCard
+            icon={DashboardIcons.AlertTriangle}
+            iconBgColor="bg-orange-100"
+            iconColor="text-orange-600"
+            label="Critical"
+            value={riskDistribution.critical}
+            valueColor="text-orange-600"
+            subtitle="Score ≥ 0.8"
+          />
         </div>
 
         {/* Main Content */}
@@ -84,10 +154,30 @@ export function DashboardPage() {
               <MousePointer2 className="w-5 h-5 text-gray-400" />
             </div>
             <div className="space-y-2">
-              <QuickLink to="/address" icon={Search} color="blue" label="Address Analysis" />
-              <QuickLink to="/high-risk" icon={DashboardIcons.ShieldAlert} color="red" label="High Risk Network" />
-              <QuickLink to="/graph" icon={Network} color="purple" label="Graph Explorer" />
-              <QuickLink to="/path-finder" icon={Route} color="green" label="Path Finder" />
+              <QuickLink
+                to="/address"
+                icon={Search}
+                color="blue"
+                label="Address Analysis"
+              />
+              <QuickLink
+                to="/high-risk"
+                icon={DashboardIcons.ShieldAlert}
+                color="red"
+                label="High Risk Network"
+              />
+              <QuickLink
+                to="/graph"
+                icon={Network}
+                color="purple"
+                label="Graph Explorer"
+              />
+              <QuickLink
+                to="/path-finder"
+                icon={Route}
+                color="green"
+                label="Path Finder"
+              />
               <QuickLink to="/tags" icon={Tag} color="indigo" label="Tag Search" />
             </div>
           </Card>
@@ -103,7 +193,13 @@ export function DashboardPage() {
                 <p className="text-sm text-gray-500">Latest high-risk detections</p>
               </div>
             </div>
-            {highRiskQuery.isLoading ? <LoadingSpinner /> : recentAlerts.length > 0 ? <RecentAlerts alerts={recentAlerts} /> : <p className="text-gray-500 text-center py-8">No recent alerts</p>}
+            {highRiskQuery.isLoading ? (
+              <LoadingSpinner />
+            ) : recentAlerts.length > 0 ? (
+              <RecentAlerts alerts={recentAlerts} />
+            ) : (
+              <p className="text-gray-500 text-center py-8">No recent alerts</p>
+            )}
           </Card>
 
           {/* Tag Distribution */}
@@ -114,18 +210,32 @@ export function DashboardPage() {
                 <p className="text-sm text-gray-500">Most common risk tags</p>
               </div>
             </div>
-            {topTags.length > 0 ? <TagDistribution tags={topTags} /> : <p className="text-gray-500 text-center py-8">No tags found</p>}
+            {topTags.length > 0 ? (
+              <TagDistribution tags={topTags} />
+            ) : (
+              <p className="text-gray-500 text-center py-8">No tags found</p>
+            )}
           </Card>
         </div>
 
         {/* High Risk Table */}
         <Card title="High-Risk Addresses" subtitle="Addresses with risk score ≥ 0.7">
           {highRiskQuery.isLoading ? (
-            <div className="py-12"><LoadingSpinner /></div>
+            <div className="py-12">
+              <LoadingSpinner />
+            </div>
           ) : highRiskAddresses.length > 0 ? (
-            <AddressTable addresses={highRiskAddresses} showTxCount showInOut showTags maxTagsDisplay={2} />
+            <AddressTable
+              addresses={highRiskAddresses}
+              showTxCount
+              showInOut
+              showTags
+              maxTagsDisplay={2}
+            />
           ) : (
-            <div className="text-center py-12 text-gray-500">No high-risk addresses found</div>
+            <div className="text-center py-12 text-gray-500">
+              No high-risk addresses found
+            </div>
           )}
         </Card>
       </div>
@@ -134,7 +244,17 @@ export function DashboardPage() {
 }
 
 // Helper Components
-function QuickLink({ to, icon: Icon, color, label }: { to: string; icon: React.ElementType; color: string; label: string }) {
+function QuickLink({
+  to,
+  icon: Icon,
+  color,
+  label,
+}: {
+  to: string
+  icon: React.ElementType
+  color: string
+  label: string
+}) {
   const colorMap: Record<string, string> = {
     blue: "text-blue-600 bg-blue-50 hover:bg-blue-100",
     red: "text-red-600 bg-red-50 hover:bg-red-100",
@@ -143,7 +263,10 @@ function QuickLink({ to, icon: Icon, color, label }: { to: string; icon: React.E
     indigo: "text-indigo-600 bg-indigo-50 hover:bg-indigo-100",
   }
   return (
-    <Link to={to} className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${colorMap[color]}`}>
+    <Link
+      to={to}
+      className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${colorMap[color]}`}
+    >
       <Icon className="w-5 h-5" />
       <span className="text-sm font-medium text-gray-900">{label}</span>
     </Link>

@@ -7,8 +7,8 @@
  */
 
 export type GraphControllerFindPathParams = {
-/**
- * Maximum path depth
- */
-maxDepth?: number;
-};
+  /**
+   * Maximum path depth
+   */
+  maxDepth?: number
+}

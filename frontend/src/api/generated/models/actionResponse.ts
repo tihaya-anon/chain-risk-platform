@@ -7,6 +7,6 @@
  */
 
 export interface ActionResponse {
-  status?: string;
-  message?: string;
+  status?: string
+  message?: string
 }

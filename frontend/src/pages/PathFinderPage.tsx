@@ -1,6 +1,15 @@
 import { useState } from "react"
 import { useSearchParams, Link } from "react-router-dom"
-import { Route, Search, ArrowRight, CheckCircle, XCircle, ExternalLink, Tag, AlertTriangle } from "lucide-react"
+import {
+  Route,
+  Search,
+  ArrowRight,
+  CheckCircle,
+  XCircle,
+  ExternalLink,
+  Tag,
+  AlertTriangle,
+} from "lucide-react"
 import { Card, Button, Input, LoadingSpinner, RiskBadge } from "@/components/common"
 import { useFindConnection } from "@/api/generated"
 
@@ -11,7 +20,12 @@ export function PathFinderPage() {
   const [queryFrom, setQueryFrom] = useState("")
   const [queryTo, setQueryTo] = useState("")
 
-  const connectionQuery = useFindConnection(queryFrom, queryTo, { maxDepth: 5 }, { query: { enabled: !!(queryFrom && queryTo) } })
+  const connectionQuery = useFindConnection(
+    queryFrom,
+    queryTo,
+    { maxDepth: 5 },
+    { query: { enabled: !!(queryFrom && queryTo) } }
+  )
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,7 +46,8 @@ export function PathFinderPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Route className="w-6 h-6 text-green-600" />Path Finder
+              <Route className="w-6 h-6 text-green-600" />
+              Path Finder
             </h1>
             <p className="text-gray-600 mt-1">Find transaction paths between addresses</p>
           </div>
@@ -40,11 +55,26 @@ export function PathFinderPage() {
           <Card>
             <form onSubmit={handleSearch} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input label="Source Address" placeholder="0x..." value={fromAddress} onChange={(e) => setFromAddress(e.target.value)} />
-                <Input label="Target Address" placeholder="0x..." value={toAddress} onChange={(e) => setToAddress(e.target.value)} />
+                <Input
+                  label="Source Address"
+                  placeholder="0x..."
+                  value={fromAddress}
+                  onChange={(e) => setFromAddress(e.target.value)}
+                />
+                <Input
+                  label="Target Address"
+                  placeholder="0x..."
+                  value={toAddress}
+                  onChange={(e) => setToAddress(e.target.value)}
+                />
               </div>
-              <Button type="submit" loading={connectionQuery.isLoading} disabled={!fromAddress.trim() || !toAddress.trim()}>
-                <Search className="w-4 h-4 mr-2" />Find Connection
+              <Button
+                type="submit"
+                loading={connectionQuery.isLoading}
+                disabled={!fromAddress.trim() || !toAddress.trim()}
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Find Connection
               </Button>
             </form>
           </Card>
@@ -54,7 +84,12 @@ export function PathFinderPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {connectionQuery.isLoading && (
-            <div className="py-12"><LoadingSpinner size="lg" /><p className="text-center text-gray-500 mt-4">Searching for connections...</p></div>
+            <div className="py-12">
+              <LoadingSpinner size="lg" />
+              <p className="text-center text-gray-500 mt-4">
+                Searching for connections...
+              </p>
+            </div>
           )}
 
           {data && (
@@ -85,8 +120,13 @@ export function PathFinderPage() {
                           <CheckCircle className="w-6 h-6 text-green-600" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">Connection Found</h3>
-                          <p className="text-gray-500">{data.path.pathLength} hop{data.path.pathLength !== 1 ? "s" : ""} between addresses</p>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            Connection Found
+                          </h3>
+                          <p className="text-gray-500">
+                            {data.path.pathLength} hop
+                            {data.path.pathLength !== 1 ? "s" : ""} between addresses
+                          </p>
                         </div>
                       </div>
 
@@ -95,11 +135,19 @@ export function PathFinderPage() {
                         <div className="flex items-center justify-around">
                           {data.path.path?.flatMap((node, i) => {
                             const elements = [
-                              <PathNodeCard key={`node-${i}`} node={node} index={i} isLast={i === (data.path?.path?.length || 0) - 1} />
+                              <PathNodeCard
+                                key={`node-${i}`}
+                                node={node}
+                                index={i}
+                                isLast={i === (data.path?.path?.length || 0) - 1}
+                              />,
                             ]
                             if (i < (data.path?.path?.length || 0) - 1) {
                               elements.push(
-                                <div key={`arrow-${i}`} className="flex flex-col items-center px-2">
+                                <div
+                                  key={`arrow-${i}`}
+                                  className="flex flex-col items-center px-2"
+                                >
                                   <ArrowRight className="w-6 h-6 text-gray-400" />
                                   <span className="text-xs text-gray-400 mt-1">tx</span>
                                 </div>
@@ -117,30 +165,53 @@ export function PathFinderPage() {
                           <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                               <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Step</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tags</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                  Step
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                  Address
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                  Risk
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                  Value
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                  Tags
+                                </th>
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                               {data.path.path?.map((node, i) => (
                                 <tr key={i} className="hover:bg-gray-50">
-                                  <td className="px-4 py-3 text-sm text-gray-500">{i + 1}</td>
+                                  <td className="px-4 py-3 text-sm text-gray-500">
+                                    {i + 1}
+                                  </td>
                                   <td className="px-4 py-3">
-                                    <Link to={`/address?q=${node.address}`} className="font-mono text-sm text-blue-600 hover:underline">
-                                      {node.address?.slice(0, 10)}...{node.address?.slice(-8)}
+                                    <Link
+                                      to={`/address?q=${node.address}`}
+                                      className="font-mono text-sm text-blue-600 hover:underline"
+                                    >
+                                      {node.address?.slice(0, 10)}...
+                                      {node.address?.slice(-8)}
                                     </Link>
                                   </td>
                                   <td className="px-4 py-3">
                                     <RiskBadge score={node.riskScore} size="sm" />
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-gray-900">{formatValue(node.value)}</td>
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {formatValue(node.value)}
+                                  </td>
                                   <td className="px-4 py-3">
                                     <div className="flex flex-wrap gap-1">
                                       {node.tags?.slice(0, 2).map((tag, j) => (
-                                        <span key={j} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{tag}</span>
+                                        <span
+                                          key={j}
+                                          className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                                        >
+                                          {tag}
+                                        </span>
                                       ))}
                                     </div>
                                   </td>
@@ -156,8 +227,12 @@ export function PathFinderPage() {
                       <div className="p-3 bg-red-100 rounded-full inline-flex mb-4">
                         <XCircle className="w-8 h-8 text-red-600" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900">No Connection Found</h3>
-                      <p className="text-gray-500 mt-1">No path exists within {data.path?.maxDepth || 6} hops</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        No Connection Found
+                      </h3>
+                      <p className="text-gray-500 mt-1">
+                        No path exists within {data.path?.maxDepth || 6} hops
+                      </p>
                     </div>
                   )}
                 </div>
@@ -168,8 +243,13 @@ export function PathFinderPage() {
           {!connectionQuery.isLoading && !data && (
             <div className="text-center py-16">
               <Route className="w-16 h-16 text-gray-300 mx-auto" />
-              <h3 className="text-lg font-medium text-gray-900 mt-4">Find Transaction Paths</h3>
-              <p className="text-gray-500 mt-2">Enter two addresses to discover how they are connected through on-chain transactions</p>
+              <h3 className="text-lg font-medium text-gray-900 mt-4">
+                Find Transaction Paths
+              </h3>
+              <p className="text-gray-500 mt-2">
+                Enter two addresses to discover how they are connected through on-chain
+                transactions
+              </p>
             </div>
           )}
         </div>
@@ -189,8 +269,18 @@ interface AddressCardProps {
 
 function AddressCard({ title, address, risk, color }: AddressCardProps) {
   const colorClasses = {
-    blue: { bg: "bg-blue-50", border: "border-blue-200", icon: "text-blue-600", accent: "bg-blue-100" },
-    purple: { bg: "bg-purple-50", border: "border-purple-200", icon: "text-purple-600", accent: "bg-purple-100" },
+    blue: {
+      bg: "bg-blue-50",
+      border: "border-blue-200",
+      icon: "text-blue-600",
+      accent: "bg-blue-100",
+    },
+    purple: {
+      bg: "bg-purple-50",
+      border: "border-purple-200",
+      icon: "text-purple-600",
+      accent: "bg-purple-100",
+    },
   }
   const c = colorClasses[color]
 
@@ -226,14 +316,21 @@ function PathNodeCard({ node, index, isLast }: PathNodeCardProps) {
   const isHighRisk = (node.riskScore ?? 0) >= 0.7
 
   return (
-    <div className={`relative p-4 bg-white rounded-xl border-2 min-w-[180px] ${isHighRisk ? "border-red-300" : "border-gray-200"} shadow-sm`}>
+    <div
+      className={`relative p-4 bg-white rounded-xl border-2 min-w-[180px] ${isHighRisk ? "border-red-300" : "border-gray-200"} shadow-sm`}
+    >
       {isHighRisk && (
         <div className="absolute -top-2 -right-2 p-1 bg-red-100 rounded-full">
           <AlertTriangle className="w-3 h-3 text-red-600" />
         </div>
       )}
-      <div className="text-xs text-gray-400 mb-2">{index === 0 ? "Start" : isLast ? "End" : `Hop ${index}`}</div>
-      <Link to={`/address?q=${node.address}`} className="font-mono text-sm text-blue-600 hover:underline block truncate">
+      <div className="text-xs text-gray-400 mb-2">
+        {index === 0 ? "Start" : isLast ? "End" : `Hop ${index}`}
+      </div>
+      <Link
+        to={`/address?q=${node.address}`}
+        className="font-mono text-sm text-blue-600 hover:underline block truncate"
+      >
         {node.address?.slice(0, 8)}...{node.address?.slice(-6)}
       </Link>
       <div className="mt-2 flex items-center gap-2">
