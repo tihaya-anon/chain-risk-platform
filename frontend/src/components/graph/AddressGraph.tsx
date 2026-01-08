@@ -48,11 +48,6 @@ function getRiskBorderColor(riskScore?: number): string {
   return "#047857"
 }
 
-function formatAddress(address: string): string {
-  if (!address) return ""
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
-}
-
 function buildRadialTree(
   centerAddress: string,
   nodes: GraphNode[],
@@ -61,7 +56,6 @@ function buildRadialTree(
   const nodeMap = new Map<string, GraphNode>()
   nodes.forEach((node) => nodeMap.set(node.address, node))
 
-  // Build edge lookup
   const edgeLookup = new Map<string, { neighbor: string; edge: GraphEdge }[]>()
   edges.forEach((edge) => {
     if (!edgeLookup.has(edge.from)) edgeLookup.set(edge.from, [])
@@ -77,7 +71,7 @@ function buildRadialTree(
 
     const isCenter = node.address === centerAddress
     const treeNode: TreeNode = {
-      name: formatAddress(node.address),
+      name: "",
       value: {
         address: node.address,
         riskScore: node.riskScore,
@@ -140,30 +134,7 @@ export function AddressGraph({
     if (!treeData) return {}
 
     return {
-      tooltip: { show: false,
-        trigger: "item" as const,
-        formatter: (params: { data?: { value?: NodeValue } }) => {
-          const value = params.data?.value
-          if (!value) return ""
-          const lines = [
-            `<strong>${value.address}</strong>`,
-            `Distance: ${value.distance} hop${value.distance !== 1 ? "s" : ""}`,
-          ]
-          if (value.riskScore !== undefined) {
-            lines.push(`Risk: ${(value.riskScore * 100).toFixed(0)}%`)
-          }
-          if (value.transferCount) {
-            lines.push(`Transfers: ${value.transferCount}`)
-          }
-          if (value.totalValue) {
-            lines.push(`Value: ${parseFloat(value.totalValue).toFixed(4)} ETH`)
-          }
-          if (value.tags?.length) {
-            lines.push(`Tags: ${value.tags.slice(0, 3).join(", ")}`)
-          }
-          return lines.join("<br/>")
-        },
-      },
+      tooltip: { show: false },
       series: [
         {
           type: "tree" as const,
@@ -187,11 +158,7 @@ export function AddressGraph({
             curveness: 0.5,
           },
           label: {
-            show: true,
-            position: "right" as const,
-            distance: 5,
-            fontSize: 10,
-            color: "#374151",
+            show: false,
           },
           emphasis: {
             focus: "ancestor" as const,

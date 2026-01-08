@@ -27,11 +27,6 @@ function getRiskColor(riskScore?: number): string {
   return "#34D399"
 }
 
-function formatAddress(address: string): string {
-  if (!address) return ""
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
-}
-
 export function HighRiskGraph({
   addresses,
   selectedNode,
@@ -47,7 +42,7 @@ export function HighRiskGraph({
   const { nodes, links } = useMemo(() => {
     const graphNodes = addresses.map((addr) => ({
       id: addr.address,
-      name: formatAddress(addr.address || ""),
+      name: "",
       value: {
         address: addr.address,
         riskScore: addr.riskScore,
@@ -68,7 +63,6 @@ export function HighRiskGraph({
       lineStyle: { color: string; opacity: number; width: number }
     }> = []
 
-    // Create edges based on shared cluster or tags
     for (let i = 0; i < addresses.length; i++) {
       for (let j = i + 1; j < addresses.length; j++) {
         const addr1 = addresses[i]
@@ -100,24 +94,7 @@ export function HighRiskGraph({
     if (!nodes.length) return {}
 
     return {
-      tooltip: {
-        trigger: "item" as const,
-        formatter: (params: { data?: { value?: NodeValue } }) => {
-          const value = params.data?.value
-          if (!value) return ""
-          const lines = [`<strong>${value.address}</strong>`]
-          if (value.riskScore !== undefined) {
-            lines.push(`Risk: ${(value.riskScore * 100).toFixed(0)}%`)
-          }
-          if (value.clusterId) {
-            lines.push(`Cluster: ${value.clusterId}`)
-          }
-          if (value.tags?.length) {
-            lines.push(`Tags: ${value.tags.slice(0, 3).join(", ")}`)
-          }
-          return lines.join("<br/>")
-        },
-      },
+      tooltip: { show: false },
       series: [
         {
           type: "graph" as const,
@@ -127,10 +104,7 @@ export function HighRiskGraph({
           roam: true,
           draggable: true,
           label: {
-            show: true,
-            position: "right" as const,
-            fontSize: 10,
-            color: "#374151",
+            show: false,
           },
           force: {
             repulsion: 300,
