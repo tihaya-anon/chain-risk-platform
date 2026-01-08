@@ -34,7 +34,7 @@ export function GraphTab({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="Automatic Clustering" subtitle="Run clustering algorithm">
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Run the common-input heuristic clustering algorithm to automatically group
               related addresses.
             </p>
@@ -47,9 +47,11 @@ export function GraphTab({
               Run Clustering Algorithm
             </Button>
             {clusteringData && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="font-medium text-green-800">Clustering Complete</p>
-                <div className="mt-2 text-sm text-green-700 space-y-1">
+              <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="font-medium text-green-800 dark:text-green-300">
+                  Clustering Complete
+                </p>
+                <div className="mt-2 text-sm text-green-700 dark:text-green-400 space-y-1">
                   <p>Clusters created: {clusteringData.clustersCreated}</p>
                   <p>Addresses clustered: {clusteringData.addressesClustered}</p>
                   <p>Duration: {clusteringData.durationMs}ms</p>
@@ -65,7 +67,7 @@ export function GraphTab({
               value={manualClusterAddresses}
               onChange={(e) => setManualClusterAddresses(e.target.value)}
               placeholder="0x1234...&#10;0x5678..."
-              className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500"
+              className="w-full h-32 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
             />
             <Button
               onClick={handleManualCluster}
@@ -82,7 +84,7 @@ export function GraphTab({
 
       <Card title="Tag Propagation" subtitle="Propagate risk tags through the graph">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Propagate risk tags from high-risk addresses to their neighbors based on
             transaction relationships.
           </p>
@@ -96,9 +98,11 @@ export function GraphTab({
             Run Tag Propagation
           </Button>
           {propagationData && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="font-medium text-green-800">Propagation Complete</p>
-              <div className="mt-2 text-sm text-green-700 space-y-1">
+            <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
+              <p className="font-medium text-green-800 dark:text-green-300">
+                Propagation Complete
+              </p>
+              <div className="mt-2 text-sm text-green-700 dark:text-green-400 space-y-1">
                 <p>Addresses affected: {propagationData.addressesAffected}</p>
                 <p>Tags propagated: {propagationData.tagsPropagated}</p>
                 <p>Duration: {propagationData.durationMs}ms</p>

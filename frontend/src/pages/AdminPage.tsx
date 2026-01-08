@@ -81,16 +81,16 @@ export function AdminPage() {
     <div className="h-full overflow-y-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Settings className="w-6 h-6 text-purple-600" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Settings className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             Admin Panel
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage pipeline, services, and system configuration
           </p>
         </div>
 
-        <div className="border-b border-gray-200">
+        <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="-mb-px flex space-x-8">
             {tabs.map((tab) => {
               const Icon = tab.icon
@@ -99,7 +99,11 @@ export function AdminPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${isActive ? "border-purple-500 text-purple-600" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    isActive
+                      ? "border-purple-500 text-purple-600 dark:text-purple-400"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                  }`}
                 >
                   <Icon className="w-4 h-4" />
                   {tab.label}

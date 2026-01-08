@@ -70,23 +70,25 @@ export function DashboardPage() {
     pipelineStatus?.streamProcessor?.processedCount?.toLocaleString() || "-"
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-50">
+    <div className="h-full overflow-y-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <LayoutDashboard className="w-7 h-7 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <LayoutDashboard className="w-7 h-7 text-blue-600 dark:text-blue-400" />
               Dashboard
             </h1>
-            <p className="text-gray-500 mt-1">Real-time on-chain risk monitoring</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
+              Real-time on-chain risk monitoring
+            </p>
           </div>
           <button
             onClick={() => {
               highRiskQuery.refetch()
               pipelineQuery.refetch()
             }}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <RefreshCw
               className={`w-4 h-4 ${highRiskQuery.isFetching ? "animate-spin" : ""}`}
@@ -99,36 +101,36 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={DashboardIcons.Database}
-            iconBgColor="bg-blue-100"
-            iconColor="text-blue-600"
+            iconBgColor="bg-blue-100 dark:bg-blue-900/50"
+            iconColor="text-blue-600 dark:text-blue-400"
             label="Last Block"
             value={lastBlock}
             subtitle="Ethereum mainnet"
           />
           <StatCard
             icon={DashboardIcons.Shuffle}
-            iconBgColor="bg-purple-100"
-            iconColor="text-purple-600"
+            iconBgColor="bg-purple-100 dark:bg-purple-900/50"
+            iconColor="text-purple-600 dark:text-purple-400"
             label="Processed TXs"
             value={processedCount}
             subtitle="Total processed"
           />
           <StatCard
             icon={DashboardIcons.ShieldAlert}
-            iconBgColor="bg-red-100"
-            iconColor="text-red-600"
+            iconBgColor="bg-red-100 dark:bg-red-900/50"
+            iconColor="text-red-600 dark:text-red-400"
             label="High Risk"
             value={highRiskAddresses.length}
-            valueColor="text-red-600"
+            valueColor="text-red-600 dark:text-red-400"
             subtitle="Score ≥ 0.7"
           />
           <StatCard
             icon={DashboardIcons.AlertTriangle}
-            iconBgColor="bg-orange-100"
-            iconColor="text-orange-600"
+            iconBgColor="bg-orange-100 dark:bg-orange-900/50"
+            iconColor="text-orange-600 dark:text-orange-400"
             label="Critical"
             value={riskDistribution.critical}
-            valueColor="text-orange-600"
+            valueColor="text-orange-600 dark:text-orange-400"
             subtitle="Score ≥ 0.8"
           />
         </div>
@@ -139,10 +141,12 @@ export function DashboardPage() {
           <Card className="lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Risk Distribution</h3>
-                <p className="text-sm text-gray-500">By severity level</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Risk Distribution
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">By severity level</p>
               </div>
-              <ChartNoAxesColumn className="w-5 h-5 text-gray-400" />
+              <ChartNoAxesColumn className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             </div>
             <RiskDistributionChart {...riskDistribution} />
           </Card>
@@ -150,8 +154,10 @@ export function DashboardPage() {
           {/* Quick Links */}
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Quick Access</h3>
-              <MousePointer2 className="w-5 h-5 text-gray-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Quick Access
+              </h3>
+              <MousePointer2 className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             </div>
             <div className="space-y-2">
               <QuickLink
@@ -189,8 +195,12 @@ export function DashboardPage() {
           <Card className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Recent Alerts</h3>
-                <p className="text-sm text-gray-500">Latest high-risk detections</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Recent Alerts
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Latest high-risk detections
+                </p>
               </div>
             </div>
             {highRiskQuery.isLoading ? (
@@ -198,7 +208,9 @@ export function DashboardPage() {
             ) : recentAlerts.length > 0 ? (
               <RecentAlerts alerts={recentAlerts} />
             ) : (
-              <p className="text-gray-500 text-center py-8">No recent alerts</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                No recent alerts
+              </p>
             )}
           </Card>
 
@@ -206,14 +218,20 @@ export function DashboardPage() {
           <Card>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Top Tags</h3>
-                <p className="text-sm text-gray-500">Most common risk tags</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Top Tags
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Most common risk tags
+                </p>
               </div>
             </div>
             {topTags.length > 0 ? (
               <TagDistribution tags={topTags} />
             ) : (
-              <p className="text-gray-500 text-center py-8">No tags found</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                No tags found
+              </p>
             )}
           </Card>
         </div>
@@ -233,7 +251,7 @@ export function DashboardPage() {
               maxTagsDisplay={2}
             />
           ) : (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               No high-risk addresses found
             </div>
           )}
@@ -256,11 +274,14 @@ function QuickLink({
   label: string
 }) {
   const colorMap: Record<string, string> = {
-    blue: "text-blue-600 bg-blue-50 hover:bg-blue-100",
-    red: "text-red-600 bg-red-50 hover:bg-red-100",
-    purple: "text-purple-600 bg-purple-50 hover:bg-purple-100",
-    green: "text-green-600 bg-green-50 hover:bg-green-100",
-    indigo: "text-indigo-600 bg-indigo-50 hover:bg-indigo-100",
+    blue: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50",
+    red: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50",
+    purple:
+      "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50",
+    green:
+      "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50",
+    indigo:
+      "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50",
   }
   return (
     <Link
@@ -268,7 +289,7 @@ function QuickLink({
       className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${colorMap[color]}`}
     >
       <Icon className="w-5 h-5" />
-      <span className="text-sm font-medium text-gray-900">{label}</span>
+      <span className="text-sm font-medium text-gray-900 dark:text-white">{label}</span>
     </Link>
   )
 }
