@@ -7,8 +7,8 @@
  */
 
 export type GraphControllerSearchByTagParams = {
-  /**
-   * Maximum results
-   */
-  limit?: number
-}
+/**
+ * Maximum results
+ */
+limit?: number;
+};

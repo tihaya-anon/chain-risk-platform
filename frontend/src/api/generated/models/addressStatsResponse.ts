@@ -7,9 +7,9 @@
  */
 
 export interface AddressStatsResponse {
-  totalValueSent: string
-  totalValueReceived: string
-  avgTxValue: string
-  maxTxValue: string
-  minTxValue: string
+  totalValueSent: string;
+  totalValueReceived: string;
+  avgTxValue: string;
+  maxTxValue: string;
+  minTxValue: string;
 }

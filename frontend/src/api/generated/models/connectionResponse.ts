@@ -5,14 +5,14 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { PathResponse } from "./pathResponse"
-import type { RiskScoreResponse } from "./riskScoreResponse"
+import type { PathResponse } from './pathResponse';
+import type { RiskScoreResponse } from './riskScoreResponse';
 
 export interface ConnectionResponse {
-  fromAddress?: string
-  toAddress?: string
-  path?: PathResponse
-  fromAddressRisk?: RiskScoreResponse
-  toAddressRisk?: RiskScoreResponse
-  orchestratedAt?: number
+  fromAddress?: string;
+  toAddress?: string;
+  path?: PathResponse;
+  fromAddressRisk?: RiskScoreResponse;
+  toAddressRisk?: RiskScoreResponse;
+  orchestratedAt?: number;
 }

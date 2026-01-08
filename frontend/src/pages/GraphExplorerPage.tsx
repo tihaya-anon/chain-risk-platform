@@ -58,6 +58,7 @@ export function GraphExplorerPage() {
     // Build distance map
     const nodeDistances = new Map<string, number>()
     nodes.forEach((node) => {
+      if (!node.address) return
       nodeDistances.set(
         node.address,
         node.distance ?? (node.address === centerAddr ? 0 : 1)

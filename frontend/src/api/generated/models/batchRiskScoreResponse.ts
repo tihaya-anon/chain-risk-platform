@@ -5,10 +5,10 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import type { RiskScoreResponse } from "./riskScoreResponse"
+import type { RiskScoreResponse } from './riskScoreResponse';
 
 export interface BatchRiskScoreResponse {
-  results: RiskScoreResponse[]
-  total: number
-  failed: number
+  results: RiskScoreResponse[];
+  total: number;
+  failed: number;
 }

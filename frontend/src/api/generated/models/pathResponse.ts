@@ -5,14 +5,14 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { PathNode } from "./pathNode"
+import type { PathNode } from './pathNode';
 
 export interface PathResponse {
-  found?: boolean
-  fromAddress?: string
-  toAddress?: string
-  pathLength?: number
-  maxDepth?: number
-  message?: string
-  path?: PathNode[]
+  found?: boolean;
+  fromAddress?: string;
+  toAddress?: string;
+  pathLength?: number;
+  maxDepth?: number;
+  message?: string;
+  path?: PathNode[];
 }

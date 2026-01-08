@@ -8,9 +8,9 @@
 
 export interface RiskScoreRequestDto {
   /** Ethereum address */
-  address: string
+  address: string;
   /** Network */
-  network?: string
+  network?: string;
   /** Include detailed risk factors */
-  includeFactors?: boolean
+  includeFactors?: boolean;
 }

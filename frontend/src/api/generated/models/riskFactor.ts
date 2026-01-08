@@ -7,9 +7,9 @@
  */
 
 export interface RiskFactor {
-  name?: string
-  score?: number
-  weight?: number
-  description?: string
-  triggered?: boolean
+  name?: string;
+  score?: number;
+  weight?: number;
+  description?: string;
+  triggered?: boolean;
 }

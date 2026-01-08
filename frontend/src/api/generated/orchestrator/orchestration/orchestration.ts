@@ -5,7 +5,10 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import { useMutation, useQuery } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -18,8 +21,8 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult,
-} from "@tanstack/react-query"
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   AddressAnalysisResponse,
@@ -31,702 +34,482 @@ import type {
   GetAddressAnalysisParams,
   GetAddressProfileParams,
   GetHighRiskNetworkParams,
-  HighRiskNetworkResponse,
-} from "../../models"
+  HighRiskNetworkResponse
+} from '../../models';
 
-import { customInstance } from "../../../axios-instance"
+import { customInstance } from '../../../axios-instance';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1]
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
 
 /**
  * Performs risk analysis for multiple addresses in a single request
  * @summary Batch address risk analysis
  */
 export const batchRiskAnalysis = (
-  batchRiskRequest: BatchRiskRequest,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    batchRiskRequest: BatchRiskRequest,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<BatchRiskResponse>(
-    {
-      url: `/api/v1/orchestration/batch-risk-analysis`,
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      data: batchRiskRequest,
-      signal,
+      
+      
+      return customInstance<BatchRiskResponse>(
+      {url: `/api/v1/orchestration/batch-risk-analysis`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: batchRiskRequest, signal
     },
-    options
-  )
-}
+      options);
+    }
+  
 
-export const getBatchRiskAnalysisMutationOptions = <
-  TError = void,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof batchRiskAnalysis>>,
-    TError,
-    { data: BatchRiskRequest },
-    TContext
-  >
-  request?: SecondParameter<typeof customInstance>
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof batchRiskAnalysis>>,
-  TError,
-  { data: BatchRiskRequest },
-  TContext
-> => {
-  const mutationKey = ["batchRiskAnalysis"]
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined }
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof batchRiskAnalysis>>,
-    { data: BatchRiskRequest }
-  > = (props) => {
-    const { data } = props ?? {}
+export const getBatchRiskAnalysisMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof batchRiskAnalysis>>, TError,{data: BatchRiskRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof batchRiskAnalysis>>, TError,{data: BatchRiskRequest}, TContext> => {
 
-    return batchRiskAnalysis(data, requestOptions)
-  }
+const mutationKey = ['batchRiskAnalysis'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-  return { mutationFn, ...mutationOptions }
-}
+      
 
-export type BatchRiskAnalysisMutationResult = NonNullable<
-  Awaited<ReturnType<typeof batchRiskAnalysis>>
->
-export type BatchRiskAnalysisMutationBody = BatchRiskRequest
-export type BatchRiskAnalysisMutationError = void
 
-/**
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof batchRiskAnalysis>>, {data: BatchRiskRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  batchRiskAnalysis(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BatchRiskAnalysisMutationResult = NonNullable<Awaited<ReturnType<typeof batchRiskAnalysis>>>
+    export type BatchRiskAnalysisMutationBody = BatchRiskRequest
+    export type BatchRiskAnalysisMutationError = void
+
+    /**
  * @summary Batch address risk analysis
  */
-export const useBatchRiskAnalysis = <TError = void, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof batchRiskAnalysis>>,
-      TError,
-      { data: BatchRiskRequest },
-      TContext
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof batchRiskAnalysis>>,
-  TError,
-  { data: BatchRiskRequest },
-  TContext
-> => {
-  const mutationOptions = getBatchRiskAnalysisMutationOptions(options)
+export const useBatchRiskAnalysis = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof batchRiskAnalysis>>, TError,{data: BatchRiskRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof batchRiskAnalysis>>,
+        TError,
+        {data: BatchRiskRequest},
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient)
-}
-/**
+      const mutationOptions = getBatchRiskAnalysisMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retrieves addresses with risk scores above the specified threshold
  * @summary Get high-risk network analysis
  */
 export const getHighRiskNetwork = (
-  params?: GetHighRiskNetworkParams,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    params?: GetHighRiskNetworkParams,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<HighRiskNetworkResponse>(
-    { url: `/api/v1/orchestration/high-risk-network`, method: "GET", params, signal },
-    options
-  )
-}
+      
+      
+      return customInstance<HighRiskNetworkResponse>(
+      {url: `/api/v1/orchestration/high-risk-network`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
 
-export const getGetHighRiskNetworkQueryKey = (params?: GetHighRiskNetworkParams) => {
-  return [`/api/v1/orchestration/high-risk-network`, ...(params ? [params] : [])] as const
-}
 
-export const getGetHighRiskNetworkQueryOptions = <
-  TData = Awaited<ReturnType<typeof getHighRiskNetwork>>,
-  TError = void,
->(
-  params?: GetHighRiskNetworkParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
+
+export const getGetHighRiskNetworkQueryKey = (params?: GetHighRiskNetworkParams,) => {
+    return [
+    `/api/v1/orchestration/high-risk-network`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetHighRiskNetworkQueryOptions = <TData = Awaited<ReturnType<typeof getHighRiskNetwork>>, TError = void>(params?: GetHighRiskNetworkParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
 
-  const queryKey = queryOptions?.queryKey ?? getGetHighRiskNetworkQueryKey(params)
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getHighRiskNetwork>>> = ({
-    signal,
-  }) => getHighRiskNetwork(params, requestOptions, signal)
+  const queryKey =  queryOptions?.queryKey ?? getGetHighRiskNetworkQueryKey(params);
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getHighRiskNetwork>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHighRiskNetwork>>> = ({ signal }) => getHighRiskNetwork(params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type GetHighRiskNetworkQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getHighRiskNetwork>>
->
+export type GetHighRiskNetworkQueryResult = NonNullable<Awaited<ReturnType<typeof getHighRiskNetwork>>>
 export type GetHighRiskNetworkQueryError = void
 
-export function useGetHighRiskNetwork<
-  TData = Awaited<ReturnType<typeof getHighRiskNetwork>>,
-  TError = void,
->(
-  params: undefined | GetHighRiskNetworkParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>
-    > &
-      Pick<
+
+export function useGetHighRiskNetwork<TData = Awaited<ReturnType<typeof getHighRiskNetwork>>, TError = void>(
+ params: undefined |  GetHighRiskNetworkParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getHighRiskNetwork>>,
           TError,
           Awaited<ReturnType<typeof getHighRiskNetwork>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetHighRiskNetwork<
-  TData = Awaited<ReturnType<typeof getHighRiskNetwork>>,
-  TError = void,
->(
-  params?: GetHighRiskNetworkParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHighRiskNetwork<TData = Awaited<ReturnType<typeof getHighRiskNetwork>>, TError = void>(
+ params?: GetHighRiskNetworkParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getHighRiskNetwork>>,
           TError,
           Awaited<ReturnType<typeof getHighRiskNetwork>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetHighRiskNetwork<
-  TData = Awaited<ReturnType<typeof getHighRiskNetwork>>,
-  TError = void,
->(
-  params?: GetHighRiskNetworkParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHighRiskNetwork<TData = Awaited<ReturnType<typeof getHighRiskNetwork>>, TError = void>(
+ params?: GetHighRiskNetworkParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get high-risk network analysis
  */
 
-export function useGetHighRiskNetwork<
-  TData = Awaited<ReturnType<typeof getHighRiskNetwork>>,
-  TError = void,
->(
-  params?: GetHighRiskNetworkParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGetHighRiskNetworkQueryOptions(params, options)
+export function useGetHighRiskNetwork<TData = Awaited<ReturnType<typeof getHighRiskNetwork>>, TError = void>(
+ params?: GetHighRiskNetworkParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHighRiskNetwork>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGetHighRiskNetworkQueryOptions(params,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * Finds the shortest path between two addresses and provides risk analysis for both endpoints
  * @summary Find connection between addresses
  */
 export const findConnection = (
-  fromAddress: string,
-  toAddress: string,
-  params?: FindConnectionParams,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    fromAddress: string,
+    toAddress: string,
+    params?: FindConnectionParams,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<ConnectionResponse>(
-    {
-      url: `/api/v1/orchestration/connection/${fromAddress}/${toAddress}`,
-      method: "GET",
-      params,
-      signal,
+      
+      
+      return customInstance<ConnectionResponse>(
+      {url: `/api/v1/orchestration/connection/${fromAddress}/${toAddress}`, method: 'GET',
+        params, signal
     },
-    options
-  )
-}
+      options);
+    }
+  
 
-export const getFindConnectionQueryKey = (
-  fromAddress?: string,
-  toAddress?: string,
-  params?: FindConnectionParams
+
+
+export const getFindConnectionQueryKey = (fromAddress?: string,
+    toAddress?: string,
+    params?: FindConnectionParams,) => {
+    return [
+    `/api/v1/orchestration/connection/${fromAddress}/${toAddress}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getFindConnectionQueryOptions = <TData = Awaited<ReturnType<typeof findConnection>>, TError = void>(fromAddress: string,
+    toAddress: string,
+    params?: FindConnectionParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  return [
-    `/api/v1/orchestration/connection/${fromAddress}/${toAddress}`,
-    ...(params ? [params] : []),
-  ] as const
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getFindConnectionQueryKey(fromAddress,toAddress,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof findConnection>>> = ({ signal }) => findConnection(fromAddress,toAddress,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(fromAddress && toAddress), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export const getFindConnectionQueryOptions = <
-  TData = Awaited<ReturnType<typeof findConnection>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params?: FindConnectionParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
-
-  const queryKey =
-    queryOptions?.queryKey ?? getFindConnectionQueryKey(fromAddress, toAddress, params)
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof findConnection>>> = ({
-    signal,
-  }) => findConnection(fromAddress, toAddress, params, requestOptions, signal)
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!(fromAddress && toAddress),
-    ...queryOptions,
-  } as UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
-}
-
-export type FindConnectionQueryResult = NonNullable<
-  Awaited<ReturnType<typeof findConnection>>
->
+export type FindConnectionQueryResult = NonNullable<Awaited<ReturnType<typeof findConnection>>>
 export type FindConnectionQueryError = void
 
-export function useFindConnection<
-  TData = Awaited<ReturnType<typeof findConnection>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params: undefined | FindConnectionParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>
-    > &
-      Pick<
+
+export function useFindConnection<TData = Awaited<ReturnType<typeof findConnection>>, TError = void>(
+ fromAddress: string,
+    toAddress: string,
+    params: undefined |  FindConnectionParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof findConnection>>,
           TError,
           Awaited<ReturnType<typeof findConnection>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useFindConnection<
-  TData = Awaited<ReturnType<typeof findConnection>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params?: FindConnectionParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useFindConnection<TData = Awaited<ReturnType<typeof findConnection>>, TError = void>(
+ fromAddress: string,
+    toAddress: string,
+    params?: FindConnectionParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof findConnection>>,
           TError,
           Awaited<ReturnType<typeof findConnection>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useFindConnection<
-  TData = Awaited<ReturnType<typeof findConnection>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params?: FindConnectionParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useFindConnection<TData = Awaited<ReturnType<typeof findConnection>>, TError = void>(
+ fromAddress: string,
+    toAddress: string,
+    params?: FindConnectionParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Find connection between addresses
  */
 
-export function useFindConnection<
-  TData = Awaited<ReturnType<typeof findConnection>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params?: FindConnectionParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getFindConnectionQueryOptions(
-    fromAddress,
-    toAddress,
-    params,
-    options
-  )
+export function useFindConnection<TData = Awaited<ReturnType<typeof findConnection>>, TError = void>(
+ fromAddress: string,
+    toAddress: string,
+    params?: FindConnectionParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof findConnection>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getFindConnectionQueryOptions(fromAddress,toAddress,params,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * Orchestrates multiple API calls to get a comprehensive address profile including basic info, risk score, and recent transfers
  * @summary Get address profile
  */
 export const getAddressProfile = (
-  address: string,
-  params?: GetAddressProfileParams,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    address: string,
+    params?: GetAddressProfileParams,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<AddressProfileResponse>(
-    {
-      url: `/api/v1/orchestration/address-profile/${address}`,
-      method: "GET",
-      params,
-      signal,
+      
+      
+      return customInstance<AddressProfileResponse>(
+      {url: `/api/v1/orchestration/address-profile/${address}`, method: 'GET',
+        params, signal
     },
-    options
-  )
-}
+      options);
+    }
+  
 
-export const getGetAddressProfileQueryKey = (
-  address?: string,
-  params?: GetAddressProfileParams
+
+
+export const getGetAddressProfileQueryKey = (address?: string,
+    params?: GetAddressProfileParams,) => {
+    return [
+    `/api/v1/orchestration/address-profile/${address}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetAddressProfileQueryOptions = <TData = Awaited<ReturnType<typeof getAddressProfile>>, TError = void>(address: string,
+    params?: GetAddressProfileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  return [
-    `/api/v1/orchestration/address-profile/${address}`,
-    ...(params ? [params] : []),
-  ] as const
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAddressProfileQueryKey(address,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAddressProfile>>> = ({ signal }) => getAddressProfile(address,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(address), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export const getGetAddressProfileQueryOptions = <
-  TData = Awaited<ReturnType<typeof getAddressProfile>>,
-  TError = void,
->(
-  address: string,
-  params?: GetAddressProfileParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
-
-  const queryKey = queryOptions?.queryKey ?? getGetAddressProfileQueryKey(address, params)
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAddressProfile>>> = ({
-    signal,
-  }) => getAddressProfile(address, params, requestOptions, signal)
-
-  return { queryKey, queryFn, enabled: !!address, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getAddressProfile>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetAddressProfileQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getAddressProfile>>
->
+export type GetAddressProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getAddressProfile>>>
 export type GetAddressProfileQueryError = void
 
-export function useGetAddressProfile<
-  TData = Awaited<ReturnType<typeof getAddressProfile>>,
-  TError = void,
->(
-  address: string,
-  params: undefined | GetAddressProfileParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>
-    > &
-      Pick<
+
+export function useGetAddressProfile<TData = Awaited<ReturnType<typeof getAddressProfile>>, TError = void>(
+ address: string,
+    params: undefined |  GetAddressProfileParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getAddressProfile>>,
           TError,
           Awaited<ReturnType<typeof getAddressProfile>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetAddressProfile<
-  TData = Awaited<ReturnType<typeof getAddressProfile>>,
-  TError = void,
->(
-  address: string,
-  params?: GetAddressProfileParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAddressProfile<TData = Awaited<ReturnType<typeof getAddressProfile>>, TError = void>(
+ address: string,
+    params?: GetAddressProfileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getAddressProfile>>,
           TError,
           Awaited<ReturnType<typeof getAddressProfile>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetAddressProfile<
-  TData = Awaited<ReturnType<typeof getAddressProfile>>,
-  TError = void,
->(
-  address: string,
-  params?: GetAddressProfileParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAddressProfile<TData = Awaited<ReturnType<typeof getAddressProfile>>, TError = void>(
+ address: string,
+    params?: GetAddressProfileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get address profile
  */
 
-export function useGetAddressProfile<
-  TData = Awaited<ReturnType<typeof getAddressProfile>>,
-  TError = void,
->(
-  address: string,
-  params?: GetAddressProfileParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGetAddressProfileQueryOptions(address, params, options)
+export function useGetAddressProfile<TData = Awaited<ReturnType<typeof getAddressProfile>>, TError = void>(
+ address: string,
+    params?: GetAddressProfileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressProfile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGetAddressProfileQueryOptions(address,params,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * Orchestrates multiple API calls to get comprehensive address analysis including basic info, risk score, graph data, neighbors, tags, and cluster information
  * @summary Get comprehensive address analysis
  */
 export const getAddressAnalysis = (
-  address: string,
-  params?: GetAddressAnalysisParams,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    address: string,
+    params?: GetAddressAnalysisParams,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<AddressAnalysisResponse>(
-    {
-      url: `/api/v1/orchestration/address-analysis/${address}`,
-      method: "GET",
-      params,
-      signal,
+      
+      
+      return customInstance<AddressAnalysisResponse>(
+      {url: `/api/v1/orchestration/address-analysis/${address}`, method: 'GET',
+        params, signal
     },
-    options
-  )
-}
+      options);
+    }
+  
 
-export const getGetAddressAnalysisQueryKey = (
-  address?: string,
-  params?: GetAddressAnalysisParams
+
+
+export const getGetAddressAnalysisQueryKey = (address?: string,
+    params?: GetAddressAnalysisParams,) => {
+    return [
+    `/api/v1/orchestration/address-analysis/${address}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetAddressAnalysisQueryOptions = <TData = Awaited<ReturnType<typeof getAddressAnalysis>>, TError = void>(address: string,
+    params?: GetAddressAnalysisParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  return [
-    `/api/v1/orchestration/address-analysis/${address}`,
-    ...(params ? [params] : []),
-  ] as const
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAddressAnalysisQueryKey(address,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAddressAnalysis>>> = ({ signal }) => getAddressAnalysis(address,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(address), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export const getGetAddressAnalysisQueryOptions = <
-  TData = Awaited<ReturnType<typeof getAddressAnalysis>>,
-  TError = void,
->(
-  address: string,
-  params?: GetAddressAnalysisParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
-
-  const queryKey =
-    queryOptions?.queryKey ?? getGetAddressAnalysisQueryKey(address, params)
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAddressAnalysis>>> = ({
-    signal,
-  }) => getAddressAnalysis(address, params, requestOptions, signal)
-
-  return { queryKey, queryFn, enabled: !!address, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getAddressAnalysis>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetAddressAnalysisQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getAddressAnalysis>>
->
+export type GetAddressAnalysisQueryResult = NonNullable<Awaited<ReturnType<typeof getAddressAnalysis>>>
 export type GetAddressAnalysisQueryError = void
 
-export function useGetAddressAnalysis<
-  TData = Awaited<ReturnType<typeof getAddressAnalysis>>,
-  TError = void,
->(
-  address: string,
-  params: undefined | GetAddressAnalysisParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>
-    > &
-      Pick<
+
+export function useGetAddressAnalysis<TData = Awaited<ReturnType<typeof getAddressAnalysis>>, TError = void>(
+ address: string,
+    params: undefined |  GetAddressAnalysisParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getAddressAnalysis>>,
           TError,
           Awaited<ReturnType<typeof getAddressAnalysis>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetAddressAnalysis<
-  TData = Awaited<ReturnType<typeof getAddressAnalysis>>,
-  TError = void,
->(
-  address: string,
-  params?: GetAddressAnalysisParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAddressAnalysis<TData = Awaited<ReturnType<typeof getAddressAnalysis>>, TError = void>(
+ address: string,
+    params?: GetAddressAnalysisParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getAddressAnalysis>>,
           TError,
           Awaited<ReturnType<typeof getAddressAnalysis>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetAddressAnalysis<
-  TData = Awaited<ReturnType<typeof getAddressAnalysis>>,
-  TError = void,
->(
-  address: string,
-  params?: GetAddressAnalysisParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAddressAnalysis<TData = Awaited<ReturnType<typeof getAddressAnalysis>>, TError = void>(
+ address: string,
+    params?: GetAddressAnalysisParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get comprehensive address analysis
  */
 
-export function useGetAddressAnalysis<
-  TData = Awaited<ReturnType<typeof getAddressAnalysis>>,
-  TError = void,
->(
-  address: string,
-  params?: GetAddressAnalysisParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGetAddressAnalysisQueryOptions(address, params, options)
+export function useGetAddressAnalysis<TData = Awaited<ReturnType<typeof getAddressAnalysis>>, TError = void>(
+ address: string,
+    params?: GetAddressAnalysisParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressAnalysis>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGetAddressAnalysisQueryOptions(address,params,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
+

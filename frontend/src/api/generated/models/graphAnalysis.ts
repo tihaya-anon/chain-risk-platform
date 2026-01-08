@@ -5,13 +5,13 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { GraphAddressInfo } from "./graphAddressInfo"
-import type { NeighborsResponse } from "./neighborsResponse"
-import type { ClusterResponse } from "./clusterResponse"
+import type { GraphAddressInfo } from './graphAddressInfo';
+import type { AddressNeighborsResponse } from './addressNeighborsResponse';
+import type { ClusterResponse } from './clusterResponse';
 
 export interface GraphAnalysis {
-  graphInfo?: GraphAddressInfo
-  neighbors?: NeighborsResponse
-  tags?: string[]
-  cluster?: ClusterResponse
+  graphInfo?: GraphAddressInfo;
+  neighbors?: AddressNeighborsResponse;
+  tags?: string[];
+  cluster?: ClusterResponse;
 }

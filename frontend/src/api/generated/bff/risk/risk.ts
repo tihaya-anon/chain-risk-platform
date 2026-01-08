@@ -5,7 +5,10 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import { useMutation, useQuery } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -18,318 +21,241 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult,
-} from "@tanstack/react-query"
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   BatchRiskScoreRequestDto,
   BatchRiskScoreResponse,
   RiskRule,
   RiskScoreRequestDto,
-  RiskScoreResponse,
-} from "../../models"
+  RiskScoreResponse
+} from '../../models';
 
-import { customInstance } from "../../../axios-instance"
+import { customInstance } from '../../../axios-instance';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1]
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
 
 /**
  * @summary Calculate risk score for an address
  */
 export const riskControllerScoreAddress = (
-  riskScoreRequestDto: RiskScoreRequestDto,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    riskScoreRequestDto: RiskScoreRequestDto,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<RiskScoreResponse>(
-    {
-      url: `/api/v1/risk/score`,
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      data: riskScoreRequestDto,
-      signal,
+      
+      
+      return customInstance<RiskScoreResponse>(
+      {url: `/api/v1/risk/score`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: riskScoreRequestDto, signal
     },
-    options
-  )
-}
+      options);
+    }
+  
 
-export const getRiskControllerScoreAddressMutationOptions = <
-  TError = void,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof riskControllerScoreAddress>>,
-    TError,
-    { data: RiskScoreRequestDto },
-    TContext
-  >
-  request?: SecondParameter<typeof customInstance>
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof riskControllerScoreAddress>>,
-  TError,
-  { data: RiskScoreRequestDto },
-  TContext
-> => {
-  const mutationKey = ["riskControllerScoreAddress"]
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined }
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof riskControllerScoreAddress>>,
-    { data: RiskScoreRequestDto }
-  > = (props) => {
-    const { data } = props ?? {}
+export const getRiskControllerScoreAddressMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof riskControllerScoreAddress>>, TError,{data: RiskScoreRequestDto}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof riskControllerScoreAddress>>, TError,{data: RiskScoreRequestDto}, TContext> => {
 
-    return riskControllerScoreAddress(data, requestOptions)
-  }
+const mutationKey = ['riskControllerScoreAddress'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-  return { mutationFn, ...mutationOptions }
-}
+      
 
-export type RiskControllerScoreAddressMutationResult = NonNullable<
-  Awaited<ReturnType<typeof riskControllerScoreAddress>>
->
-export type RiskControllerScoreAddressMutationBody = RiskScoreRequestDto
-export type RiskControllerScoreAddressMutationError = void
 
-/**
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof riskControllerScoreAddress>>, {data: RiskScoreRequestDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  riskControllerScoreAddress(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RiskControllerScoreAddressMutationResult = NonNullable<Awaited<ReturnType<typeof riskControllerScoreAddress>>>
+    export type RiskControllerScoreAddressMutationBody = RiskScoreRequestDto
+    export type RiskControllerScoreAddressMutationError = void
+
+    /**
  * @summary Calculate risk score for an address
  */
-export const useRiskControllerScoreAddress = <TError = void, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof riskControllerScoreAddress>>,
-      TError,
-      { data: RiskScoreRequestDto },
-      TContext
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof riskControllerScoreAddress>>,
-  TError,
-  { data: RiskScoreRequestDto },
-  TContext
-> => {
-  const mutationOptions = getRiskControllerScoreAddressMutationOptions(options)
+export const useRiskControllerScoreAddress = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof riskControllerScoreAddress>>, TError,{data: RiskScoreRequestDto}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof riskControllerScoreAddress>>,
+        TError,
+        {data: RiskScoreRequestDto},
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient)
-}
-/**
+      const mutationOptions = getRiskControllerScoreAddressMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * @summary Calculate risk scores for multiple addresses
  */
 export const riskControllerScoreAddressesBatch = (
-  batchRiskScoreRequestDto: BatchRiskScoreRequestDto,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    batchRiskScoreRequestDto: BatchRiskScoreRequestDto,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<BatchRiskScoreResponse>(
-    {
-      url: `/api/v1/risk/score/batch`,
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      data: batchRiskScoreRequestDto,
-      signal,
+      
+      
+      return customInstance<BatchRiskScoreResponse>(
+      {url: `/api/v1/risk/score/batch`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: batchRiskScoreRequestDto, signal
     },
-    options
-  )
-}
+      options);
+    }
+  
 
-export const getRiskControllerScoreAddressesBatchMutationOptions = <
-  TError = void,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>,
-    TError,
-    { data: BatchRiskScoreRequestDto },
-    TContext
-  >
-  request?: SecondParameter<typeof customInstance>
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>,
-  TError,
-  { data: BatchRiskScoreRequestDto },
-  TContext
-> => {
-  const mutationKey = ["riskControllerScoreAddressesBatch"]
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined }
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>,
-    { data: BatchRiskScoreRequestDto }
-  > = (props) => {
-    const { data } = props ?? {}
+export const getRiskControllerScoreAddressesBatchMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>, TError,{data: BatchRiskScoreRequestDto}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>, TError,{data: BatchRiskScoreRequestDto}, TContext> => {
 
-    return riskControllerScoreAddressesBatch(data, requestOptions)
-  }
+const mutationKey = ['riskControllerScoreAddressesBatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-  return { mutationFn, ...mutationOptions }
-}
+      
 
-export type RiskControllerScoreAddressesBatchMutationResult = NonNullable<
-  Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>
->
-export type RiskControllerScoreAddressesBatchMutationBody = BatchRiskScoreRequestDto
-export type RiskControllerScoreAddressesBatchMutationError = void
 
-/**
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>, {data: BatchRiskScoreRequestDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  riskControllerScoreAddressesBatch(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RiskControllerScoreAddressesBatchMutationResult = NonNullable<Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>>
+    export type RiskControllerScoreAddressesBatchMutationBody = BatchRiskScoreRequestDto
+    export type RiskControllerScoreAddressesBatchMutationError = void
+
+    /**
  * @summary Calculate risk scores for multiple addresses
  */
-export const useRiskControllerScoreAddressesBatch = <TError = void, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>,
-      TError,
-      { data: BatchRiskScoreRequestDto },
-      TContext
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>,
-  TError,
-  { data: BatchRiskScoreRequestDto },
-  TContext
-> => {
-  const mutationOptions = getRiskControllerScoreAddressesBatchMutationOptions(options)
+export const useRiskControllerScoreAddressesBatch = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>, TError,{data: BatchRiskScoreRequestDto}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof riskControllerScoreAddressesBatch>>,
+        TError,
+        {data: BatchRiskScoreRequestDto},
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient)
-}
-/**
+      const mutationOptions = getRiskControllerScoreAddressesBatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * @summary Get all risk rules
  */
 export const riskControllerListRules = (
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<RiskRule[]>(
-    { url: `/api/v1/risk/rules`, method: "GET", signal },
-    options
-  )
-}
+      
+      
+      return customInstance<RiskRule[]>(
+      {url: `/api/v1/risk/rules`, method: 'GET', signal
+    },
+      options);
+    }
+  
+
+
 
 export const getRiskControllerListRulesQueryKey = () => {
-  return [`/api/v1/risk/rules`] as const
+    return [
+    `/api/v1/risk/rules`
+    ] as const;
+    }
+
+    
+export const getRiskControllerListRulesQueryOptions = <TData = Awaited<ReturnType<typeof riskControllerListRules>>, TError = void>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getRiskControllerListRulesQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof riskControllerListRules>>> = ({ signal }) => riskControllerListRules(requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export const getRiskControllerListRulesQueryOptions = <
-  TData = Awaited<ReturnType<typeof riskControllerListRules>>,
-  TError = void,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>
-  >
-  request?: SecondParameter<typeof customInstance>
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
-
-  const queryKey = queryOptions?.queryKey ?? getRiskControllerListRulesQueryKey()
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof riskControllerListRules>>> = ({
-    signal,
-  }) => riskControllerListRules(requestOptions, signal)
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof riskControllerListRules>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type RiskControllerListRulesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof riskControllerListRules>>
->
+export type RiskControllerListRulesQueryResult = NonNullable<Awaited<ReturnType<typeof riskControllerListRules>>>
 export type RiskControllerListRulesQueryError = void
 
-export function useRiskControllerListRules<
-  TData = Awaited<ReturnType<typeof riskControllerListRules>>,
-  TError = void,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>
-    > &
-      Pick<
+
+export function useRiskControllerListRules<TData = Awaited<ReturnType<typeof riskControllerListRules>>, TError = void>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof riskControllerListRules>>,
           TError,
           Awaited<ReturnType<typeof riskControllerListRules>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useRiskControllerListRules<
-  TData = Awaited<ReturnType<typeof riskControllerListRules>>,
-  TError = void,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useRiskControllerListRules<TData = Awaited<ReturnType<typeof riskControllerListRules>>, TError = void>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof riskControllerListRules>>,
           TError,
           Awaited<ReturnType<typeof riskControllerListRules>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useRiskControllerListRules<
-  TData = Awaited<ReturnType<typeof riskControllerListRules>>,
-  TError = void,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useRiskControllerListRules<TData = Awaited<ReturnType<typeof riskControllerListRules>>, TError = void>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get all risk rules
  */
 
-export function useRiskControllerListRules<
-  TData = Awaited<ReturnType<typeof riskControllerListRules>>,
-  TError = void,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useRiskControllerListRules<TData = Awaited<ReturnType<typeof riskControllerListRules>>, TError = void>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof riskControllerListRules>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
   const queryOptions = getRiskControllerListRulesQueryOptions(options)
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  query.queryKey = queryOptions.queryKey
+  query.queryKey = queryOptions.queryKey ;
 
-  return query
+  return query;
 }
+
+
+
+

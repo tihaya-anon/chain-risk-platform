@@ -5,7 +5,10 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import { useMutation, useQuery } from "@tanstack/react-query"
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -18,8 +21,8 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult,
-} from "@tanstack/react-query"
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   AddTagRequestDto,
@@ -33,1785 +36,1159 @@ import type {
   GraphControllerSearchByTagParams,
   ManualClusterRequestDto,
   PathResponse,
-  PropagationResultResponse,
-} from "../../models"
+  PropagationResultResponse
+} from '../../models';
 
-import { customInstance } from "../../../axios-instance"
+import { customInstance } from '../../../axios-instance';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1]
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
 
 /**
  * @summary Get address information from graph
  */
 export const graphControllerGetAddressInfo = (
-  address: string,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    address: string,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<AddressInfoResponse>(
-    { url: `/api/v1/graph/address/${address}`, method: "GET", signal },
-    options
-  )
-}
+      
+      
+      return customInstance<AddressInfoResponse>(
+      {url: `/api/v1/graph/address/${address}`, method: 'GET', signal
+    },
+      options);
+    }
+  
 
-export const getGraphControllerGetAddressInfoQueryKey = (address?: string) => {
-  return [`/api/v1/graph/address/${address}`] as const
-}
 
-export const getGraphControllerGetAddressInfoQueryOptions = <
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
+
+export const getGraphControllerGetAddressInfoQueryKey = (address?: string,) => {
+    return [
+    `/api/v1/graph/address/${address}`
+    ] as const;
+    }
+
+    
+export const getGraphControllerGetAddressInfoQueryOptions = <TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError = void>(address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGraphControllerGetAddressInfoQueryKey(address)
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof graphControllerGetAddressInfo>>
-  > = ({ signal }) => graphControllerGetAddressInfo(address, requestOptions, signal)
+  const queryKey =  queryOptions?.queryKey ?? getGraphControllerGetAddressInfoQueryKey(address);
 
-  return { queryKey, queryFn, enabled: !!address, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerGetAddressInfo>>> = ({ signal }) => graphControllerGetAddressInfo(address, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(address), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type GraphControllerGetAddressInfoQueryResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerGetAddressInfo>>
->
+export type GraphControllerGetAddressInfoQueryResult = NonNullable<Awaited<ReturnType<typeof graphControllerGetAddressInfo>>>
 export type GraphControllerGetAddressInfoQueryError = void
 
-export function useGraphControllerGetAddressInfo<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-  TError = void,
->(
-  address: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+export function useGraphControllerGetAddressInfo<TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError = void>(
+ address: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetAddressInfo>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetAddressInfo<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetAddressInfo<TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError = void>(
+ address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetAddressInfo>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetAddressInfo<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetAddressInfo<TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError = void>(
+ address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get address information from graph
  */
 
-export function useGraphControllerGetAddressInfo<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressInfo>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGraphControllerGetAddressInfoQueryOptions(address, options)
+export function useGraphControllerGetAddressInfo<TData = Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError = void>(
+ address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressInfo>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGraphControllerGetAddressInfoQueryOptions(address,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * @summary Get address neighbors
  */
 export const graphControllerGetAddressNeighbors = (
-  address: string,
-  params?: GraphControllerGetAddressNeighborsParams,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    address: string,
+    params?: GraphControllerGetAddressNeighborsParams,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<AddressNeighborsResponse>(
-    { url: `/api/v1/graph/address/${address}/neighbors`, method: "GET", params, signal },
-    options
-  )
+      
+      
+      return customInstance<AddressNeighborsResponse>(
+      {url: `/api/v1/graph/address/${address}/neighbors`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGraphControllerGetAddressNeighborsQueryKey = (address?: string,
+    params?: GraphControllerGetAddressNeighborsParams,) => {
+    return [
+    `/api/v1/graph/address/${address}/neighbors`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGraphControllerGetAddressNeighborsQueryOptions = <TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError = void>(address: string,
+    params?: GraphControllerGetAddressNeighborsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGraphControllerGetAddressNeighborsQueryKey(address,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>> = ({ signal }) => graphControllerGetAddressNeighbors(address,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(address), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export const getGraphControllerGetAddressNeighborsQueryKey = (
-  address?: string,
-  params?: GraphControllerGetAddressNeighborsParams
-) => {
-  return [
-    `/api/v1/graph/address/${address}/neighbors`,
-    ...(params ? [params] : []),
-  ] as const
-}
-
-export const getGraphControllerGetAddressNeighborsQueryOptions = <
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-  TError = void,
->(
-  address: string,
-  params?: GraphControllerGetAddressNeighborsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
-
-  const queryKey =
-    queryOptions?.queryKey ??
-    getGraphControllerGetAddressNeighborsQueryKey(address, params)
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>
-  > = ({ signal }) =>
-    graphControllerGetAddressNeighbors(address, params, requestOptions, signal)
-
-  return { queryKey, queryFn, enabled: !!address, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GraphControllerGetAddressNeighborsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>
->
+export type GraphControllerGetAddressNeighborsQueryResult = NonNullable<Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>>
 export type GraphControllerGetAddressNeighborsQueryError = void
 
-export function useGraphControllerGetAddressNeighbors<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-  TError = void,
->(
-  address: string,
-  params: undefined | GraphControllerGetAddressNeighborsParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+export function useGraphControllerGetAddressNeighbors<TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError = void>(
+ address: string,
+    params: undefined |  GraphControllerGetAddressNeighborsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetAddressNeighbors<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-  TError = void,
->(
-  address: string,
-  params?: GraphControllerGetAddressNeighborsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetAddressNeighbors<TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError = void>(
+ address: string,
+    params?: GraphControllerGetAddressNeighborsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetAddressNeighbors<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-  TError = void,
->(
-  address: string,
-  params?: GraphControllerGetAddressNeighborsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetAddressNeighbors<TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError = void>(
+ address: string,
+    params?: GraphControllerGetAddressNeighborsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get address neighbors
  */
 
-export function useGraphControllerGetAddressNeighbors<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-  TError = void,
->(
-  address: string,
-  params?: GraphControllerGetAddressNeighborsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGraphControllerGetAddressNeighborsQueryOptions(
-    address,
-    params,
-    options
-  )
+export function useGraphControllerGetAddressNeighbors<TData = Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError = void>(
+ address: string,
+    params?: GraphControllerGetAddressNeighborsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressNeighbors>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGraphControllerGetAddressNeighborsQueryOptions(address,params,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * @summary Get address tags
  */
 export const graphControllerGetAddressTags = (
-  address: string,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    address: string,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<string[]>(
-    { url: `/api/v1/graph/address/${address}/tags`, method: "GET", signal },
-    options
-  )
-}
+      
+      
+      return customInstance<string[]>(
+      {url: `/api/v1/graph/address/${address}/tags`, method: 'GET', signal
+    },
+      options);
+    }
+  
 
-export const getGraphControllerGetAddressTagsQueryKey = (address?: string) => {
-  return [`/api/v1/graph/address/${address}/tags`] as const
-}
 
-export const getGraphControllerGetAddressTagsQueryOptions = <
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
+
+export const getGraphControllerGetAddressTagsQueryKey = (address?: string,) => {
+    return [
+    `/api/v1/graph/address/${address}/tags`
+    ] as const;
+    }
+
+    
+export const getGraphControllerGetAddressTagsQueryOptions = <TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError = void>(address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGraphControllerGetAddressTagsQueryKey(address)
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof graphControllerGetAddressTags>>
-  > = ({ signal }) => graphControllerGetAddressTags(address, requestOptions, signal)
+  const queryKey =  queryOptions?.queryKey ?? getGraphControllerGetAddressTagsQueryKey(address);
 
-  return { queryKey, queryFn, enabled: !!address, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerGetAddressTags>>> = ({ signal }) => graphControllerGetAddressTags(address, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(address), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type GraphControllerGetAddressTagsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerGetAddressTags>>
->
+export type GraphControllerGetAddressTagsQueryResult = NonNullable<Awaited<ReturnType<typeof graphControllerGetAddressTags>>>
 export type GraphControllerGetAddressTagsQueryError = void
 
-export function useGraphControllerGetAddressTags<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-  TError = void,
->(
-  address: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+export function useGraphControllerGetAddressTags<TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError = void>(
+ address: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetAddressTags>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetAddressTags<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetAddressTags<TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError = void>(
+ address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetAddressTags>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetAddressTags<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetAddressTags<TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError = void>(
+ address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get address tags
  */
 
-export function useGraphControllerGetAddressTags<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressTags>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGraphControllerGetAddressTagsQueryOptions(address, options)
+export function useGraphControllerGetAddressTags<TData = Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError = void>(
+ address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressTags>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGraphControllerGetAddressTagsQueryOptions(address,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * @summary Add tags to address
  */
 export const graphControllerAddAddressTags = (
-  address: string,
-  addTagRequestDto: AddTagRequestDto,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    address: string,
+    addTagRequestDto: AddTagRequestDto,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<AddressInfoResponse>(
-    {
-      url: `/api/v1/graph/address/${address}/tags`,
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      data: addTagRequestDto,
-      signal,
+      
+      
+      return customInstance<AddressInfoResponse>(
+      {url: `/api/v1/graph/address/${address}/tags`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: addTagRequestDto, signal
     },
-    options
-  )
-}
+      options);
+    }
+  
 
-export const getGraphControllerAddAddressTagsMutationOptions = <
-  TError = void,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof graphControllerAddAddressTags>>,
-    TError,
-    { address: string; data: AddTagRequestDto },
-    TContext
-  >
-  request?: SecondParameter<typeof customInstance>
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof graphControllerAddAddressTags>>,
-  TError,
-  { address: string; data: AddTagRequestDto },
-  TContext
-> => {
-  const mutationKey = ["graphControllerAddAddressTags"]
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined }
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof graphControllerAddAddressTags>>,
-    { address: string; data: AddTagRequestDto }
-  > = (props) => {
-    const { address, data } = props ?? {}
+export const getGraphControllerAddAddressTagsMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerAddAddressTags>>, TError,{address: string;data: AddTagRequestDto}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof graphControllerAddAddressTags>>, TError,{address: string;data: AddTagRequestDto}, TContext> => {
 
-    return graphControllerAddAddressTags(address, data, requestOptions)
-  }
+const mutationKey = ['graphControllerAddAddressTags'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-  return { mutationFn, ...mutationOptions }
-}
+      
 
-export type GraphControllerAddAddressTagsMutationResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerAddAddressTags>>
->
-export type GraphControllerAddAddressTagsMutationBody = AddTagRequestDto
-export type GraphControllerAddAddressTagsMutationError = void
 
-/**
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof graphControllerAddAddressTags>>, {address: string;data: AddTagRequestDto}> = (props) => {
+          const {address,data} = props ?? {};
+
+          return  graphControllerAddAddressTags(address,data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GraphControllerAddAddressTagsMutationResult = NonNullable<Awaited<ReturnType<typeof graphControllerAddAddressTags>>>
+    export type GraphControllerAddAddressTagsMutationBody = AddTagRequestDto
+    export type GraphControllerAddAddressTagsMutationError = void
+
+    /**
  * @summary Add tags to address
  */
-export const useGraphControllerAddAddressTags = <TError = void, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof graphControllerAddAddressTags>>,
-      TError,
-      { address: string; data: AddTagRequestDto },
-      TContext
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof graphControllerAddAddressTags>>,
-  TError,
-  { address: string; data: AddTagRequestDto },
-  TContext
-> => {
-  const mutationOptions = getGraphControllerAddAddressTagsMutationOptions(options)
+export const useGraphControllerAddAddressTags = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerAddAddressTags>>, TError,{address: string;data: AddTagRequestDto}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof graphControllerAddAddressTags>>,
+        TError,
+        {address: string;data: AddTagRequestDto},
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient)
-}
-/**
+      const mutationOptions = getGraphControllerAddAddressTagsMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * @summary Remove tag from address
  */
 export const graphControllerRemoveAddressTag = (
-  address: string,
-  tag: string,
-  options?: SecondParameter<typeof customInstance>
-) => {
-  return customInstance<void>(
-    { url: `/api/v1/graph/address/${address}/tags/${tag}`, method: "DELETE" },
-    options
-  )
-}
+    address: string,
+    tag: string,
+ options?: SecondParameter<typeof customInstance>,) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/graph/address/${address}/tags/${tag}`, method: 'DELETE'
+    },
+      options);
+    }
+  
 
-export const getGraphControllerRemoveAddressTagMutationOptions = <
-  TError = void,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>,
-    TError,
-    { address: string; tag: string },
-    TContext
-  >
-  request?: SecondParameter<typeof customInstance>
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>,
-  TError,
-  { address: string; tag: string },
-  TContext
-> => {
-  const mutationKey = ["graphControllerRemoveAddressTag"]
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined }
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>,
-    { address: string; tag: string }
-  > = (props) => {
-    const { address, tag } = props ?? {}
+export const getGraphControllerRemoveAddressTagMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>, TError,{address: string;tag: string}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>, TError,{address: string;tag: string}, TContext> => {
 
-    return graphControllerRemoveAddressTag(address, tag, requestOptions)
-  }
+const mutationKey = ['graphControllerRemoveAddressTag'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-  return { mutationFn, ...mutationOptions }
-}
+      
 
-export type GraphControllerRemoveAddressTagMutationResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>
->
 
-export type GraphControllerRemoveAddressTagMutationError = void
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>, {address: string;tag: string}> = (props) => {
+          const {address,tag} = props ?? {};
 
-/**
+          return  graphControllerRemoveAddressTag(address,tag,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GraphControllerRemoveAddressTagMutationResult = NonNullable<Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>>
+    
+    export type GraphControllerRemoveAddressTagMutationError = void
+
+    /**
  * @summary Remove tag from address
  */
-export const useGraphControllerRemoveAddressTag = <TError = void, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>,
-      TError,
-      { address: string; tag: string },
-      TContext
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>,
-  TError,
-  { address: string; tag: string },
-  TContext
-> => {
-  const mutationOptions = getGraphControllerRemoveAddressTagMutationOptions(options)
+export const useGraphControllerRemoveAddressTag = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>, TError,{address: string;tag: string}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof graphControllerRemoveAddressTag>>,
+        TError,
+        {address: string;tag: string},
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient)
-}
-/**
+      const mutationOptions = getGraphControllerRemoveAddressTagMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * @summary Get cluster that address belongs to
  */
 export const graphControllerGetAddressCluster = (
-  address: string,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    address: string,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<ClusterResponse>(
-    { url: `/api/v1/graph/address/${address}/cluster`, method: "GET", signal },
-    options
-  )
-}
+      
+      
+      return customInstance<ClusterResponse>(
+      {url: `/api/v1/graph/address/${address}/cluster`, method: 'GET', signal
+    },
+      options);
+    }
+  
 
-export const getGraphControllerGetAddressClusterQueryKey = (address?: string) => {
-  return [`/api/v1/graph/address/${address}/cluster`] as const
-}
 
-export const getGraphControllerGetAddressClusterQueryOptions = <
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
+
+export const getGraphControllerGetAddressClusterQueryKey = (address?: string,) => {
+    return [
+    `/api/v1/graph/address/${address}/cluster`
+    ] as const;
+    }
+
+    
+export const getGraphControllerGetAddressClusterQueryOptions = <TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError = void>(address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGraphControllerGetAddressClusterQueryKey(address)
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof graphControllerGetAddressCluster>>
-  > = ({ signal }) => graphControllerGetAddressCluster(address, requestOptions, signal)
+  const queryKey =  queryOptions?.queryKey ?? getGraphControllerGetAddressClusterQueryKey(address);
 
-  return { queryKey, queryFn, enabled: !!address, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerGetAddressCluster>>> = ({ signal }) => graphControllerGetAddressCluster(address, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(address), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type GraphControllerGetAddressClusterQueryResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerGetAddressCluster>>
->
+export type GraphControllerGetAddressClusterQueryResult = NonNullable<Awaited<ReturnType<typeof graphControllerGetAddressCluster>>>
 export type GraphControllerGetAddressClusterQueryError = void
 
-export function useGraphControllerGetAddressCluster<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-  TError = void,
->(
-  address: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+export function useGraphControllerGetAddressCluster<TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError = void>(
+ address: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetAddressCluster>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetAddressCluster<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetAddressCluster<TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError = void>(
+ address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetAddressCluster>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetAddressCluster<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetAddressCluster<TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError = void>(
+ address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get cluster that address belongs to
  */
 
-export function useGraphControllerGetAddressCluster<
-  TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-  TError = void,
->(
-  address: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetAddressCluster>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGraphControllerGetAddressClusterQueryOptions(address, options)
+export function useGraphControllerGetAddressCluster<TData = Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError = void>(
+ address: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetAddressCluster>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGraphControllerGetAddressClusterQueryOptions(address,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * @summary Find shortest path between two addresses
  */
 export const graphControllerFindPath = (
-  fromAddress: string,
-  toAddress: string,
-  params?: GraphControllerFindPathParams,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    fromAddress: string,
+    toAddress: string,
+    params?: GraphControllerFindPathParams,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<PathResponse>(
-    {
-      url: `/api/v1/graph/path/${fromAddress}/${toAddress}`,
-      method: "GET",
-      params,
-      signal,
+      
+      
+      return customInstance<PathResponse>(
+      {url: `/api/v1/graph/path/${fromAddress}/${toAddress}`, method: 'GET',
+        params, signal
     },
-    options
-  )
-}
+      options);
+    }
+  
 
-export const getGraphControllerFindPathQueryKey = (
-  fromAddress?: string,
-  toAddress?: string,
-  params?: GraphControllerFindPathParams
+
+
+export const getGraphControllerFindPathQueryKey = (fromAddress?: string,
+    toAddress?: string,
+    params?: GraphControllerFindPathParams,) => {
+    return [
+    `/api/v1/graph/path/${fromAddress}/${toAddress}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGraphControllerFindPathQueryOptions = <TData = Awaited<ReturnType<typeof graphControllerFindPath>>, TError = void>(fromAddress: string,
+    toAddress: string,
+    params?: GraphControllerFindPathParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  return [
-    `/api/v1/graph/path/${fromAddress}/${toAddress}`,
-    ...(params ? [params] : []),
-  ] as const
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGraphControllerFindPathQueryKey(fromAddress,toAddress,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerFindPath>>> = ({ signal }) => graphControllerFindPath(fromAddress,toAddress,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(fromAddress && toAddress), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export const getGraphControllerFindPathQueryOptions = <
-  TData = Awaited<ReturnType<typeof graphControllerFindPath>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params?: GraphControllerFindPathParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
-
-  const queryKey =
-    queryOptions?.queryKey ??
-    getGraphControllerFindPathQueryKey(fromAddress, toAddress, params)
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerFindPath>>> = ({
-    signal,
-  }) => graphControllerFindPath(fromAddress, toAddress, params, requestOptions, signal)
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!(fromAddress && toAddress),
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof graphControllerFindPath>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GraphControllerFindPathQueryResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerFindPath>>
->
+export type GraphControllerFindPathQueryResult = NonNullable<Awaited<ReturnType<typeof graphControllerFindPath>>>
 export type GraphControllerFindPathQueryError = void
 
-export function useGraphControllerFindPath<
-  TData = Awaited<ReturnType<typeof graphControllerFindPath>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params: undefined | GraphControllerFindPathParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>
-    > &
-      Pick<
+
+export function useGraphControllerFindPath<TData = Awaited<ReturnType<typeof graphControllerFindPath>>, TError = void>(
+ fromAddress: string,
+    toAddress: string,
+    params: undefined |  GraphControllerFindPathParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerFindPath>>,
           TError,
           Awaited<ReturnType<typeof graphControllerFindPath>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerFindPath<
-  TData = Awaited<ReturnType<typeof graphControllerFindPath>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params?: GraphControllerFindPathParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerFindPath<TData = Awaited<ReturnType<typeof graphControllerFindPath>>, TError = void>(
+ fromAddress: string,
+    toAddress: string,
+    params?: GraphControllerFindPathParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerFindPath>>,
           TError,
           Awaited<ReturnType<typeof graphControllerFindPath>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerFindPath<
-  TData = Awaited<ReturnType<typeof graphControllerFindPath>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params?: GraphControllerFindPathParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerFindPath<TData = Awaited<ReturnType<typeof graphControllerFindPath>>, TError = void>(
+ fromAddress: string,
+    toAddress: string,
+    params?: GraphControllerFindPathParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Find shortest path between two addresses
  */
 
-export function useGraphControllerFindPath<
-  TData = Awaited<ReturnType<typeof graphControllerFindPath>>,
-  TError = void,
->(
-  fromAddress: string,
-  toAddress: string,
-  params?: GraphControllerFindPathParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGraphControllerFindPathQueryOptions(
-    fromAddress,
-    toAddress,
-    params,
-    options
-  )
+export function useGraphControllerFindPath<TData = Awaited<ReturnType<typeof graphControllerFindPath>>, TError = void>(
+ fromAddress: string,
+    toAddress: string,
+    params?: GraphControllerFindPathParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerFindPath>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGraphControllerFindPathQueryOptions(fromAddress,toAddress,params,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * @summary Get cluster by ID
  */
 export const graphControllerGetCluster = (
-  clusterId: string,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    clusterId: string,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<ClusterResponse>(
-    { url: `/api/v1/graph/cluster/${clusterId}`, method: "GET", signal },
-    options
-  )
-}
+      
+      
+      return customInstance<ClusterResponse>(
+      {url: `/api/v1/graph/cluster/${clusterId}`, method: 'GET', signal
+    },
+      options);
+    }
+  
 
-export const getGraphControllerGetClusterQueryKey = (clusterId?: string) => {
-  return [`/api/v1/graph/cluster/${clusterId}`] as const
-}
 
-export const getGraphControllerGetClusterQueryOptions = <
-  TData = Awaited<ReturnType<typeof graphControllerGetCluster>>,
-  TError = void,
->(
-  clusterId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetCluster>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
+
+export const getGraphControllerGetClusterQueryKey = (clusterId?: string,) => {
+    return [
+    `/api/v1/graph/cluster/${clusterId}`
+    ] as const;
+    }
+
+    
+export const getGraphControllerGetClusterQueryOptions = <TData = Awaited<ReturnType<typeof graphControllerGetCluster>>, TError = void>(clusterId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetCluster>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGraphControllerGetClusterQueryKey(clusterId)
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerGetCluster>>> = ({
-    signal,
-  }) => graphControllerGetCluster(clusterId, requestOptions, signal)
+  const queryKey =  queryOptions?.queryKey ?? getGraphControllerGetClusterQueryKey(clusterId);
 
-  return { queryKey, queryFn, enabled: !!clusterId, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof graphControllerGetCluster>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerGetCluster>>> = ({ signal }) => graphControllerGetCluster(clusterId, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(clusterId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetCluster>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type GraphControllerGetClusterQueryResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerGetCluster>>
->
+export type GraphControllerGetClusterQueryResult = NonNullable<Awaited<ReturnType<typeof graphControllerGetCluster>>>
 export type GraphControllerGetClusterQueryError = void
 
-export function useGraphControllerGetCluster<
-  TData = Awaited<ReturnType<typeof graphControllerGetCluster>>,
-  TError = void,
->(
-  clusterId: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetCluster>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+export function useGraphControllerGetCluster<TData = Awaited<ReturnType<typeof graphControllerGetCluster>>, TError = void>(
+ clusterId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetCluster>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetCluster>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetCluster>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetCluster<
-  TData = Awaited<ReturnType<typeof graphControllerGetCluster>>,
-  TError = void,
->(
-  clusterId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetCluster>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetCluster<TData = Awaited<ReturnType<typeof graphControllerGetCluster>>, TError = void>(
+ clusterId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetCluster>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetCluster>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetCluster>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetCluster<
-  TData = Awaited<ReturnType<typeof graphControllerGetCluster>>,
-  TError = void,
->(
-  clusterId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetCluster>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetCluster<TData = Awaited<ReturnType<typeof graphControllerGetCluster>>, TError = void>(
+ clusterId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetCluster>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get cluster by ID
  */
 
-export function useGraphControllerGetCluster<
-  TData = Awaited<ReturnType<typeof graphControllerGetCluster>>,
-  TError = void,
->(
-  clusterId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetCluster>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGraphControllerGetClusterQueryOptions(clusterId, options)
+export function useGraphControllerGetCluster<TData = Awaited<ReturnType<typeof graphControllerGetCluster>>, TError = void>(
+ clusterId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetCluster>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGraphControllerGetClusterQueryOptions(clusterId,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * @summary Run clustering algorithm
  */
 export const graphControllerRunClustering = (
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<ClusteringResultResponse>(
-    { url: `/api/v1/graph/cluster/run`, method: "POST", signal },
-    options
-  )
-}
+      
+      
+      return customInstance<ClusteringResultResponse>(
+      {url: `/api/v1/graph/cluster/run`, method: 'POST', signal
+    },
+      options);
+    }
+  
 
-export const getGraphControllerRunClusteringMutationOptions = <
-  TError = void,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof graphControllerRunClustering>>,
-    TError,
-    void,
-    TContext
-  >
-  request?: SecondParameter<typeof customInstance>
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof graphControllerRunClustering>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ["graphControllerRunClustering"]
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined }
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof graphControllerRunClustering>>,
-    void
-  > = () => {
-    return graphControllerRunClustering(requestOptions)
-  }
+export const getGraphControllerRunClusteringMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerRunClustering>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof graphControllerRunClustering>>, TError,void, TContext> => {
 
-  return { mutationFn, ...mutationOptions }
-}
+const mutationKey = ['graphControllerRunClustering'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-export type GraphControllerRunClusteringMutationResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerRunClustering>>
->
+      
 
-export type GraphControllerRunClusteringMutationError = void
 
-/**
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof graphControllerRunClustering>>, void> = () => {
+          
+
+          return  graphControllerRunClustering(requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GraphControllerRunClusteringMutationResult = NonNullable<Awaited<ReturnType<typeof graphControllerRunClustering>>>
+    
+    export type GraphControllerRunClusteringMutationError = void
+
+    /**
  * @summary Run clustering algorithm
  */
-export const useGraphControllerRunClustering = <TError = void, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof graphControllerRunClustering>>,
-      TError,
-      void,
-      TContext
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof graphControllerRunClustering>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationOptions = getGraphControllerRunClusteringMutationOptions(options)
+export const useGraphControllerRunClustering = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerRunClustering>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof graphControllerRunClustering>>,
+        TError,
+        void,
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient)
-}
-/**
+      const mutationOptions = getGraphControllerRunClusteringMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * @summary Manually cluster addresses
  */
 export const graphControllerManualCluster = (
-  manualClusterRequestDto: ManualClusterRequestDto,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    manualClusterRequestDto: ManualClusterRequestDto,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<ClusteringResultResponse>(
-    {
-      url: `/api/v1/graph/cluster/manual`,
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      data: manualClusterRequestDto,
-      signal,
+      
+      
+      return customInstance<ClusteringResultResponse>(
+      {url: `/api/v1/graph/cluster/manual`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: manualClusterRequestDto, signal
     },
-    options
-  )
-}
+      options);
+    }
+  
 
-export const getGraphControllerManualClusterMutationOptions = <
-  TError = void,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof graphControllerManualCluster>>,
-    TError,
-    { data: ManualClusterRequestDto },
-    TContext
-  >
-  request?: SecondParameter<typeof customInstance>
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof graphControllerManualCluster>>,
-  TError,
-  { data: ManualClusterRequestDto },
-  TContext
-> => {
-  const mutationKey = ["graphControllerManualCluster"]
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined }
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof graphControllerManualCluster>>,
-    { data: ManualClusterRequestDto }
-  > = (props) => {
-    const { data } = props ?? {}
+export const getGraphControllerManualClusterMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerManualCluster>>, TError,{data: ManualClusterRequestDto}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof graphControllerManualCluster>>, TError,{data: ManualClusterRequestDto}, TContext> => {
 
-    return graphControllerManualCluster(data, requestOptions)
-  }
+const mutationKey = ['graphControllerManualCluster'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-  return { mutationFn, ...mutationOptions }
-}
+      
 
-export type GraphControllerManualClusterMutationResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerManualCluster>>
->
-export type GraphControllerManualClusterMutationBody = ManualClusterRequestDto
-export type GraphControllerManualClusterMutationError = void
 
-/**
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof graphControllerManualCluster>>, {data: ManualClusterRequestDto}> = (props) => {
+          const {data} = props ?? {};
+
+          return  graphControllerManualCluster(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GraphControllerManualClusterMutationResult = NonNullable<Awaited<ReturnType<typeof graphControllerManualCluster>>>
+    export type GraphControllerManualClusterMutationBody = ManualClusterRequestDto
+    export type GraphControllerManualClusterMutationError = void
+
+    /**
  * @summary Manually cluster addresses
  */
-export const useGraphControllerManualCluster = <TError = void, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof graphControllerManualCluster>>,
-      TError,
-      { data: ManualClusterRequestDto },
-      TContext
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof graphControllerManualCluster>>,
-  TError,
-  { data: ManualClusterRequestDto },
-  TContext
-> => {
-  const mutationOptions = getGraphControllerManualClusterMutationOptions(options)
+export const useGraphControllerManualCluster = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerManualCluster>>, TError,{data: ManualClusterRequestDto}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof graphControllerManualCluster>>,
+        TError,
+        {data: ManualClusterRequestDto},
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient)
-}
-/**
+      const mutationOptions = getGraphControllerManualClusterMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * @summary Search addresses by tag
  */
 export const graphControllerSearchByTag = (
-  tag: string,
-  params?: GraphControllerSearchByTagParams,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    tag: string,
+    params?: GraphControllerSearchByTagParams,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<AddressInfoResponse[]>(
-    { url: `/api/v1/graph/search/tag/${tag}`, method: "GET", params, signal },
-    options
-  )
+      
+      
+      return customInstance<AddressInfoResponse[]>(
+      {url: `/api/v1/graph/search/tag/${tag}`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGraphControllerSearchByTagQueryKey = (tag?: string,
+    params?: GraphControllerSearchByTagParams,) => {
+    return [
+    `/api/v1/graph/search/tag/${tag}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGraphControllerSearchByTagQueryOptions = <TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError = void>(tag: string,
+    params?: GraphControllerSearchByTagParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGraphControllerSearchByTagQueryKey(tag,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerSearchByTag>>> = ({ signal }) => graphControllerSearchByTag(tag,params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(tag), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export const getGraphControllerSearchByTagQueryKey = (
-  tag?: string,
-  params?: GraphControllerSearchByTagParams
-) => {
-  return [`/api/v1/graph/search/tag/${tag}`, ...(params ? [params] : [])] as const
-}
-
-export const getGraphControllerSearchByTagQueryOptions = <
-  TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-  TError = void,
->(
-  tag: string,
-  params?: GraphControllerSearchByTagParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
-
-  const queryKey =
-    queryOptions?.queryKey ?? getGraphControllerSearchByTagQueryKey(tag, params)
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof graphControllerSearchByTag>>
-  > = ({ signal }) => graphControllerSearchByTag(tag, params, requestOptions, signal)
-
-  return { queryKey, queryFn, enabled: !!tag, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GraphControllerSearchByTagQueryResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerSearchByTag>>
->
+export type GraphControllerSearchByTagQueryResult = NonNullable<Awaited<ReturnType<typeof graphControllerSearchByTag>>>
 export type GraphControllerSearchByTagQueryError = void
 
-export function useGraphControllerSearchByTag<
-  TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-  TError = void,
->(
-  tag: string,
-  params: undefined | GraphControllerSearchByTagParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+export function useGraphControllerSearchByTag<TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError = void>(
+ tag: string,
+    params: undefined |  GraphControllerSearchByTagParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerSearchByTag>>,
           TError,
           Awaited<ReturnType<typeof graphControllerSearchByTag>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerSearchByTag<
-  TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-  TError = void,
->(
-  tag: string,
-  params?: GraphControllerSearchByTagParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerSearchByTag<TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError = void>(
+ tag: string,
+    params?: GraphControllerSearchByTagParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerSearchByTag>>,
           TError,
           Awaited<ReturnType<typeof graphControllerSearchByTag>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerSearchByTag<
-  TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-  TError = void,
->(
-  tag: string,
-  params?: GraphControllerSearchByTagParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerSearchByTag<TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError = void>(
+ tag: string,
+    params?: GraphControllerSearchByTagParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Search addresses by tag
  */
 
-export function useGraphControllerSearchByTag<
-  TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-  TError = void,
->(
-  tag: string,
-  params?: GraphControllerSearchByTagParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerSearchByTag>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGraphControllerSearchByTagQueryOptions(tag, params, options)
+export function useGraphControllerSearchByTag<TData = Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError = void>(
+ tag: string,
+    params?: GraphControllerSearchByTagParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerSearchByTag>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGraphControllerSearchByTagQueryOptions(tag,params,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * @summary Get high-risk addresses
  */
 export const graphControllerGetHighRiskAddresses = (
-  params?: GraphControllerGetHighRiskAddressesParams,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    params?: GraphControllerGetHighRiskAddressesParams,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<AddressInfoResponse[]>(
-    { url: `/api/v1/graph/search/high-risk`, method: "GET", params, signal },
-    options
-  )
+      
+      
+      return customInstance<AddressInfoResponse[]>(
+      {url: `/api/v1/graph/search/high-risk`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getGraphControllerGetHighRiskAddressesQueryKey = (params?: GraphControllerGetHighRiskAddressesParams,) => {
+    return [
+    `/api/v1/graph/search/high-risk`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGraphControllerGetHighRiskAddressesQueryOptions = <TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError = void>(params?: GraphControllerGetHighRiskAddressesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGraphControllerGetHighRiskAddressesQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>> = ({ signal }) => graphControllerGetHighRiskAddresses(params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export const getGraphControllerGetHighRiskAddressesQueryKey = (
-  params?: GraphControllerGetHighRiskAddressesParams
-) => {
-  return [`/api/v1/graph/search/high-risk`, ...(params ? [params] : [])] as const
-}
-
-export const getGraphControllerGetHighRiskAddressesQueryOptions = <
-  TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-  TError = void,
->(
-  params?: GraphControllerGetHighRiskAddressesParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
-
-  const queryKey =
-    queryOptions?.queryKey ?? getGraphControllerGetHighRiskAddressesQueryKey(params)
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>
-  > = ({ signal }) => graphControllerGetHighRiskAddresses(params, requestOptions, signal)
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GraphControllerGetHighRiskAddressesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>
->
+export type GraphControllerGetHighRiskAddressesQueryResult = NonNullable<Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>>
 export type GraphControllerGetHighRiskAddressesQueryError = void
 
-export function useGraphControllerGetHighRiskAddresses<
-  TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-  TError = void,
->(
-  params: undefined | GraphControllerGetHighRiskAddressesParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+export function useGraphControllerGetHighRiskAddresses<TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError = void>(
+ params: undefined |  GraphControllerGetHighRiskAddressesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetHighRiskAddresses<
-  TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-  TError = void,
->(
-  params?: GraphControllerGetHighRiskAddressesParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetHighRiskAddresses<TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError = void>(
+ params?: GraphControllerGetHighRiskAddressesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
           TError,
           Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGraphControllerGetHighRiskAddresses<
-  TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-  TError = void,
->(
-  params?: GraphControllerGetHighRiskAddressesParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGraphControllerGetHighRiskAddresses<TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError = void>(
+ params?: GraphControllerGetHighRiskAddressesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get high-risk addresses
  */
 
-export function useGraphControllerGetHighRiskAddresses<
-  TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-  TError = void,
->(
-  params?: GraphControllerGetHighRiskAddressesParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGraphControllerGetHighRiskAddressesQueryOptions(params, options)
+export function useGraphControllerGetHighRiskAddresses<TData = Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError = void>(
+ params?: GraphControllerGetHighRiskAddressesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof graphControllerGetHighRiskAddresses>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getGraphControllerGetHighRiskAddressesQueryOptions(params,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * @summary Propagate risk tags to neighbors
  */
 export const graphControllerPropagateTags = (
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<PropagationResultResponse>(
-    { url: `/api/v1/graph/propagate`, method: "POST", signal },
-    options
-  )
-}
+      
+      
+      return customInstance<PropagationResultResponse>(
+      {url: `/api/v1/graph/propagate`, method: 'POST', signal
+    },
+      options);
+    }
+  
 
-export const getGraphControllerPropagateTagsMutationOptions = <
-  TError = void,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof graphControllerPropagateTags>>,
-    TError,
-    void,
-    TContext
-  >
-  request?: SecondParameter<typeof customInstance>
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof graphControllerPropagateTags>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ["graphControllerPropagateTags"]
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined }
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof graphControllerPropagateTags>>,
-    void
-  > = () => {
-    return graphControllerPropagateTags(requestOptions)
-  }
+export const getGraphControllerPropagateTagsMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerPropagateTags>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof graphControllerPropagateTags>>, TError,void, TContext> => {
 
-  return { mutationFn, ...mutationOptions }
-}
+const mutationKey = ['graphControllerPropagateTags'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-export type GraphControllerPropagateTagsMutationResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerPropagateTags>>
->
+      
 
-export type GraphControllerPropagateTagsMutationError = void
 
-/**
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof graphControllerPropagateTags>>, void> = () => {
+          
+
+          return  graphControllerPropagateTags(requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GraphControllerPropagateTagsMutationResult = NonNullable<Awaited<ReturnType<typeof graphControllerPropagateTags>>>
+    
+    export type GraphControllerPropagateTagsMutationError = void
+
+    /**
  * @summary Propagate risk tags to neighbors
  */
-export const useGraphControllerPropagateTags = <TError = void, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof graphControllerPropagateTags>>,
-      TError,
-      void,
-      TContext
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof graphControllerPropagateTags>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationOptions = getGraphControllerPropagateTagsMutationOptions(options)
+export const useGraphControllerPropagateTags = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerPropagateTags>>, TError,void, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof graphControllerPropagateTags>>,
+        TError,
+        void,
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient)
-}
-/**
+      const mutationOptions = getGraphControllerPropagateTagsMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * @summary Propagate risk from specific address
  */
 export const graphControllerPropagateFromAddress = (
-  address: string,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    address: string,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<PropagationResultResponse>(
-    { url: `/api/v1/graph/propagate/${address}`, method: "POST", signal },
-    options
-  )
-}
+      
+      
+      return customInstance<PropagationResultResponse>(
+      {url: `/api/v1/graph/propagate/${address}`, method: 'POST', signal
+    },
+      options);
+    }
+  
 
-export const getGraphControllerPropagateFromAddressMutationOptions = <
-  TError = void,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>,
-    TError,
-    { address: string },
-    TContext
-  >
-  request?: SecondParameter<typeof customInstance>
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>,
-  TError,
-  { address: string },
-  TContext
-> => {
-  const mutationKey = ["graphControllerPropagateFromAddress"]
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined }
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>,
-    { address: string }
-  > = (props) => {
-    const { address } = props ?? {}
+export const getGraphControllerPropagateFromAddressMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>, TError,{address: string}, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>, TError,{address: string}, TContext> => {
 
-    return graphControllerPropagateFromAddress(address, requestOptions)
-  }
+const mutationKey = ['graphControllerPropagateFromAddress'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-  return { mutationFn, ...mutationOptions }
-}
+      
 
-export type GraphControllerPropagateFromAddressMutationResult = NonNullable<
-  Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>
->
 
-export type GraphControllerPropagateFromAddressMutationError = void
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>, {address: string}> = (props) => {
+          const {address} = props ?? {};
 
-/**
+          return  graphControllerPropagateFromAddress(address,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GraphControllerPropagateFromAddressMutationResult = NonNullable<Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>>
+    
+    export type GraphControllerPropagateFromAddressMutationError = void
+
+    /**
  * @summary Propagate risk from specific address
  */
-export const useGraphControllerPropagateFromAddress = <TError = void, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>,
-      TError,
-      { address: string },
-      TContext
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>,
-  TError,
-  { address: string },
-  TContext
-> => {
-  const mutationOptions = getGraphControllerPropagateFromAddressMutationOptions(options)
+export const useGraphControllerPropagateFromAddress = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>, TError,{address: string}, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof graphControllerPropagateFromAddress>>,
+        TError,
+        {address: string},
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient)
-}
+      const mutationOptions = getGraphControllerPropagateFromAddressMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    

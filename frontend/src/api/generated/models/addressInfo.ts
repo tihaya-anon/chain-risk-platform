@@ -7,12 +7,12 @@
  */
 
 export interface AddressInfo {
-  address?: string
-  network?: string
-  firstSeen?: string
-  lastSeen?: string
-  totalTxCount?: number
-  sentTxCount?: number
-  receivedTxCount?: number
-  uniqueInteracted?: number
+  address?: string;
+  network?: string;
+  firstSeen?: string;
+  lastSeen?: string;
+  totalTxCount?: number;
+  sentTxCount?: number;
+  receivedTxCount?: number;
+  uniqueInteracted?: number;
 }

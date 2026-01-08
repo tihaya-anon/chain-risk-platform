@@ -5,15 +5,15 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { AddressInfo } from "./addressInfo"
-import type { RiskScoreResponse } from "./riskScoreResponse"
-import type { PaginatedTransfers } from "./paginatedTransfers"
+import type { AddressInfo } from './addressInfo';
+import type { RiskScoreResponse } from './riskScoreResponse';
+import type { PaginatedTransfers } from './paginatedTransfers';
 
 export interface AddressProfileResponse {
-  address?: string
-  network?: string
-  addressInfo?: AddressInfo
-  riskScore?: RiskScoreResponse
-  recentTransfers?: PaginatedTransfers
-  orchestratedAt?: number
+  address?: string;
+  network?: string;
+  addressInfo?: AddressInfo;
+  riskScore?: RiskScoreResponse;
+  recentTransfers?: PaginatedTransfers;
+  orchestratedAt?: number;
 }

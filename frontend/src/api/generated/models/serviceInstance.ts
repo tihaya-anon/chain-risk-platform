@@ -5,12 +5,12 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { ServiceInstanceMetadata } from "./serviceInstanceMetadata"
+import type { ServiceInstanceMetadata } from './serviceInstanceMetadata';
 
 export interface ServiceInstance {
-  instanceId?: string
-  ip?: string
-  port?: number
-  healthy?: boolean
-  metadata?: ServiceInstanceMetadata
+  instanceId?: string;
+  ip?: string;
+  port?: number;
+  healthy?: boolean;
+  metadata?: ServiceInstanceMetadata;
 }

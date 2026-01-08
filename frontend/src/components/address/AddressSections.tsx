@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { Link } from "react-router-dom"
 import {
   Network,
@@ -285,10 +286,88 @@ export function ClusterSection({ data }: { data: AddressAnalysisResponse }) {
   )
 }
 
-export function NeighborsSection({ data }: { data: AddressAnalysisResponse }) {
-  const neighbors = data.graph?.neighbors
+interface NeighborDisplay {
+  address: string
+  direction: "incoming" | "outgoing" | "both"
+  transferCount: number
+  totalValue: string
+  riskScore?: number
+  tags?: string[]
+}
 
-  if (!neighbors || !neighbors.neighbors || neighbors.neighbors.length === 0) {
+export function NeighborsSection({ data }: { data: AddressAnalysisResponse }) {
+  const neighborsData = data.graph?.neighbors
+  const centerAddress = data.address
+
+  // Transform nodes + edges into neighbor list for table display
+  const neighborsList = useMemo<NeighborDisplay[]>(() => {
+    if (!neighborsData?.nodes || !neighborsData?.edges) return []
+
+    const { nodes, edges } = neighborsData
+
+    // Build edge info map: neighborAddress -> { incoming, outgoing, totalValue }
+    const edgeInfo = new Map<
+      string,
+      { inCount: number; outCount: number; totalValue: bigint }
+    >()
+
+    for (const edge of edges) {
+      const isOutgoing = edge.from === centerAddress
+      const isIncoming = edge.to === centerAddress
+      const neighborAddr = isOutgoing ? edge.to : edge.from
+
+      if (!neighborAddr || neighborAddr === centerAddress) continue
+
+      const existing = edgeInfo.get(neighborAddr) || {
+        inCount: 0,
+        outCount: 0,
+        totalValue: 0n,
+      }
+
+      if (isOutgoing) {
+        existing.outCount += edge.transferCount || 0
+      }
+      if (isIncoming) {
+        existing.inCount += edge.transferCount || 0
+      }
+
+      try {
+        existing.totalValue += BigInt(edge.totalValue || "0")
+      } catch {
+        // ignore parse errors
+      }
+
+      edgeInfo.set(neighborAddr, existing)
+    }
+
+    // Filter nodes to only neighbors (distance > 0 or not center)
+    const neighborNodes = nodes.filter(
+      (n) => n.address !== centerAddress && (n.distance === undefined || n.distance > 0)
+    )
+
+    return neighborNodes.map((node) => {
+      const info = edgeInfo.get(node.address!) || {
+        inCount: 0,
+        outCount: 0,
+        totalValue: 0n,
+      }
+
+      let direction: "incoming" | "outgoing" | "both" = "both"
+      if (info.inCount > 0 && info.outCount === 0) direction = "incoming"
+      else if (info.outCount > 0 && info.inCount === 0) direction = "outgoing"
+
+      return {
+        address: node.address!,
+        direction,
+        transferCount: info.inCount + info.outCount,
+        totalValue: info.totalValue.toString(),
+        riskScore: node.riskScore,
+        tags: node.tags,
+      }
+    })
+  }, [neighborsData, centerAddress])
+
+  if (neighborsList.length === 0) {
     return (
       <div className="text-center py-8">
         <Network className="w-12 h-12 text-gray-300 mx-auto" />
@@ -300,8 +379,8 @@ export function NeighborsSection({ data }: { data: AddressAnalysisResponse }) {
   return (
     <div>
       <div className="mb-4 text-sm text-gray-500">
-        Showing {neighbors.neighbors.length} of {neighbors.totalCount} connected addresses
-        (depth: {neighbors.depth})
+        Showing {neighborsList.length} connected addresses (depth:{" "}
+        {neighborsData?.depth || 1})
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -328,7 +407,7 @@ export function NeighborsSection({ data }: { data: AddressAnalysisResponse }) {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {neighbors.neighbors.map((neighbor, i) => (
+            {neighborsList.map((neighbor, i) => (
               <tr key={i} className="hover:bg-gray-50">
                 <td className="px-4 py-3">
                   <Link

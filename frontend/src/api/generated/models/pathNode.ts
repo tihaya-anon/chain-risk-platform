@@ -7,10 +7,10 @@
  */
 
 export interface PathNode {
-  address?: string
-  txHash?: string
-  value?: string
-  timestamp?: string
-  riskScore?: number
-  tags?: string[]
+  address?: string;
+  txHash?: string;
+  value?: string;
+  timestamp?: string;
+  riskScore?: number;
+  tags?: string[];
 }

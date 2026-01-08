@@ -5,10 +5,10 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { Transfer } from "./transfer"
-import type { Pagination } from "./pagination"
+import type { Transfer } from './transfer';
+import type { Pagination } from './pagination';
 
 export interface PaginatedTransfers {
-  items?: Transfer[]
-  pagination?: Pagination
+  items?: Transfer[];
+  pagination?: Pagination;
 }

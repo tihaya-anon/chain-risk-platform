@@ -85,38 +85,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["pause", "resume", "trigger"]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ActionResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/pipeline/graph-sync/{action}": {
-      "post": {
-        "tags": ["Admin API"],
-        "summary": "Control graph sync",
-        "description": "Pause, resume, or trigger graph synchronization",
-        "operationId": "controlGraphSync",
-        "parameters": [
-          {
-            "name": "action",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["pause", "resume", "trigger"]
+              "enum": ["pause", "resume"]
             }
           }
         ],
@@ -890,7 +859,7 @@
             "$ref": "#/components/schemas/GraphAddressInfo"
           },
           "neighbors": {
-            "$ref": "#/components/schemas/NeighborsResponse"
+            "$ref": "#/components/schemas/AddressNeighborsResponse"
           },
           "tags": {
             "type": "array",
@@ -903,44 +872,44 @@
           }
         }
       },
-      "NeighborsResponse": {
+      "AddressNeighborsResponse": {
         "type": "object",
+        "description": "Subgraph of address neighbors with nodes and edges (same as BFF)",
         "properties": {
           "address": {
-            "type": "string"
-          },
-          "neighbors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/NeighborInfo"
-            }
-          },
-          "totalCount": {
-            "type": "integer"
+            "type": "string",
+            "description": "Center address"
           },
           "depth": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Search depth used"
+          },
+          "nodes": {
+            "type": "array",
+            "description": "Nodes in the subgraph",
+            "items": {
+              "$ref": "#/components/schemas/GraphNode"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "description": "Edges in the subgraph",
+            "items": {
+              "$ref": "#/components/schemas/GraphEdge"
+            }
           }
-        }
+        },
+        "required": ["address", "nodes", "edges"]
       },
-      "NeighborInfo": {
+      "GraphNode": {
         "type": "object",
         "properties": {
           "address": {
             "type": "string"
           },
-          "direction": {
-            "type": "string",
-            "enum": ["incoming", "outgoing", "both"]
-          },
-          "transferCount": {
-            "type": "integer"
-          },
-          "totalValue": {
-            "type": "string"
-          },
-          "lastTransfer": {
-            "type": "string"
+          "distance": {
+            "type": "integer",
+            "description": "Distance from center node"
           },
           "riskScore": {
             "type": "number"
@@ -950,6 +919,32 @@
             "items": {
               "type": "string"
             }
+          },
+          "firstSeen": {
+            "type": "string"
+          },
+          "lastSeen": {
+            "type": "string"
+          }
+        }
+      },
+      "GraphEdge": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "transferCount": {
+            "type": "integer"
+          },
+          "totalValue": {
+            "type": "string"
+          },
+          "lastTransfer": {
+            "type": "string"
           }
         }
       },
@@ -1057,9 +1052,6 @@
           "streamProcessor": {
             "$ref": "#/components/schemas/StreamProcessorStatus"
           },
-          "graphSync": {
-            "$ref": "#/components/schemas/GraphSyncStatus"
-          },
           "clustering": {
             "$ref": "#/components/schemas/ComponentStatus"
           },
@@ -1099,20 +1091,6 @@
           }
         }
       },
-      "GraphSyncStatus": {
-        "type": "object",
-        "properties": {
-          "enabled": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "string"
-          },
-          "lastSyncTime": {
-            "type": "string"
-          }
-        }
-      },
       "ComponentStatus": {
         "type": "object",
         "properties": {
@@ -1149,9 +1127,6 @@
           },
           "streamProcessor": {
             "$ref": "#/components/schemas/StreamProcessorConfig"
-          },
-          "graphSync": {
-            "$ref": "#/components/schemas/GraphSyncConfig"
           },
           "clustering": {
             "$ref": "#/components/schemas/ClusteringConfig"
@@ -1229,21 +1204,6 @@
         "type": "object",
         "properties": {
           "maxPollRecords": {
-            "type": "integer"
-          }
-        }
-      },
-      "GraphSyncConfig": {
-        "type": "object",
-        "properties": {
-          "enabled": {
-            "type": "boolean"
-          },
-          "intervalMs": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "batchSize": {
             "type": "integer"
           }
         }

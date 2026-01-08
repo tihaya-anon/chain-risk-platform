@@ -5,15 +5,13 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { IngestionStatus } from "./ingestionStatus"
-import type { StreamProcessorStatus } from "./streamProcessorStatus"
-import type { GraphSyncStatus } from "./graphSyncStatus"
-import type { ComponentStatus } from "./componentStatus"
+import type { IngestionStatus } from './ingestionStatus';
+import type { StreamProcessorStatus } from './streamProcessorStatus';
+import type { ComponentStatus } from './componentStatus';
 
 export interface PipelineStatus {
-  ingestion?: IngestionStatus
-  streamProcessor?: StreamProcessorStatus
-  graphSync?: GraphSyncStatus
-  clustering?: ComponentStatus
-  propagation?: ComponentStatus
+  ingestion?: IngestionStatus;
+  streamProcessor?: StreamProcessorStatus;
+  clustering?: ComponentStatus;
+  propagation?: ComponentStatus;
 }

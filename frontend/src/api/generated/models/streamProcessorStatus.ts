@@ -7,7 +7,7 @@
  */
 
 export interface StreamProcessorStatus {
-  enabled?: boolean
-  status?: string
-  processedCount?: number
+  enabled?: boolean;
+  status?: string;
+  processedCount?: number;
 }

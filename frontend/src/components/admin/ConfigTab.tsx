@@ -111,18 +111,42 @@ export function ConfigTab({
             </div>
 
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Graph Sync</h4>
+              <h4 className="font-medium text-gray-900 mb-3">Clustering</h4>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="p-3 bg-gray-50 rounded">
-                  <p className="text-gray-600">Interval</p>
+                  <p className="text-gray-600">Min Cluster Size</p>
                   <p className="font-medium">
-                    {pipelineConfig?.graphSync?.intervalMs || "-"}ms
+                    {pipelineConfig?.clustering?.minClusterSize || "-"}
                   </p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded">
-                  <p className="text-gray-600">Batch Size</p>
+                  <p className="text-gray-600">Max Depth</p>
                   <p className="font-medium">
-                    {pipelineConfig?.graphSync?.batchSize || "-"}
+                    {pipelineConfig?.clustering?.maxDepth || "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 mb-3">Propagation</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                <div className="p-3 bg-gray-50 rounded">
+                  <p className="text-gray-600">Max Hops</p>
+                  <p className="font-medium">
+                    {pipelineConfig?.propagation?.maxHops || "-"}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded">
+                  <p className="text-gray-600">Decay Factor</p>
+                  <p className="font-medium">
+                    {pipelineConfig?.propagation?.decayFactor || "-"}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded">
+                  <p className="text-gray-600">Min Threshold</p>
+                  <p className="font-medium">
+                    {pipelineConfig?.propagation?.minThreshold || "-"}
                   </p>
                 </div>
               </div>

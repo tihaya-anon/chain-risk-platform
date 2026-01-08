@@ -7,8 +7,8 @@
  */
 
 export interface PropagationConfig {
-  enabled?: boolean
-  maxHops?: number
-  decayFactor?: number
-  minThreshold?: number
+  enabled?: boolean;
+  maxHops?: number;
+  decayFactor?: number;
+  minThreshold?: number;
 }

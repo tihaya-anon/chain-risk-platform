@@ -54,6 +54,7 @@ function calculateRadialLayout(centerAddress: string, nodes: GraphNode[]) {
   // Group nodes by distance
   const nodesByDistance = new Map<number, GraphNode[]>()
   nodes.forEach((node) => {
+    if (!node.address) return
     const dist = node.distance ?? (node.address === centerAddress ? 0 : 1)
     if (!nodesByDistance.has(dist)) {
       nodesByDistance.set(dist, [])
@@ -77,6 +78,7 @@ function calculateRadialLayout(centerAddress: string, nodes: GraphNode[]) {
     const startAngle = -Math.PI / 2 // Start from top
 
     nodesAtDist.forEach((node, index) => {
+      if (!node.address) return
       const angle = startAngle + index * angleStep
       positions.set(node.address, {
         x: radius * Math.cos(angle),
@@ -90,9 +92,6 @@ function calculateRadialLayout(centerAddress: string, nodes: GraphNode[]) {
 
 /**
  * Determine edge direction based on BFS order (distance from center)
- * - outgoing: from inner layer to outer layer (arrow points outward)
- * - incoming: from outer layer to inner layer (arrow points inward)
- * - both: edges in both directions exist
  */
 function determineEdgeDirections(
   edges: GraphEdge[],
@@ -107,26 +106,21 @@ function determineEdgeDirections(
   >()
 
   edges.forEach((edge) => {
+    if (!edge.from || !edge.to) return
     const fromDist = nodeDistances.get(edge.from) ?? 999
     const toDist = nodeDistances.get(edge.to) ?? 999
     const key = [edge.from, edge.to].sort().join("-")
     const existing = edgePairs.get(key)
 
-    // Determine direction based on distance
-    // Arrow always points to target, so:
-    // - outgoing: source=inner (small dist), target=outer (large dist) -> arrow points outward
-    // - incoming: source=outer (large dist), target=inner (small dist) -> arrow points inward
     let edgeDirection: "incoming" | "outgoing" = "outgoing"
-    let source = edge.from
-    let target = edge.to
+    const source = edge.from
+    const target = edge.to
 
     if (fromDist > toDist) {
-      // Original edge goes outer -> inner = incoming
       edgeDirection = "incoming"
     }
 
     if (existing) {
-      // If we already have an edge, check if it's the opposite direction
       if (existing.direction !== edgeDirection && existing.direction !== "both") {
         existing.direction = "both"
       }
@@ -161,6 +155,7 @@ export function AddressGraph({
     // Build node distance map
     const nodeDistances = new Map<string, number>()
     data.nodes.forEach((node) => {
+      if (!node.address) return
       nodeDistances.set(
         node.address,
         node.distance ?? (node.address === centerAddress ? 0 : 1)
@@ -168,39 +163,42 @@ export function AddressGraph({
     })
 
     // Build nodes
-    const graphNodes = data.nodes.map((node) => {
-      const pos = positions.get(node.address) || { x: 0, y: 0 }
-      const isCenter = node.address === centerAddress
-      const isSelected = selectedNode === node.address
+    const graphNodes = data.nodes
+      .filter((node) => node.address)
+      .map((node) => {
+        const address = node.address!
+        const pos = positions.get(address) || { x: 0, y: 0 }
+        const isCenter = address === centerAddress
+        const isSelected = selectedNode === address
 
-      const nodeColor = isCenter ? "#3B82F6" : getRiskColor(node.riskScore)
-      const selectedBorderColor = isCenter
-        ? "#1E40AF"
-        : getRiskBorderColor(node.riskScore)
+        const nodeColor = isCenter ? "#3B82F6" : getRiskColor(node.riskScore)
+        const selectedBorderColor = isCenter
+          ? "#1E40AF"
+          : getRiskBorderColor(node.riskScore)
 
-      return {
-        id: node.address,
-        name: "",
-        x: pos.x,
-        y: pos.y,
-        fixed: true,
-        value: {
-          address: node.address,
-          riskScore: node.riskScore,
-          tags: node.tags,
-          distance: node.distance ?? (isCenter ? 0 : 1),
-          isCenter,
-        } as NodeValue,
-        symbolSize: isCenter ? 40 : 22 + (node.riskScore || 0) * 12,
-        itemStyle: {
-          color: nodeColor,
-          borderColor: isSelected ? selectedBorderColor : nodeColor,
-          borderWidth: isSelected ? 4 : 2,
-          shadowBlur: isSelected ? 15 : 0,
-          shadowColor: isSelected ? "rgba(0,0,0,0.3)" : "transparent",
-        },
-      }
-    })
+        return {
+          id: address,
+          name: "",
+          x: pos.x,
+          y: pos.y,
+          fixed: true,
+          value: {
+            address,
+            riskScore: node.riskScore,
+            tags: node.tags,
+            distance: node.distance ?? (isCenter ? 0 : 1),
+            isCenter,
+          } as NodeValue,
+          symbolSize: isCenter ? 40 : 22 + (node.riskScore || 0) * 12,
+          itemStyle: {
+            color: nodeColor,
+            borderColor: isSelected ? selectedBorderColor : nodeColor,
+            borderWidth: isSelected ? 4 : 2,
+            shadowBlur: isSelected ? 15 : 0,
+            shadowColor: isSelected ? "rgba(0,0,0,0.3)" : "transparent",
+          },
+        }
+      })
 
     // Build edges with direction based on BFS distance
     const edgePairs = determineEdgeDirections(data.edges || [], nodeDistances)
