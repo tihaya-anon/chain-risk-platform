@@ -1,5 +1,5 @@
-import { useRef, useEffect } from "react"
-import { Network, DataSet, Options } from "vis-network/standalone"
+import { useMemo, useRef } from "react"
+import ReactECharts from "echarts-for-react"
 import { Circle } from "lucide-react"
 import type { GraphAddressInfo } from "@/api/generated"
 
@@ -12,7 +12,14 @@ interface HighRiskGraphProps {
   height?: string
 }
 
-function getRiskColor(riskScore: number | undefined): string {
+interface NodeValue {
+  address: string
+  riskScore?: number
+  tags?: string[]
+  clusterId?: string
+}
+
+function getRiskColor(riskScore?: number): string {
   if (riskScore === undefined) return "#9CA3AF"
   if (riskScore >= 0.8) return "#F87171"
   if (riskScore >= 0.6) return "#FB923C"
@@ -20,43 +27,9 @@ function getRiskColor(riskScore: number | undefined): string {
   return "#34D399"
 }
 
-function getRiskBorderColor(riskScore: number | undefined): string {
-  if (riskScore === undefined) return "#6B7280"
-  if (riskScore >= 0.8) return "#EF4444"
-  if (riskScore >= 0.6) return "#F97316"
-  if (riskScore >= 0.4) return "#F59E0B"
-  return "#10B981"
-}
-
-function getRiskHighlightColor(riskScore: number | undefined): string {
-  if (riskScore === undefined) return "#D1D5DB"
-  if (riskScore >= 0.8) return "#FCA5A5"
-  if (riskScore >= 0.6) return "#FDBA74"
-  if (riskScore >= 0.4) return "#FCD34D"
-  return "#6EE7B7"
-}
-
-function getRiskHighlightBorderColor(riskScore: number | undefined): string {
-  if (riskScore === undefined) return "#9CA3AF"
-  if (riskScore >= 0.8) return "#F87171"
-  if (riskScore >= 0.6) return "#FB923C"
-  if (riskScore >= 0.4) return "#FBBF24"
-  return "#34D399"
-}
-
-function getRiskColors(riskScore: number | undefined) {
-  return {
-    background: getRiskColor(riskScore),
-    border: getRiskBorderColor(riskScore),
-    highlight: {
-      background: getRiskHighlightColor(riskScore),
-      border: getRiskHighlightBorderColor(riskScore),
-    },
-    hover: {
-      background: getRiskHighlightColor(riskScore),
-      border: getRiskHighlightBorderColor(riskScore),
-    },
-  }
+function formatAddress(address: string): string {
+  if (!address) return ""
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
 export function HighRiskGraph({
@@ -67,152 +40,164 @@ export function HighRiskGraph({
   onNodeDoubleClick,
   height = "500px",
 }: HighRiskGraphProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const networkRef = useRef<Network | null>(null)
-  const callbacksRef = useRef({ onNodeHover, onNodeClick, onNodeDoubleClick })
-  const selectedNodeRef = useRef<string | null>(null)
+  const chartRef = useRef<ReactECharts>(null)
+  const addressesRef = useRef(addresses)
+  addressesRef.current = addresses
 
-  useEffect(() => {
-    callbacksRef.current = { onNodeHover, onNodeClick, onNodeDoubleClick }
-    selectedNodeRef.current = selectedNode || null
-  }, [onNodeHover, onNodeClick, onNodeDoubleClick, selectedNode])
-
-  useEffect(() => {
-    if (!containerRef.current || !addresses.length) return
-
-    const nodes = addresses.map((addr) => ({
+  const { nodes, links } = useMemo(() => {
+    const graphNodes = addresses.map((addr) => ({
       id: addr.address,
-      label: `${addr.address?.slice(0, 6)}...${addr.address?.slice(-4)}`,
-      color: getRiskColors(addr.riskScore),
-      size: Math.min(30, 15 + (addr.riskScore || 0) * 15),
-      borderWidth: 2,
+      name: formatAddress(addr.address || ""),
+      value: {
+        address: addr.address,
+        riskScore: addr.riskScore,
+        tags: addr.tags,
+        clusterId: addr.clusterId,
+      } as NodeValue,
+      symbolSize: Math.min(35, 18 + (addr.riskScore || 0) * 17),
+      itemStyle: {
+        color: getRiskColor(addr.riskScore),
+        borderColor: getRiskColor(addr.riskScore),
+        borderWidth: 2,
+      },
     }))
 
-    const edges: Array<{
-      id: string
-      from: string
-      to: string
-      color: { color: string; opacity: number }
-      width: number
+    const graphLinks: Array<{
+      source: string
+      target: string
+      lineStyle: { color: string; opacity: number; width: number }
     }> = []
 
+    // Create edges based on shared cluster or tags
     for (let i = 0; i < addresses.length; i++) {
       for (let j = i + 1; j < addresses.length; j++) {
         const addr1 = addresses[i]
         const addr2 = addresses[j]
 
         if (addr1.clusterId && addr1.clusterId === addr2.clusterId) {
-          edges.push({
-            id: `edge-${i}-${j}`,
-            from: addr1.address!,
-            to: addr2.address!,
-            color: { color: "#9CA3AF", opacity: 0.5 },
-            width: 1,
+          graphLinks.push({
+            source: addr1.address!,
+            target: addr2.address!,
+            lineStyle: { color: "#9CA3AF", opacity: 0.6, width: 2 },
           })
         } else if (addr1.tags && addr2.tags) {
           const sharedTags = addr1.tags.filter((t) => addr2.tags?.includes(t))
           if (sharedTags.length > 0) {
-            edges.push({
-              id: `edge-${i}-${j}`,
-              from: addr1.address!,
-              to: addr2.address!,
-              color: { color: "#6B7280", opacity: 0.3 },
-              width: 1,
+            graphLinks.push({
+              source: addr1.address!,
+              target: addr2.address!,
+              lineStyle: { color: "#6B7280", opacity: 0.3, width: 1 },
             })
           }
         }
       }
     }
 
-    const nodesDataSet = new DataSet(nodes)
-    const edgesDataSet = new DataSet(edges)
-
-    const options: Options = {
-      nodes: {
-        shape: "dot",
-        font: { size: 10, color: "#374151" },
-        borderWidth: 2,
-        shadow: true,
-      },
-      edges: {
-        smooth: { enabled: true, type: "continuous", roundness: 0.5 },
-        shadow: false,
-      },
-      physics: {
-        enabled: true,
-        solver: "forceAtlas2Based",
-        forceAtlas2Based: {
-          gravitationalConstant: -100,
-          centralGravity: 0.01,
-          springLength: 200,
-          springConstant: 0.05,
-        },
-        stabilization: { iterations: 100 },
-      },
-      interaction: {
-        hover: true,
-        tooltipDelay: 0,
-      },
-    }
-
-    const network = new Network(
-      containerRef.current,
-      { nodes: nodesDataSet, edges: edgesDataSet },
-      options
-    )
-
-    network.on("hoverNode", (params) => {
-      if (selectedNodeRef.current) return
-      const nodeId = params.node as string
-      const addr = addresses.find((a) => a.address === nodeId)
-      callbacksRef.current.onNodeHover?.(addr || null)
-    })
-
-    network.on("blurNode", () => {
-      if (!selectedNodeRef.current) {
-        callbacksRef.current.onNodeHover?.(null)
-      }
-    })
-
-    network.on("click", (params) => {
-      if (params.nodes.length > 0) {
-        const nodeId = params.nodes[0] as string
-        if (selectedNodeRef.current === nodeId) {
-          callbacksRef.current.onNodeClick?.(null)
-        } else {
-          const addr = addresses.find((a) => a.address === nodeId)
-          callbacksRef.current.onNodeClick?.(addr || null)
-        }
-      } else {
-        callbacksRef.current.onNodeClick?.(null)
-      }
-    })
-
-    network.on("doubleClick", (params) => {
-      if (params.nodes.length > 0) {
-        const nodeId = params.nodes[0] as string
-        callbacksRef.current.onNodeDoubleClick?.(nodeId)
-      }
-    })
-
-    network.on("stabilizationIterationsDone", () => {
-      network.setOptions({ physics: { enabled: false } })
-    })
-
-    networkRef.current = network
-
-    return () => {
-      network.destroy()
-      networkRef.current = null
-    }
+    return { nodes: graphNodes, links: graphLinks }
   }, [addresses])
 
+  const option = useMemo(() => {
+    if (!nodes.length) return {}
+
+    return {
+      tooltip: {
+        trigger: "item" as const,
+        formatter: (params: { data?: { value?: NodeValue } }) => {
+          const value = params.data?.value
+          if (!value) return ""
+          const lines = [`<strong>${value.address}</strong>`]
+          if (value.riskScore !== undefined) {
+            lines.push(`Risk: ${(value.riskScore * 100).toFixed(0)}%`)
+          }
+          if (value.clusterId) {
+            lines.push(`Cluster: ${value.clusterId}`)
+          }
+          if (value.tags?.length) {
+            lines.push(`Tags: ${value.tags.slice(0, 3).join(", ")}`)
+          }
+          return lines.join("<br/>")
+        },
+      },
+      series: [
+        {
+          type: "graph" as const,
+          layout: "force" as const,
+          data: nodes,
+          links,
+          roam: true,
+          draggable: true,
+          label: {
+            show: true,
+            position: "right" as const,
+            fontSize: 10,
+            color: "#374151",
+          },
+          force: {
+            repulsion: 300,
+            gravity: 0.1,
+            edgeLength: [100, 200],
+            friction: 0.6,
+          },
+          emphasis: {
+            focus: "adjacency" as const,
+            itemStyle: {
+              borderWidth: 3,
+              shadowBlur: 10,
+              shadowColor: "rgba(0,0,0,0.3)",
+            },
+          },
+          lineStyle: {
+            curveness: 0.1,
+          },
+          animationDuration: 1000,
+          animationEasingUpdate: "quinticInOut" as const,
+        },
+      ],
+    }
+  }, [nodes, links])
+
+  const handleEvents = useMemo(() => {
+    return {
+      mouseover: (params: { data?: { value?: NodeValue } }) => {
+        if (!params.data?.value || selectedNode) return
+        const addr = addressesRef.current.find((a) => a.address === params.data?.value?.address)
+        onNodeHover?.(addr || null)
+      },
+      mouseout: () => {
+        if (!selectedNode) {
+          onNodeHover?.(null)
+        }
+      },
+      click: (params: { data?: { value?: NodeValue } }) => {
+        if (!params.data?.value) return
+        const addr = addressesRef.current.find((a) => a.address === params.data?.value?.address)
+        onNodeClick?.(addr || null)
+      },
+      dblclick: (params: { data?: { value?: NodeValue } }) => {
+        if (!params.data?.value?.address) return
+        onNodeDoubleClick?.(params.data.value.address)
+      },
+    }
+  }, [selectedNode, onNodeHover, onNodeClick, onNodeDoubleClick])
+
+  if (!addresses.length) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500">
+        No high-risk addresses found
+      </div>
+    )
+  }
+
   return (
-    <div
-      ref={containerRef}
-      style={{ height, width: "100%" }}
-      className="border border-gray-200 rounded-lg bg-gray-50"
-    />
+    <div className="border border-gray-200 rounded-lg bg-gray-50" style={{ height }}>
+      <ReactECharts
+        ref={chartRef}
+        option={option}
+        style={{ height: "100%", width: "100%" }}
+        onEvents={handleEvents}
+        opts={{ renderer: "canvas" }}
+      />
+    </div>
   )
 }
 

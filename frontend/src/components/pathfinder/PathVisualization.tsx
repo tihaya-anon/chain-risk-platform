@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react"
-import { Network, DataSet, Options } from "vis-network/standalone"
+import { useMemo } from "react"
+import ReactECharts from "echarts-for-react"
 import { Circle, AlertCircle } from "lucide-react"
 import { Card } from "@/components/common"
 
@@ -17,145 +17,123 @@ interface PathVisualizationProps {
   message?: string
 }
 
-export function PathVisualization({
-  path,
-  found,
-  maxDepth,
-  message,
-}: PathVisualizationProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const networkRef = useRef<Network | null>(null)
+function getRiskColor(riskScore?: number): string {
+  if (riskScore === undefined) return "#9CA3AF"
+  if (riskScore >= 0.8) return "#F87171"
+  if (riskScore >= 0.6) return "#FB923C"
+  if (riskScore >= 0.4) return "#FBBF24"
+  return "#34D399"
+}
 
-  useEffect(() => {
-    if (!containerRef.current || !found || !path.length) return
+function formatAddress(address: string): string {
+  if (!address) return ""
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
 
-    // Build nodes and edges
-    const nodes: Array<{
-      id: string
-      label: string
-      color: { background: string; border: string }
-      size: number
-      font?: { color: string }
-      borderWidth: number
-    }> = []
-    const edges: Array<{
-      id: string
-      from: string
-      to: string
-      arrows: string
-      label?: string
-      color: { color: string }
-      width: number
-    }> = []
+function formatValue(value: string): string {
+  const num = parseFloat(value)
+  if (isNaN(num)) return value
+  if (num >= 1e18) return `${(num / 1e18).toFixed(2)} ETH`
+  return value
+}
 
-    path.forEach((node, index) => {
+export function PathVisualization({ path, found, maxDepth, message }: PathVisualizationProps) {
+  const option = useMemo(() => {
+    if (!found || !path.length) return {}
+
+    const spacing = 180
+    const nodes = path.map((node, index) => {
       const isStart = index === 0
       const isEnd = index === path.length - 1
 
-      let bgColor = "#9CA3AF"
-      let borderColor = "#6B7280"
+      let color = getRiskColor(node.riskScore)
+      if (isStart) color = "#3B82F6"
+      else if (isEnd) color = "#8B5CF6"
 
-      if (isStart) {
-        bgColor = "#3B82F6"
-        borderColor = "#2563EB"
-      } else if (isEnd) {
-        bgColor = "#8B5CF6"
-        borderColor = "#7C3AED"
-      } else if (node.riskScore !== undefined) {
-        if (node.riskScore >= 0.8) {
-          bgColor = "#F87171"
-          borderColor = "#EF4444"
-        } else if (node.riskScore >= 0.6) {
-          bgColor = "#FB923C"
-          borderColor = "#F97316"
-        } else if (node.riskScore >= 0.4) {
-          bgColor = "#FBBF24"
-          borderColor = "#F59E0B"
-        } else {
-          bgColor = "#34D399"
-          borderColor = "#10B981"
-        }
-      }
-
-      nodes.push({
+      return {
         id: node.address,
-        label: `${node.address.slice(0, 6)}...${node.address.slice(-4)}${
-          isStart ? "\n(Source)" : isEnd ? "\n(Target)" : ""
-        }`,
-        color: { background: bgColor, border: borderColor },
-        size: isStart || isEnd ? 30 : 20,
-        font: isStart || isEnd ? { color: "#FFFFFF" } : undefined,
-        borderWidth: isStart || isEnd ? 3 : 2,
-      })
-
-      if (index < path.length - 1) {
-        const nextNode = path[index + 1]
-        edges.push({
-          id: `edge-${index}`,
-          from: node.address,
-          to: nextNode.address,
-          arrows: "to",
-          label: node.value ? formatValue(node.value) : undefined,
-          color: { color: "#6B7280" },
-          width: 2,
-        })
+        name: formatAddress(node.address),
+        x: index * spacing,
+        y: 0,
+        symbolSize: isStart || isEnd ? 40 : 28,
+        itemStyle: {
+          color,
+          borderColor: color,
+          borderWidth: isStart || isEnd ? 3 : 2,
+        },
+        label: {
+          show: true,
+          position: "bottom" as const,
+          distance: 10,
+          formatter: isStart ? "{b}\n(Source)" : isEnd ? "{b}\n(Target)" : "{b}",
+          fontSize: 11,
+          color: "#374151",
+        },
+        value: {
+          address: node.address,
+          riskScore: node.riskScore,
+          tags: node.tags,
+          isStart,
+          isEnd,
+        },
       }
     })
 
-    const nodesDataSet = new DataSet(nodes)
-    const edgesDataSet = new DataSet(edges)
+    const links = path.slice(0, -1).map((node, index) => ({
+      source: node.address,
+      target: path[index + 1].address,
+      lineStyle: {
+        color: "#6B7280",
+        width: 2,
+        curveness: 0,
+      },
+      label: {
+        show: !!node.value,
+        formatter: node.value ? formatValue(node.value) : "",
+        fontSize: 10,
+        color: "#6B7280",
+      },
+      symbol: ["none", "arrow"],
+      symbolSize: [0, 10],
+    }))
 
-    const options: Options = {
-      nodes: {
-        shape: "dot",
-        font: { size: 12, color: "#374151" },
-        borderWidth: 2,
-        shadow: true,
-      },
-      edges: {
-        smooth: { enabled: true, type: "curvedCW", roundness: 0.2 },
-        shadow: true,
-        font: { size: 10, align: "middle" },
-      },
-      physics: {
-        enabled: true,
-        solver: "hierarchicalRepulsion",
-        hierarchicalRepulsion: {
-          nodeDistance: 150,
-          springLength: 150,
+    return {
+      tooltip: {
+        trigger: "item" as const,
+        formatter: (params: { data?: { value?: { address: string; riskScore?: number; tags?: string[] } } }) => {
+          const value = params.data?.value
+          if (!value) return ""
+          const lines = [`<strong>${value.address}</strong>`]
+          if (value.riskScore !== undefined) {
+            lines.push(`Risk: ${(value.riskScore * 100).toFixed(0)}%`)
+          }
+          if (value.tags?.length) {
+            lines.push(`Tags: ${value.tags.slice(0, 3).join(", ")}`)
+          }
+          return lines.join("<br/>")
         },
-        stabilization: { iterations: 50 },
       },
-      layout: {
-        hierarchical: {
-          enabled: true,
-          direction: "LR",
-          sortMethod: "directed",
-          levelSeparation: 200,
-          nodeSpacing: 100,
+      series: [
+        {
+          type: "graph" as const,
+          layout: "none" as const,
+          data: nodes,
+          links,
+          roam: true,
+          lineStyle: {
+            opacity: 0.9,
+          },
+          emphasis: {
+            focus: "adjacency" as const,
+            itemStyle: {
+              borderWidth: 4,
+              shadowBlur: 10,
+              shadowColor: "rgba(0,0,0,0.3)",
+            },
+          },
+          animationDuration: 800,
         },
-      },
-      interaction: {
-        hover: true,
-        tooltipDelay: 200,
-      },
-    }
-
-    const network = new Network(
-      containerRef.current,
-      { nodes: nodesDataSet, edges: edgesDataSet },
-      options
-    )
-
-    network.on("stabilizationIterationsDone", () => {
-      network.setOptions({ physics: { enabled: false } })
-    })
-
-    networkRef.current = network
-
-    return () => {
-      network.destroy()
-      networkRef.current = null
+      ],
     }
   }, [path, found])
 
@@ -172,11 +150,13 @@ export function PathVisualization({
     >
       {found ? (
         <>
-          <div
-            ref={containerRef}
-            style={{ height: "400px", width: "100%" }}
-            className="border border-gray-200 rounded-lg bg-gray-50"
-          />
+          <div className="border border-gray-200 rounded-lg bg-gray-50" style={{ height: "400px" }}>
+            <ReactECharts
+              option={option}
+              style={{ height: "100%", width: "100%" }}
+              opts={{ renderer: "canvas" }}
+            />
+          </div>
           <div className="mt-4 flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2">
               <Circle className="w-4 h-4 fill-blue-500 text-blue-500" />
@@ -199,9 +179,7 @@ export function PathVisualization({
       ) : (
         <div className="text-center py-12">
           <AlertCircle className="w-16 h-16 text-gray-300 mx-auto" />
-          <p className="text-gray-500 mt-4">
-            {message || "No direct or indirect connection found"}
-          </p>
+          <p className="text-gray-500 mt-4">{message || "No direct or indirect connection found"}</p>
           <p className="text-sm text-gray-400 mt-2">
             Try increasing the max depth or check if the addresses are correct
           </p>
@@ -209,12 +187,4 @@ export function PathVisualization({
       )}
     </Card>
   )
-}
-
-// Helper function
-function formatValue(value: string): string {
-  const num = parseFloat(value)
-  if (isNaN(num)) return value
-  if (num >= 1e18) return `${(num / 1e18).toFixed(2)} ETH`
-  return value
 }
