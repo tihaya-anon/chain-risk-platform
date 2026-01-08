@@ -93,15 +93,15 @@ function calculateRadialLayout(
 
 /**
  * Determine edge direction based on BFS order (distance from center)
- * - outgoing: from inner layer to outer layer (distance increases)
- * - incoming: from outer layer to inner layer (distance decreases)
+ * - outgoing: from inner layer to outer layer (arrow points outward)
+ * - incoming: from outer layer to inner layer (arrow points inward)
  * - both: edges in both directions exist
  */
 function determineEdgeDirections(
   edges: GraphEdge[],
   nodeDistances: Map<string, number>
-): Map<string, { from: string; to: string; direction: "incoming" | "outgoing" | "both" }> {
-  const edgePairs = new Map<string, { from: string; to: string; direction: "incoming" | "outgoing" | "both" }>()
+): Map<string, { source: string; target: string; direction: "incoming" | "outgoing" | "both" }> {
+  const edgePairs = new Map<string, { source: string; target: string; direction: "incoming" | "outgoing" | "both" }>()
 
   edges.forEach((edge) => {
     const fromDist = nodeDistances.get(edge.from) ?? 999
@@ -110,29 +110,37 @@ function determineEdgeDirections(
     const existing = edgePairs.get(key)
 
     // Determine direction based on distance
-    // outgoing: from smaller distance to larger distance (inner -> outer)
-    // incoming: from larger distance to smaller distance (outer -> inner)
+    // Arrow always points to target, so:
+    // - outgoing: source=inner (small dist), target=outer (large dist) -> arrow points outward
+    // - incoming: source=outer (large dist), target=inner (small dist) -> arrow points inward
     let edgeDirection: "incoming" | "outgoing"
+    let source: string
+    let target: string
+
     if (fromDist < toDist) {
-      edgeDirection = "outgoing" // inner -> outer
-    } else if (fromDist > toDist) {
-      edgeDirection = "incoming" // outer -> inner
-    } else {
-      // Same distance level - use original edge direction
+      // Original edge goes inner -> outer = outgoing
       edgeDirection = "outgoing"
+      source = edge.from
+      target = edge.to
+    } else if (fromDist > toDist) {
+      // Original edge goes outer -> inner = incoming
+      edgeDirection = "incoming"
+      source = edge.from
+      target = edge.to
+    } else {
+      // Same distance level
+      edgeDirection = "outgoing"
+      source = edge.from
+      target = edge.to
     }
 
     if (existing) {
-      // If we already have an edge in the opposite direction, it's bidirectional
-      if (existing.direction !== edgeDirection) {
+      // If we already have an edge, check if it's the opposite direction
+      if (existing.direction !== edgeDirection && existing.direction !== "both") {
         existing.direction = "both"
       }
     } else {
-      edgePairs.set(key, {
-        from: edgeDirection === "outgoing" ? edge.from : edge.to,
-        to: edgeDirection === "outgoing" ? edge.to : edge.from,
-        direction: edgeDirection,
-      })
+      edgePairs.set(key, { source, target, direction: edgeDirection })
     }
   })
 
@@ -202,8 +210,8 @@ export function AddressGraph({
     const edgePairs = determineEdgeDirections(data.edges || [], nodeDistances)
 
     const graphLinks = Array.from(edgePairs.values()).map((edge) => ({
-      source: edge.from,
-      target: edge.to,
+      source: edge.source,
+      target: edge.target,
       lineStyle: {
         color: EDGE_COLORS[edge.direction],
         width: 2,
