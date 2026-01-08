@@ -148,14 +148,34 @@ export class AddressInfoResponse {
   outgoingCount?: number;
 }
 
-export class NeighborInfo {
-  @ApiProperty({ description: "Neighbor address" })
+// ============== Subgraph Response (nodes + edges) ==============
+
+export class GraphNode {
+  @ApiProperty({ description: "Address (node ID)" })
   address: string;
 
-  @ApiPropertyOptional({
-    description: "Direction of transfers (IN, OUT, BOTH)",
-  })
-  direction?: string;
+  @ApiPropertyOptional({ description: "Distance from center (0 = center)" })
+  distance?: number;
+
+  @ApiPropertyOptional({ description: "Risk score" })
+  riskScore?: number;
+
+  @ApiPropertyOptional({ description: "Tags", type: [String] })
+  tags?: string[];
+
+  @ApiPropertyOptional({ description: "First seen timestamp" })
+  firstSeen?: string;
+
+  @ApiPropertyOptional({ description: "Last seen timestamp" })
+  lastSeen?: string;
+}
+
+export class GraphEdge {
+  @ApiProperty({ description: "Source address" })
+  from: string;
+
+  @ApiProperty({ description: "Target address" })
+  to: string;
 
   @ApiPropertyOptional({ description: "Number of transfers" })
   transferCount?: number;
@@ -165,27 +185,23 @@ export class NeighborInfo {
 
   @ApiPropertyOptional({ description: "Last transfer timestamp" })
   lastTransfer?: string;
-
-  @ApiPropertyOptional({ description: "Risk score" })
-  riskScore?: number;
-
-  @ApiPropertyOptional({ description: "Tags", type: [String] })
-  tags?: string[];
 }
 
 export class AddressNeighborsResponse {
   @ApiProperty({ description: "Center address" })
   address: string;
 
-  @ApiProperty({ description: "List of neighbors", type: [NeighborInfo] })
-  neighbors: NeighborInfo[];
-
-  @ApiPropertyOptional({ description: "Total neighbor count" })
-  totalCount?: number;
-
   @ApiPropertyOptional({ description: "Search depth used" })
   depth?: number;
+
+  @ApiProperty({ description: "Nodes in the subgraph", type: [GraphNode] })
+  nodes: GraphNode[];
+
+  @ApiProperty({ description: "Edges in the subgraph", type: [GraphEdge] })
+  edges: GraphEdge[];
 }
+
+// ============== Path Finding ==============
 
 export class PathNode {
   @ApiProperty({ description: "Address in the path" })
@@ -230,6 +246,8 @@ export class PathResponse {
   path?: PathNode[];
 }
 
+// ============== Cluster ==============
+
 export class ClusterResponse {
   @ApiProperty({ description: "Cluster ID" })
   clusterId: string;
@@ -261,6 +279,8 @@ export class ClusterResponse {
   @ApiPropertyOptional({ description: "Network" })
   network?: string;
 }
+
+// ============== Operation Results ==============
 
 export class PropagationResultResponse {
   @ApiProperty({ description: "Propagation status" })

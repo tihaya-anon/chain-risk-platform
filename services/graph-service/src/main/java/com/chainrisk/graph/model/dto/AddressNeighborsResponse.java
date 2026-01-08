@@ -9,7 +9,8 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Response DTO for address neighbors query
+ * Response DTO for address neighbors query.
+ * Returns a subgraph structure (nodes + edges) suitable for graph visualization.
  */
 @Data
 @Builder
@@ -18,42 +19,84 @@ import java.util.List;
 public class AddressNeighborsResponse {
 
     /**
-     * The queried address
+     * The center address of the BFS query
      */
     private String address;
-
-    /**
-     * List of neighboring addresses
-     */
-    private List<NeighborInfo> neighbors;
-
-    /**
-     * Total count of neighbors (may be more than returned if limited)
-     */
-    private Integer totalCount;
 
     /**
      * Query depth used
      */
     private Integer depth;
 
+    /**
+     * All nodes in the subgraph (including center)
+     */
+    private List<GraphNode> nodes;
+
+    /**
+     * All edges in the subgraph
+     */
+    private List<GraphEdge> edges;
+
+    /**
+     * Node in the subgraph
+     */
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class NeighborInfo {
+    public static class GraphNode {
         /**
-         * Neighbor address
+         * Address (also serves as node ID)
          */
         private String address;
 
         /**
-         * Direction of transfer (incoming/outgoing)
+         * Distance from center (0 = center node)
          */
-        private String direction;
+        private Integer distance;
 
         /**
-         * Number of transfers between addresses
+         * Risk score
+         */
+        private Double riskScore;
+
+        /**
+         * Tags
+         */
+        private List<String> tags;
+
+        /**
+         * First seen timestamp
+         */
+        private Instant firstSeen;
+
+        /**
+         * Last seen timestamp
+         */
+        private Instant lastSeen;
+    }
+
+    /**
+     * Edge in the subgraph
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class GraphEdge {
+        /**
+         * Source address
+         */
+        private String from;
+
+        /**
+         * Target address
+         */
+        private String to;
+
+        /**
+         * Number of transfers on this edge
          */
         private Integer transferCount;
 
@@ -66,15 +109,5 @@ public class AddressNeighborsResponse {
          * Timestamp of last transfer
          */
         private Instant lastTransfer;
-
-        /**
-         * Risk score of the neighbor
-         */
-        private Double riskScore;
-
-        /**
-         * Tags of the neighbor
-         */
-        private List<String> tags;
     }
 }

@@ -1,6 +1,8 @@
 package com.chainrisk.graph.service.impl;
 
 import com.chainrisk.graph.model.dto.*;
+import com.chainrisk.graph.model.dto.AddressNeighborsResponse.GraphNode;
+import com.chainrisk.graph.model.dto.AddressNeighborsResponse.GraphEdge;
 import com.chainrisk.graph.model.node.AddressNode;
 import com.chainrisk.graph.model.node.ClusterNode;
 import com.chainrisk.graph.repository.AddressRepository;
@@ -15,7 +17,6 @@ import org.neo4j.driver.Record;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,86 +41,131 @@ public class GraphQueryServiceImpl implements GraphQueryService {
     @Override
     public AddressNeighborsResponse getNeighbors(String address, int depth, int limit) {
         String normalizedAddress = address.toLowerCase();
-        
-        List<AddressNeighborsResponse.NeighborInfo> neighbors = new ArrayList<>();
 
-        // Get outgoing neighbors using native Neo4j driver
-        String outgoingCypher = """
-            MATCH (a:Address {address: $address})-[t:TRANSFER]->(neighbor:Address)
-            WITH neighbor, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
-            RETURN neighbor.address as address, neighbor.riskScore as riskScore, neighbor.tags as tags,
-                   transferCount, totalValue, lastTransfer
-            ORDER BY transferCount DESC
+        // Maps to collect nodes and edges
+        Map<String, GraphNode> nodeMap = new LinkedHashMap<>();
+        Map<String, GraphEdge> edgeMap = new LinkedHashMap<>();
+
+        // BFS query: find all nodes and edges within depth hops (both directions)
+        String cypher = """
+            MATCH path = (center:Address {address: $address})-[:TRANSFER*1..%d]-(neighbor:Address)
+            WITH center, neighbor, 
+                 min(length(path)) as distance,
+                 relationships(path) as rels
+            WHERE neighbor.address <> $address
+            RETURN DISTINCT
+                   neighbor.address as address,
+                   neighbor.riskScore as riskScore,
+                   neighbor.tags as tags,
+                   neighbor.firstSeen as firstSeen,
+                   neighbor.lastSeen as lastSeen,
+                   distance
+            ORDER BY distance, riskScore DESC
             LIMIT $limit
-            """;
+            """.formatted(depth);
 
         try (Session session = neo4jDriver.session()) {
-            Result outgoingResult = session.run(outgoingCypher, Map.of(
+            // First, add center node
+            Result centerResult = session.run(
+                "MATCH (a:Address {address: $address}) " +
+                "RETURN a.address as address, a.riskScore as riskScore, a.tags as tags, " +
+                "a.firstSeen as firstSeen, a.lastSeen as lastSeen",
+                Map.of("address", normalizedAddress)
+            );
+            
+            if (centerResult.hasNext()) {
+                Record r = centerResult.next();
+                nodeMap.put(normalizedAddress, buildGraphNode(r, 0));
+            } else {
+                // Center node not found, create placeholder
+                nodeMap.put(normalizedAddress, GraphNode.builder()
+                        .address(normalizedAddress)
+                        .distance(0)
+                        .build());
+            }
+
+            // Query neighbor nodes
+            Result nodeResult = session.run(cypher, Map.of(
                     "address", normalizedAddress,
-                    "limit", limit / 2
+                    "limit", limit
             ));
 
-            while (outgoingResult.hasNext()) {
-                Record record = outgoingResult.next();
-                neighbors.add(buildNeighborInfo(record, "outgoing"));
+            while (nodeResult.hasNext()) {
+                Record r = nodeResult.next();
+                String addr = r.get("address").asString();
+                int distance = r.get("distance").asInt();
+                nodeMap.put(addr, buildGraphNode(r, distance));
             }
+        } catch (Exception e) {
+            log.error("Failed to query neighbor nodes for {}", normalizedAddress, e);
         }
 
-        // Get incoming neighbors using native Neo4j driver
-        String incomingCypher = """
-            MATCH (neighbor:Address)-[t:TRANSFER]->(b:Address {address: $address})
-            WITH neighbor, count(t) as transferCount, sum(toFloat(t.value)) as totalValue, max(t.timestamp) as lastTransfer
-            RETURN neighbor.address as address, neighbor.riskScore as riskScore, neighbor.tags as tags,
-                   transferCount, totalValue, lastTransfer
-            ORDER BY transferCount DESC
-            LIMIT $limit
-            """;
+        // Query edges between collected nodes
+        if (nodeMap.size() > 1) {
+            List<String> addresses = new ArrayList<>(nodeMap.keySet());
+            
+            String edgeCypher = """
+                MATCH (a:Address)-[t:TRANSFER]->(b:Address)
+                WHERE a.address IN $addresses AND b.address IN $addresses
+                WITH a.address as fromAddr, b.address as toAddr,
+                     count(t) as transferCount,
+                     sum(toFloat(coalesce(t.value, '0'))) as totalValue,
+                     max(t.timestamp) as lastTransfer
+                RETURN fromAddr, toAddr, transferCount, totalValue, lastTransfer
+                """;
 
-        try (Session session = neo4jDriver.session()) {
-            Result incomingResult = session.run(incomingCypher, Map.of(
-                    "address", normalizedAddress,
-                    "limit", limit / 2
-            ));
+            try (Session session = neo4jDriver.session()) {
+                Result edgeResult = session.run(edgeCypher, Map.of("addresses", addresses));
 
-            while (incomingResult.hasNext()) {
-                Record record = incomingResult.next();
-                neighbors.add(buildNeighborInfo(record, "incoming"));
+                while (edgeResult.hasNext()) {
+                    Record r = edgeResult.next();
+                    String from = r.get("fromAddr").asString();
+                    String to = r.get("toAddr").asString();
+                    String edgeKey = from + "->" + to;
+
+                    edgeMap.put(edgeKey, GraphEdge.builder()
+                            .from(from)
+                            .to(to)
+                            .transferCount(r.get("transferCount").asInt())
+                            .totalValue(formatValue(r.get("totalValue")))
+                            .lastTransfer(parseTimestamp(r.get("lastTransfer")))
+                            .build());
+                }
+            } catch (Exception e) {
+                log.error("Failed to query edges for {}", normalizedAddress, e);
             }
         }
 
         return AddressNeighborsResponse.builder()
                 .address(normalizedAddress)
-                .neighbors(neighbors)
-                .totalCount(neighbors.size())
                 .depth(depth)
+                .nodes(new ArrayList<>(nodeMap.values()))
+                .edges(new ArrayList<>(edgeMap.values()))
                 .build();
     }
 
-    /**
-     * Build NeighborInfo from Neo4j Record
-     */
-    private AddressNeighborsResponse.NeighborInfo buildNeighborInfo(Record record, String direction) {
-        String neighborAddress = record.get("address").asString();
-        Double riskScore = record.get("riskScore").isNull() ? null : record.get("riskScore").asDouble();
-        List<String> tags = record.get("tags").isNull() ? 
-                Collections.emptyList() : 
-                record.get("tags").asList(v -> v.asString());
-        int transferCount = record.get("transferCount").asInt();
-        Double totalValue = record.get("totalValue").isNull() ? null : record.get("totalValue").asDouble();
-        Instant lastTransfer = null;
-        if (!record.get("lastTransfer").isNull()) {
-            lastTransfer = Instant.ofEpochMilli(record.get("lastTransfer").asLong());
-        }
-
-        return AddressNeighborsResponse.NeighborInfo.builder()
-                .address(neighborAddress)
-                .direction(direction)
-                .transferCount(transferCount)
-                .totalValue(totalValue != null ? String.valueOf(totalValue.longValue()) : "0")
-                .lastTransfer(lastTransfer)
-                .riskScore(riskScore)
-                .tags(tags)
+    private GraphNode buildGraphNode(Record record, int distance) {
+        return GraphNode.builder()
+                .address(record.get("address").asString())
+                .distance(distance)
+                .riskScore(record.get("riskScore").isNull() ? null : record.get("riskScore").asDouble())
+                .tags(record.get("tags").isNull() ? 
+                        Collections.emptyList() : 
+                        record.get("tags").asList(v -> v.asString()))
+                .firstSeen(parseTimestamp(record.get("firstSeen")))
+                .lastSeen(parseTimestamp(record.get("lastSeen")))
                 .build();
+    }
+
+    private String formatValue(org.neo4j.driver.Value value) {
+        if (value.isNull()) return "0";
+        Double d = value.asDouble();
+        return String.valueOf(d.longValue());
+    }
+
+    private Instant parseTimestamp(org.neo4j.driver.Value value) {
+        if (value.isNull()) return null;
+        return Instant.ofEpochMilli(value.asLong());
     }
 
     @Override
@@ -139,7 +185,6 @@ public class GraphQueryServiceImpl implements GraphQueryService {
         String normalizedFrom = fromAddress.toLowerCase();
         String normalizedTo = toAddress.toLowerCase();
 
-        // Handle case when start and end nodes are the same
         if (normalizedFrom.equals(normalizedTo)) {
             log.warn("Path finding requested with same start and end address: {}", normalizedFrom);
             return PathResponse.builder()
@@ -173,7 +218,6 @@ public class GraphQueryServiceImpl implements GraphQueryService {
 
                 List<PathResponse.PathNode> pathNodes = new ArrayList<>();
                 
-                // Extract nodes and relationships from path
                 var nodes = path.nodes();
                 var relationships = path.relationships();
                 
@@ -198,8 +242,7 @@ public class GraphQueryServiceImpl implements GraphQueryService {
                         builder.txHash(rel.get("txHash").asString());
                         builder.value(rel.get("value").asString());
                         if (!rel.get("timestamp").isNull()) {
-                            long timestampMillis = rel.get("timestamp").asLong();
-                            builder.timestamp(Instant.ofEpochMilli(timestampMillis));
+                            builder.timestamp(Instant.ofEpochMilli(rel.get("timestamp").asLong()));
                         }
                     }
 
