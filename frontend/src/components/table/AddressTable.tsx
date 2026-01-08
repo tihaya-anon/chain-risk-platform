@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 import { ExternalLink, Network, Tag } from "lucide-react"
-import { RiskBadge } from "@/components/common"
+import { RiskBadge, ClickableTag } from "@/components/common"
 import type { GraphAddressInfo } from "@/api/generated"
 
 interface AddressTableProps {
@@ -104,14 +104,11 @@ export function AddressTable({
               {showTags && (
                 <td className="px-4 py-3">
                   {addr.tags && addr.tags.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 items-center">
                       {addr.tags.slice(0, maxTagsDisplay).map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded"
-                        >
-                          <Tag className="w-3 h-3" />
-                          {tag}
+                        <span key={idx} className="inline-flex items-center gap-1">
+                          <Tag className="w-3 h-3 text-gray-400" />
+                          <ClickableTag tag={tag} />
                         </span>
                       ))}
                       {addr.tags.length > maxTagsDisplay && (
