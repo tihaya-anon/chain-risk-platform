@@ -10,7 +10,7 @@ import {
   Tag,
   Box,
 } from "lucide-react"
-import { RiskBadge } from "@/components/common"
+import { RiskBadge, ClickableTag } from "@/components/common"
 import type { AddressAnalysisResponse, RiskScoreResponseRiskLevel } from "@/api/generated"
 
 function formatValue(value: string | undefined): string {
@@ -145,12 +145,9 @@ export function RiskSection({ data }: { data: AddressAnalysisResponse }) {
           <h4 className="text-sm font-medium text-gray-700 mb-2">Risk Tags</h4>
           <div className="flex flex-wrap gap-1">
             {risk.tags.map((tag, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded"
-              >
-                <Tag className="w-3 h-3" />
-                {tag}
+              <span key={i} className="inline-flex items-center gap-1">
+                <Tag className="w-3 h-3 text-red-400" />
+                <ClickableTag tag={tag} variant="risk" />
               </span>
             ))}
           </div>
@@ -207,12 +204,9 @@ export function GraphInfoSection({ data }: { data: AddressAnalysisResponse }) {
           <label className="text-sm text-gray-500 block mb-2">Address Tags</label>
           <div className="flex flex-wrap gap-2">
             {tags.map((tag, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full"
-              >
-                <Tag className="w-3 h-3" />
-                {tag}
+              <span key={i} className="inline-flex items-center gap-1">
+                <Tag className="w-3 h-3 text-blue-400" />
+                <ClickableTag tag={tag} variant="info" size="md" />
               </span>
             ))}
           </div>
@@ -279,12 +273,9 @@ export function ClusterSection({ data }: { data: AddressAnalysisResponse }) {
           <label className="text-sm text-gray-500 block mb-1">Cluster Tags</label>
           <div className="flex flex-wrap gap-1">
             {cluster.tags.map((tag, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
-              >
-                <Tag className="w-3 h-3" />
-                {tag}
+              <span key={i} className="inline-flex items-center gap-1">
+                <Tag className="w-3 h-3 text-gray-400" />
+                <ClickableTag tag={tag} />
               </span>
             ))}
           </div>
@@ -383,12 +374,9 @@ export function NeighborsSection({ data }: { data: AddressAnalysisResponse }) {
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {neighbor.tags?.slice(0, 3).map((tag, j) => (
-                      <span
-                        key={j}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
-                      >
-                        <Tag className="w-3 h-3" />
-                        {tag}
+                      <span key={j} className="inline-flex items-center gap-1">
+                        <Tag className="w-3 h-3 text-gray-400" />
+                        <ClickableTag tag={tag} />
                       </span>
                     ))}
                     {neighbor.tags && neighbor.tags.length > 3 && (
