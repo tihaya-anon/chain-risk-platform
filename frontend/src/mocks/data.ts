@@ -156,7 +156,7 @@ export function mockPathNode() {
 
 export function mockAddressAnalysisResponse(address?: string) {
   const addr = address || mockAddress()
-  const neighborsResponse = mockNeighborsResponse(addr)
+  const neighborsResponse = mockNeighborsResponse(addr, 1)
   
   return {
     address: addr,
@@ -264,44 +264,100 @@ export function mockConnectionResponse(fromAddress?: string, toAddress?: string)
 
 /**
  * Mock neighbors response with subgraph structure (nodes + edges)
+ * Supports multi-hop depth for radial tree visualization
  */
 export function mockNeighborsResponse(address?: string, depth: number = 1) {
   const centerAddr = address || mockAddress()
   
-  // Generate neighbor addresses with different directions
-  const incomingCount = faker.number.int({ min: 2, max: 5 })
-  const outgoingCount = faker.number.int({ min: 2, max: 5 })
-  const bothCount = faker.number.int({ min: 1, max: 3 })
+  interface NodeInfo {
+    address: string
+    distance: number
+    riskScore: number
+    tags: string[]
+    firstSeen: string
+    lastSeen: string
+  }
   
-  const incomingAddrs = Array.from({ length: incomingCount }, mockAddress)
-  const outgoingAddrs = Array.from({ length: outgoingCount }, mockAddress)
-  const bothAddrs = Array.from({ length: bothCount }, mockAddress)
+  interface EdgeInfo {
+    from: string
+    to: string
+    transferCount: number
+    totalValue: string
+    lastTransfer: string
+  }
 
-  // Build nodes array (center + all neighbors)
-  const nodes = [
-    mockGraphNode(centerAddr, 0), // center node at distance 0
-    ...incomingAddrs.map(addr => mockGraphNode(addr, 1)),
-    ...outgoingAddrs.map(addr => mockGraphNode(addr, 1)),
-    ...bothAddrs.map(addr => mockGraphNode(addr, 1)),
-  ]
+  const nodeMap = new Map<string, NodeInfo>()
+  const edges: EdgeInfo[] = []
 
-  // Build edges array
-  const edges = [
-    // Incoming edges: neighbor -> center
-    ...incomingAddrs.map(addr => mockGraphEdge(addr, centerAddr)),
-    // Outgoing edges: center -> neighbor
-    ...outgoingAddrs.map(addr => mockGraphEdge(centerAddr, addr)),
-    // Both directions
-    ...bothAddrs.flatMap(addr => [
-      mockGraphEdge(addr, centerAddr),
-      mockGraphEdge(centerAddr, addr),
-    ]),
-  ]
+  // Add center node
+  nodeMap.set(centerAddr, {
+    address: centerAddr,
+    distance: 0,
+    riskScore: mockRiskScore(),
+    tags: mockTags(3),
+    firstSeen: mockTimestamp(),
+    lastSeen: mockTimestamp(),
+  })
+
+  // Track nodes at each level for building connections
+  const levelNodes: string[][] = [[centerAddr]]
+
+  // Generate nodes and edges for each depth level
+  for (let d = 1; d <= depth; d++) {
+    const currentLevelNodes: string[] = []
+    const parentNodes = levelNodes[d - 1]
+    
+    // Each parent gets some children
+    for (const parentAddr of parentNodes) {
+      const childCount = faker.number.int({ min: 2, max: Math.max(2, 5 - d) }) // fewer children at deeper levels
+      
+      for (let i = 0; i < childCount; i++) {
+        const childAddr = mockAddress()
+        
+        // Avoid duplicates
+        if (nodeMap.has(childAddr)) continue
+        
+        // Add child node
+        nodeMap.set(childAddr, {
+          address: childAddr,
+          distance: d,
+          riskScore: mockRiskScore(),
+          tags: mockTags(3),
+          firstSeen: mockTimestamp(),
+          lastSeen: mockTimestamp(),
+        })
+        currentLevelNodes.push(childAddr)
+
+        // Add edge (randomly choose direction)
+        const direction = faker.helpers.arrayElement(["in", "out", "both"])
+        if (direction === "in" || direction === "both") {
+          edges.push({
+            from: childAddr,
+            to: parentAddr,
+            transferCount: faker.number.int({ min: 1, max: 50 }),
+            totalValue: mockEthValue(),
+            lastTransfer: mockTimestamp(),
+          })
+        }
+        if (direction === "out" || direction === "both") {
+          edges.push({
+            from: parentAddr,
+            to: childAddr,
+            transferCount: faker.number.int({ min: 1, max: 50 }),
+            totalValue: mockEthValue(),
+            lastTransfer: mockTimestamp(),
+          })
+        }
+      }
+    }
+    
+    levelNodes.push(currentLevelNodes)
+  }
 
   return {
     address: centerAddr,
     depth,
-    nodes,
+    nodes: Array.from(nodeMap.values()),
     edges,
   }
 }

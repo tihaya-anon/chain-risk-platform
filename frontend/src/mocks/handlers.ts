@@ -113,9 +113,9 @@ const graphGetAddressHandler = http.get("*/api/v1/graph/address/:address", async
 })
 
 // GET /api/v1/graph/address/:address/neighbors
-const graphGetNeighborsHandler = http.get("*/api/v1/graph/address/:address/neighbors", async ({ params }) => {
+const graphGetNeighborsHandler = http.get("*/api/v1/graph/address/:address/neighbors", async ({ params, request }) => {
   await delay(300)
-  return HttpResponse.json(mockNeighborsResponse(params.address as string))
+  const url = new URL(request.url); const depth = parseInt(url.searchParams.get("depth") || "1", 10); return HttpResponse.json(mockNeighborsResponse(params.address as string, depth))
 })
 
 // GET /api/v1/graph/address/:address/tags

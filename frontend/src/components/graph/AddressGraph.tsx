@@ -140,7 +140,7 @@ export function AddressGraph({
     if (!treeData) return {}
 
     return {
-      tooltip: {
+      tooltip: { show: false,
         trigger: "item" as const,
         formatter: (params: { data?: { value?: NodeValue } }) => {
           const value = params.data?.value
