@@ -1,5 +1,5 @@
 import { AddressTable } from "@/components/table"
-import { Card, Button } from "@/components/common"
+import { Card, Button, ClickableTag } from "@/components/common"
 import { ExternalLink, Network, Tag } from "lucide-react"
 import type { GraphAddressInfo } from "@/api/generated"
 
@@ -80,12 +80,9 @@ export function SelectedAddressPanel({
             <label className="text-xs text-gray-500">Tags</label>
             <div className="flex flex-wrap gap-1 mt-1">
               {address.tags.map((tag, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded"
-                >
-                  <Tag className="w-3 h-3" />
-                  {tag}
+                <span key={i} className="inline-flex items-center gap-1">
+                  <Tag className="w-3 h-3 text-red-400" />
+                  <ClickableTag tag={tag} variant="risk" />
                 </span>
               ))}
             </div>

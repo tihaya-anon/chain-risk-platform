@@ -1,6 +1,13 @@
 import { useState } from "react"
 import { ShieldCheck, Search, AlertTriangle } from "lucide-react"
-import { Card, Button, Input, LoadingSpinner, RiskBadge } from "@/components/common"
+import {
+  Card,
+  Button,
+  Input,
+  LoadingSpinner,
+  RiskBadge,
+  ClickableTag,
+} from "@/components/common"
 import {
   useRiskControllerScoreAddress,
   useRiskControllerListRules,
@@ -93,12 +100,7 @@ export function RiskPage() {
                     <h4 className="font-medium text-gray-700 mb-2">Tags</h4>
                     <div className="flex flex-wrap gap-2">
                       {scoreMutation.data.tags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded"
-                        >
-                          {tag}
-                        </span>
+                        <ClickableTag key={i} tag={tag} variant="risk" size="md" />
                       ))}
                     </div>
                   </div>
