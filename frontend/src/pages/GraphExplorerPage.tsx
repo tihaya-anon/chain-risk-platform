@@ -39,12 +39,23 @@ export function GraphExplorerPage() {
   const isDisplaySelected = !!selectedNode
   const showCenterInfo = (isSelectedCenter && !selectedNode) || (isHoveredCenter && !hoveredNode && !selectedNode)
 
-  // Calculate edge info for display node
+  // Calculate edge info for display node based on BFS distance
   const displayNodeEdgeInfo = useMemo(() => {
-    if (!displayNode || !neighborsQuery.data?.edges) return null
+    if (!displayNode || !neighborsQuery.data?.edges || !neighborsQuery.data?.nodes) return null
+    
     const edges = neighborsQuery.data.edges
+    const nodes = neighborsQuery.data.nodes
     const centerAddr = neighborsQuery.data.address
 
+    // Build distance map
+    const nodeDistances = new Map<string, number>()
+    nodes.forEach((node) => {
+      nodeDistances.set(node.address, node.distance ?? (node.address === centerAddr ? 0 : 1))
+    })
+
+    const displayNodeDist = nodeDistances.get(displayNode.address) ?? 999
+
+    // Find edges involving this node
     const nodeEdges = edges.filter(
       (e) => e.from === displayNode.address || e.to === displayNode.address
     )
@@ -52,13 +63,29 @@ export function GraphExplorerPage() {
     const totalTransfers = nodeEdges.reduce((sum, e) => sum + (e.transferCount || 0), 0)
     const totalValue = nodeEdges.reduce((sum, e) => sum + parseFloat(e.totalValue || "0"), 0)
 
-    const inEdges = edges.filter((e) => e.from === displayNode.address && e.to === centerAddr)
-    const outEdges = edges.filter((e) => e.from === centerAddr && e.to === displayNode.address)
+    // Determine direction based on BFS distance
+    // outgoing: edge goes from inner (smaller distance) to outer (larger distance)
+    // incoming: edge goes from outer (larger distance) to inner (smaller distance)
+    let hasOutgoing = false
+    let hasIncoming = false
+
+    nodeEdges.forEach((edge) => {
+      const otherAddr = edge.from === displayNode.address ? edge.to : edge.from
+      const otherDist = nodeDistances.get(otherAddr) ?? 999
+
+      if (displayNodeDist < otherDist) {
+        // This node is inner, edge goes to outer = outgoing from this node's perspective
+        hasOutgoing = true
+      } else if (displayNodeDist > otherDist) {
+        // This node is outer, edge comes from inner = incoming to this node
+        hasIncoming = true
+      }
+    })
 
     let direction: "incoming" | "outgoing" | "both" | "indirect" | undefined
-    if (inEdges.length > 0 && outEdges.length > 0) direction = "both"
-    else if (inEdges.length > 0) direction = "incoming"
-    else if (outEdges.length > 0) direction = "outgoing"
+    if (hasIncoming && hasOutgoing) direction = "both"
+    else if (hasIncoming) direction = "incoming"
+    else if (hasOutgoing) direction = "outgoing"
     else if (nodeEdges.length > 0) direction = "indirect"
 
     return { direction, totalTransfers, totalValue: totalValue.toFixed(4), edgeCount: nodeEdges.length }

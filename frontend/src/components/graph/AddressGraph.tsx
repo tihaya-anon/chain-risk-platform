@@ -39,8 +39,8 @@ function getRiskBorderColor(riskScore?: number): string {
 
 // Edge direction colors - exported for use in other components
 export const EDGE_COLORS = {
-  incoming: "#3B82F6",  // blue - money flowing in
-  outgoing: "#F97316",  // orange - money flowing out
+  incoming: "#3B82F6",  // blue - from outer to inner (toward center)
+  outgoing: "#F97316",  // orange - from inner to outer (away from center)
   both: "#8B5CF6",      // purple - bidirectional
   indirect: "#6B7280",  // gray - indirect connection
 }
@@ -50,8 +50,7 @@ export const EDGE_COLORS = {
  */
 function calculateRadialLayout(
   centerAddress: string,
-  nodes: GraphNode[],
-  edges: GraphEdge[]
+  nodes: GraphNode[]
 ) {
   const positions = new Map<string, { x: number; y: number }>()
   
@@ -67,15 +66,6 @@ function calculateRadialLayout(
 
   // Center node at origin
   positions.set(centerAddress, { x: 0, y: 0 })
-
-  // Build parent-child relationships for better angle distribution
-  const edgeLookup = new Map<string, Set<string>>()
-  edges.forEach((e) => {
-    if (!edgeLookup.has(e.from)) edgeLookup.set(e.from, new Set())
-    if (!edgeLookup.has(e.to)) edgeLookup.set(e.to, new Set())
-    edgeLookup.get(e.from)!.add(e.to)
-    edgeLookup.get(e.to)!.add(e.from)
-  })
 
   // Place nodes at each distance level
   const baseRadius = 180
@@ -101,6 +91,54 @@ function calculateRadialLayout(
   return positions
 }
 
+/**
+ * Determine edge direction based on BFS order (distance from center)
+ * - outgoing: from inner layer to outer layer (distance increases)
+ * - incoming: from outer layer to inner layer (distance decreases)
+ * - both: edges in both directions exist
+ */
+function determineEdgeDirections(
+  edges: GraphEdge[],
+  nodeDistances: Map<string, number>
+): Map<string, { from: string; to: string; direction: "incoming" | "outgoing" | "both" }> {
+  const edgePairs = new Map<string, { from: string; to: string; direction: "incoming" | "outgoing" | "both" }>()
+
+  edges.forEach((edge) => {
+    const fromDist = nodeDistances.get(edge.from) ?? 999
+    const toDist = nodeDistances.get(edge.to) ?? 999
+    const key = [edge.from, edge.to].sort().join("-")
+    const existing = edgePairs.get(key)
+
+    // Determine direction based on distance
+    // outgoing: from smaller distance to larger distance (inner -> outer)
+    // incoming: from larger distance to smaller distance (outer -> inner)
+    let edgeDirection: "incoming" | "outgoing"
+    if (fromDist < toDist) {
+      edgeDirection = "outgoing" // inner -> outer
+    } else if (fromDist > toDist) {
+      edgeDirection = "incoming" // outer -> inner
+    } else {
+      // Same distance level - use original edge direction
+      edgeDirection = "outgoing"
+    }
+
+    if (existing) {
+      // If we already have an edge in the opposite direction, it's bidirectional
+      if (existing.direction !== edgeDirection) {
+        existing.direction = "both"
+      }
+    } else {
+      edgePairs.set(key, {
+        from: edgeDirection === "outgoing" ? edge.from : edge.to,
+        to: edgeDirection === "outgoing" ? edge.to : edge.from,
+        direction: edgeDirection,
+      })
+    }
+  })
+
+  return edgePairs
+}
+
 export function AddressGraph({
   data,
   selectedNode,
@@ -119,7 +157,13 @@ export function AddressGraph({
     }
 
     const centerAddress = data.address
-    const positions = calculateRadialLayout(centerAddress, data.nodes, data.edges || [])
+    const positions = calculateRadialLayout(centerAddress, data.nodes)
+
+    // Build node distance map
+    const nodeDistances = new Map<string, number>()
+    data.nodes.forEach((node) => {
+      nodeDistances.set(node.address, node.distance ?? (node.address === centerAddress ? 0 : 1))
+    })
 
     // Build nodes
     const graphNodes = data.nodes.map((node) => {
@@ -154,23 +198,8 @@ export function AddressGraph({
       }
     })
 
-    // Build edges - deduplicate and determine direction
-    const edgePairs = new Map<string, { from: string; to: string; direction: "incoming" | "outgoing" | "both" }>()
-    
-    ;(data.edges || []).forEach((edge) => {
-      const key = [edge.from, edge.to].sort().join("-")
-      const existing = edgePairs.get(key)
-      
-      if (existing) {
-        existing.direction = "both"
-      } else {
-        edgePairs.set(key, {
-          from: edge.from,
-          to: edge.to,
-          direction: edge.from === centerAddress ? "outgoing" : "incoming",
-        })
-      }
-    })
+    // Build edges with direction based on BFS distance
+    const edgePairs = determineEdgeDirections(data.edges || [], nodeDistances)
 
     const graphLinks = Array.from(edgePairs.values()).map((edge) => ({
       source: edge.from,
