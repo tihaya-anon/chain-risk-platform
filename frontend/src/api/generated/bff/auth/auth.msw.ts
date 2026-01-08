@@ -5,87 +5,54 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import { faker } from "@faker-js/faker"
+import {
+  faker
+} from '@faker-js/faker';
 
-import { HttpResponse, delay, http } from "msw"
-import type { RequestHandlerOptions } from "msw"
+import {
+  HttpResponse,
+  delay,
+  http
+} from 'msw';
+import type {
+  RequestHandlerOptions
+} from 'msw';
 
-import type { LoginResponse, UserProfileResponse } from "../../models"
+import type {
+  LoginResponse,
+  UserProfileResponse
+} from '../../models';
 
-export const getAuthControllerLoginResponseMock = (
-  overrideResponse: Partial<LoginResponse> = {}
-): LoginResponse => ({
-  accessToken: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  tokenType: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  expiresIn: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-})
 
-export const getAuthControllerGetProfileResponseMock = (
-  overrideResponse: Partial<UserProfileResponse> = {}
-): UserProfileResponse => ({
-  id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  username: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  role: faker.helpers.arrayElement(["admin", "user"] as const),
-  ...overrideResponse,
-})
+export const getAuthControllerLoginResponseMock = (overrideResponse: Partial< LoginResponse > = {}): LoginResponse => ({accessToken: faker.string.alpha({length: {min: 10, max: 20}}), tokenType: faker.string.alpha({length: {min: 10, max: 20}}), expiresIn: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getAuthControllerLoginMockHandler = (
-  overrideResponse?:
-    | LoginResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0]
-      ) => Promise<LoginResponse> | LoginResponse),
-  options?: RequestHandlerOptions
-) => {
-  return http.post(
-    "*/api/v1/auth/login",
-    async (info) => {
-      await delay(1000)
+export const getAuthControllerGetProfileResponseMock = (overrideResponse: Partial< UserProfileResponse > = {}): UserProfileResponse => ({id: faker.string.alpha({length: {min: 10, max: 20}}), username: faker.string.alpha({length: {min: 10, max: 20}}), role: faker.helpers.arrayElement(['admin','user'] as const), ...overrideResponse})
 
-      return new HttpResponse(
-        JSON.stringify(
-          overrideResponse !== undefined
-            ? typeof overrideResponse === "function"
-              ? await overrideResponse(info)
-              : overrideResponse
-            : getAuthControllerLoginResponseMock()
-        ),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )
-    },
-    options
-  )
+
+export const getAuthControllerLoginMockHandler = (overrideResponse?: LoginResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<LoginResponse> | LoginResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/api/v1/auth/login', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAuthControllerLoginResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
 }
 
-export const getAuthControllerGetProfileMockHandler = (
-  overrideResponse?:
-    | UserProfileResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
-      ) => Promise<UserProfileResponse> | UserProfileResponse),
-  options?: RequestHandlerOptions
-) => {
-  return http.get(
-    "*/api/v1/auth/profile",
-    async (info) => {
-      await delay(1000)
-
-      return new HttpResponse(
-        JSON.stringify(
-          overrideResponse !== undefined
-            ? typeof overrideResponse === "function"
-              ? await overrideResponse(info)
-              : overrideResponse
-            : getAuthControllerGetProfileResponseMock()
-        ),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )
-    },
-    options
-  )
+export const getAuthControllerGetProfileMockHandler = (overrideResponse?: UserProfileResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<UserProfileResponse> | UserProfileResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/auth/profile', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAuthControllerGetProfileResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
 }
 export const getAuthMock = () => [
   getAuthControllerLoginMockHandler(),
-  getAuthControllerGetProfileMockHandler(),
+  getAuthControllerGetProfileMockHandler()
 ]

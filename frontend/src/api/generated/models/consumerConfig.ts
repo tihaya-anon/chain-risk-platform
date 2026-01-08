@@ -7,5 +7,5 @@
  */
 
 export interface ConsumerConfig {
-  maxPollRecords?: number
+  maxPollRecords?: number;
 }

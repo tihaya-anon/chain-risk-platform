@@ -5,11 +5,11 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { NeighborInfo } from "./neighborInfo"
+import type { NeighborInfo } from './neighborInfo';
 
 export interface NeighborsResponse {
-  address?: string
-  neighbors?: NeighborInfo[]
-  totalCount?: number
-  depth?: number
+  address?: string;
+  neighbors?: NeighborInfo[];
+  totalCount?: number;
+  depth?: number;
 }

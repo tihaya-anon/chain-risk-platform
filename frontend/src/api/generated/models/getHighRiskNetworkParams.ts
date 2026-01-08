@@ -7,12 +7,12 @@
  */
 
 export type GetHighRiskNetworkParams = {
-  /**
-   * Risk score threshold (0.0 - 1.0)
-   */
-  threshold?: number
-  /**
-   * Maximum number of addresses to return
-   */
-  limit?: number
-}
+/**
+ * Risk score threshold (0.0 - 1.0)
+ */
+threshold?: number;
+/**
+ * Maximum number of addresses to return
+ */
+limit?: number;
+};

@@ -5,17 +5,17 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { IngestionConfig } from "./ingestionConfig"
-import type { StreamProcessorConfig } from "./streamProcessorConfig"
-import type { GraphSyncConfig } from "./graphSyncConfig"
-import type { ClusteringConfig } from "./clusteringConfig"
-import type { PropagationConfig } from "./propagationConfig"
+import type { IngestionConfig } from './ingestionConfig';
+import type { StreamProcessorConfig } from './streamProcessorConfig';
+import type { GraphSyncConfig } from './graphSyncConfig';
+import type { ClusteringConfig } from './clusteringConfig';
+import type { PropagationConfig } from './propagationConfig';
 
 export interface PipelineProperties {
-  enabled?: boolean
-  ingestion?: IngestionConfig
-  streamProcessor?: StreamProcessorConfig
-  graphSync?: GraphSyncConfig
-  clustering?: ClusteringConfig
-  propagation?: PropagationConfig
+  enabled?: boolean;
+  ingestion?: IngestionConfig;
+  streamProcessor?: StreamProcessorConfig;
+  graphSync?: GraphSyncConfig;
+  clustering?: ClusteringConfig;
+  propagation?: PropagationConfig;
 }

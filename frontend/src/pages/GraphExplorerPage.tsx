@@ -1,10 +1,10 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { useSearchParams, Link } from "react-router-dom"
-import { Network, Search, Info, ExternalLink, Activity, ArrowDownLeft, ArrowUpRight } from "lucide-react"
+import { Network, Search, Info, ExternalLink, Activity } from "lucide-react"
 import { Card, Button, Input, LoadingSpinner, RiskBadge } from "@/components/common"
 import { AddressGraph, AddressGraphLegend } from "@/components/graph"
 import { useGraphControllerGetAddressNeighbors, useGraphControllerGetAddressInfo } from "@/api/generated"
-import type { NeighborInfo } from "@/api/generated"
+import type { GraphNode } from "@/api/generated"
 
 export function GraphExplorerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -13,11 +13,31 @@ export function GraphExplorerPage() {
   const [searchAddress, setSearchAddress] = useState(addressParam)
   const [queryAddress, setQueryAddress] = useState(addressParam)
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
-  const [hoveredNode, setHoveredNode] = useState<NeighborInfo | null>(null)
+  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null)
   const [isCenter, setIsCenter] = useState(false)
 
   const neighborsQuery = useGraphControllerGetAddressNeighbors(queryAddress, { depth: 1, limit: 30 }, { query: { enabled: !!queryAddress } })
   const addressInfoQuery = useGraphControllerGetAddressInfo(queryAddress, { query: { enabled: !!queryAddress } })
+
+  // Calculate edge info for selected node
+  const selectedNodeEdgeInfo = useMemo(() => {
+    if (!hoveredNode || !neighborsQuery.data?.edges) return null
+    const edges = neighborsQuery.data.edges
+    const centerAddr = neighborsQuery.data.address
+
+    const inEdges = edges.filter(e => e.from === hoveredNode.address && e.to === centerAddr)
+    const outEdges = edges.filter(e => e.from === centerAddr && e.to === hoveredNode.address)
+
+    const totalTransfers = [...inEdges, ...outEdges].reduce((sum, e) => sum + (e.transferCount || 0), 0)
+    const totalValue = [...inEdges, ...outEdges].reduce((sum, e) => sum + parseFloat(e.totalValue || "0"), 0)
+
+    let direction: "incoming" | "outgoing" | "both" | undefined
+    if (inEdges.length > 0 && outEdges.length > 0) direction = "both"
+    else if (inEdges.length > 0) direction = "incoming"
+    else if (outEdges.length > 0) direction = "outgoing"
+
+    return { direction, totalTransfers, totalValue: String(totalValue) }
+  }, [hoveredNode, neighborsQuery.data])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,16 +50,15 @@ export function GraphExplorerPage() {
     }
   }
 
-  // Use useCallback to stabilize these functions
-  const handleNodeHover = useCallback((neighbor: NeighborInfo | null, center?: boolean) => {
-    setHoveredNode(neighbor)
+  const handleNodeHover = useCallback((node: GraphNode | null, center?: boolean) => {
+    setHoveredNode(node)
     setIsCenter(!!center)
   }, [])
 
-  const handleNodeClick = useCallback((neighbor: NeighborInfo | null, center?: boolean) => {
-    if (neighbor) {
-      setSelectedNode(neighbor.address || null)
-      setHoveredNode(neighbor)
+  const handleNodeClick = useCallback((node: GraphNode | null, center?: boolean) => {
+    if (node) {
+      setSelectedNode(node.address || null)
+      setHoveredNode(node)
       setIsCenter(false)
     } else if (center) {
       setSelectedNode(queryAddress)
@@ -53,7 +72,6 @@ export function GraphExplorerPage() {
   }, [queryAddress])
 
   const handleNodeDoubleClick = useCallback((address: string) => {
-    // Navigate to the new address
     setSearchAddress(address)
     setQueryAddress(address)
     setSearchParams({ address })
@@ -61,9 +79,9 @@ export function GraphExplorerPage() {
     setHoveredNode(null)
   }, [setSearchParams])
 
-  // Display info: selected > hovered > center address
   const displayNode = selectedNode ? hoveredNode : hoveredNode
   const showCenterInfo = isCenter && !hoveredNode
+  const nodeCount = (neighborsQuery.data?.nodes?.length || 1) - 1 // exclude center
 
   return (
     <div className="h-full flex flex-col">
@@ -107,7 +125,7 @@ export function GraphExplorerPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="font-semibold text-gray-900">Network Graph</h3>
-                      <p className="text-sm text-gray-500">{neighborsQuery.data.neighbors?.length || 0} connected addresses</p>
+                      <p className="text-sm text-gray-500">{nodeCount} connected addresses, {neighborsQuery.data.edges?.length || 0} edges</p>
                     </div>
                     <AddressGraphLegend />
                   </div>
@@ -138,7 +156,7 @@ export function GraphExplorerPage() {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-gray-500 text-xs">Risk Score</label>
-                          <p className="font-semibold">{addressInfoQuery.data.riskScore?.toFixed(2) || "N/A"}</p>
+                          <RiskBadge score={addressInfoQuery.data.riskScore} size="sm" />
                         </div>
                         <div>
                           <label className="text-gray-500 text-xs">TX Count</label>
@@ -175,26 +193,25 @@ export function GraphExplorerPage() {
                       <p className="font-mono text-xs text-gray-700 break-all bg-gray-50 p-2 rounded">{displayNode.address}</p>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-gray-500 text-xs">Direction</label>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            {displayNode.direction === "incoming" && <ArrowDownLeft className="w-4 h-4 text-green-600" />}
-                            {displayNode.direction === "outgoing" && <ArrowUpRight className="w-4 h-4 text-red-600" />}
-                            {displayNode.direction === "both" && <><ArrowDownLeft className="w-3 h-3 text-purple-600" /><ArrowUpRight className="w-3 h-3 text-purple-600" /></>}
-                            <span className="font-medium capitalize">{displayNode.direction}</span>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-gray-500 text-xs">Transfers</label>
-                          <p className="font-semibold">{displayNode.transferCount?.toLocaleString() || "0"}</p>
-                        </div>
-                        <div>
                           <label className="text-gray-500 text-xs">Risk Score</label>
                           <RiskBadge score={displayNode.riskScore} size="sm" />
                         </div>
                         <div>
-                          <label className="text-gray-500 text-xs">Total Value</label>
-                          <p className="font-semibold text-xs">{formatValue(displayNode.totalValue)}</p>
+                          <label className="text-gray-500 text-xs">Distance</label>
+                          <p className="font-semibold">{displayNode.distance} hop{displayNode.distance !== 1 ? "s" : ""}</p>
                         </div>
+                        {selectedNodeEdgeInfo && (
+                          <>
+                            <div>
+                              <label className="text-gray-500 text-xs">Direction</label>
+                              <p className="font-semibold capitalize">{selectedNodeEdgeInfo.direction || "N/A"}</p>
+                            </div>
+                            <div>
+                              <label className="text-gray-500 text-xs">Transfers</label>
+                              <p className="font-semibold">{selectedNodeEdgeInfo.totalTransfers}</p>
+                            </div>
+                          </>
+                        )}
                       </div>
                       {displayNode.tags && displayNode.tags.length > 0 && (
                         <div>
@@ -236,14 +253,4 @@ export function GraphExplorerPage() {
       </div>
     </div>
   )
-}
-
-function formatValue(value?: string): string {
-  if (!value) return "-"
-  const num = parseFloat(value)
-  if (isNaN(num)) return value
-  if (num >= 1e18) return `${(num / 1e18).toFixed(2)} ETH`
-  if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`
-  if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`
-  return num.toLocaleString()
 }

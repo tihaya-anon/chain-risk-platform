@@ -5,149 +5,54 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import { faker } from "@faker-js/faker"
+import {
+  faker
+} from '@faker-js/faker';
 
-import { HttpResponse, delay, http } from "msw"
-import type { RequestHandlerOptions } from "msw"
+import {
+  HttpResponse,
+  delay,
+  http
+} from 'msw';
+import type {
+  RequestHandlerOptions
+} from 'msw';
 
-import type { PaginatedTransfersResponse, TransferResponse } from "../../models"
+import type {
+  PaginatedTransfersResponse,
+  TransferResponse
+} from '../../models';
 
-export const getTransfersControllerListTransfersResponseMock = (
-  overrideResponse: Partial<PaginatedTransfersResponse> = {}
-): PaginatedTransfersResponse => ({
-  items: Array.from(
-    { length: faker.number.int({ min: 1, max: 10 }) },
-    (_, i) => i + 1
-  ).map(() => ({
-    id: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
-    txHash: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    blockNumber: faker.number.float({
-      min: undefined,
-      max: undefined,
-      fractionDigits: 2,
-    }),
-    logIndex: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
-    fromAddress: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    toAddress: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    value: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    timestamp: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    transferType: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    network: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    tokenAddress: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      undefined,
-    ]),
-    tokenSymbol: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      undefined,
-    ]),
-    tokenDecimal: faker.helpers.arrayElement([
-      faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
-      undefined,
-    ]),
-  })),
-  pagination: {
-    page: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
-    pageSize: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
-    total: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
-    totalPages: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
-  },
-  ...overrideResponse,
-})
 
-export const getTransfersControllerGetTransferByTxHashResponseMock =
-  (): TransferResponse[] =>
-    Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-      () => ({
-        id: faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
-        txHash: faker.string.alpha({ length: { min: 10, max: 20 } }),
-        blockNumber: faker.number.float({
-          min: undefined,
-          max: undefined,
-          fractionDigits: 2,
-        }),
-        logIndex: faker.number.float({
-          min: undefined,
-          max: undefined,
-          fractionDigits: 2,
-        }),
-        fromAddress: faker.string.alpha({ length: { min: 10, max: 20 } }),
-        toAddress: faker.string.alpha({ length: { min: 10, max: 20 } }),
-        value: faker.string.alpha({ length: { min: 10, max: 20 } }),
-        timestamp: faker.string.alpha({ length: { min: 10, max: 20 } }),
-        transferType: faker.string.alpha({ length: { min: 10, max: 20 } }),
-        network: faker.string.alpha({ length: { min: 10, max: 20 } }),
-        tokenAddress: faker.helpers.arrayElement([
-          faker.string.alpha({ length: { min: 10, max: 20 } }),
-          undefined,
-        ]),
-        tokenSymbol: faker.helpers.arrayElement([
-          faker.string.alpha({ length: { min: 10, max: 20 } }),
-          undefined,
-        ]),
-        tokenDecimal: faker.helpers.arrayElement([
-          faker.number.float({ min: undefined, max: undefined, fractionDigits: 2 }),
-          undefined,
-        ]),
+export const getTransfersControllerListTransfersResponseMock = (overrideResponse: Partial< PaginatedTransfersResponse > = {}): PaginatedTransfersResponse => ({items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), txHash: faker.string.alpha({length: {min: 10, max: 20}}), blockNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), logIndex: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), fromAddress: faker.string.alpha({length: {min: 10, max: 20}}), toAddress: faker.string.alpha({length: {min: 10, max: 20}}), value: faker.string.alpha({length: {min: 10, max: 20}}), timestamp: faker.string.alpha({length: {min: 10, max: 20}}), transferType: faker.string.alpha({length: {min: 10, max: 20}}), network: faker.string.alpha({length: {min: 10, max: 20}}), tokenAddress: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), tokenSymbol: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), tokenDecimal: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined])})), pagination: {page: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), pageSize: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), total: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), totalPages: faker.number.float({min: undefined, max: undefined, fractionDigits: 2})}, ...overrideResponse})
+
+export const getTransfersControllerGetTransferByTxHashResponseMock = (): TransferResponse[] => (Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() => ({id: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), txHash: faker.string.alpha({length: {min: 10, max: 20}}), blockNumber: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), logIndex: faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), fromAddress: faker.string.alpha({length: {min: 10, max: 20}}), toAddress: faker.string.alpha({length: {min: 10, max: 20}}), value: faker.string.alpha({length: {min: 10, max: 20}}), timestamp: faker.string.alpha({length: {min: 10, max: 20}}), transferType: faker.string.alpha({length: {min: 10, max: 20}}), network: faker.string.alpha({length: {min: 10, max: 20}}), tokenAddress: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), tokenSymbol: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), tokenDecimal: faker.helpers.arrayElement([faker.number.float({min: undefined, max: undefined, fractionDigits: 2}), undefined])})))
+
+
+export const getTransfersControllerListTransfersMockHandler = (overrideResponse?: PaginatedTransfersResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PaginatedTransfersResponse> | PaginatedTransfersResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/transfers', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getTransfersControllerListTransfersResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
       })
-    )
-
-export const getTransfersControllerListTransfersMockHandler = (
-  overrideResponse?:
-    | PaginatedTransfersResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
-      ) => Promise<PaginatedTransfersResponse> | PaginatedTransfersResponse),
-  options?: RequestHandlerOptions
-) => {
-  return http.get(
-    "*/api/v1/transfers",
-    async (info) => {
-      await delay(1000)
-
-      return new HttpResponse(
-        JSON.stringify(
-          overrideResponse !== undefined
-            ? typeof overrideResponse === "function"
-              ? await overrideResponse(info)
-              : overrideResponse
-            : getTransfersControllerListTransfersResponseMock()
-        ),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )
-    },
-    options
-  )
+  }, options)
 }
 
-export const getTransfersControllerGetTransferByTxHashMockHandler = (
-  overrideResponse?:
-    | TransferResponse[]
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0]
-      ) => Promise<TransferResponse[]> | TransferResponse[]),
-  options?: RequestHandlerOptions
-) => {
-  return http.get(
-    "*/api/v1/transfers/tx/:txHash",
-    async (info) => {
-      await delay(1000)
-
-      return new HttpResponse(
-        JSON.stringify(
-          overrideResponse !== undefined
-            ? typeof overrideResponse === "function"
-              ? await overrideResponse(info)
-              : overrideResponse
-            : getTransfersControllerGetTransferByTxHashResponseMock()
-        ),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      )
-    },
-    options
-  )
+export const getTransfersControllerGetTransferByTxHashMockHandler = (overrideResponse?: TransferResponse[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<TransferResponse[]> | TransferResponse[]), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/transfers/tx/:txHash', async (info) => {await delay(1000);
+  
+    return new HttpResponse(JSON.stringify(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getTransfersControllerGetTransferByTxHashResponseMock()),
+      { status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+  }, options)
 }
 export const getTransfersMock = () => [
   getTransfersControllerListTransfersMockHandler(),
-  getTransfersControllerGetTransferByTxHashMockHandler(),
+  getTransfersControllerGetTransferByTxHashMockHandler()
 ]

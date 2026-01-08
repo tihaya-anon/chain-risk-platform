@@ -5,7 +5,9 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import { useQuery } from "@tanstack/react-query"
+import {
+  useQuery
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -15,329 +17,204 @@ import type {
   QueryKey,
   UndefinedInitialDataOptions,
   UseQueryOptions,
-  UseQueryResult,
-} from "@tanstack/react-query"
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   PaginatedTransfersResponse,
   TransferResponse,
-  TransfersControllerListTransfersParams,
-} from "../../models"
+  TransfersControllerListTransfersParams
+} from '../../models';
 
-import { customInstance } from "../../../axios-instance"
+import { customInstance } from '../../../axios-instance';
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1]
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
 
 /**
  * @summary List transfers
  */
 export const transfersControllerListTransfers = (
-  params?: TransfersControllerListTransfersParams,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    params?: TransfersControllerListTransfersParams,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<PaginatedTransfersResponse>(
-    { url: `/api/v1/transfers`, method: "GET", params, signal },
-    options
-  )
+      
+      
+      return customInstance<PaginatedTransfersResponse>(
+      {url: `/api/v1/transfers`, method: 'GET',
+        params, signal
+    },
+      options);
+    }
+  
+
+
+
+export const getTransfersControllerListTransfersQueryKey = (params?: TransfersControllerListTransfersParams,) => {
+    return [
+    `/api/v1/transfers`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getTransfersControllerListTransfersQueryOptions = <TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError = void>(params?: TransfersControllerListTransfersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getTransfersControllerListTransfersQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof transfersControllerListTransfers>>> = ({ signal }) => transfersControllerListTransfers(params, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export const getTransfersControllerListTransfersQueryKey = (
-  params?: TransfersControllerListTransfersParams
-) => {
-  return [`/api/v1/transfers`, ...(params ? [params] : [])] as const
-}
-
-export const getTransfersControllerListTransfersQueryOptions = <
-  TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-  TError = void,
->(
-  params?: TransfersControllerListTransfersParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
-
-  const queryKey =
-    queryOptions?.queryKey ?? getTransfersControllerListTransfersQueryKey(params)
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof transfersControllerListTransfers>>
-  > = ({ signal }) => transfersControllerListTransfers(params, requestOptions, signal)
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type TransfersControllerListTransfersQueryResult = NonNullable<
-  Awaited<ReturnType<typeof transfersControllerListTransfers>>
->
+export type TransfersControllerListTransfersQueryResult = NonNullable<Awaited<ReturnType<typeof transfersControllerListTransfers>>>
 export type TransfersControllerListTransfersQueryError = void
 
-export function useTransfersControllerListTransfers<
-  TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-  TError = void,
->(
-  params: undefined | TransfersControllerListTransfersParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+export function useTransfersControllerListTransfers<TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError = void>(
+ params: undefined |  TransfersControllerListTransfersParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof transfersControllerListTransfers>>,
           TError,
           Awaited<ReturnType<typeof transfersControllerListTransfers>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useTransfersControllerListTransfers<
-  TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-  TError = void,
->(
-  params?: TransfersControllerListTransfersParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTransfersControllerListTransfers<TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError = void>(
+ params?: TransfersControllerListTransfersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof transfersControllerListTransfers>>,
           TError,
           Awaited<ReturnType<typeof transfersControllerListTransfers>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useTransfersControllerListTransfers<
-  TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-  TError = void,
->(
-  params?: TransfersControllerListTransfersParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTransfersControllerListTransfers<TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError = void>(
+ params?: TransfersControllerListTransfersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List transfers
  */
 
-export function useTransfersControllerListTransfers<
-  TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-  TError = void,
->(
-  params?: TransfersControllerListTransfersParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerListTransfers>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getTransfersControllerListTransfersQueryOptions(params, options)
+export function useTransfersControllerListTransfers<TData = Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError = void>(
+ params?: TransfersControllerListTransfersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerListTransfers>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getTransfersControllerListTransfersQueryOptions(params,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
 
 /**
  * @summary Get transfers by transaction hash
  */
 export const transfersControllerGetTransferByTxHash = (
-  txHash: string,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal
+    txHash: string,
+ options?: SecondParameter<typeof customInstance>,signal?: AbortSignal
 ) => {
-  return customInstance<TransferResponse[]>(
-    { url: `/api/v1/transfers/tx/${txHash}`, method: "GET", signal },
-    options
-  )
-}
+      
+      
+      return customInstance<TransferResponse[]>(
+      {url: `/api/v1/transfers/tx/${txHash}`, method: 'GET', signal
+    },
+      options);
+    }
+  
 
-export const getTransfersControllerGetTransferByTxHashQueryKey = (txHash?: string) => {
-  return [`/api/v1/transfers/tx/${txHash}`] as const
-}
 
-export const getTransfersControllerGetTransferByTxHashQueryOptions = <
-  TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-  TError = void,
->(
-  txHash: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  }
+
+export const getTransfersControllerGetTransferByTxHashQueryKey = (txHash?: string,) => {
+    return [
+    `/api/v1/transfers/tx/${txHash}`
+    ] as const;
+    }
+
+    
+export const getTransfersControllerGetTransferByTxHashQueryOptions = <TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError = void>(txHash: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {}
 
-  const queryKey =
-    queryOptions?.queryKey ?? getTransfersControllerGetTransferByTxHashQueryKey(txHash)
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>
-  > = ({ signal }) =>
-    transfersControllerGetTransferByTxHash(txHash, requestOptions, signal)
+  const queryKey =  queryOptions?.queryKey ?? getTransfersControllerGetTransferByTxHashQueryKey(txHash);
 
-  return { queryKey, queryFn, enabled: !!txHash, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> }
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>> = ({ signal }) => transfersControllerGetTransferByTxHash(txHash, requestOptions, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(txHash), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type TransfersControllerGetTransferByTxHashQueryResult = NonNullable<
-  Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>
->
+export type TransfersControllerGetTransferByTxHashQueryResult = NonNullable<Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>>
 export type TransfersControllerGetTransferByTxHashQueryError = void
 
-export function useTransfersControllerGetTransferByTxHash<
-  TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-  TError = void,
->(
-  txHash: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+export function useTransfersControllerGetTransferByTxHash<TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError = void>(
+ txHash: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
           TError,
           Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useTransfersControllerGetTransferByTxHash<
-  TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-  TError = void,
->(
-  txHash: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTransfersControllerGetTransferByTxHash<TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError = void>(
+ txHash: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
           TError,
           Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>
-        >,
-        "initialData"
-      >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useTransfersControllerGetTransferByTxHash<
-  TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-  TError = void,
->(
-  txHash: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTransfersControllerGetTransferByTxHash<TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError = void>(
+ txHash: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get transfers by transaction hash
  */
 
-export function useTransfersControllerGetTransferByTxHash<
-  TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-  TError = void,
->(
-  txHash: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>,
-        TError,
-        TData
-      >
-    >
-    request?: SecondParameter<typeof customInstance>
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getTransfersControllerGetTransferByTxHashQueryOptions(
-    txHash,
-    options
-  )
+export function useTransfersControllerGetTransferByTxHash<TData = Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError = void>(
+ txHash: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof transfersControllerGetTransferByTxHash>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
-    queryKey: DataTag<QueryKey, TData, TError>
-  }
+  const queryOptions = getTransfersControllerGetTransferByTxHashQueryOptions(txHash,options)
 
-  query.queryKey = queryOptions.queryKey
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  return query
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
 }
+
+
+
+

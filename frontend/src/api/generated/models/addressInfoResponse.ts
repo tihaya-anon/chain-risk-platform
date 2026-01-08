@@ -8,23 +8,23 @@
 
 export interface AddressInfoResponse {
   /** Blockchain address */
-  address: string
+  address: string;
   /** First seen timestamp */
-  firstSeen?: string
+  firstSeen?: string;
   /** Last seen timestamp */
-  lastSeen?: string
+  lastSeen?: string;
   /** Transaction count */
-  txCount?: number
+  txCount?: number;
   /** Risk score (0.0 - 1.0) */
-  riskScore?: number
+  riskScore?: number;
   /** Tags associated with the address */
-  tags?: string[]
+  tags?: string[];
   /** Cluster ID if address belongs to a cluster */
-  clusterId?: string
+  clusterId?: string;
   /** Network (e.g., ethereum) */
-  network?: string
+  network?: string;
   /** Incoming transfer count */
-  incomingCount?: number
+  incomingCount?: number;
   /** Outgoing transfer count */
-  outgoingCount?: number
+  outgoingCount?: number;
 }

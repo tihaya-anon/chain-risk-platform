@@ -5,12 +5,12 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { PollingConfig } from "./pollingConfig"
-import type { RateLimitConfig } from "./rateLimitConfig"
+import type { PollingConfig } from './pollingConfig';
+import type { RateLimitConfig } from './rateLimitConfig';
 
 export interface IngestionConfig {
-  enabled?: boolean
-  network?: string
-  polling?: PollingConfig
-  rateLimit?: RateLimitConfig
+  enabled?: boolean;
+  network?: string;
+  polling?: PollingConfig;
+  rateLimit?: RateLimitConfig;
 }

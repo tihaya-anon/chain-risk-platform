@@ -7,12 +7,12 @@
  */
 
 export type GraphControllerGetHighRiskAddressesParams = {
-  /**
-   * Risk score threshold (0.0 - 1.0)
-   */
-  threshold?: number
-  /**
-   * Maximum results
-   */
-  limit?: number
-}
+/**
+ * Risk score threshold (0.0 - 1.0)
+ */
+threshold?: number;
+/**
+ * Maximum results
+ */
+limit?: number;
+};

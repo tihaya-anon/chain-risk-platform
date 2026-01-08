@@ -8,9 +8,9 @@
 
 export interface BatchRiskScoreRequestDto {
   /** List of addresses */
-  addresses: string[]
+  addresses: string[];
   /** Network */
-  network?: string
+  network?: string;
   /** Include detailed risk factors */
-  includeFactors?: boolean
+  includeFactors?: boolean;
 }

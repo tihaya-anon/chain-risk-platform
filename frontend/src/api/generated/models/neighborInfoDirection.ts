@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type NeighborInfoDirection =
-  (typeof NeighborInfoDirection)[keyof typeof NeighborInfoDirection]
+export type NeighborInfoDirection = typeof NeighborInfoDirection[keyof typeof NeighborInfoDirection];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const NeighborInfoDirection = {
-  incoming: "incoming",
-  outgoing: "outgoing",
-  both: "both",
-} as const
+  incoming: 'incoming',
+  outgoing: 'outgoing',
+  both: 'both',
+} as const;

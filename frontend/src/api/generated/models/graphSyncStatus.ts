@@ -7,7 +7,7 @@
  */
 
 export interface GraphSyncStatus {
-  enabled?: boolean
-  status?: string
-  lastSyncTime?: string
+  enabled?: boolean;
+  status?: string;
+  lastSyncTime?: string;
 }

@@ -8,7 +8,7 @@
 
 export interface BatchRiskRequest {
   /** List of addresses to analyze */
-  addresses: string[]
+  addresses: string[];
   /** Blockchain network */
-  network?: string
+  network?: string;
 }

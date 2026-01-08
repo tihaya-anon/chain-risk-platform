@@ -7,7 +7,7 @@
  */
 
 export interface RiskProperties {
-  highThreshold?: number
-  mediumThreshold?: number
-  cacheTtlSeconds?: number
+  highThreshold?: number;
+  mediumThreshold?: number;
+  cacheTtlSeconds?: number;
 }

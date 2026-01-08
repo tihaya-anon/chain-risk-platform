@@ -5,10 +5,10 @@
  * BFF API for Chain Risk Platform
  * OpenAPI spec version: 1.0
  */
-import type { TransferResponse } from "./transferResponse"
-import type { PaginationMetadata } from "./paginationMetadata"
+import type { TransferResponse } from './transferResponse';
+import type { PaginationMetadata } from './paginationMetadata';
 
 export interface PaginatedTransfersResponse {
-  items: TransferResponse[]
-  pagination: PaginationMetadata
+  items: TransferResponse[];
+  pagination: PaginationMetadata;
 }

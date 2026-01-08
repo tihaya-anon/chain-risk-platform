@@ -89,15 +89,26 @@ export function mockGraphAddressInfo(address?: string) {
   }
 }
 
-export function mockNeighborInfo() {
+// Graph Node for subgraph response
+export function mockGraphNode(address?: string, distance: number = 1) {
   return {
-    address: mockAddress(),
-    direction: faker.helpers.arrayElement(["incoming", "outgoing", "both"] as const),
+    address: address || mockAddress(),
+    distance,
+    riskScore: mockRiskScore(),
+    tags: mockTags(3),
+    firstSeen: mockTimestamp(),
+    lastSeen: mockTimestamp(),
+  }
+}
+
+// Graph Edge for subgraph response
+export function mockGraphEdge(from: string, to: string) {
+  return {
+    from,
+    to,
     transferCount: faker.number.int({ min: 1, max: 100 }),
     totalValue: mockEthValue(),
     lastTransfer: mockTimestamp(),
-    riskScore: mockRiskScore(),
-    tags: mockTags(3),
   }
 }
 
@@ -145,6 +156,8 @@ export function mockPathNode() {
 
 export function mockAddressAnalysisResponse(address?: string) {
   const addr = address || mockAddress()
+  const neighborsResponse = mockNeighborsResponse(addr)
+  
   return {
     address: addr,
     network: "ethereum",
@@ -154,12 +167,7 @@ export function mockAddressAnalysisResponse(address?: string) {
     },
     graph: {
       graphInfo: mockGraphAddressInfo(addr),
-      neighbors: {
-        address: addr,
-        neighbors: Array.from({ length: faker.number.int({ min: 3, max: 10 }) }, mockNeighborInfo),
-        totalCount: faker.number.int({ min: 10, max: 100 }),
-        depth: 1,
-      },
+      neighbors: neighborsResponse,
       tags: mockTags(5),
       cluster: mockClusterResponse(),
     },
@@ -168,7 +176,6 @@ export function mockAddressAnalysisResponse(address?: string) {
 }
 
 export function mockHighRiskNetworkResponse() {
-  // Generate addresses with full range of risk scores for dashboard distribution
   const addresses = [
     // Critical (>= 0.8)
     ...Array.from({ length: faker.number.int({ min: 2, max: 4 }) }, () => ({
@@ -255,13 +262,47 @@ export function mockConnectionResponse(fromAddress?: string, toAddress?: string)
   }
 }
 
-export function mockNeighborsResponse(address?: string) {
-  const addr = address || mockAddress()
+/**
+ * Mock neighbors response with subgraph structure (nodes + edges)
+ */
+export function mockNeighborsResponse(address?: string, depth: number = 1) {
+  const centerAddr = address || mockAddress()
+  
+  // Generate neighbor addresses with different directions
+  const incomingCount = faker.number.int({ min: 2, max: 5 })
+  const outgoingCount = faker.number.int({ min: 2, max: 5 })
+  const bothCount = faker.number.int({ min: 1, max: 3 })
+  
+  const incomingAddrs = Array.from({ length: incomingCount }, mockAddress)
+  const outgoingAddrs = Array.from({ length: outgoingCount }, mockAddress)
+  const bothAddrs = Array.from({ length: bothCount }, mockAddress)
+
+  // Build nodes array (center + all neighbors)
+  const nodes = [
+    mockGraphNode(centerAddr, 0), // center node at distance 0
+    ...incomingAddrs.map(addr => mockGraphNode(addr, 1)),
+    ...outgoingAddrs.map(addr => mockGraphNode(addr, 1)),
+    ...bothAddrs.map(addr => mockGraphNode(addr, 1)),
+  ]
+
+  // Build edges array
+  const edges = [
+    // Incoming edges: neighbor -> center
+    ...incomingAddrs.map(addr => mockGraphEdge(addr, centerAddr)),
+    // Outgoing edges: center -> neighbor
+    ...outgoingAddrs.map(addr => mockGraphEdge(centerAddr, addr)),
+    // Both directions
+    ...bothAddrs.flatMap(addr => [
+      mockGraphEdge(addr, centerAddr),
+      mockGraphEdge(centerAddr, addr),
+    ]),
+  ]
+
   return {
-    address: addr,
-    neighbors: Array.from({ length: faker.number.int({ min: 5, max: 15 }) }, mockNeighborInfo),
-    totalCount: faker.number.int({ min: 20, max: 100 }),
-    depth: 1,
+    address: centerAddr,
+    depth,
+    nodes,
+    edges,
   }
 }
 
@@ -300,7 +341,7 @@ export function mockPipelineStatus() {
 }
 
 export function mockServices() {
-  const services = [
+  return [
     { name: "address-service", groupName: "chain-risk", clusterCount: 2, instanceCount: 3, healthyInstanceCount: 3 },
     { name: "risk-service", groupName: "chain-risk", clusterCount: 2, instanceCount: 2, healthyInstanceCount: 2 },
     { name: "graph-service", groupName: "chain-risk", clusterCount: 1, instanceCount: 2, healthyInstanceCount: 2 },
@@ -308,7 +349,6 @@ export function mockServices() {
     { name: "orchestrator", groupName: "chain-risk", clusterCount: 1, instanceCount: 2, healthyInstanceCount: 2 },
     { name: "bff", groupName: "chain-risk", clusterCount: 1, instanceCount: 2, healthyInstanceCount: 2 },
   ]
-  return services
 }
 
 export function mockRiskConfig() {
@@ -325,23 +365,14 @@ export function mockPipelineConfig() {
     ingestion: {
       enabled: true,
       network: "ethereum",
-      polling: {
-        intervalMs: 1000,
-        batchSize: 100,
-      },
-      rateLimit: {
-        requestsPerSecond: 50,
-      },
+      polling: { intervalMs: 1000, batchSize: 100 },
+      rateLimit: { requestsPerSecond: 50 },
     },
     streamProcessor: {
       enabled: true,
       parallelism: 4,
-      checkpoint: {
-        intervalMs: 60000,
-      },
-      consumer: {
-        maxPollRecords: 500,
-      },
+      checkpoint: { intervalMs: 60000 },
+      consumer: { maxPollRecords: 500 },
     },
     graphSync: {
       enabled: true,

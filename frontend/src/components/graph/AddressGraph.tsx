@@ -1,50 +1,57 @@
 import { useRef, useEffect } from "react"
 import { Network, DataSet, Options, Data } from "vis-network/standalone"
 import { Circle } from "lucide-react"
-import type { AddressNeighborsResponse, NeighborInfo } from "@/api/generated"
+import type { AddressNeighborsResponse, GraphNode, GraphEdge } from "@/api/generated"
 
 interface AddressGraphProps {
   data: AddressNeighborsResponse | null
   selectedNode?: string | null
-  onNodeHover?: (neighbor: NeighborInfo | null, isCenter?: boolean) => void
-  onNodeClick?: (neighbor: NeighborInfo | null, isCenter?: boolean) => void
+  onNodeHover?: (node: GraphNode | null, isCenter?: boolean) => void
+  onNodeClick?: (node: GraphNode | null, isCenter?: boolean) => void
   onNodeDoubleClick?: (address: string) => void
   height?: string
 }
 
-function getDirectionColor(direction?: string): string {
-  switch (direction) {
-    case "incoming": return "#10B981"
-    case "outgoing": return "#EF4444"
-    case "both": return "#8B5CF6"
-    default: return "#6B7280"
-  }
+function getRiskColor(riskScore?: number): string {
+  if (riskScore === undefined) return "#6B7280"
+  if (riskScore >= 0.8) return "#EF4444"
+  if (riskScore >= 0.6) return "#F97316"
+  if (riskScore >= 0.4) return "#FBBF24"
+  return "#10B981"
 }
 
-function getDirectionHighlight(direction?: string): string {
-  switch (direction) {
-    case "incoming": return "#6EE7B7"
-    case "outgoing": return "#FCA5A5"
-    case "both": return "#C4B5FD"
-    default: return "#D1D5DB"
-  }
+function getRiskHighlight(riskScore?: number): string {
+  if (riskScore === undefined) return "#D1D5DB"
+  if (riskScore >= 0.8) return "#FCA5A5"
+  if (riskScore >= 0.6) return "#FDBA74"
+  if (riskScore >= 0.4) return "#FCD34D"
+  return "#6EE7B7"
 }
 
-function getRiskBasedSize(riskScore?: number, transferCount?: number): number {
+function getRiskBasedSize(riskScore?: number): number {
   const baseSize = 15
-  const riskBonus = (riskScore || 0) * 10
-  const txBonus = Math.min((transferCount || 0) / 20, 10)
-  return baseSize + riskBonus + txBonus
+  const riskBonus = (riskScore || 0) * 15
+  return baseSize + riskBonus
 }
 
 function degToRad(deg: number): number {
   return (deg * Math.PI) / 180
 }
 
-// Distribute nodes evenly within range, avoiding boundaries
-// Divides range into (count+1) segments, places nodes at segment boundaries 1..count
+// Determine node direction based on edges
+function getNodeDirection(nodeAddr: string, centerAddr: string, edges: GraphEdge[]): "incoming" | "outgoing" | "both" | undefined {
+  const hasIncoming = edges.some(e => e.from === nodeAddr && e.to === centerAddr)
+  const hasOutgoing = edges.some(e => e.from === centerAddr && e.to === nodeAddr)
+  
+  if (hasIncoming && hasOutgoing) return "both"
+  if (hasIncoming) return "incoming"
+  if (hasOutgoing) return "outgoing"
+  return undefined
+}
+
+// Get position based on direction
 function getNodePosition(
-  direction: string | undefined,
+  direction: "incoming" | "outgoing" | "both" | undefined,
   index: number,
   totalByType: { in: number; out: number; both: number }
 ) {
@@ -66,8 +73,9 @@ function getNodePosition(
     count = totalByType.out
   }
 
-  // Place at (index+1)/(count+1) of the range - never at boundaries
-  const angle = startDeg + ((index + 1) / (count + 1)) * (endDeg - startDeg)
+  const angle = count > 0 
+    ? startDeg + ((index + 1) / (count + 1)) * (endDeg - startDeg)
+    : (startDeg + endDeg) / 2
 
   const rad = degToRad(angle)
   return {
@@ -106,75 +114,97 @@ export function AddressGraph({
     if (!containerRef.current || !data) return
 
     const centerAddress = data.address || ""
-    const neighbors = data.neighbors || []
+    const graphNodes = data.nodes || []
+    const graphEdges = data.edges || []
 
-    const incoming = neighbors.filter(n => n.direction === "incoming")
-    const outgoing = neighbors.filter(n => n.direction === "outgoing")
-    const both = neighbors.filter(n => n.direction === "both")
+    // Classify nodes by direction
+    const nodeDirections = new Map<string, "incoming" | "outgoing" | "both" | undefined>()
+    graphNodes.forEach(n => {
+      if (n.address !== centerAddress) {
+        nodeDirections.set(n.address, getNodeDirection(n.address, centerAddress, graphEdges))
+      }
+    })
+
+    // Count by direction
+    const incoming: GraphNode[] = []
+    const outgoing: GraphNode[] = []
+    const both: GraphNode[] = []
+
+    graphNodes.forEach(n => {
+      if (n.address === centerAddress) return
+      const dir = nodeDirections.get(n.address)
+      if (dir === "incoming") incoming.push(n)
+      else if (dir === "outgoing") outgoing.push(n)
+      else if (dir === "both") both.push(n)
+      else outgoing.push(n) // default
+    })
+
     const totalByType = { in: incoming.length, out: outgoing.length, both: both.length }
 
-    let inIdx = 0, outIdx = 0, bothIdx = 0
-
-    const nodes: any[] = [
-      {
-        id: centerAddress,
-        label: `${centerAddress?.slice(0, 6)}...${centerAddress?.slice(-4)}`,
-        x: 0,
-        y: 0,
-        fixed: { x: true, y: true },
-        color: {
-          background: "#3B82F6",
-          border: "#2563EB",
-          highlight: { background: "#60A5FA", border: "#3B82F6" },
-          hover: { background: "#60A5FA", border: "#3B82F6" },
-        },
-        size: 30,
-        borderWidth: 3,
-        font: { color: "#1F2937", size: 11 },
+    // Build vis-network nodes
+    const visNodes: any[] = []
+    
+    // Center node
+    visNodes.push({
+      id: centerAddress,
+      label: `${centerAddress?.slice(0, 6)}...${centerAddress?.slice(-4)}`,
+      x: 0,
+      y: 0,
+      fixed: { x: true, y: true },
+      color: {
+        background: "#3B82F6",
+        border: "#2563EB",
+        highlight: { background: "#60A5FA", border: "#3B82F6" },
+        hover: { background: "#60A5FA", border: "#3B82F6" },
       },
-    ]
+      size: 30,
+      borderWidth: 3,
+      font: { color: "#1F2937", size: 11 },
+    })
 
-    neighbors.forEach((n: NeighborInfo) => {
+    // Add other nodes with positions
+    let inIdx = 0, outIdx = 0, bothIdx = 0
+    graphNodes.forEach((n) => {
+      if (n.address === centerAddress) return
+
+      const dir = nodeDirections.get(n.address)
       let idx = 0
-      if (n.direction === "incoming") idx = inIdx++
-      else if (n.direction === "outgoing") idx = outIdx++
-      else idx = bothIdx++
+      if (dir === "incoming") idx = inIdx++
+      else if (dir === "outgoing") idx = outIdx++
+      else if (dir === "both") idx = bothIdx++
+      else idx = outIdx++
 
-      const pos = getNodePosition(n.direction, idx, totalByType)
+      const pos = getNodePosition(dir, idx, totalByType)
 
-      nodes.push({
-        id: n.address || "",
+      visNodes.push({
+        id: n.address,
         label: `${n.address?.slice(0, 6)}...${n.address?.slice(-4)}`,
         x: pos.x,
         y: pos.y,
         color: {
-          background: getDirectionColor(n.direction),
-          border: getDirectionColor(n.direction),
-          highlight: { background: getDirectionHighlight(n.direction), border: getDirectionColor(n.direction) },
-          hover: { background: getDirectionHighlight(n.direction), border: getDirectionColor(n.direction) },
+          background: getRiskColor(n.riskScore),
+          border: getRiskColor(n.riskScore),
+          highlight: { background: getRiskHighlight(n.riskScore), border: getRiskColor(n.riskScore) },
+          hover: { background: getRiskHighlight(n.riskScore), border: getRiskColor(n.riskScore) },
         },
-        size: getRiskBasedSize(n.riskScore, n.transferCount),
+        size: getRiskBasedSize(n.riskScore),
         borderWidth: 2,
         font: { color: "#374151", size: 10 },
       })
     })
 
-    const edges: any[] = neighbors.map((n: NeighborInfo, i: number) => {
-      const isIncoming = n.direction === "incoming"
-      const isBoth = n.direction === "both"
-
-      return {
-        id: `edge-${i}`,
-        from: isIncoming ? n.address || "" : centerAddress,
-        to: isIncoming ? centerAddress : n.address || "",
-        arrows: isBoth ? "to;from" : "to",
-        color: { color: "#94A3B8", highlight: "#64748B", hover: "#64748B" },
-        width: Math.min(1 + (n.transferCount || 0) / 50, 4),
-        label: n.transferCount ? String(n.transferCount) : "",
-        font: { size: 9, color: "#6B7280", strokeWidth: 0 },
-        smooth: { enabled: true, type: "curvedCCW", roundness: 0.15 },
-      }
-    })
+    // Build vis-network edges
+    const visEdges: any[] = graphEdges.map((e, i) => ({
+      id: `edge-${i}`,
+      from: e.from,
+      to: e.to,
+      arrows: "to",
+      color: { color: "#94A3B8", highlight: "#64748B", hover: "#64748B" },
+      width: Math.min(1 + (e.transferCount || 0) / 50, 4),
+      label: e.transferCount ? String(e.transferCount) : "",
+      font: { size: 9, color: "#6B7280", strokeWidth: 0 },
+      smooth: { enabled: true, type: "curvedCCW", roundness: 0.15 },
+    }))
 
     const options: Options = {
       nodes: {
@@ -185,9 +215,7 @@ export function AddressGraph({
       edges: {
         smooth: { enabled: true, type: "curvedCCW", roundness: 0.15 },
       },
-      physics: {
-        enabled: false,
-      },
+      physics: { enabled: false },
       interaction: {
         hover: true,
         tooltipDelay: 0,
@@ -198,8 +226,8 @@ export function AddressGraph({
     }
 
     const graphData: Data = {
-      nodes: new DataSet(nodes),
-      edges: new DataSet(edges),
+      nodes: new DataSet(visNodes),
+      edges: new DataSet(visEdges),
     }
 
     const network = new Network(containerRef.current, graphData, options)
@@ -214,8 +242,8 @@ export function AddressGraph({
       if (nodeId === currentData.address) {
         callbacksRef.current.onNodeHover?.(null, true)
       } else {
-        const neighbor = currentData.neighbors?.find((n) => n.address === nodeId)
-        callbacksRef.current.onNodeHover?.(neighbor || null, false)
+        const node = currentData.nodes?.find((n) => n.address === nodeId)
+        callbacksRef.current.onNodeHover?.(node || null, false)
       }
     })
 
@@ -237,8 +265,8 @@ export function AddressGraph({
           if (nodeId === currentData.address) {
             callbacksRef.current.onNodeClick?.(null, true)
           } else {
-            const neighbor = currentData.neighbors?.find((n) => n.address === nodeId)
-            callbacksRef.current.onNodeClick?.(neighbor || null, false)
+            const node = currentData.nodes?.find((n) => n.address === nodeId)
+            callbacksRef.current.onNodeClick?.(node || null, false)
           }
         }
       } else {
@@ -287,15 +315,15 @@ export function AddressGraphLegend() {
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-green-500 text-green-600" />
-        <span>In</span>
+        <span>Low Risk</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <Circle className="w-3 h-3 fill-yellow-500 text-yellow-600" />
+        <span>Medium</span>
       </div>
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-red-500 text-red-600" />
-        <span>Out</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <Circle className="w-3 h-3 fill-purple-500 text-purple-600" />
-        <span>Both</span>
+        <span>High Risk</span>
       </div>
     </div>
   )

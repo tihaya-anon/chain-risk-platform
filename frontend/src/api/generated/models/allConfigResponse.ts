@@ -5,10 +5,10 @@
  * API Gateway and Orchestration layer for Chain Risk Platform.
  * OpenAPI spec version: 1.0.0
  */
-import type { RiskProperties } from "./riskProperties"
-import type { PipelineProperties } from "./pipelineProperties"
+import type { RiskProperties } from './riskProperties';
+import type { PipelineProperties } from './pipelineProperties';
 
 export interface AllConfigResponse {
-  risk?: RiskProperties
-  pipeline?: PipelineProperties
+  risk?: RiskProperties;
+  pipeline?: PipelineProperties;
 }

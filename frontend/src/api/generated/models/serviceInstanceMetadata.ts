@@ -6,4 +6,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ServiceInstanceMetadata = { [key: string]: string }
+export type ServiceInstanceMetadata = {[key: string]: string};
