@@ -2,6 +2,13 @@ import { useMemo, useRef } from "react"
 import ReactECharts from "echarts-for-react"
 import { Circle, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-react"
 import type { AddressNeighborsResponse, GraphNode, GraphEdge } from "@/api/generated"
+import {
+  getRiskHex,
+  getRiskBorderHex,
+  DIRECTION_COLORS,
+  NODE_COLORS,
+  type Direction,
+} from "@/lib/palette"
 
 interface AddressGraphProps {
   data: AddressNeighborsResponse | null
@@ -18,31 +25,6 @@ interface NodeValue {
   tags?: string[]
   distance: number
   isCenter: boolean
-}
-
-function getRiskColor(riskScore?: number): string {
-  if (riskScore === undefined) return "#6B7280"
-  if (riskScore >= 0.8) return "#EF4444"
-  if (riskScore >= 0.6) return "#F97316"
-  if (riskScore >= 0.4) return "#FBBF24"
-  return "#10B981"
-}
-
-// Darker version for selected border
-function getRiskBorderColor(riskScore?: number): string {
-  if (riskScore === undefined) return "#374151"
-  if (riskScore >= 0.8) return "#B91C1C"
-  if (riskScore >= 0.6) return "#C2410C"
-  if (riskScore >= 0.4) return "#A16207"
-  return "#047857"
-}
-
-// Edge direction colors - exported for use in other components
-export const EDGE_COLORS = {
-  incoming: "#3B82F6", // blue - from outer to inner (toward center)
-  outgoing: "#F97316", // orange - from inner to outer (away from center)
-  both: "#8B5CF6", // purple - bidirectional
-  indirect: "#6B7280", // gray - indirect connection
 }
 
 /**
@@ -96,13 +78,10 @@ function calculateRadialLayout(centerAddress: string, nodes: GraphNode[]) {
 function determineEdgeDirections(
   edges: GraphEdge[],
   nodeDistances: Map<string, number>
-): Map<
-  string,
-  { source: string; target: string; direction: "incoming" | "outgoing" | "both" }
-> {
+): Map<string, { source: string; target: string; direction: Direction }> {
   const edgePairs = new Map<
     string,
-    { source: string; target: string; direction: "incoming" | "outgoing" | "both" }
+    { source: string; target: string; direction: Direction }
   >()
 
   edges.forEach((edge) => {
@@ -112,7 +91,7 @@ function determineEdgeDirections(
     const key = [edge.from, edge.to].sort().join("-")
     const existing = edgePairs.get(key)
 
-    let edgeDirection: "incoming" | "outgoing" = "outgoing"
+    let edgeDirection: Direction = "outgoing"
     const source = edge.from
     const target = edge.to
 
@@ -171,10 +150,10 @@ export function AddressGraph({
         const isCenter = address === centerAddress
         const isSelected = selectedNode === address
 
-        const nodeColor = isCenter ? "#3B82F6" : getRiskColor(node.riskScore)
+        const nodeColor = isCenter ? NODE_COLORS.center.hex : getRiskHex(node.riskScore)
         const selectedBorderColor = isCenter
-          ? "#1E40AF"
-          : getRiskBorderColor(node.riskScore)
+          ? NODE_COLORS.center.border
+          : getRiskBorderHex(node.riskScore)
 
         return {
           id: address,
@@ -207,7 +186,7 @@ export function AddressGraph({
       source: edge.source,
       target: edge.target,
       lineStyle: {
-        color: EDGE_COLORS[edge.direction],
+        color: DIRECTION_COLORS[edge.direction].hex,
         width: 2,
         curveness: 0.2,
         opacity: 0.7,
@@ -339,21 +318,20 @@ export function AddressGraphLegend() {
 }
 
 // Direction icon component for use in panels
-export function DirectionIcon({
-  direction,
-}: {
-  direction?: "incoming" | "outgoing" | "both" | "indirect"
-}) {
+export function DirectionIcon({ direction }: { direction?: Direction }) {
+  const color = DIRECTION_COLORS[direction || "indirect"].hex
   switch (direction) {
     case "incoming":
-      return <ArrowLeft className="w-4 h-4" style={{ color: EDGE_COLORS.incoming }} />
+      return <ArrowLeft className="w-4 h-4" style={{ color }} />
     case "outgoing":
-      return <ArrowRight className="w-4 h-4" style={{ color: EDGE_COLORS.outgoing }} />
+      return <ArrowRight className="w-4 h-4" style={{ color }} />
     case "both":
-      return <ArrowLeftRight className="w-4 h-4" style={{ color: EDGE_COLORS.both }} />
+      return <ArrowLeftRight className="w-4 h-4" style={{ color }} />
     case "indirect":
-      return <ArrowRight className="w-4 h-4" style={{ color: EDGE_COLORS.indirect }} />
     default:
-      return <span className="text-gray-400">—</span>
+      return <ArrowRight className="w-4 h-4" style={{ color }} />
   }
 }
+
+// Re-export for backward compatibility
+export { EDGE_COLORS } from "@/lib/palette"

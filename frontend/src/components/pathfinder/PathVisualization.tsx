@@ -2,6 +2,7 @@ import { useMemo } from "react"
 import ReactECharts from "echarts-for-react"
 import { Circle, AlertCircle } from "lucide-react"
 import { Card } from "@/components/common"
+import { getRiskHexLight, NODE_COLORS, RISK_COLORS } from "@/lib/palette"
 
 interface PathNode {
   address: string
@@ -15,14 +16,6 @@ interface PathVisualizationProps {
   found: boolean
   maxDepth?: number
   message?: string
-}
-
-function getRiskColor(riskScore?: number): string {
-  if (riskScore === undefined) return "#9CA3AF"
-  if (riskScore >= 0.8) return "#F87171"
-  if (riskScore >= 0.6) return "#FB923C"
-  if (riskScore >= 0.4) return "#FBBF24"
-  return "#34D399"
 }
 
 function formatAddress(address: string): string {
@@ -51,9 +44,9 @@ export function PathVisualization({
       const isStart = index === 0
       const isEnd = index === path.length - 1
 
-      let color = getRiskColor(node.riskScore)
-      if (isStart) color = "#3B82F6"
-      else if (isEnd) color = "#8B5CF6"
+      let color = getRiskHexLight(node.riskScore)
+      if (isStart) color = NODE_COLORS.source.hex
+      else if (isEnd) color = NODE_COLORS.target.hex
 
       return {
         id: node.address,
@@ -88,7 +81,7 @@ export function PathVisualization({
       source: node.address,
       target: path[index + 1].address,
       lineStyle: {
-        color: "#6B7280",
+        color: RISK_COLORS.unknown.hex,
         width: 2,
         curveness: 0,
       },
@@ -96,7 +89,7 @@ export function PathVisualization({
         show: !!node.value,
         formatter: node.value ? formatValue(node.value) : "",
         fontSize: 10,
-        color: "#6B7280",
+        color: RISK_COLORS.unknown.hex,
       },
       symbol: ["none", "arrow"],
       symbolSize: [0, 10],

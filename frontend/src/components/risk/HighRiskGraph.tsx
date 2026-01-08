@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react"
 import ReactECharts from "echarts-for-react"
 import { Circle } from "lucide-react"
 import type { GraphAddressInfo } from "@/api/generated"
+import { getRiskHexLight, getRiskBorderHex, RISK_COLORS } from "@/lib/palette"
 
 interface HighRiskGraphProps {
   addresses: GraphAddressInfo[]
@@ -19,23 +20,6 @@ interface NodeValue {
   clusterId?: string
 }
 
-function getRiskColor(riskScore?: number): string {
-  if (riskScore === undefined) return "#9CA3AF"
-  if (riskScore >= 0.8) return "#F87171"
-  if (riskScore >= 0.6) return "#FB923C"
-  if (riskScore >= 0.4) return "#FBBF24"
-  return "#34D399"
-}
-
-// Darker version for selected border
-function getRiskBorderColor(riskScore?: number): string {
-  if (riskScore === undefined) return "#4B5563"
-  if (riskScore >= 0.8) return "#B91C1C"
-  if (riskScore >= 0.6) return "#C2410C"
-  if (riskScore >= 0.4) return "#A16207"
-  return "#047857"
-}
-
 export function HighRiskGraph({
   addresses,
   selectedNode,
@@ -51,8 +35,8 @@ export function HighRiskGraph({
   const { nodes, links } = useMemo(() => {
     const graphNodes = addresses.map((addr) => {
       const isSelected = selectedNode === addr.address
-      const nodeColor = getRiskColor(addr.riskScore)
-      const selectedBorderColor = getRiskBorderColor(addr.riskScore)
+      const nodeColor = getRiskHexLight(addr.riskScore)
+      const selectedBorderColor = getRiskBorderHex(addr.riskScore)
 
       return {
         id: addr.address,
@@ -89,7 +73,11 @@ export function HighRiskGraph({
           graphLinks.push({
             source: addr1.address!,
             target: addr2.address!,
-            lineStyle: { color: "#9CA3AF", opacity: 0.6, width: 2 },
+            lineStyle: {
+              color: RISK_COLORS.unknown.hexLight,
+              opacity: 0.6,
+              width: 2,
+            },
           })
         } else if (addr1.tags && addr2.tags) {
           const sharedTags = addr1.tags.filter((t) => addr2.tags?.includes(t))
@@ -97,7 +85,11 @@ export function HighRiskGraph({
             graphLinks.push({
               source: addr1.address!,
               target: addr2.address!,
-              lineStyle: { color: "#6B7280", opacity: 0.3, width: 1 },
+              lineStyle: {
+                color: RISK_COLORS.unknown.hex,
+                opacity: 0.3,
+                width: 1,
+              },
             })
           }
         }

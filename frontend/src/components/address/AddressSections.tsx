@@ -13,6 +13,13 @@ import {
 } from "lucide-react"
 import { RiskBadge, ClickableTag } from "@/components/common"
 import type { AddressAnalysisResponse, RiskScoreResponseRiskLevel } from "@/api/generated"
+import { DirectionIcon } from "../graph/AddressGraph"
+import {
+  RISK_COLORS,
+  DIRECTION_COLORS,
+  getRiskBadgeClasses,
+  getDirectionBadgeClasses,
+} from "@/lib/palette"
 
 function formatValue(value: string | undefined): string {
   if (!value) return "N/A"
@@ -71,14 +78,16 @@ export function BasicInfoSection({ data }: { data: AddressAnalysisResponse }) {
             <ArrowUpRight className="w-3 h-3" />
             Sent
           </label>
-          <p className="font-medium text-red-600">{info.sentTxCount?.toLocaleString()}</p>
+          <p className={`font-medium ${RISK_COLORS.critical.text}`}>
+            {info.sentTxCount?.toLocaleString()}
+          </p>
         </div>
         <div>
           <label className="text-sm text-gray-500 flex items-center gap-1">
             <ArrowDownLeft className="w-3 h-3" />
             Received
           </label>
-          <p className="font-medium text-green-600">
+          <p className={`font-medium ${RISK_COLORS.low.text}`}>
             {info.receivedTxCount?.toLocaleString()}
           </p>
         </div>
@@ -147,7 +156,7 @@ export function RiskSection({ data }: { data: AddressAnalysisResponse }) {
           <div className="flex flex-wrap gap-1">
             {risk.tags.map((tag, i) => (
               <span key={i} className="inline-flex items-center gap-1">
-                <Tag className="w-3 h-3 text-red-400" />
+                <Tag className={`w-3 h-3 ${RISK_COLORS.critical.text}`} />
                 <ClickableTag tag={tag} variant="risk" />
               </span>
             ))}
@@ -171,7 +180,7 @@ export function GraphInfoSection({ data }: { data: AddressAnalysisResponse }) {
               <ArrowDownLeft className="w-3 h-3" />
               Incoming Transfers
             </label>
-            <p className="font-medium text-green-600 text-xl">
+            <p className={`font-medium text-xl ${RISK_COLORS.low.text}`}>
               {graphInfo.incomingCount}
             </p>
           </div>
@@ -180,7 +189,9 @@ export function GraphInfoSection({ data }: { data: AddressAnalysisResponse }) {
               <ArrowUpRight className="w-3 h-3" />
               Outgoing Transfers
             </label>
-            <p className="font-medium text-red-600 text-xl">{graphInfo.outgoingCount}</p>
+            <p className={`font-medium text-xl ${RISK_COLORS.critical.text}`}>
+              {graphInfo.outgoingCount}
+            </p>
           </div>
           <div>
             <label className="text-sm text-gray-500">Graph Risk Score</label>
@@ -206,7 +217,7 @@ export function GraphInfoSection({ data }: { data: AddressAnalysisResponse }) {
           <div className="flex flex-wrap gap-2">
             {tags.map((tag, i) => (
               <span key={i} className="inline-flex items-center gap-1">
-                <Tag className="w-3 h-3 text-blue-400" />
+                <Tag className={`w-3 h-3 ${DIRECTION_COLORS.incoming.text}`} />
                 <ClickableTag tag={tag} variant="info" size="md" />
               </span>
             ))}
@@ -420,26 +431,9 @@ export function NeighborsSection({ data }: { data: AddressAnalysisResponse }) {
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${
-                      neighbor.direction === "incoming"
-                        ? "bg-green-100 text-green-700"
-                        : neighbor.direction === "outgoing"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-purple-100 text-purple-700"
-                    }`}
+                    className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${getDirectionBadgeClasses(neighbor.direction)}`}
                   >
-                    {neighbor.direction === "incoming" && (
-                      <ArrowDownLeft className="w-3 h-3" />
-                    )}
-                    {neighbor.direction === "outgoing" && (
-                      <ArrowUpRight className="w-3 h-3" />
-                    )}
-                    {neighbor.direction === "both" && (
-                      <>
-                        <ArrowDownLeft className="w-3 h-3" />
-                        <ArrowUpRight className="w-3 h-3" />
-                      </>
-                    )}
+                    <DirectionIcon direction={neighbor.direction} />
                     {neighbor.direction}
                   </span>
                 </td>
@@ -479,16 +473,9 @@ export function RiskScoreIndicator({ score }: { score: number | undefined }) {
     return <span className="text-gray-400 text-sm">N/A</span>
   }
 
-  const getColor = (s: number) => {
-    if (s >= 0.8) return "text-red-600 bg-red-100"
-    if (s >= 0.6) return "text-orange-600 bg-orange-100"
-    if (s >= 0.4) return "text-yellow-600 bg-yellow-100"
-    return "text-green-600 bg-green-100"
-  }
-
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${getColor(score)}`}
+      className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${getRiskBadgeClasses(score)}`}
     >
       {score.toFixed(2)}
     </span>

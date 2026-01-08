@@ -1,6 +1,7 @@
 import { Database, ShieldAlert, AlertTriangle, Tag, Shuffle } from "lucide-react"
 import { useNavigate, Link } from "react-router-dom"
 import { Card } from "@/components/common"
+import { RISK_COLORS, getRiskDotClass } from "@/lib/palette"
 
 // Stat Card
 interface StatCardProps {
@@ -57,17 +58,27 @@ export function RiskDistributionChart({
     {
       label: "Critical",
       count: critical,
-      color: "bg-red-500",
-      textColor: "text-red-600",
+      color: RISK_COLORS.critical.bgSolid,
+      textColor: RISK_COLORS.critical.text,
     },
-    { label: "High", count: high, color: "bg-orange-500", textColor: "text-orange-600" },
+    {
+      label: "High",
+      count: high,
+      color: RISK_COLORS.high.bgSolid,
+      textColor: RISK_COLORS.high.text,
+    },
     {
       label: "Medium",
       count: medium,
-      color: "bg-yellow-500",
-      textColor: "text-yellow-600",
+      color: RISK_COLORS.medium.bgSolid,
+      textColor: RISK_COLORS.medium.text,
     },
-    { label: "Low", count: low, color: "bg-green-500", textColor: "text-green-600" },
+    {
+      label: "Low",
+      count: low,
+      color: RISK_COLORS.low.bgSolid,
+      textColor: RISK_COLORS.low.text,
+    },
   ]
 
   return (
@@ -144,12 +155,6 @@ interface Alert {
 export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
   const navigate = useNavigate()
 
-  const getRiskColor = (score: number) => {
-    if (score >= 0.8) return "bg-red-500"
-    if (score >= 0.6) return "bg-orange-500"
-    return "bg-yellow-500"
-  }
-
   const handleTagClick = (e: React.MouseEvent, tag: string) => {
     e.preventDefault()
     e.stopPropagation()
@@ -164,7 +169,7 @@ export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
           className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <span
-            className={`w-2 h-2 rounded-full flex-shrink-0 ${getRiskColor(alert.riskScore)}`}
+            className={`w-2 h-2 rounded-full flex-shrink-0 ${getRiskDotClass(alert.riskScore)}`}
           />
           <div className="flex-1 min-w-0">
             <Link
