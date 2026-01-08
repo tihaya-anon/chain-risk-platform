@@ -151,7 +151,7 @@ export function PathVisualization({
       {found ? (
         <>
           <div
-            className="border border-gray-200 rounded-lg bg-gray-50"
+            className="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
             style={{ height: "400px" }}
           >
             <ReactECharts
@@ -160,7 +160,7 @@ export function PathVisualization({
               opts={{ renderer: "canvas" }}
             />
           </div>
-          <div className="mt-4 flex flex-wrap gap-4 text-sm">
+          <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <Circle className="w-4 h-4 fill-blue-500 text-blue-500" />
               <span>Source</span>
@@ -181,11 +181,11 @@ export function PathVisualization({
         </>
       ) : (
         <div className="text-center py-12">
-          <AlertCircle className="w-16 h-16 text-gray-300 mx-auto" />
-          <p className="text-gray-500 mt-4">
+          <AlertCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto" />
+          <p className="text-gray-500 dark:text-gray-400 mt-4">
             {message || "No direct or indirect connection found"}
           </p>
-          <p className="text-sm text-gray-400 mt-2">
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
             Try increasing the max depth or check if the addresses are correct
           </p>
         </div>

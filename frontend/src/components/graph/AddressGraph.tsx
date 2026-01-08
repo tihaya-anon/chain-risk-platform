@@ -263,14 +263,17 @@ export function AddressGraph({
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
         No graph data available
       </div>
     )
   }
 
   return (
-    <div className="border border-gray-200 rounded-lg bg-gray-50" style={{ height }}>
+    <div
+      className="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+      style={{ height }}
+    >
       <ReactECharts
         ref={chartRef}
         option={option}
@@ -284,7 +287,7 @@ export function AddressGraph({
 
 export function AddressGraphLegend() {
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-600">
+    <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-600 dark:text-gray-400">
       <div className="flex items-center gap-1">
         <Circle className="w-3 h-3 fill-blue-500 text-blue-600" />
         <span>Center</span>
@@ -301,7 +304,7 @@ export function AddressGraphLegend() {
         <Circle className="w-3 h-3 fill-red-500 text-red-600" />
         <span>High</span>
       </div>
-      <div className="border-l border-gray-300 pl-3 flex items-center gap-1">
+      <div className="border-l border-gray-300 dark:border-gray-600 pl-3 flex items-center gap-1">
         <ArrowLeft className="w-3 h-3 text-blue-500" />
         <span>In</span>
       </div>

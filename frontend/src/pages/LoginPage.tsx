@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Button, Input } from "@/components/common"
+import { Button, Input, ThemeToggle } from "@/components/common"
 import { useAuthControllerLogin } from "@/api/generated"
 import { useAuthStore } from "@/store/auth"
 
@@ -36,15 +36,26 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <span className="text-6xl">🔗</span>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">Chain Risk Platform</h2>
-          <p className="mt-2 text-sm text-gray-600">Sign in to access the dashboard</p>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
+            Chain Risk Platform
+          </h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Sign in to access the dashboard
+          </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form
+          className="mt-8 space-y-6 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+          onSubmit={handleSubmit}
+        >
           <div className="space-y-4">
             <Input
               label="Username"
@@ -64,7 +75,11 @@ export function LoginPage() {
             />
           </div>
 
-          {error && <div className="text-sm text-red-600 text-center">{error}</div>}
+          {error && (
+            <div className="text-sm text-red-600 dark:text-red-400 text-center">
+              {error}
+            </div>
+          )}
 
           <Button
             type="submit"
@@ -75,7 +90,7 @@ export function LoginPage() {
             Sign in
           </Button>
 
-          <div className="text-center text-sm text-gray-500">
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
             <p>Demo accounts:</p>
             <p className="font-mono">admin / admin123</p>
             <p className="font-mono">user / user123</p>

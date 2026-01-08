@@ -1,6 +1,7 @@
 /**
  * Unified color palette for the application.
  * All color definitions should be imported from here to ensure consistency.
+ * Includes both light and dark mode variants.
  */
 
 // =============================================================================
@@ -14,55 +15,55 @@ export const RISK_COLORS = {
     hex: "#EF4444",
     hexLight: "#F87171",
     border: "#B91C1C",
-    bg: "bg-red-100",
+    bg: "bg-red-100 dark:bg-red-900/30",
     bgSolid: "bg-red-500",
-    text: "text-red-600",
-    textDark: "text-red-800",
-    borderTw: "border-red-200",
+    text: "text-red-600 dark:text-red-400",
+    textDark: "text-red-800 dark:text-red-300",
+    borderTw: "border-red-200 dark:border-red-800",
   },
   /** High risk (score >= 0.6) */
   high: {
     hex: "#F97316",
     hexLight: "#FB923C",
     border: "#C2410C",
-    bg: "bg-orange-100",
+    bg: "bg-orange-100 dark:bg-orange-900/30",
     bgSolid: "bg-orange-500",
-    text: "text-orange-600",
-    textDark: "text-orange-800",
-    borderTw: "border-orange-200",
+    text: "text-orange-600 dark:text-orange-400",
+    textDark: "text-orange-800 dark:text-orange-300",
+    borderTw: "border-orange-200 dark:border-orange-800",
   },
   /** Medium risk (score >= 0.4) */
   medium: {
     hex: "#FBBF24",
     hexLight: "#FCD34D",
     border: "#A16207",
-    bg: "bg-yellow-100",
+    bg: "bg-yellow-100 dark:bg-yellow-900/30",
     bgSolid: "bg-yellow-500",
-    text: "text-yellow-600",
-    textDark: "text-yellow-800",
-    borderTw: "border-yellow-200",
+    text: "text-yellow-600 dark:text-yellow-400",
+    textDark: "text-yellow-800 dark:text-yellow-300",
+    borderTw: "border-yellow-200 dark:border-yellow-800",
   },
   /** Low risk (score < 0.4) */
   low: {
     hex: "#10B981",
     hexLight: "#34D399",
     border: "#047857",
-    bg: "bg-green-100",
+    bg: "bg-green-100 dark:bg-green-900/30",
     bgSolid: "bg-green-500",
-    text: "text-green-600",
-    textDark: "text-green-800",
-    borderTw: "border-green-200",
+    text: "text-green-600 dark:text-green-400",
+    textDark: "text-green-800 dark:text-green-300",
+    borderTw: "border-green-200 dark:border-green-800",
   },
   /** Unknown/undefined risk */
   unknown: {
     hex: "#6B7280",
     hexLight: "#9CA3AF",
     border: "#374151",
-    bg: "bg-gray-100",
+    bg: "bg-gray-100 dark:bg-gray-800",
     bgSolid: "bg-gray-500",
-    text: "text-gray-600",
-    textDark: "text-gray-800",
-    borderTw: "border-gray-200",
+    text: "text-gray-600 dark:text-gray-400",
+    textDark: "text-gray-800 dark:text-gray-300",
+    borderTw: "border-gray-200 dark:border-gray-700",
   },
 } as const
 
@@ -77,34 +78,34 @@ export const DIRECTION_COLORS = {
   /** Incoming: from outer to inner (toward center) */
   incoming: {
     hex: "#3B82F6",
-    bg: "bg-blue-100",
+    bg: "bg-blue-100 dark:bg-blue-900/30",
     bgSolid: "bg-blue-500",
-    text: "text-blue-600",
-    textDark: "text-blue-700",
+    text: "text-blue-600 dark:text-blue-400",
+    textDark: "text-blue-700 dark:text-blue-300",
   },
   /** Outgoing: from inner to outer (away from center) */
   outgoing: {
     hex: "#F97316",
-    bg: "bg-orange-100",
+    bg: "bg-orange-100 dark:bg-orange-900/30",
     bgSolid: "bg-orange-500",
-    text: "text-orange-600",
-    textDark: "text-orange-700",
+    text: "text-orange-600 dark:text-orange-400",
+    textDark: "text-orange-700 dark:text-orange-300",
   },
   /** Bidirectional */
   both: {
     hex: "#8B5CF6",
-    bg: "bg-purple-100",
+    bg: "bg-purple-100 dark:bg-purple-900/30",
     bgSolid: "bg-purple-500",
-    text: "text-purple-600",
-    textDark: "text-purple-700",
+    text: "text-purple-600 dark:text-purple-400",
+    textDark: "text-purple-700 dark:text-purple-300",
   },
   /** Indirect connection */
   indirect: {
     hex: "#6B7280",
-    bg: "bg-gray-100",
+    bg: "bg-gray-100 dark:bg-gray-800",
     bgSolid: "bg-gray-500",
-    text: "text-gray-600",
-    textDark: "text-gray-700",
+    text: "text-gray-600 dark:text-gray-400",
+    textDark: "text-gray-700 dark:text-gray-300",
   },
 } as const
 

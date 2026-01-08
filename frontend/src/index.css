@@ -1,33 +1,69 @@
 @import "tailwindcss";
 
-/* Custom styles */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom CSS variables */
 :root {
   --color-primary: #3b82f6;
   --color-primary-hover: #2563eb;
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
   --color-success: #10b981;
+
+  /* Background colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+
+  /* Text colors */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+
+  /* Border colors */
+  --border-primary: #e5e7eb;
+  --border-secondary: #d1d5db;
+}
+
+.dark {
+  --color-primary: #60a5fa;
+  --color-primary-hover: #3b82f6;
+
+  /* Background colors - dark */
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
+
+  /* Text colors - dark */
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #6b7280;
+
+  /* Border colors - dark */
+  --border-primary: #374151;
+  --border-secondary: #4b5563;
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply bg-gray-50 text-gray-900 antialiased transition-colors duration-200;
+  @apply dark:bg-gray-900 dark:text-gray-100;
 }
 
 /* Risk level colors */
 .risk-low {
-  @apply text-green-600 bg-green-50;
+  @apply text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/30;
 }
 
 .risk-medium {
-  @apply text-yellow-600 bg-yellow-50;
+  @apply text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/30;
 }
 
 .risk-high {
-  @apply text-orange-600 bg-orange-50;
+  @apply text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/30;
 }
 
 .risk-critical {
-  @apply text-red-600 bg-red-50;
+  @apply text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/30;
 }
 
 /* Custom scrollbar styles */
@@ -49,8 +85,20 @@ body {
   background-color: #9ca3af;
 }
 
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
+}
+
 /* Firefox scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #d1d5db transparent;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: #4b5563 transparent;
 }

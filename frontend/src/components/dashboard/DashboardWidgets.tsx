@@ -20,7 +20,7 @@ export function StatCard({
   iconColor,
   label,
   value,
-  valueColor = "text-gray-900",
+  valueColor = "text-gray-900 dark:text-white",
   subtitle,
 }: StatCardProps) {
   return (
@@ -30,9 +30,11 @@ export function StatCard({
           <Icon className={`w-6 h-6 ${iconColor}`} />
         </div>
         <div>
-          <p className="text-sm text-gray-500">{label}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
           <p className={`text-2xl font-bold ${valueColor}`}>{value}</p>
-          {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>
+          )}
         </div>
       </div>
     </Card>
@@ -85,8 +87,8 @@ export function RiskDistributionChart({
     <div className="space-y-4">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-4">
-          <div className="w-20 text-sm text-gray-600">{item.label}</div>
-          <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+          <div className="w-20 text-sm text-gray-600 dark:text-gray-400">{item.label}</div>
+          <div className="flex-1 h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className={`h-full ${item.color} rounded-full transition-all duration-500`}
               style={{ width: `${(item.count / total) * 100}%` }}
@@ -121,17 +123,19 @@ export function TagDistribution({ tags }: { tags: TagCount[] }) {
         <button
           key={item.tag}
           onClick={() => handleTagClick(item.tag)}
-          className="w-full flex items-center gap-3 hover:bg-gray-50 rounded-lg p-1 -m-1 transition-colors text-left"
+          className="w-full flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-1 -m-1 transition-colors text-left"
         >
-          <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <Tag className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-gray-700 truncate hover:text-indigo-600 transition-colors">
+              <span className="text-sm text-gray-700 dark:text-gray-300 truncate hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 {item.tag}
               </span>
-              <span className="text-sm font-medium text-gray-900 ml-2">{item.count}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white ml-2">
+                {item.count}
+              </span>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
                 className="h-full bg-indigo-500 rounded-full"
                 style={{ width: `${(item.count / maxCount) * 100}%` }}
@@ -166,7 +170,7 @@ export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
       {alerts.map((alert, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+          className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <span
             className={`w-2 h-2 rounded-full flex-shrink-0 ${getRiskDotClass(alert.riskScore)}`}
@@ -174,22 +178,22 @@ export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
           <div className="flex-1 min-w-0">
             <Link
               to={`/address?q=${alert.address}`}
-              className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              className="font-mono text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline"
             >
               {alert.address}
             </Link>
             <button
               onClick={(e) => handleTagClick(e, alert.tag)}
-              className="block text-xs text-gray-500 hover:text-indigo-600 transition-colors"
+              className="block text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             >
               {alert.tag}
             </button>
           </div>
           <div className="text-right flex-shrink-0">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
               {(alert.riskScore * 100).toFixed(0)}%
             </p>
-            <p className="text-xs text-gray-400">{alert.time}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{alert.time}</p>
           </div>
         </div>
       ))}

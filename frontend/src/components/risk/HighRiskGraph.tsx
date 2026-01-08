@@ -165,14 +165,17 @@ export function HighRiskGraph({
 
   if (!addresses.length) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
         No high-risk addresses found
       </div>
     )
   }
 
   return (
-    <div className="border border-gray-200 rounded-lg bg-gray-50" style={{ height }}>
+    <div
+      className="border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+      style={{ height }}
+    >
       <ReactECharts
         ref={chartRef}
         option={option}
@@ -186,7 +189,7 @@ export function HighRiskGraph({
 
 export function HighRiskGraphLegend() {
   return (
-    <div className="flex flex-wrap gap-4 text-sm">
+    <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
       <div className="flex items-center gap-2">
         <Circle className="w-4 h-4 fill-red-400 text-red-500" />
         <span>Critical (≥0.8)</span>
