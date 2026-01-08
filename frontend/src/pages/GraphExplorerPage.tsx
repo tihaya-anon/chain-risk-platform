@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react"
 import { useSearchParams, Link } from "react-router-dom"
 import { Network, Search, Info, ExternalLink, Activity } from "lucide-react"
 import { Card, Button, Input, LoadingSpinner, RiskBadge } from "@/components/common"
-import { AddressGraph, AddressGraphLegend } from "@/components/graph"
+import { AddressGraph, AddressGraphLegend, DirectionIcon } from "@/components/graph"
 import { useGraphControllerGetAddressNeighbors, useGraphControllerGetAddressInfo } from "@/api/generated"
 import type { GraphNode } from "@/api/generated"
 
@@ -316,9 +316,10 @@ export function GraphExplorerPage() {
                           <>
                             <div>
                               <label className="text-gray-500 text-xs">Direction</label>
-                              <p className="font-semibold capitalize">
-                                {displayNodeEdgeInfo.direction || "N/A"}
-                              </p>
+                              <div className="flex items-center gap-1.5 font-semibold">
+                                <DirectionIcon direction={displayNodeEdgeInfo.direction} />
+                                <span className="capitalize">{displayNodeEdgeInfo.direction || "N/A"}</span>
+                              </div>
                             </div>
                             <div>
                               <label className="text-gray-500 text-xs">Transfers</label>

@@ -27,6 +27,15 @@ function getRiskColor(riskScore?: number): string {
   return "#34D399"
 }
 
+// Darker version for selected border
+function getRiskBorderColor(riskScore?: number): string {
+  if (riskScore === undefined) return "#4B5563"
+  if (riskScore >= 0.8) return "#B91C1C"
+  if (riskScore >= 0.6) return "#C2410C"
+  if (riskScore >= 0.4) return "#A16207"
+  return "#047857"
+}
+
 export function HighRiskGraph({
   addresses,
   selectedNode,
@@ -42,6 +51,8 @@ export function HighRiskGraph({
   const { nodes, links } = useMemo(() => {
     const graphNodes = addresses.map((addr) => {
       const isSelected = selectedNode === addr.address
+      const nodeColor = getRiskColor(addr.riskScore)
+      const selectedBorderColor = getRiskBorderColor(addr.riskScore)
       
       return {
         id: addr.address,
@@ -54,11 +65,11 @@ export function HighRiskGraph({
         } as NodeValue,
         symbolSize: Math.min(35, 18 + (addr.riskScore || 0) * 17),
         itemStyle: {
-          color: getRiskColor(addr.riskScore),
-          borderColor: isSelected ? "#1F2937" : getRiskColor(addr.riskScore),
+          color: nodeColor,
+          borderColor: isSelected ? selectedBorderColor : nodeColor,
           borderWidth: isSelected ? 4 : 2,
           shadowBlur: isSelected ? 15 : 0,
-          shadowColor: isSelected ? "rgba(0,0,0,0.4)" : "transparent",
+          shadowColor: isSelected ? "rgba(0,0,0,0.3)" : "transparent",
         },
       }
     })

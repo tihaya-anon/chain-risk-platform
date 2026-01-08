@@ -28,11 +28,21 @@ function getRiskColor(riskScore?: number): string {
   return "#10B981"
 }
 
-// Edge direction colors
-const EDGE_COLORS = {
+// Darker version for selected border
+function getRiskBorderColor(riskScore?: number): string {
+  if (riskScore === undefined) return "#374151"
+  if (riskScore >= 0.8) return "#B91C1C"
+  if (riskScore >= 0.6) return "#C2410C"
+  if (riskScore >= 0.4) return "#A16207"
+  return "#047857"
+}
+
+// Edge direction colors - exported for use in other components
+export const EDGE_COLORS = {
   incoming: "#3B82F6",  // blue - money flowing in
   outgoing: "#F97316",  // orange - money flowing out
   both: "#8B5CF6",      // purple - bidirectional
+  indirect: "#6B7280",  // gray - indirect connection
 }
 
 /**
@@ -91,10 +101,6 @@ function calculateRadialLayout(
   return positions
 }
 
-/**
- * Determine edge direction relative to center
- */
-
 export function AddressGraph({
   data,
   selectedNode,
@@ -121,6 +127,9 @@ export function AddressGraph({
       const isCenter = node.address === centerAddress
       const isSelected = selectedNode === node.address
 
+      const nodeColor = isCenter ? "#3B82F6" : getRiskColor(node.riskScore)
+      const selectedBorderColor = isCenter ? "#1E40AF" : getRiskBorderColor(node.riskScore)
+
       return {
         id: node.address,
         name: "",
@@ -136,11 +145,11 @@ export function AddressGraph({
         } as NodeValue,
         symbolSize: isCenter ? 40 : 22 + (node.riskScore || 0) * 12,
         itemStyle: {
-          color: isCenter ? "#3B82F6" : getRiskColor(node.riskScore),
-          borderColor: isSelected ? "#1F2937" : (isCenter ? "#1D4ED8" : getRiskColor(node.riskScore)),
+          color: nodeColor,
+          borderColor: isSelected ? selectedBorderColor : nodeColor,
           borderWidth: isSelected ? 4 : 2,
           shadowBlur: isSelected ? 15 : 0,
-          shadowColor: isSelected ? "rgba(0,0,0,0.4)" : "transparent",
+          shadowColor: isSelected ? "rgba(0,0,0,0.3)" : "transparent",
         },
       }
     })
@@ -296,4 +305,20 @@ export function AddressGraphLegend() {
       </div>
     </div>
   )
+}
+
+// Direction icon component for use in panels
+export function DirectionIcon({ direction }: { direction?: "incoming" | "outgoing" | "both" | "indirect" }) {
+  switch (direction) {
+    case "incoming":
+      return <ArrowLeft className="w-4 h-4" style={{ color: EDGE_COLORS.incoming }} />
+    case "outgoing":
+      return <ArrowRight className="w-4 h-4" style={{ color: EDGE_COLORS.outgoing }} />
+    case "both":
+      return <ArrowLeftRight className="w-4 h-4" style={{ color: EDGE_COLORS.both }} />
+    case "indirect":
+      return <ArrowRight className="w-4 h-4" style={{ color: EDGE_COLORS.indirect }} />
+    default:
+      return <span className="text-gray-400">—</span>
+  }
 }
