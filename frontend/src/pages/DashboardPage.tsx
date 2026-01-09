@@ -8,6 +8,7 @@ import {
   Route,
   Tag,
   MousePointer2,
+  Bell,
 } from "lucide-react"
 import { Card, LoadingSpinner } from "@/components/common"
 import { AddressTable } from "@/components/table"
@@ -16,6 +17,7 @@ import {
   RiskDistributionChart,
   TagDistribution,
   RecentAlerts,
+  AlertSummaryWidget,
   DashboardIcons,
 } from "@/components/dashboard/DashboardWidgets"
 import {
@@ -151,42 +153,8 @@ export function DashboardPage() {
             <RiskDistributionChart {...riskDistribution} />
           </Card>
 
-          {/* Quick Links */}
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Quick Access
-              </h3>
-              <MousePointer2 className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-            </div>
-            <div className="space-y-2">
-              <QuickLink
-                to="/address"
-                icon={Search}
-                color="blue"
-                label="Address Analysis"
-              />
-              <QuickLink
-                to="/high-risk"
-                icon={DashboardIcons.ShieldAlert}
-                color="red"
-                label="High Risk Network"
-              />
-              <QuickLink
-                to="/graph"
-                icon={Network}
-                color="purple"
-                label="Graph Explorer"
-              />
-              <QuickLink
-                to="/path-finder"
-                icon={Route}
-                color="green"
-                label="Path Finder"
-              />
-              <QuickLink to="/tags" icon={Tag} color="indigo" label="Tag Search" />
-            </div>
-          </Card>
+          {/* Alert Summary */}
+          <AlertSummaryWidget />
         </div>
 
         {/* Second Row */}
@@ -196,10 +164,10 @@ export function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Recent Alerts
+                  Recent High-Risk Detections
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Latest high-risk detections
+                  Latest high-risk addresses
                 </p>
               </div>
             </div>
@@ -214,8 +182,55 @@ export function DashboardPage() {
             )}
           </Card>
 
-          {/* Tag Distribution */}
-          <Card>
+          {/* Quick Links & Tags */}
+          <div className="space-y-6">
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Quick Access
+                </h3>
+                <MousePointer2 className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              </div>
+              <div className="space-y-2">
+                <QuickLink
+                  to="/address"
+                  icon={Search}
+                  color="blue"
+                  label="Address Analysis"
+                />
+                <QuickLink
+                  to="/alerts"
+                  icon={Bell}
+                  color="orange"
+                  label="Alert Management"
+                />
+                <QuickLink
+                  to="/high-risk"
+                  icon={DashboardIcons.ShieldAlert}
+                  color="red"
+                  label="High Risk Network"
+                />
+                <QuickLink
+                  to="/graph"
+                  icon={Network}
+                  color="purple"
+                  label="Graph Explorer"
+                />
+                <QuickLink
+                  to="/path-finder"
+                  icon={Route}
+                  color="green"
+                  label="Path Finder"
+                />
+                <QuickLink to="/tags" icon={Tag} color="indigo" label="Tag Search" />
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Third Row - Tags */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-1">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -234,28 +249,32 @@ export function DashboardPage() {
               </p>
             )}
           </Card>
-        </div>
 
-        {/* High Risk Table */}
-        <Card title="High-Risk Addresses" subtitle="Addresses with risk score ≥ 0.7">
-          {highRiskQuery.isLoading ? (
-            <div className="py-12">
-              <LoadingSpinner />
-            </div>
-          ) : highRiskAddresses.length > 0 ? (
-            <AddressTable
-              addresses={highRiskAddresses}
-              showTxCount
-              showInOut
-              showTags
-              maxTagsDisplay={2}
-            />
-          ) : (
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              No high-risk addresses found
-            </div>
-          )}
-        </Card>
+          {/* High Risk Table */}
+          <Card
+            title="High-Risk Addresses"
+            subtitle="Addresses with risk score ≥ 0.7"
+            className="lg:col-span-2"
+          >
+            {highRiskQuery.isLoading ? (
+              <div className="py-12">
+                <LoadingSpinner />
+              </div>
+            ) : highRiskAddresses.length > 0 ? (
+              <AddressTable
+                addresses={highRiskAddresses.slice(0, 10)}
+                showTxCount
+                showInOut
+                showTags
+                maxTagsDisplay={2}
+              />
+            ) : (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                No high-risk addresses found
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   )
@@ -282,6 +301,8 @@ function QuickLink({
       "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50",
     indigo:
       "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50",
+    orange:
+      "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50",
   }
   return (
     <Link

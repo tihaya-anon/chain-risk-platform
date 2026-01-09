@@ -6,3 +6,5 @@ export {
   NeighborsSection,
   RiskScoreIndicator,
 } from "./AddressSections"
+
+export { AddressAlertsSection } from "./AddressAlertsSection"

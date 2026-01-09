@@ -1,6 +1,5 @@
 /**
  * Alert API hooks for BFF Alert endpoints
- * Manual implementation pending orval generation
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { customInstance } from "../../../axios-instance"
@@ -86,6 +85,7 @@ export interface UpdateAlertRuleDto {
 export interface AlertHistoryQuery {
   ruleId?: number
   entityType?: string
+  entityId?: string
   severity?: Severity
   status?: AlertStatus
   from?: string
@@ -125,6 +125,7 @@ export const alertKeys = {
   history: () => [...alertKeys.all, "history"] as const,
   historyList: (query: AlertHistoryQuery) => [...alertKeys.history(), query] as const,
   historyDetail: (id: number) => [...alertKeys.history(), id] as const,
+  historyByEntity: (entityId: string) => [...alertKeys.history(), "entity", entityId] as const,
   stats: (hours?: number) => [...alertKeys.all, "stats", { hours }] as const,
   subscriptions: () => [...alertKeys.all, "subscriptions"] as const,
 }
@@ -252,10 +253,11 @@ export const listAlertHistory = (query: AlertHistoryQuery = {}) =>
     params: query,
   })
 
-export const useListAlertHistory = (query: AlertHistoryQuery = {}) =>
+export const useListAlertHistory = (query: AlertHistoryQuery = {}, options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: alertKeys.historyList(query),
     queryFn: () => listAlertHistory(query),
+    enabled: options?.enabled ?? true,
   })
 
 export const getAlertHistory = (id: number) =>
@@ -269,6 +271,14 @@ export const useGetAlertHistory = (id: number) =>
     queryKey: alertKeys.historyDetail(id),
     queryFn: () => getAlertHistory(id),
     enabled: id > 0,
+  })
+
+// Convenience hook for fetching alerts by entity (address/tx)
+export const useListAlertsByEntity = (entityId: string, limit = 10) =>
+  useQuery({
+    queryKey: alertKeys.historyByEntity(entityId),
+    queryFn: () => listAlertHistory({ entityId, limit }),
+    enabled: !!entityId,
   })
 
 export const acknowledgeAlert = (id: number) =>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { Link, useSearchParams } from "react-router-dom"
-import { Search, Network, Route, XCircle } from "lucide-react"
+import { Search, Network, Route, XCircle, Bell } from "lucide-react"
 import { Button, Input, Card, LoadingSpinner } from "@/components/common"
 import {
   BasicInfoSection,
@@ -8,6 +8,7 @@ import {
   GraphInfoSection,
   ClusterSection,
   NeighborsSection,
+  AddressAlertsSection,
 } from "@/components/address"
 import { useGetAddressAnalysis } from "@/api/generated"
 
@@ -125,13 +126,28 @@ export function AddressPage() {
                 <Card title="Graph Analysis" className="lg:col-span-2">
                   <GraphInfoSection data={data} />
                 </Card>
+                <Card
+                  title="Alerts"
+                  subtitle="Recent alerts for this address"
+                  action={
+                    <Link
+                      to={`/alerts?entityId=${data.address}`}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                    >
+                      <Bell className="w-4 h-4" />
+                      View All
+                    </Link>
+                  }
+                >
+                  <AddressAlertsSection address={data.address || ""} />
+                </Card>
                 <Card title="Cluster">
                   <ClusterSection data={data} />
                 </Card>
                 <Card
                   title="Connected Addresses"
                   subtitle="Top neighbors by transfer count"
-                  className="lg:col-span-3"
+                  className="lg:col-span-2"
                 >
                   <NeighborsSection data={data} />
                 </Card>

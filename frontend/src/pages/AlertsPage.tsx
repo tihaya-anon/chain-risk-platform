@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Bell, List, Settings, BarChart3, RefreshCw } from "lucide-react"
+import { Bell, List, Settings, BarChart3, RefreshCw, BellRing } from "lucide-react"
 import {
   AlertStatsCards,
   SeverityChart,
@@ -8,6 +8,7 @@ import {
   AlertRulesTable,
   RuleFormModal,
 } from "@/components/alert"
+import { SubscriptionsTable, SubscriptionFormModal } from "@/components/alert/Subscriptions"
 import { Button } from "@/components/common"
 import {
   useListAlertRules,
@@ -19,13 +20,18 @@ import {
   useEnableAlertRule,
   useDisableAlertRule,
   useAcknowledgeAlert,
+  useListSubscriptions,
+  useCreateSubscription,
+  useDeleteSubscription,
   type AlertRule,
   type AlertHistory,
   type CreateAlertRuleDto,
   type AlertHistoryQuery,
+
+  type CreateSubscriptionDto,
 } from "@/api/generated"
 
-type TabType = "overview" | "history" | "rules"
+type TabType = "overview" | "history" | "rules" | "subscriptions"
 
 export function AlertsPage() {
   const [activeTab, setActiveTab] = useState<TabType>("overview")
@@ -33,6 +39,7 @@ export function AlertsPage() {
   const [selectedAlert, setSelectedAlert] = useState<AlertHistory | null>(null)
   const [editingRule, setEditingRule] = useState<AlertRule | null>(null)
   const [showRuleForm, setShowRuleForm] = useState(false)
+  const [showSubscriptionForm, setShowSubscriptionForm] = useState(false)
 
   const pageSize = 20
 
@@ -46,6 +53,7 @@ export function AlertsPage() {
   const { data: rules, isLoading: rulesLoading, refetch: refetchRules } = useListAlertRules()
   const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useListAlertHistory(historyQuery)
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useGetAlertStats(24)
+  const { data: subscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useListSubscriptions()
 
   // Mutations
   const createRule = useCreateAlertRule()
@@ -54,17 +62,21 @@ export function AlertsPage() {
   const enableRule = useEnableAlertRule()
   const disableRule = useDisableAlertRule()
   const acknowledgeAlert = useAcknowledgeAlert()
+  const createSubscription = useCreateSubscription()
+  const deleteSubscription = useDeleteSubscription()
 
   const tabs = [
     { id: "overview" as TabType, label: "Overview", icon: BarChart3 },
     { id: "history" as TabType, label: "Alert History", icon: List },
     { id: "rules" as TabType, label: "Rules", icon: Settings },
+    { id: "subscriptions" as TabType, label: "Subscriptions", icon: BellRing },
   ]
 
   const handleRefresh = () => {
     refetchStats()
     refetchHistory()
     refetchRules()
+    refetchSubscriptions()
   }
 
   const handleAcknowledge = (id: number) => {
@@ -102,6 +114,18 @@ export function AlertsPage() {
   const handleEditRule = (rule: AlertRule) => {
     setEditingRule(rule)
     setShowRuleForm(true)
+  }
+
+  const handleSaveSubscription = (data: CreateSubscriptionDto) => {
+    createSubscription.mutate(data, {
+      onSuccess: () => setShowSubscriptionForm(false),
+    })
+  }
+
+  const handleDeleteSubscription = (id: number) => {
+    if (confirm("Are you sure you want to delete this subscription?")) {
+      deleteSubscription.mutate(id)
+    }
   }
 
   // Transform API data for components
@@ -205,6 +229,16 @@ export function AlertsPage() {
         />
       )}
 
+      {activeTab === "subscriptions" && (
+        <SubscriptionsTable
+          subscriptions={subscriptions || []}
+          rules={rules || []}
+          onDelete={handleDeleteSubscription}
+          onCreate={() => setShowSubscriptionForm(true)}
+          isLoading={subscriptionsLoading}
+        />
+      )}
+
       {/* Modals */}
       {selectedAlert && (
         <AlertDetailModal
@@ -222,6 +256,15 @@ export function AlertsPage() {
             setEditingRule(null)
           }}
           onSave={handleSaveRule}
+        />
+      )}
+
+      {showSubscriptionForm && (
+        <SubscriptionFormModal
+          rules={rules || []}
+          onClose={() => setShowSubscriptionForm(false)}
+          onSave={handleSaveSubscription}
+          isLoading={createSubscription.isPending}
         />
       )}
     </div>
