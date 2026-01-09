@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: chain-risk
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - pvc.yaml
+  - ingress.yaml
+  - hpa.yaml
+  # Services
+  - query-service/deployment.yaml
+  - risk-service/deployment.yaml
+  - alert-service/deployment.yaml
+  - graph-service/deployment.yaml
+  - bff/deployment.yaml
+  - orchestrator/deployment.yaml
+  - stream-processor/deployment.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: chain-risk-platform
+  app.kubernetes.io/managed-by: kustomize
