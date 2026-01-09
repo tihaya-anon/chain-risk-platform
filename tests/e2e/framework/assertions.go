@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // AssertDatabaseCount checks record count in a table
@@ -69,9 +70,24 @@ func (e *TestEnv) AssertKafkaTopicExists(topic string) error {
 	return nil
 }
 
-// AssertHTTPStatus checks HTTP endpoint returns expected status
-func (e *TestEnv) AssertHTTPStatus(ctx context.Context, url string, expectedStatus int) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+// AssertHTTPEndpoint checks HTTP endpoint returns expected status
+func (e *TestEnv) AssertHTTPEndpoint(ctx context.Context, method, url string, expectedStatus int) error {
+	var req *http.Request
+	var err error
+
+	switch strings.ToUpper(method) {
+	case "GET":
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	case "POST":
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	case "PUT":
+		req, err = http.NewRequestWithContext(ctx, http.MethodPut, url, nil)
+	case "DELETE":
+		req, err = http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	default:
+		req, err = http.NewRequestWithContext(ctx, method, url, nil)
+	}
+
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -86,6 +102,11 @@ func (e *TestEnv) AssertHTTPStatus(ctx context.Context, url string, expectedStat
 		return fmt.Errorf("expected status %d, got %d", expectedStatus, resp.StatusCode)
 	}
 	return nil
+}
+
+// AssertHTTPStatus is an alias for AssertHTTPEndpoint with GET method
+func (e *TestEnv) AssertHTTPStatus(ctx context.Context, url string, expectedStatus int) error {
+	return e.AssertHTTPEndpoint(ctx, "GET", url, expectedStatus)
 }
 
 // AssertJSONResponse checks JSON response contains expected field
