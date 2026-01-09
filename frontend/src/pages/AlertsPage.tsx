@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Bell, List, Settings, BarChart3 } from "lucide-react"
+import { Bell, List, Settings, BarChart3, RefreshCw } from "lucide-react"
 import {
   AlertStatsCards,
   SeverityChart,
@@ -8,146 +8,52 @@ import {
   AlertRulesTable,
   RuleFormModal,
 } from "@/components/alert"
-
-// Types
-type Severity = "low" | "medium" | "high" | "critical"
-type Status = "pending" | "sent" | "acknowledged" | "resolved"
-
-interface AlertHistoryItem {
-  id: number
-  ruleId?: number
-  alertType: string
-  severity: Severity
-  entityType: string
-  entityId: string
-  title: string
-  message: string
-  metadata: Record<string, any>
-  status: Status
-  notifiedAt?: string
-  acknowledgedAt?: string
-  acknowledgedBy?: string
-  createdAt: string
-}
-
-interface AlertRule {
-  id: number
-  name: string
-  description: string
-  ruleType: string
-  severity: Severity
-  conditions: Record<string, any>
-  enabled: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-interface AlertStats {
-  total: number
-  bySeverity: Record<string, number>
-  byStatus: Record<string, number>
-  byType: Record<string, number>
-  averagePerHour: number
-}
-
-// Mock data
-const mockStats: AlertStats = {
-  total: 156,
-  bySeverity: { critical: 12, high: 34, medium: 67, low: 43 },
-  byStatus: { pending: 8, sent: 45, acknowledged: 89, resolved: 14 },
-  byType: { risk_score: 78, transaction_value: 45, tag_match: 33 },
-  averagePerHour: 6.5,
-}
-
-const mockAlerts: AlertHistoryItem[] = [
-  {
-    id: 1,
-    ruleId: 1,
-    alertType: "risk_score",
-    severity: "critical",
-    entityType: "address",
-    entityId: "0x742d35Cc6634C0532925a3b844Bc9e7595f1b7E0",
-    title: "High risk score detected: 92.00",
-    message: "Address risk score exceeded threshold",
-    metadata: { score: 92, threshold: 80 },
-    status: "sent",
-    notifiedAt: "2026-01-09T04:20:00Z",
-    createdAt: "2026-01-09T04:20:00Z",
-  },
-  {
-    id: 2,
-    ruleId: 2,
-    alertType: "transaction_value",
-    severity: "high",
-    entityType: "transaction",
-    entityId: "0xabc123def456789012345678901234567890abcdef1234567890abcdef12345678",
-    title: "Large transaction detected: $2,500,000",
-    message: "Transaction value exceeded threshold",
-    metadata: { value_usd: 2500000, threshold: 1000000 },
-    status: "acknowledged",
-    notifiedAt: "2026-01-09T03:15:00Z",
-    acknowledgedAt: "2026-01-09T03:30:00Z",
-    acknowledgedBy: "admin",
-    createdAt: "2026-01-09T03:15:00Z",
-  },
-  {
-    id: 3,
-    alertType: "tag_match",
-    severity: "medium",
-    entityType: "address",
-    entityId: "0x1234567890123456789012345678901234567890",
-    title: "Suspicious tag detected: mixer",
-    message: "Address tagged with suspicious label",
-    metadata: { matched_tags: ["mixer"], rule_tags: ["mixer", "sanctioned"] },
-    status: "pending",
-    createdAt: "2026-01-09T02:45:00Z",
-  },
-]
-
-const mockRules: AlertRule[] = [
-  {
-    id: 1,
-    name: "High Risk Score Alert",
-    description: "Alert when risk score exceeds threshold",
-    ruleType: "risk_score",
-    severity: "critical",
-    conditions: { threshold: 80, operator: ">=" },
-    enabled: true,
-    createdAt: "2026-01-01T00:00:00Z",
-    updatedAt: "2026-01-05T00:00:00Z",
-  },
-  {
-    id: 2,
-    name: "Large Transaction",
-    description: "Alert on transactions over $1M USD",
-    ruleType: "transaction_value",
-    severity: "high",
-    conditions: { threshold: 1000000, currency: "USD" },
-    enabled: true,
-    createdAt: "2026-01-01T00:00:00Z",
-    updatedAt: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: 3,
-    name: "Mixer Detection",
-    description: "Alert on addresses with mixer tags",
-    ruleType: "tag_match",
-    severity: "medium",
-    conditions: { tags: ["mixer", "tornado"], match_mode: "any" },
-    enabled: false,
-    createdAt: "2026-01-02T00:00:00Z",
-    updatedAt: "2026-01-03T00:00:00Z",
-  },
-]
+import { Button } from "@/components/common"
+import {
+  useListAlertRules,
+  useListAlertHistory,
+  useGetAlertStats,
+  useCreateAlertRule,
+  useUpdateAlertRule,
+  useDeleteAlertRule,
+  useEnableAlertRule,
+  useDisableAlertRule,
+  useAcknowledgeAlert,
+  type AlertRule,
+  type AlertHistory,
+  type CreateAlertRuleDto,
+  type AlertHistoryQuery,
+} from "@/api/generated"
 
 type TabType = "overview" | "history" | "rules"
 
 export function AlertsPage() {
   const [activeTab, setActiveTab] = useState<TabType>("overview")
   const [historyPage, setHistoryPage] = useState(1)
-  const [selectedAlert, setSelectedAlert] = useState<AlertHistoryItem | null>(null)
+  const [selectedAlert, setSelectedAlert] = useState<AlertHistory | null>(null)
   const [editingRule, setEditingRule] = useState<AlertRule | null>(null)
   const [showRuleForm, setShowRuleForm] = useState(false)
+
+  const pageSize = 20
+
+  // Query params
+  const historyQuery: AlertHistoryQuery = {
+    limit: pageSize,
+    offset: (historyPage - 1) * pageSize,
+  }
+
+  // API hooks
+  const { data: rules, isLoading: rulesLoading, refetch: refetchRules } = useListAlertRules()
+  const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useListAlertHistory(historyQuery)
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useGetAlertStats(24)
+
+  // Mutations
+  const createRule = useCreateAlertRule()
+  const updateRule = useUpdateAlertRule()
+  const deleteRule = useDeleteAlertRule()
+  const enableRule = useEnableAlertRule()
+  const disableRule = useDisableAlertRule()
+  const acknowledgeAlert = useAcknowledgeAlert()
 
   const tabs = [
     { id: "overview" as TabType, label: "Overview", icon: BarChart3 },
@@ -155,31 +61,41 @@ export function AlertsPage() {
     { id: "rules" as TabType, label: "Rules", icon: Settings },
   ]
 
+  const handleRefresh = () => {
+    refetchStats()
+    refetchHistory()
+    refetchRules()
+  }
+
   const handleAcknowledge = (id: number) => {
-    console.log("Acknowledge alert:", id)
-    // TODO: Call API
+    acknowledgeAlert.mutate(id)
   }
 
   const handleDeleteRule = (id: number) => {
     if (confirm("Are you sure you want to delete this rule?")) {
-      console.log("Delete rule:", id)
-      // TODO: Call API
+      deleteRule.mutate(id)
     }
   }
 
   const handleToggleRule = (id: number, enabled: boolean) => {
-    console.log("Toggle rule:", id, enabled)
-    // TODO: Call API
+    if (enabled) {
+      enableRule.mutate(id)
+    } else {
+      disableRule.mutate(id)
+    }
   }
 
-  const handleSaveRule = (data: Partial<AlertRule>) => {
-    console.log("Save rule:", data)
-    // TODO: Call API
+  const handleSaveRule = (data: CreateAlertRuleDto) => {
+    if (editingRule) {
+      updateRule.mutate({ id: editingRule.id, data })
+    } else {
+      createRule.mutate(data)
+    }
     setShowRuleForm(false)
     setEditingRule(null)
   }
 
-  const handleViewDetails = (alert: AlertHistoryItem) => {
+  const handleViewDetails = (alert: AlertHistory) => {
     setSelectedAlert(alert)
   }
 
@@ -187,6 +103,20 @@ export function AlertsPage() {
     setEditingRule(rule)
     setShowRuleForm(true)
   }
+
+  // Transform API data for components
+  const alertStats = stats
+    ? {
+        total: stats.total,
+        bySeverity: stats.bySeverity,
+        byStatus: stats.byStatus,
+        byType: stats.byType,
+        averagePerHour: stats.averagePerHour,
+      }
+    : { total: 0, bySeverity: {}, byStatus: {}, byType: {}, averagePerHour: 0 }
+
+  const alertHistory = historyData?.data || []
+  const historyTotal = historyData?.total || 0
 
   return (
     <div className="p-6 space-y-6 overflow-y-auto h-full">
@@ -203,6 +133,10 @@ export function AlertsPage() {
             </p>
           </div>
         </div>
+        <Button variant="secondary" onClick={handleRefresh}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -228,16 +162,17 @@ export function AlertsPage() {
       {/* Tab Content */}
       {activeTab === "overview" && (
         <div className="space-y-6">
-          <AlertStatsCards stats={mockStats} />
+          <AlertStatsCards stats={alertStats} isLoading={statsLoading} />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SeverityChart bySeverity={mockStats.bySeverity} />
+            <SeverityChart bySeverity={alertStats.bySeverity} isLoading={statsLoading} />
             <AlertHistoryTable
-              alerts={mockAlerts.slice(0, 5)}
-              total={mockAlerts.length}
+              alerts={alertHistory.slice(0, 5)}
+              total={Math.min(historyTotal, 5)}
               page={1}
               pageSize={5}
               onPageChange={() => setActiveTab("history")}
               onViewDetails={handleViewDetails}
+              isLoading={historyLoading}
             />
           </div>
         </div>
@@ -245,19 +180,20 @@ export function AlertsPage() {
 
       {activeTab === "history" && (
         <AlertHistoryTable
-          alerts={mockAlerts}
-          total={mockAlerts.length}
+          alerts={alertHistory}
+          total={historyTotal}
           page={historyPage}
-          pageSize={20}
+          pageSize={pageSize}
           onPageChange={setHistoryPage}
           onAcknowledge={handleAcknowledge}
           onViewDetails={handleViewDetails}
+          isLoading={historyLoading}
         />
       )}
 
       {activeTab === "rules" && (
         <AlertRulesTable
-          rules={mockRules}
+          rules={rules || []}
           onEdit={handleEditRule}
           onDelete={handleDeleteRule}
           onToggle={handleToggleRule}
@@ -265,6 +201,7 @@ export function AlertsPage() {
             setEditingRule(null)
             setShowRuleForm(true)
           }}
+          isLoading={rulesLoading}
         />
       )}
 

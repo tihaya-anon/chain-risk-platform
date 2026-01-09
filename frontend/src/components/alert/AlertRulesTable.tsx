@@ -3,18 +3,7 @@ import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight } from "lucide-react"
 import { Card } from "@/components/common/Card"
 import { Button } from "@/components/common/Button"
 import { SeverityBadge } from "./AlertBadges"
-
-interface AlertRule {
-  id: number
-  name: string
-  description: string
-  ruleType: string
-  severity: "low" | "medium" | "high" | "critical"
-  conditions: Record<string, any>
-  enabled: boolean
-  createdAt: string
-  updatedAt: string
-}
+import type { AlertRule, CreateAlertRuleDto, RuleType, Severity } from "@/api/generated"
 
 interface AlertRulesTableProps {
   rules: AlertRule[]
@@ -25,10 +14,11 @@ interface AlertRulesTableProps {
   isLoading?: boolean
 }
 
-const ruleTypeLabels: Record<string, string> = {
+const ruleTypeLabels: Record<RuleType, string> = {
   risk_score: "Risk Score",
   transaction_value: "Transaction Value",
   tag_match: "Tag Match",
+  graph_pattern: "Graph Pattern",
   velocity: "Velocity",
   cluster_risk: "Cluster Risk",
 }
@@ -159,20 +149,21 @@ export function AlertRulesTable({
   )
 }
 
-function formatConditions(conditions: Record<string, any>): string {
+function formatConditions(conditions: Record<string, unknown>): string {
   const parts: string[] = []
-  if (conditions.threshold !== undefined) {
-    const op = conditions.operator || ">="
-    parts.push(`${op} ${conditions.threshold}`)
+  const c = conditions as Record<string, any>
+  if (c.threshold !== undefined) {
+    const op = c.operator || ">="
+    parts.push(`${op} ${c.threshold}`)
   }
-  if (conditions.tags) {
-    parts.push(`tags: ${conditions.tags.join(", ")}`)
+  if (c.tags) {
+    parts.push(`tags: ${c.tags.join(", ")}`)
   }
-  if (conditions.count !== undefined) {
-    parts.push(`count >= ${conditions.count}`)
+  if (c.count !== undefined) {
+    parts.push(`count >= ${c.count}`)
   }
-  if (conditions.window) {
-    parts.push(`window: ${conditions.window}`)
+  if (c.window) {
+    parts.push(`window: ${c.window}`)
   }
   return parts.join(" | ") || "—"
 }
@@ -180,12 +171,19 @@ function formatConditions(conditions: Record<string, any>): string {
 interface RuleFormModalProps {
   rule?: AlertRule | null
   onClose: () => void
-  onSave: (data: Partial<AlertRule>) => void
+  onSave: (data: CreateAlertRuleDto) => void
   isLoading?: boolean
 }
 
 export function RuleFormModal({ rule, onClose, onSave, isLoading }: RuleFormModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    description: string
+    ruleType: RuleType
+    severity: Severity
+    conditions: Record<string, unknown>
+    enabled: boolean
+  }>({
     name: rule?.name || "",
     description: rule?.description || "",
     ruleType: rule?.ruleType || "risk_score",
@@ -243,12 +241,13 @@ export function RuleFormModal({ rule, onClose, onSave, isLoading }: RuleFormModa
                 </label>
                 <select
                   value={formData.ruleType}
-                  onChange={(e) => setFormData({ ...formData, ruleType: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, ruleType: e.target.value as RuleType })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="risk_score">Risk Score</option>
                   <option value="transaction_value">Transaction Value</option>
                   <option value="tag_match">Tag Match</option>
+                  <option value="graph_pattern">Graph Pattern</option>
                   <option value="velocity">Velocity</option>
                   <option value="cluster_risk">Cluster Risk</option>
                 </select>
@@ -260,9 +259,7 @@ export function RuleFormModal({ rule, onClose, onSave, isLoading }: RuleFormModa
                 </label>
                 <select
                   value={formData.severity}
-                  onChange={(e) =>
-                    setFormData({ ...formData, severity: e.target.value as any })
-                  }
+                  onChange={(e) => setFormData({ ...formData, severity: e.target.value as Severity })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="low">Low</option>

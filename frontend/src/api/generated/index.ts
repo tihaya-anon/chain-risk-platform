@@ -8,6 +8,7 @@ export * from "./bff/auth/auth"
 export * from "./bff/graph/graph"
 export * from "./bff/risk/risk"
 export * from "./bff/transfers/transfers"
+export * from "./bff/alerts/alerts"
 
 // Orchestrator APIs
 export * from "./orchestrator/admin-api/admin-api"

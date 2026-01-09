@@ -3,32 +3,16 @@ import { Eye, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { Card } from "@/components/common/Card"
 import { Button } from "@/components/common/Button"
 import { SeverityBadge, StatusBadge } from "./AlertBadges"
-
-interface AlertHistoryItem {
-  id: number
-  ruleId?: number
-  alertType: string
-  severity: "low" | "medium" | "high" | "critical"
-  entityType: string
-  entityId: string
-  title: string
-  message: string
-  metadata: Record<string, any>
-  status: "pending" | "sent" | "acknowledged" | "resolved"
-  notifiedAt?: string
-  acknowledgedAt?: string
-  acknowledgedBy?: string
-  createdAt: string
-}
+import type { AlertHistory } from "@/api/generated"
 
 interface AlertHistoryTableProps {
-  alerts: AlertHistoryItem[]
+  alerts: AlertHistory[]
   total: number
   page: number
   pageSize: number
   onPageChange: (page: number) => void
   onAcknowledge?: (id: number) => void
-  onViewDetails?: (alert: AlertHistoryItem) => void
+  onViewDetails?: (alert: AlertHistory) => void
   isLoading?: boolean
 }
 
@@ -181,7 +165,7 @@ export function AlertHistoryTable({
 }
 
 interface AlertDetailModalProps {
-  alert: AlertHistoryItem | null
+  alert: AlertHistory | null
   onClose: () => void
   onAcknowledge?: (id: number) => void
 }

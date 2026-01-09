@@ -95,11 +95,26 @@ function StatCard({ icon: Icon, label, value, iconColor, bgColor }: StatCardProp
 
 interface SeverityChartProps {
   bySeverity: Record<string, number>
+  isLoading?: boolean
 }
 
-export function SeverityChart({ bySeverity }: SeverityChartProps) {
+export function SeverityChart({ bySeverity, isLoading }: SeverityChartProps) {
+  if (isLoading) {
+    return (
+      <Card title="Alerts by Severity">
+        <div className="animate-pulse space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i}>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2" />
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </Card>
+    )
+  }
+
   const total = Object.values(bySeverity).reduce((a, b) => a + b, 0)
-  if (total === 0) return null
 
   const severities = [
     { key: "critical", label: "Critical", color: "bg-red-500" },
@@ -110,28 +125,32 @@ export function SeverityChart({ bySeverity }: SeverityChartProps) {
 
   return (
     <Card title="Alerts by Severity">
-      <div className="space-y-3">
-        {severities.map(({ key, label, color }) => {
-          const count = bySeverity[key] || 0
-          const percent = total > 0 ? (count / total) * 100 : 0
-          return (
-            <div key={key}>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600 dark:text-gray-300">{label}</span>
-                <span className="text-gray-900 dark:text-white font-medium">
-                  {count} ({percent.toFixed(0)}%)
-                </span>
+      {total === 0 ? (
+        <p className="text-gray-500 dark:text-gray-400 text-sm">No alerts in the selected period</p>
+      ) : (
+        <div className="space-y-3">
+          {severities.map(({ key, label, color }) => {
+            const count = bySeverity[key] || 0
+            const percent = total > 0 ? (count / total) * 100 : 0
+            return (
+              <div key={key}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-600 dark:text-gray-300">{label}</span>
+                  <span className="text-gray-900 dark:text-white font-medium">
+                    {count} ({percent.toFixed(0)}%)
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${color} transition-all duration-300`}
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${color} transition-all duration-300`}
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </Card>
   )
 }
