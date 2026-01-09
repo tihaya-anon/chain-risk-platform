@@ -83,6 +83,53 @@ class ModelRegistry:
 
         return f"{object_prefix}/model.pkl"
 
+    def upload_isolation_forest(
+        self,
+        model: Any,
+        scaler: Any,
+        version: str,
+        metrics: Optional[dict] = None,
+        features: Optional[list[str]] = None,
+        hyperparameters: Optional[dict] = None,
+    ) -> str:
+        """Upload Isolation Forest model with scaler to MinIO."""
+        model_name = "isolation_forest"
+        log.info(f"Uploading {model_name}/{version} to MinIO")
+
+        local_dir = Path(f"/tmp/ml-models/{model_name}/{version}")
+        local_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save model and scaler together
+        model_data = {
+            "model": model,
+            "scaler": scaler,
+            "feature_cols": features or [],
+        }
+        model_path = local_dir / "model.pkl"
+        joblib.dump(model_data, model_path)
+
+        metadata = {
+            "model_name": model_name,
+            "model_type": "isolation_forest",
+            "version": version,
+            "created_at": datetime.utcnow().isoformat() + "Z",
+            "metrics": metrics or {},
+            "features": features or [],
+            "hyperparameters": hyperparameters or {},
+        }
+        metadata_path = local_dir / "metadata.json"
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=2)
+
+        object_prefix = f"{model_name}/{version}"
+        self.client.fput_object(self.bucket, f"{object_prefix}/model.pkl", str(model_path))
+        self.client.fput_object(self.bucket, f"{object_prefix}/metadata.json", str(metadata_path))
+
+        self._update_latest(model_name, version)
+        log.info(f"Uploaded {model_name}/{version} to MinIO")
+
+        return f"{object_prefix}/model.pkl"
+
     def upload_gnn_model(
         self,
         model_path: str,
@@ -92,29 +139,16 @@ class ModelRegistry:
         feature_cols: Optional[list[str]] = None,
         model_config: Optional[dict] = None,
     ) -> str:
-        """
-        Upload GNN model (PyTorch) to MinIO.
+        """Upload GNN model (PyTorch) to MinIO."""
+        import shutil
 
-        Args:
-            model_path: Local path to saved .pt file
-            model_type: GNN type (gcn, gat, sage)
-            version: Model version
-            metrics: Evaluation metrics
-            feature_cols: Feature column names
-            model_config: Model configuration
-
-        Returns:
-            Object path in MinIO
-        """
         model_name = f"gnn_{model_type}"
-        log.info(f"Uploading {model_name}/{version} to MinIO")
+        log.info(f"Uploading GNN model {model_name}/{version} to MinIO")
 
         local_dir = Path(f"/tmp/ml-models/{model_name}/{version}")
         local_dir.mkdir(parents=True, exist_ok=True)
 
         # Copy model file
-        import shutil
-
         dest_model_path = local_dir / "model.pt"
         shutil.copy(model_path, dest_model_path)
 
@@ -172,17 +206,7 @@ class ModelRegistry:
     def download_gnn_model(
         self, model_name: str, version: str = "latest", device: str = "cpu"
     ) -> tuple[Any, dict]:
-        """
-        Download GNN model from MinIO.
-
-        Args:
-            model_name: Model name (e.g., 'gnn_sage')
-            version: Model version or 'latest'
-            device: Device to load model on
-
-        Returns:
-            Tuple of (model, metadata)
-        """
+        """Download GNN model from MinIO."""
         import torch
         from gnn.models import create_gnn_model
 
@@ -203,14 +227,11 @@ class ModelRegistry:
         self.client.fget_object(self.bucket, f"{object_prefix}/model.pt", str(model_path))
         self.client.fget_object(self.bucket, f"{object_prefix}/metadata.json", str(metadata_path))
 
-        # Load metadata
         with open(metadata_path) as f:
             metadata = json.load(f)
 
-        # Load checkpoint
         checkpoint = torch.load(model_path, map_location=device)
 
-        # Recreate model
         model_config = checkpoint.get("model_config", metadata.get("model_config", {}))
         gnn_type = checkpoint.get("model_type", metadata.get("gnn_type", "sage"))
         feature_cols = checkpoint.get("feature_cols", metadata.get("feature_cols", []))
@@ -229,7 +250,6 @@ class ModelRegistry:
         model.to(device)
         model.eval()
 
-        # Add extra info to metadata
         metadata["norm_params"] = checkpoint.get("norm_params")
         metadata["feature_cols"] = feature_cols
 
