@@ -3,18 +3,23 @@ import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight } from "lucide-react"
 import { Card } from "@/components/common/Card"
 import { Button } from "@/components/common/Button"
 import { SeverityBadge } from "./AlertBadges"
-import type { AlertRule, CreateAlertRuleDto, RuleType, Severity } from "@/api/generated"
+import type {
+  AlertRuleResponse,
+  CreateAlertRuleDto,
+  CreateAlertRuleDtoRuleType,
+  CreateAlertRuleDtoSeverity,
+} from "@/api/generated"
 
 interface AlertRulesTableProps {
-  rules: AlertRule[]
-  onEdit?: (rule: AlertRule) => void
+  rules: AlertRuleResponse[]
+  onEdit?: (rule: AlertRuleResponse) => void
   onDelete?: (id: number) => void
   onToggle?: (id: number, enabled: boolean) => void
   onCreate?: () => void
   isLoading?: boolean
 }
 
-const ruleTypeLabels: Record<RuleType, string> = {
+const ruleTypeLabels: Record<string, string> = {
   risk_score: "Risk Score",
   transaction_value: "Transaction Value",
   tag_match: "Tag Match",
@@ -122,7 +127,7 @@ export function AlertRulesTable({
                   </td>
                   <td className="py-3 px-4">
                     <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-gray-700 dark:text-gray-300">
-                      {formatConditions(rule.conditions)}
+                      {formatConditions(rule.conditions as Record<string, unknown>)}
                     </code>
                   </td>
                   <td className="py-3 px-4">
@@ -169,7 +174,7 @@ function formatConditions(conditions: Record<string, unknown>): string {
 }
 
 interface RuleFormModalProps {
-  rule?: AlertRule | null
+  rule?: AlertRuleResponse | null
   onClose: () => void
   onSave: (data: CreateAlertRuleDto) => void
   isLoading?: boolean
@@ -179,22 +184,29 @@ export function RuleFormModal({ rule, onClose, onSave, isLoading }: RuleFormModa
   const [formData, setFormData] = useState<{
     name: string
     description: string
-    ruleType: RuleType
-    severity: Severity
+    ruleType: CreateAlertRuleDtoRuleType
+    severity: CreateAlertRuleDtoSeverity
     conditions: Record<string, unknown>
     enabled: boolean
   }>({
     name: rule?.name || "",
     description: rule?.description || "",
-    ruleType: rule?.ruleType || "risk_score",
-    severity: rule?.severity || "medium",
-    conditions: rule?.conditions || { threshold: 80, operator: ">=" },
+    ruleType: (rule?.ruleType as CreateAlertRuleDtoRuleType) || "risk_score",
+    severity: (rule?.severity as CreateAlertRuleDtoSeverity) || "medium",
+    conditions: (rule?.conditions as Record<string, unknown>) || { threshold: 80, operator: ">=" },
     enabled: rule?.enabled ?? true,
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(formData)
+    onSave({
+      name: formData.name,
+      description: formData.description || undefined,
+      ruleType: formData.ruleType,
+      severity: formData.severity,
+      conditions: formData.conditions,
+      enabled: formData.enabled,
+    })
   }
 
   return (
@@ -241,13 +253,14 @@ export function RuleFormModal({ rule, onClose, onSave, isLoading }: RuleFormModa
                 </label>
                 <select
                   value={formData.ruleType}
-                  onChange={(e) => setFormData({ ...formData, ruleType: e.target.value as RuleType })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ruleType: e.target.value as CreateAlertRuleDtoRuleType })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="risk_score">Risk Score</option>
                   <option value="transaction_value">Transaction Value</option>
                   <option value="tag_match">Tag Match</option>
-                  <option value="graph_pattern">Graph Pattern</option>
                   <option value="velocity">Velocity</option>
                   <option value="cluster_risk">Cluster Risk</option>
                 </select>
@@ -259,7 +272,9 @@ export function RuleFormModal({ rule, onClose, onSave, isLoading }: RuleFormModa
                 </label>
                 <select
                   value={formData.severity}
-                  onChange={(e) => setFormData({ ...formData, severity: e.target.value as Severity })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, severity: e.target.value as CreateAlertRuleDtoSeverity })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="low">Low</option>
@@ -297,10 +312,7 @@ export function RuleFormModal({ rule, onClose, onSave, isLoading }: RuleFormModa
                 onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
                 className="w-4 h-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500"
               />
-              <label
-                htmlFor="enabled"
-                className="ml-2 text-sm text-gray-700 dark:text-gray-300"
-              >
+              <label htmlFor="enabled" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                 Enable this rule
               </label>
             </div>

@@ -3,28 +3,28 @@ import { Plus, Trash2, Mail, Globe, MessageSquare, Send } from "lucide-react"
 import { Card } from "@/components/common/Card"
 import { Button } from "@/components/common/Button"
 import type {
-  AlertSubscription,
-  AlertRule,
+  SubscriptionResponse,
+  AlertRuleResponse,
   CreateSubscriptionDto,
-  ChannelType,
+  CreateSubscriptionDtoChannelType,
 } from "@/api/generated"
 
 interface SubscriptionsTableProps {
-  subscriptions: AlertSubscription[]
-  rules: AlertRule[]
+  subscriptions: SubscriptionResponse[]
+  rules: AlertRuleResponse[]
   onDelete?: (id: number) => void
   onCreate?: () => void
   isLoading?: boolean
 }
 
-const channelIcons: Record<ChannelType, typeof Mail> = {
+const channelIcons: Record<CreateSubscriptionDtoChannelType, typeof Mail> = {
   email: Mail,
   webhook: Globe,
   slack: MessageSquare,
   telegram: Send,
 }
 
-const channelLabels: Record<ChannelType, string> = {
+const channelLabels: Record<CreateSubscriptionDtoChannelType, string> = {
   email: "Email",
   webhook: "Webhook",
   slack: "Slack",
@@ -44,8 +44,9 @@ export function SubscriptionsTable({
     return rule?.name || `Rule #${ruleId}`
   }
 
-  const getChannelDisplay = (sub: AlertSubscription) => {
-    const config = sub.channelConfig as Record<string, any>
+  const getChannelDisplay = (sub: SubscriptionResponse) => {
+    const config = sub.channelConfig as Record<string, any> | undefined
+    if (!config) return "—"
     switch (sub.channelType) {
       case "email":
         return config.email || config.address || "—"
@@ -109,7 +110,8 @@ export function SubscriptionsTable({
               </tr>
             ) : (
               subscriptions.map((sub) => {
-                const Icon = channelIcons[sub.channelType]
+                const channelType = sub.channelType as CreateSubscriptionDtoChannelType
+                const Icon = channelIcons[channelType] || Mail
                 return (
                   <tr
                     key={sub.id}
@@ -119,7 +121,7 @@ export function SubscriptionsTable({
                       <div className="flex items-center gap-2">
                         <Icon className="w-4 h-4 text-gray-500" />
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {channelLabels[sub.channelType]}
+                          {channelLabels[channelType] || channelType}
                         </span>
                       </div>
                     </td>
@@ -170,7 +172,7 @@ function truncateUrl(url: string): string {
 }
 
 interface SubscriptionFormModalProps {
-  rules: AlertRule[]
+  rules: AlertRuleResponse[]
   onClose: () => void
   onSave: (data: CreateSubscriptionDto) => void
   isLoading?: boolean
@@ -182,13 +184,14 @@ export function SubscriptionFormModal({
   onSave,
   isLoading,
 }: SubscriptionFormModalProps) {
-  const [channelType, setChannelType] = useState<ChannelType>("email")
+  const [channelType, setChannelType] = useState<CreateSubscriptionDtoChannelType>("email")
   const [ruleId, setRuleId] = useState<number | undefined>(undefined)
   const [channelConfig, setChannelConfig] = useState<Record<string, string>>({})
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave({
+      userId: "", // Will be set by BFF from auth context
       channelType,
       ruleId: ruleId || undefined,
       channelConfig,
@@ -240,9 +243,7 @@ export function SubscriptionFormModal({
               <input
                 type="url"
                 value={channelConfig.webhook_url || ""}
-                onChange={(e) =>
-                  setChannelConfig({ ...channelConfig, webhook_url: e.target.value })
-                }
+                onChange={(e) => setChannelConfig({ ...channelConfig, webhook_url: e.target.value })}
                 placeholder="https://hooks.slack.com/services/..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 required
@@ -272,9 +273,7 @@ export function SubscriptionFormModal({
               <input
                 type="text"
                 value={channelConfig.bot_token || ""}
-                onChange={(e) =>
-                  setChannelConfig({ ...channelConfig, bot_token: e.target.value })
-                }
+                onChange={(e) => setChannelConfig({ ...channelConfig, bot_token: e.target.value })}
                 placeholder="123456789:ABC-DEF..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 required
@@ -318,27 +317,29 @@ export function SubscriptionFormModal({
                 Notification Channel
               </label>
               <div className="grid grid-cols-4 gap-2">
-                {(["email", "webhook", "slack", "telegram"] as ChannelType[]).map((type) => {
-                  const Icon = channelIcons[type]
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => {
-                        setChannelType(type)
-                        setChannelConfig({})
-                      }}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-colors ${
-                        channelType === type
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                          : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span className="text-xs font-medium">{channelLabels[type]}</span>
-                    </button>
-                  )
-                })}
+                {(["email", "webhook", "slack", "telegram"] as CreateSubscriptionDtoChannelType[]).map(
+                  (type) => {
+                    const Icon = channelIcons[type]
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => {
+                          setChannelType(type)
+                          setChannelConfig({})
+                        }}
+                        className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-colors ${
+                          channelType === type
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                            : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span className="text-xs font-medium">{channelLabels[type]}</span>
+                      </button>
+                    )
+                  }
+                )}
               </div>
             </div>
 

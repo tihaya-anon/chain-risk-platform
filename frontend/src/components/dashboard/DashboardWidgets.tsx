@@ -1,8 +1,7 @@
-import { Database, ShieldAlert, AlertTriangle, Tag, Shuffle, Bell, ArrowRight } from "lucide-react"
+import { Database, ShieldAlert, AlertTriangle, Tag, Shuffle } from "lucide-react"
 import { useNavigate, Link } from "react-router-dom"
-import { Card, LoadingSpinner } from "@/components/common"
+import { Card } from "@/components/common"
 import { RISK_COLORS, getRiskDotClass } from "@/lib/palette"
-import { useGetAlertStats } from "@/api/generated"
 
 // Stat Card
 interface StatCardProps {
@@ -198,118 +197,6 @@ export function RecentAlerts({ alerts }: { alerts: Alert[] }) {
           </div>
         </div>
       ))}
-    </div>
-  )
-}
-
-// Alert Summary Widget - Real-time alert statistics
-export function AlertSummaryWidget() {
-  const { data: stats, isLoading } = useGetAlertStats(24)
-
-  if (isLoading) {
-    return (
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-orange-500" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Alert Summary
-            </h3>
-          </div>
-        </div>
-        <div className="py-8">
-          <LoadingSpinner />
-        </div>
-      </Card>
-    )
-  }
-
-  const critical = stats?.bySeverity?.critical || 0
-  const high = stats?.bySeverity?.high || 0
-  const pending = stats?.byStatus?.pending || 0
-  const sent = stats?.byStatus?.sent || 0
-  const total = stats?.total || 0
-
-  return (
-    <Card>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Bell className="w-5 h-5 text-orange-500" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Alert Summary
-          </h3>
-        </div>
-        <Link
-          to="/alerts"
-          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
-        >
-          View All
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
-
-      <div className="space-y-4">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{total}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total (24h)</p>
-          </div>
-          <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {pending + sent}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Unresolved</p>
-          </div>
-        </div>
-
-        {/* Severity Breakdown */}
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">By Severity</p>
-          <div className="flex gap-2">
-            <SeverityPill label="Critical" count={critical} color="red" />
-            <SeverityPill label="High" count={high} color="orange" />
-            <SeverityPill label="Med" count={stats?.bySeverity?.medium || 0} color="yellow" />
-            <SeverityPill label="Low" count={stats?.bySeverity?.low || 0} color="blue" />
-          </div>
-        </div>
-
-        {/* Rate */}
-        {stats?.averagePerHour !== undefined && stats.averagePerHour > 0 && (
-          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Average rate:{" "}
-              <span className="font-medium text-gray-900 dark:text-white">
-                {stats.averagePerHour.toFixed(1)}/hour
-              </span>
-            </p>
-          </div>
-        )}
-      </div>
-    </Card>
-  )
-}
-
-function SeverityPill({
-  label,
-  count,
-  color,
-}: {
-  label: string
-  count: number
-  color: "red" | "orange" | "yellow" | "blue"
-}) {
-  const colorMap = {
-    red: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    orange: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    yellow: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-    blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  }
-
-  return (
-    <div className={`flex-1 px-2 py-1.5 rounded-lg text-center ${colorMap[color]}`}>
-      <p className="text-lg font-bold">{count}</p>
-      <p className="text-xs">{label}</p>
     </div>
   )
 }

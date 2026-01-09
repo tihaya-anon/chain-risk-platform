@@ -3,73 +3,60 @@ import {
   LayoutDashboard,
   RefreshCw,
   Network,
-  ChartNoAxesColumn,
   Search,
   Route,
   Tag,
-  MousePointer2,
   Bell,
+  Database,
+  Shuffle,
+  ShieldAlert,
+  AlertTriangle,
+  ArrowRight,
 } from "lucide-react"
 import { Card, LoadingSpinner } from "@/components/common"
 import { AddressTable } from "@/components/table"
 import {
-  StatCard,
-  RiskDistributionChart,
-  TagDistribution,
-  RecentAlerts,
-  AlertSummaryWidget,
-  DashboardIcons,
-} from "@/components/dashboard/DashboardWidgets"
-import {
   useGraphControllerGetHighRiskAddresses,
   useGetPipelineStatus,
+  useAlertControllerGetStats,
+  useAlertControllerListHistory,
+  type AlertHistoryResponse,
 } from "@/api/generated"
 import type { GraphAddressInfo } from "@/api/generated"
+import { formatDistanceToNow } from "date-fns"
 
 export function DashboardPage() {
   const highRiskQuery = useGraphControllerGetHighRiskAddresses(
-    { threshold: 0.7, limit: 20 },
+    { threshold: 0.7, limit: 10 },
     { query: { refetchInterval: 60000 } }
   )
   const pipelineQuery = useGetPipelineStatus({ query: { refetchInterval: 30000 } })
+  const alertStatsQuery = useAlertControllerGetStats({ hours: 24 })
+  const recentAlertsQuery = useAlertControllerListHistory({ pageSize: 5, page: 1 })
 
   const highRiskAddresses: GraphAddressInfo[] = highRiskQuery.data || []
+  const pipelineStatus = pipelineQuery.data
+  const alertStats = alertStatsQuery.data
+  const recentAlerts = recentAlertsQuery.data?.data || []
 
-  // Calculate risk distribution
-  const riskDistribution = {
-    critical: highRiskAddresses.filter((a) => (a.riskScore ?? 0) >= 0.8).length,
-    high: highRiskAddresses.filter(
-      (a) => (a.riskScore ?? 0) >= 0.6 && (a.riskScore ?? 0) < 0.8
-    ).length,
-    medium: highRiskAddresses.filter(
-      (a) => (a.riskScore ?? 0) >= 0.4 && (a.riskScore ?? 0) < 0.6
-    ).length,
-    low: highRiskAddresses.filter((a) => (a.riskScore ?? 0) < 0.4).length,
+  const isRefreshing =
+    highRiskQuery.isFetching || pipelineQuery.isFetching || alertStatsQuery.isFetching
+
+  const handleRefresh = () => {
+    highRiskQuery.refetch()
+    pipelineQuery.refetch()
+    alertStatsQuery.refetch()
+    recentAlertsQuery.refetch()
   }
 
-  // Calculate tag distribution
-  const tagCounts: Record<string, number> = {}
-  highRiskAddresses.forEach((a) => {
-    a.tags?.forEach((tag) => {
-      tagCounts[tag] = (tagCounts[tag] || 0) + 1
-    })
-  })
-  const topTags = Object.entries(tagCounts)
-    .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => b.count - a.count)
-
-  // Recent alerts (from high risk addresses)
-  const recentAlerts = highRiskAddresses.slice(0, 5).map((a) => ({
-    address: a.address || "",
-    riskScore: a.riskScore ?? 0,
-    tag: a.tags?.[0] || "unknown",
-    time: a.lastSeen ? formatTimeAgo(a.lastSeen) : "recently",
-  }))
-
-  const pipelineStatus = pipelineQuery.data
+  // Stats
   const lastBlock = pipelineStatus?.ingestion?.lastBlock?.toLocaleString() || "-"
-  const processedCount =
-    pipelineStatus?.streamProcessor?.processedCount?.toLocaleString() || "-"
+  const processedCount = pipelineStatus?.streamProcessor?.processedCount?.toLocaleString() || "-"
+  const bySeverity = alertStats?.bySeverity as Record<string, number> | undefined
+  const byStatus = alertStats?.byStatus as Record<string, number> | undefined
+  const criticalAlerts = bySeverity?.critical || 0
+  const highAlerts = bySeverity?.high || 0
+  const pendingAlerts = (byStatus?.pending || 0) + (byStatus?.sent || 0)
 
   return (
     <div className="h-full overflow-y-auto">
@@ -86,243 +73,234 @@ export function DashboardPage() {
             </p>
           </div>
           <button
-            onClick={() => {
-              highRiskQuery.refetch()
-              pipelineQuery.refetch()
-            }}
+            onClick={handleRefresh}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            <RefreshCw
-              className={`w-4 h-4 ${highRiskQuery.isFetching ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
           </button>
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
-            icon={DashboardIcons.Database}
-            iconBgColor="bg-blue-100 dark:bg-blue-900/50"
+            icon={Database}
             iconColor="text-blue-600 dark:text-blue-400"
+            bgColor="bg-blue-100 dark:bg-blue-900/50"
             label="Last Block"
             value={lastBlock}
-            subtitle="Ethereum mainnet"
           />
           <StatCard
-            icon={DashboardIcons.Shuffle}
-            iconBgColor="bg-purple-100 dark:bg-purple-900/50"
+            icon={Shuffle}
             iconColor="text-purple-600 dark:text-purple-400"
+            bgColor="bg-purple-100 dark:bg-purple-900/50"
             label="Processed TXs"
             value={processedCount}
-            subtitle="Total processed"
           />
           <StatCard
-            icon={DashboardIcons.ShieldAlert}
-            iconBgColor="bg-red-100 dark:bg-red-900/50"
+            icon={ShieldAlert}
             iconColor="text-red-600 dark:text-red-400"
+            bgColor="bg-red-100 dark:bg-red-900/50"
             label="High Risk"
             value={highRiskAddresses.length}
             valueColor="text-red-600 dark:text-red-400"
-            subtitle="Score ≥ 0.7"
           />
           <StatCard
-            icon={DashboardIcons.AlertTriangle}
-            iconBgColor="bg-orange-100 dark:bg-orange-900/50"
+            icon={Bell}
             iconColor="text-orange-600 dark:text-orange-400"
-            label="Critical"
-            value={riskDistribution.critical}
-            valueColor="text-orange-600 dark:text-orange-400"
-            subtitle="Score ≥ 0.8"
+            bgColor="bg-orange-100 dark:bg-orange-900/50"
+            label="Pending Alerts"
+            value={pendingAlerts}
+            valueColor={pendingAlerts > 0 ? "text-orange-600 dark:text-orange-400" : undefined}
           />
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Risk Distribution */}
-          <Card className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Risk Distribution
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">By severity level</p>
-              </div>
-              <ChartNoAxesColumn className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-            </div>
-            <RiskDistributionChart {...riskDistribution} />
-          </Card>
-
-          {/* Alert Summary */}
-          <AlertSummaryWidget />
-        </div>
-
-        {/* Second Row */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Alerts */}
           <Card className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <div>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-500" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Recent High-Risk Detections
+                  Recent Alerts
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Latest high-risk addresses
-                </p>
               </div>
+              <Link
+                to="/alerts"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+              >
+                View All <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
-            {highRiskQuery.isLoading ? (
+            {recentAlertsQuery.isLoading ? (
               <LoadingSpinner />
             ) : recentAlerts.length > 0 ? (
-              <RecentAlerts alerts={recentAlerts} />
+              <div className="space-y-3">
+                {recentAlerts.map((alert: AlertHistoryResponse) => (
+                  <div
+                    key={alert.id}
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                  >
+                    <SeverityDot severity={alert.severity} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {alert.title}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                        alert.severity === "critical"
+                          ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
+                          : alert.severity === "high"
+                            ? "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300"
+                            : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300"
+                      }`}
+                    >
+                      {alert.severity}
+                    </span>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                No recent alerts
-              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">No recent alerts</p>
             )}
           </Card>
 
-          {/* Quick Links & Tags */}
+          {/* Alert Summary + Quick Links */}
           <div className="space-y-6">
+            {/* Alert Summary */}
             <Card>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Quick Access
-                </h3>
-                <MousePointer2 className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Alert Summary (24h)
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {criticalAlerts}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Critical</p>
+                </div>
+                <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {highAlerts}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">High</p>
+                </div>
               </div>
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Total (24h)</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {alertStats?.total || 0}
+                  </span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Quick Links */}
+            <Card>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                Quick Access
+              </h3>
               <div className="space-y-2">
-                <QuickLink
-                  to="/address"
-                  icon={Search}
-                  color="blue"
-                  label="Address Analysis"
-                />
-                <QuickLink
-                  to="/alerts"
-                  icon={Bell}
-                  color="orange"
-                  label="Alert Management"
-                />
-                <QuickLink
-                  to="/high-risk"
-                  icon={DashboardIcons.ShieldAlert}
-                  color="red"
-                  label="High Risk Network"
-                />
-                <QuickLink
-                  to="/graph"
-                  icon={Network}
-                  color="purple"
-                  label="Graph Explorer"
-                />
-                <QuickLink
-                  to="/path-finder"
-                  icon={Route}
-                  color="green"
-                  label="Path Finder"
-                />
-                <QuickLink to="/tags" icon={Tag} color="indigo" label="Tag Search" />
+                <QuickLink to="/address" icon={Search} label="Address Analysis" />
+                <QuickLink to="/alerts" icon={Bell} label="Alert Management" />
+                <QuickLink to="/graph" icon={Network} label="Graph Explorer" />
+                <QuickLink to="/path-finder" icon={Route} label="Path Finder" />
+                <QuickLink to="/tags" icon={Tag} label="Tag Search" />
               </div>
             </Card>
           </div>
         </div>
 
-        {/* Third Row - Tags */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-1">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Top Tags
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Most common risk tags
-                </p>
-              </div>
+        {/* High Risk Table */}
+        <Card title="High-Risk Addresses" subtitle="Addresses with risk score ≥ 0.7">
+          {highRiskQuery.isLoading ? (
+            <div className="py-12">
+              <LoadingSpinner />
             </div>
-            {topTags.length > 0 ? (
-              <TagDistribution tags={topTags} />
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                No tags found
-              </p>
-            )}
-          </Card>
-
-          {/* High Risk Table */}
-          <Card
-            title="High-Risk Addresses"
-            subtitle="Addresses with risk score ≥ 0.7"
-            className="lg:col-span-2"
-          >
-            {highRiskQuery.isLoading ? (
-              <div className="py-12">
-                <LoadingSpinner />
-              </div>
-            ) : highRiskAddresses.length > 0 ? (
-              <AddressTable
-                addresses={highRiskAddresses.slice(0, 10)}
-                showTxCount
-                showInOut
-                showTags
-                maxTagsDisplay={2}
-              />
-            ) : (
-              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                No high-risk addresses found
-              </div>
-            )}
-          </Card>
-        </div>
+          ) : highRiskAddresses.length > 0 ? (
+            <AddressTable
+              addresses={highRiskAddresses}
+              showTxCount
+              showInOut
+              showTags
+              maxTagsDisplay={2}
+            />
+          ) : (
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              No high-risk addresses found
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   )
 }
 
 // Helper Components
+function StatCard({
+  icon: Icon,
+  iconColor,
+  bgColor,
+  label,
+  value,
+  valueColor,
+}: {
+  icon: typeof Database
+  iconColor: string
+  bgColor: string
+  label: string
+  value: string | number
+  valueColor?: string
+}) {
+  return (
+    <Card>
+      <div className="flex items-center gap-3">
+        <div className={`p-2.5 ${bgColor} rounded-lg`}>
+          <Icon className={`w-5 h-5 ${iconColor}`} />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+          <p className={`text-xl font-bold ${valueColor || "text-gray-900 dark:text-white"}`}>
+            {value}
+          </p>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 function QuickLink({
   to,
   icon: Icon,
-  color,
   label,
 }: {
   to: string
-  icon: React.ElementType
-  color: string
+  icon: typeof Search
   label: string
 }) {
-  const colorMap: Record<string, string> = {
-    blue: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50",
-    red: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50",
-    purple:
-      "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50",
-    green:
-      "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50",
-    indigo:
-      "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50",
-    orange:
-      "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50",
-  }
   return (
     <Link
       to={to}
-      className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${colorMap[color]}`}
+      className="flex items-center gap-3 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
     >
-      <Icon className="w-5 h-5" />
-      <span className="text-sm font-medium text-gray-900 dark:text-white">{label}</span>
+      <Icon className="w-4 h-4 text-gray-400" />
+      <span className="text-sm">{label}</span>
     </Link>
   )
 }
 
-function formatTimeAgo(isoString: string): string {
-  const date = new Date(isoString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  if (diffMins < 60) return `${diffMins}m ago`
-  const diffHours = Math.floor(diffMins / 60)
-  if (diffHours < 24) return `${diffHours}h ago`
-  const diffDays = Math.floor(diffHours / 24)
-  return `${diffDays}d ago`
+function SeverityDot({ severity }: { severity: string }) {
+  const colors: Record<string, string> = {
+    critical: "bg-red-500",
+    high: "bg-orange-500",
+    medium: "bg-yellow-500",
+    low: "bg-blue-500",
+  }
+  return <span className={`w-2 h-2 rounded-full flex-shrink-0 ${colors[severity] || colors.low}`} />
 }

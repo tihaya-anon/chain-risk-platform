@@ -3,16 +3,16 @@ import { Eye, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { Card } from "@/components/common/Card"
 import { Button } from "@/components/common/Button"
 import { SeverityBadge, StatusBadge } from "./AlertBadges"
-import type { AlertHistory } from "@/api/generated"
+import type { AlertHistoryResponse } from "@/api/generated"
 
 interface AlertHistoryTableProps {
-  alerts: AlertHistory[]
+  alerts: AlertHistoryResponse[]
   total: number
   page: number
   pageSize: number
   onPageChange: (page: number) => void
   onAcknowledge?: (id: number) => void
-  onViewDetails?: (alert: AlertHistory) => void
+  onViewDetails?: (alert: AlertHistoryResponse) => void
   isLoading?: boolean
 }
 
@@ -132,7 +132,6 @@ export function AlertHistoryTable({
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -165,13 +164,15 @@ export function AlertHistoryTable({
 }
 
 interface AlertDetailModalProps {
-  alert: AlertHistory | null
+  alert: AlertHistoryResponse | null
   onClose: () => void
   onAcknowledge?: (id: number) => void
 }
 
 export function AlertDetailModal({ alert, onClose, onAcknowledge }: AlertDetailModalProps) {
   if (!alert) return null
+
+  const metadata = alert.metadata as Record<string, unknown> | undefined
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -229,13 +230,13 @@ export function AlertDetailModal({ alert, onClose, onAcknowledge }: AlertDetailM
             </code>
           </div>
 
-          {Object.keys(alert.metadata).length > 0 && (
+          {metadata && Object.keys(metadata).length > 0 && (
             <div>
               <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Metadata
               </label>
               <pre className="mt-1 text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded font-mono text-gray-700 dark:text-gray-300 overflow-x-auto">
-                {JSON.stringify(alert.metadata, null, 2)}
+                {JSON.stringify(metadata, null, 2)}
               </pre>
             </div>
           )}

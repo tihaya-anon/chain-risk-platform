@@ -2,13 +2,17 @@ import { Link } from "react-router-dom"
 import { formatDistanceToNow } from "date-fns"
 import { Bell, AlertTriangle, ArrowRight } from "lucide-react"
 import { LoadingSpinner } from "@/components/common"
-import { useListAlertsByEntity, type AlertHistory, type Severity } from "@/api/generated"
+import {
+  useAlertControllerListHistory,
+  type AlertHistoryResponse,
+  type AlertHistoryResponseSeverity,
+} from "@/api/generated"
 
 interface AddressAlertsSectionProps {
   address: string
 }
 
-const severityStyles: Record<Severity, string> = {
+const severityStyles: Record<AlertHistoryResponseSeverity, string> = {
   critical: "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300",
   high: "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300",
   medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300",
@@ -16,7 +20,10 @@ const severityStyles: Record<Severity, string> = {
 }
 
 export function AddressAlertsSection({ address }: AddressAlertsSectionProps) {
-  const { data, isLoading, error } = useListAlertsByEntity(address, 5)
+  const { data, isLoading, error } = useAlertControllerListHistory(
+    { entityId: address, pageSize: 5, page: 1 },
+    { query: { enabled: !!address } }
+  )
 
   if (isLoading) {
     return (
@@ -40,9 +47,7 @@ export function AddressAlertsSection({ address }: AddressAlertsSectionProps) {
     return (
       <div className="text-center py-8">
         <Bell className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto" />
-        <p className="text-gray-500 dark:text-gray-400 mt-3">
-          No alerts for this address
-        </p>
+        <p className="text-gray-500 dark:text-gray-400 mt-3">No alerts for this address</p>
       </div>
     )
   }
@@ -66,7 +71,7 @@ export function AddressAlertsSection({ address }: AddressAlertsSectionProps) {
   )
 }
 
-function AlertItem({ alert }: { alert: AlertHistory }) {
+function AlertItem({ alert }: { alert: AlertHistoryResponse }) {
   return (
     <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
       <AlertTriangle
@@ -89,12 +94,8 @@ function AlertItem({ alert }: { alert: AlertHistory }) {
             {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}
           </span>
         </div>
-        <p className="text-sm font-medium text-gray-900 dark:text-white">
-          {alert.title}
-        </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-          {alert.message}
-        </p>
+        <p className="text-sm font-medium text-gray-900 dark:text-white">{alert.title}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{alert.message}</p>
       </div>
       <span
         className={`text-xs px-2 py-0.5 rounded-full ${
