@@ -1,5 +1,5 @@
 /**
- * MSW Request Handlers - Fixed API paths to match generated hooks
+ * MSW Request Handlers
  */
 
 import { http, HttpResponse, delay } from "msw"
@@ -83,7 +83,6 @@ const profileHandler = http.get("*/api/v1/auth/profile", async ({ request }) => 
 
 // ==================== Orchestration Handlers ====================
 
-// GET /api/v1/orchestration/address-analysis/:address
 const getAddressAnalysisHandler = http.get(
   "*/api/v1/orchestration/address-analysis/:address",
   async ({ params }) => {
@@ -92,7 +91,6 @@ const getAddressAnalysisHandler = http.get(
   }
 )
 
-// GET /api/v1/orchestration/address-profile/:address
 const getAddressProfileHandler = http.get(
   "*/api/v1/orchestration/address-profile/:address",
   async ({ params }) => {
@@ -113,7 +111,6 @@ const getAddressProfileHandler = http.get(
   }
 )
 
-// GET /api/v1/orchestration/high-risk-network
 const getHighRiskNetworkHandler = http.get(
   "*/api/v1/orchestration/high-risk-network",
   async () => {
@@ -122,7 +119,6 @@ const getHighRiskNetworkHandler = http.get(
   }
 )
 
-// GET /api/v1/orchestration/connection/:fromAddress/:toAddress
 const findConnectionHandler = http.get(
   "*/api/v1/orchestration/connection/:fromAddress/:toAddress",
   async ({ params }) => {
@@ -133,7 +129,6 @@ const findConnectionHandler = http.get(
   }
 )
 
-// POST /api/v1/orchestration/batch-risk-analysis
 const batchRiskAnalysisHandler = http.post(
   "*/api/v1/orchestration/batch-risk-analysis",
   async ({ request }) => {
@@ -149,7 +144,6 @@ const batchRiskAnalysisHandler = http.post(
 
 // ==================== BFF Graph Handlers ====================
 
-// GET /api/v1/graph/address/:address
 const graphGetAddressHandler = http.get(
   "*/api/v1/graph/address/:address",
   async ({ params }) => {
@@ -158,7 +152,6 @@ const graphGetAddressHandler = http.get(
   }
 )
 
-// GET /api/v1/graph/address/:address/neighbors
 const graphGetNeighborsHandler = http.get(
   "*/api/v1/graph/address/:address/neighbors",
   async ({ params, request }) => {
@@ -169,19 +162,16 @@ const graphGetNeighborsHandler = http.get(
   }
 )
 
-// GET /api/v1/graph/address/:address/tags
 const graphGetTagsHandler = http.get("*/api/v1/graph/address/:address/tags", async () => {
   await delay(100)
   return HttpResponse.json({ tags: mockTags(5) })
 })
 
-// POST /api/v1/graph/address/:address/tags
 const graphAddTagHandler = http.post("*/api/v1/graph/address/:address/tags", async () => {
   await delay(200)
   return HttpResponse.json({ success: true, message: "Tag added" })
 })
 
-// DELETE /api/v1/graph/address/:address/tags/:tag
 const graphRemoveTagHandler = http.delete(
   "*/api/v1/graph/address/:address/tags/:tag",
   async () => {
@@ -190,7 +180,6 @@ const graphRemoveTagHandler = http.delete(
   }
 )
 
-// GET /api/v1/graph/address/:address/cluster
 const graphGetAddressClusterHandler = http.get(
   "*/api/v1/graph/address/:address/cluster",
   async () => {
@@ -199,7 +188,6 @@ const graphGetAddressClusterHandler = http.get(
   }
 )
 
-// GET /api/v1/graph/path/:fromAddress/:toAddress
 const graphFindPathHandler = http.get(
   "*/api/v1/graph/path/:fromAddress/:toAddress",
   async ({ params }) => {
@@ -217,13 +205,11 @@ const graphFindPathHandler = http.get(
   }
 )
 
-// GET /api/v1/graph/cluster/:clusterId
 const graphGetClusterHandler = http.get("*/api/v1/graph/cluster/:clusterId", async () => {
   await delay(200)
   return HttpResponse.json(mockClusterResponse())
 })
 
-// POST /api/v1/graph/cluster/run
 const graphRunClusteringHandler = http.post("*/api/v1/graph/cluster/run", async () => {
   await delay(800)
   return HttpResponse.json({
@@ -233,7 +219,6 @@ const graphRunClusteringHandler = http.post("*/api/v1/graph/cluster/run", async 
   })
 })
 
-// POST /api/v1/graph/cluster/manual
 const graphManualClusterHandler = http.post("*/api/v1/graph/cluster/manual", async () => {
   await delay(400)
   return HttpResponse.json({
@@ -243,20 +228,17 @@ const graphManualClusterHandler = http.post("*/api/v1/graph/cluster/manual", asy
   })
 })
 
-// GET /api/v1/graph/search/tag/:tag
 const graphSearchByTagHandler = http.get("*/api/v1/graph/search/tag/:tag", async () => {
   await delay(300)
   return HttpResponse.json(Array.from({ length: 10 }, () => mockGraphAddressInfo()))
 })
 
-// GET /api/v1/graph/search/high-risk
 const graphHighRiskHandler = http.get("*/api/v1/graph/search/high-risk", async () => {
   await delay(300)
   const resp = mockHighRiskNetworkResponse()
   return HttpResponse.json(resp.highRiskAddresses)
 })
 
-// POST /api/v1/graph/propagate
 const graphPropagateHandler = http.post("*/api/v1/graph/propagate", async () => {
   await delay(600)
   return HttpResponse.json({
@@ -266,7 +248,6 @@ const graphPropagateHandler = http.post("*/api/v1/graph/propagate", async () => 
   })
 })
 
-// POST /api/v1/graph/propagate/:address
 const graphPropagateAddressHandler = http.post(
   "*/api/v1/graph/propagate/:address",
   async () => {
@@ -277,14 +258,12 @@ const graphPropagateAddressHandler = http.post(
 
 // ==================== BFF Risk Handlers ====================
 
-// POST /api/v1/risk/score
 const riskScoreHandler = http.post("*/api/v1/risk/score", async ({ request }) => {
   await delay(300)
   const body = (await request.json()) as { address: string; network?: string }
   return HttpResponse.json(mockRiskScoreResponse(body.address))
 })
 
-// POST /api/v1/risk/score/batch
 const riskBatchScoreHandler = http.post(
   "*/api/v1/risk/score/batch",
   async ({ request }) => {
@@ -296,7 +275,6 @@ const riskBatchScoreHandler = http.post(
   }
 )
 
-// GET /api/v1/risk/rules
 const riskRulesHandler = http.get("*/api/v1/risk/rules", async () => {
   await delay(200)
   return HttpResponse.json([
@@ -340,13 +318,11 @@ const riskRulesHandler = http.get("*/api/v1/risk/rules", async () => {
 
 // ==================== BFF Address Handlers ====================
 
-// GET /api/v1/addresses/:address
 const addressInfoHandler = http.get("*/api/v1/addresses/:address", async ({ params }) => {
   await delay(200)
   return HttpResponse.json(mockGraphAddressInfo(params.address as string))
 })
 
-// GET /api/v1/addresses/:address/transfers
 const addressTransfersHandler = http.get(
   "*/api/v1/addresses/:address/transfers",
   async () => {
@@ -358,14 +334,13 @@ const addressTransfersHandler = http.get(
   }
 )
 
-// GET /api/v1/addresses/:address/stats
 const addressStatsHandler = http.get("*/api/v1/addresses/:address/stats", async () => {
   await delay(200)
   return HttpResponse.json({
     totalValueSent: String(BigInt(Math.floor(Math.random() * 1000)) * BigInt(10 ** 18)),
     totalValueReceived: String(
-      BigInt(Math.floor(Math.random() * 1000)) * BigInt(10 ** 18)
-    ),
+      BigInt(Math.floor(Math.random() * 1000)) * BigInt(10 ** 18))
+    ,
     avgTxValue: String(BigInt(Math.floor(Math.random() * 10)) * BigInt(10 ** 18)),
     maxTxValue: String(BigInt(Math.floor(Math.random() * 100)) * BigInt(10 ** 18)),
     minTxValue: String(BigInt(Math.floor(Math.random() * 1)) * BigInt(10 ** 17)),
@@ -374,7 +349,6 @@ const addressStatsHandler = http.get("*/api/v1/addresses/:address/stats", async 
 
 // ==================== BFF Transfers Handlers ====================
 
-// GET /api/v1/transfers
 const listTransfersHandler = http.get("*/api/v1/transfers", async () => {
   await delay(300)
   return HttpResponse.json({
@@ -383,9 +357,295 @@ const listTransfersHandler = http.get("*/api/v1/transfers", async () => {
   })
 })
 
+// ==================== Alert Handlers ====================
+
+const MOCK_ALERT_RULES = [
+  {
+    id: 1,
+    name: "High Risk Score",
+    description: "Alert when address risk score exceeds threshold",
+    ruleType: "risk_score",
+    severity: "high",
+    enabled: true,
+    conditions: { operator: "gt", threshold: 80 },
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 2,
+    name: "Mixer Interaction",
+    description: "Alert when address interacts with known mixer",
+    ruleType: "tag_detected",
+    severity: "critical",
+    enabled: true,
+    conditions: { tags: ["mixer", "tornado-cash"] },
+    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 3,
+    name: "Large Transfer",
+    description: "Alert on transfers exceeding 100 ETH",
+    ruleType: "large_transfer",
+    severity: "medium",
+    enabled: true,
+    conditions: { threshold: "100000000000000000000" },
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 4,
+    name: "Sanctioned Entity",
+    description: "Alert when address is on sanctions list",
+    ruleType: "tag_detected",
+    severity: "critical",
+    enabled: true,
+    conditions: { tags: ["ofac", "sanctioned"] },
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 5,
+    name: "New High Value Address",
+    description: "Alert on new addresses with high activity",
+    ruleType: "risk_score",
+    severity: "low",
+    enabled: false,
+    conditions: { operator: "gt", threshold: 50 },
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+]
+
+function generateMockAlertHistory(count: number) {
+  const severities = ["critical", "high", "medium", "low"] as const
+  const statuses = ["pending", "acknowledged", "resolved"] as const
+  const ruleTypes = ["risk_score", "tag_detected", "large_transfer"] as const
+
+  return Array.from({ length: count }, (_, i) => {
+    const severity = severities[Math.floor(Math.random() * severities.length)]
+    const ruleType = ruleTypes[Math.floor(Math.random() * ruleTypes.length)]
+    const address = `0x${Math.random().toString(16).slice(2, 42).padEnd(40, "0")}`
+    const rule = MOCK_ALERT_RULES[Math.floor(Math.random() * MOCK_ALERT_RULES.length)]
+
+    return {
+      id: i + 1,
+      ruleId: rule.id,
+      ruleName: rule.name,
+      severity,
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      title: `${severity.charAt(0).toUpperCase() + severity.slice(1)} Alert: ${rule.name}`,
+      message: `Address ${address.slice(0, 10)}...${address.slice(-8)} triggered ${rule.name.toLowerCase()} rule`,
+      entityType: "address",
+      entityId: address,
+      metadata: { ruleType, threshold: rule.conditions },
+      createdAt: new Date(
+        Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)
+      ).toISOString(),
+      acknowledgedAt:
+        Math.random() > 0.5
+          ? new Date(
+              Date.now() - Math.floor(Math.random() * 3 * 24 * 60 * 60 * 1000)
+            ).toISOString()
+          : null,
+      resolvedAt:
+        Math.random() > 0.7
+          ? new Date(
+              Date.now() - Math.floor(Math.random() * 1 * 24 * 60 * 60 * 1000)
+            ).toISOString()
+          : null,
+    }
+  })
+}
+
+const alertRulesHandler = http.get("*/api/v1/alerts/rules", async () => {
+  await delay(200)
+  return HttpResponse.json(MOCK_ALERT_RULES)
+})
+
+const alertRuleByIdHandler = http.get("*/api/v1/alerts/rules/:id", async ({ params }) => {
+  await delay(100)
+  const rule = MOCK_ALERT_RULES.find((r) => r.id === Number(params.id))
+  if (!rule) {
+    return new HttpResponse(JSON.stringify({ message: "Rule not found" }), { status: 404 })
+  }
+  return HttpResponse.json(rule)
+})
+
+const createAlertRuleHandler = http.post("*/api/v1/alerts/rules", async ({ request }) => {
+  await delay(300)
+  const body = (await request.json()) as Record<string, unknown>
+  const newRule = {
+    id: MOCK_ALERT_RULES.length + 1,
+    ...body,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  return HttpResponse.json(newRule, { status: 201 })
+})
+
+const updateAlertRuleHandler = http.patch(
+  "*/api/v1/alerts/rules/:id",
+  async ({ params, request }) => {
+    await delay(200)
+    const body = (await request.json()) as Record<string, unknown>
+    const rule = MOCK_ALERT_RULES.find((r) => r.id === Number(params.id))
+    if (!rule) {
+      return new HttpResponse(JSON.stringify({ message: "Rule not found" }), {
+        status: 404,
+      })
+    }
+    return HttpResponse.json({ ...rule, ...body, updatedAt: new Date().toISOString() })
+  }
+)
+
+const deleteAlertRuleHandler = http.delete(
+  "*/api/v1/alerts/rules/:id",
+  async ({ params }) => {
+    await delay(200)
+    const rule = MOCK_ALERT_RULES.find((r) => r.id === Number(params.id))
+    if (!rule) {
+      return new HttpResponse(JSON.stringify({ message: "Rule not found" }), {
+        status: 404,
+      })
+    }
+    return new HttpResponse(null, { status: 204 })
+  }
+)
+
+const alertHistoryHandler = http.get("*/api/v1/alerts/history", async ({ request }) => {
+  await delay(250)
+  const url = new URL(request.url)
+  const page = parseInt(url.searchParams.get("page") || "1", 10)
+  const pageSize = parseInt(url.searchParams.get("pageSize") || "20", 10)
+  const total = 87
+
+  const data = generateMockAlertHistory(Math.min(pageSize, total - (page - 1) * pageSize))
+
+  return HttpResponse.json({
+    data,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize),
+  })
+})
+
+const alertStatsHandler = http.get("*/api/v1/alerts/stats", async ({ request }) => {
+  await delay(150)
+  const url = new URL(request.url)
+  const hours = parseInt(url.searchParams.get("hours") || "24", 10)
+
+  const baseCount = hours <= 24 ? 15 : hours <= 168 ? 45 : 120
+
+  return HttpResponse.json({
+    total: baseCount + Math.floor(Math.random() * 10),
+    pending: Math.floor(baseCount * 0.4) + Math.floor(Math.random() * 5),
+    acknowledged: Math.floor(baseCount * 0.35) + Math.floor(Math.random() * 3),
+    resolved: Math.floor(baseCount * 0.25) + Math.floor(Math.random() * 2),
+    bySeverity: {
+      critical: Math.floor(baseCount * 0.1) + Math.floor(Math.random() * 2),
+      high: Math.floor(baseCount * 0.25) + Math.floor(Math.random() * 3),
+      medium: Math.floor(baseCount * 0.4) + Math.floor(Math.random() * 4),
+      low: Math.floor(baseCount * 0.25) + Math.floor(Math.random() * 2),
+    },
+    hours,
+  })
+})
+
+const acknowledgeAlertHandler = http.post(
+  "*/api/v1/alerts/history/:id/acknowledge",
+  async ({ params }) => {
+    await delay(200)
+    return HttpResponse.json({
+      id: Number(params.id),
+      status: "acknowledged",
+      acknowledgedAt: new Date().toISOString(),
+    })
+  }
+)
+
+const resolveAlertHandler = http.post(
+  "*/api/v1/alerts/history/:id/resolve",
+  async ({ params }) => {
+    await delay(200)
+    return HttpResponse.json({
+      id: Number(params.id),
+      status: "resolved",
+      resolvedAt: new Date().toISOString(),
+    })
+  }
+)
+
+const MOCK_SUBSCRIPTIONS = [
+  {
+    id: 1,
+    userId: "1",
+    ruleId: 1,
+    channelType: "email",
+    channelConfig: { email: "alerts@example.com" },
+    enabled: true,
+    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 2,
+    userId: "1",
+    ruleId: 2,
+    channelType: "slack",
+    channelConfig: { webhook_url: "https://hooks.slack.com/...", channel: "#alerts" },
+    enabled: true,
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 3,
+    userId: "1",
+    ruleId: undefined,
+    channelType: "webhook",
+    channelConfig: { url: "https://api.example.com/webhooks/alerts" },
+    enabled: false,
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+]
+
+const subscriptionsHandler = http.get("*/api/v1/alerts/subscriptions", async () => {
+  await delay(200)
+  return HttpResponse.json(MOCK_SUBSCRIPTIONS)
+})
+
+const createSubscriptionHandler = http.post(
+  "*/api/v1/alerts/subscriptions",
+  async ({ request }) => {
+    await delay(300)
+    const body = (await request.json()) as Record<string, unknown>
+    const newSub = {
+      id: MOCK_SUBSCRIPTIONS.length + 1,
+      ...body,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    return HttpResponse.json(newSub, { status: 201 })
+  }
+)
+
+const deleteSubscriptionHandler = http.delete(
+  "*/api/v1/alerts/subscriptions/:id",
+  async ({ params }) => {
+    await delay(200)
+    const sub = MOCK_SUBSCRIPTIONS.find((s) => s.id === Number(params.id))
+    if (!sub) {
+      return new HttpResponse(JSON.stringify({ message: "Subscription not found" }), {
+        status: 404,
+      })
+    }
+    return new HttpResponse(null, { status: 204 })
+  }
+)
+
 // ==================== Admin Handlers ====================
 
-// POST /api/admin/pipeline/ingestion/:action
 const adminIngestionHandler = http.post(
   "*/api/admin/pipeline/ingestion/:action",
   async ({ params }) => {
@@ -398,13 +658,11 @@ const adminIngestionHandler = http.post(
   }
 )
 
-// GET /api/admin/services
 const adminServicesHandler = http.get("*/api/admin/services", async () => {
   await delay(200)
   return HttpResponse.json(mockServices())
 })
 
-// GET /api/admin/services/:serviceName
 const adminServiceHandler = http.get(
   "*/api/admin/services/:serviceName",
   async ({ params }) => {
@@ -415,25 +673,21 @@ const adminServiceHandler = http.get(
   }
 )
 
-// GET /api/admin/pipeline/status
 const adminPipelineStatusHandler = http.get("*/api/admin/pipeline/status", async () => {
   await delay(200)
   return HttpResponse.json(mockPipelineStatus())
 })
 
-// GET /api/admin/config/risk
 const adminRiskConfigHandler = http.get("*/api/admin/config/risk", async () => {
   await delay(200)
   return HttpResponse.json(mockRiskConfig())
 })
 
-// GET /api/admin/config/pipeline
 const adminPipelineConfigHandler = http.get("*/api/admin/config/pipeline", async () => {
   await delay(200)
   return HttpResponse.json(mockPipelineConfig())
 })
 
-// GET /api/admin/config/all
 const adminAllConfigHandler = http.get("*/api/admin/config/all", async () => {
   await delay(200)
   return HttpResponse.json({ risk: mockRiskConfig(), pipeline: mockPipelineConfig() })
@@ -481,6 +735,20 @@ export const handlers = [
 
   // BFF Transfers
   listTransfersHandler,
+
+  // Alerts
+  alertRulesHandler,
+  alertRuleByIdHandler,
+  createAlertRuleHandler,
+  updateAlertRuleHandler,
+  deleteAlertRuleHandler,
+  alertHistoryHandler,
+  alertStatsHandler,
+  acknowledgeAlertHandler,
+  resolveAlertHandler,
+  subscriptionsHandler,
+  createSubscriptionHandler,
+  deleteSubscriptionHandler,
 
   // Admin
   adminIngestionHandler,

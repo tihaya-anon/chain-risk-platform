@@ -17,7 +17,6 @@ export function RiskPage() {
   const [address, setAddress] = useState("")
 
   const scoreMutation = useRiskControllerScoreAddress()
-
   const rulesQuery = useRiskControllerListRules()
 
   const handleScore = (e: React.FormEvent) => {
@@ -29,14 +28,16 @@ export function RiskPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200">
+      <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <ShieldCheck className="w-6 h-6 text-orange-600" />
               Risk Scoring
             </h1>
-            <p className="text-gray-600 mt-1">Calculate risk scores for addresses</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Calculate risk scores for addresses
+            </p>
           </div>
 
           <Card>
@@ -63,7 +64,9 @@ export function RiskPage() {
             <Card title="Risk Score Result">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <p className="font-mono text-sm">{scoreMutation.data.address}</p>
+                  <p className="font-mono text-sm text-gray-900 dark:text-white">
+                    {scoreMutation.data.address}
+                  </p>
                   <RiskBadge
                     level={scoreMutation.data.riskLevel}
                     score={scoreMutation.data.riskScore}
@@ -73,20 +76,24 @@ export function RiskPage() {
 
                 {scoreMutation.data.factors && scoreMutation.data.factors.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-gray-700 mb-2">Risk Factors</h4>
+                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Risk Factors
+                    </h4>
                     <div className="space-y-2">
                       {scoreMutation.data.factors
                         .filter((f) => f.triggered)
                         .map((factor, i) => (
                           <div
                             key={i}
-                            className="flex items-center justify-between p-2 bg-red-50 rounded"
+                            className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900/30 rounded"
                           >
                             <div className="flex items-center gap-2">
                               <AlertTriangle className="w-4 h-4 text-red-500" />
-                              <span className="text-sm">{factor.name}</span>
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {factor.name}
+                              </span>
                             </div>
-                            <span className="text-sm font-medium">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                               {factor.score?.toFixed(2)}
                             </span>
                           </div>
@@ -97,7 +104,9 @@ export function RiskPage() {
 
                 {scoreMutation.data.tags && scoreMutation.data.tags.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-gray-700 mb-2">Tags</h4>
+                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Tags
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {scoreMutation.data.tags.map((tag, i) => (
                         <ClickableTag key={i} tag={tag} variant="risk" size="md" />
@@ -117,14 +126,22 @@ export function RiskPage() {
                 {rulesQuery.data.map((rule) => (
                   <div
                     key={rule.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{rule.name}</p>
-                      <p className="text-sm text-gray-500">{rule.description}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {rule.name}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {rule.description}
+                      </p>
                     </div>
                     <span
-                      className={`px-2 py-1 text-xs rounded ${rule.enabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                      className={`px-2 py-1 text-xs rounded ${
+                        rule.enabled
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300"
+                          : "bg-gray-100 text-gray-500 dark:bg-gray-600 dark:text-gray-400"
+                      }`}
                     >
                       {rule.enabled ? "Enabled" : "Disabled"}
                     </span>
@@ -132,7 +149,7 @@ export function RiskPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">No rules found</p>
+              <p className="text-gray-500 dark:text-gray-400">No rules found</p>
             )}
           </Card>
         </div>
