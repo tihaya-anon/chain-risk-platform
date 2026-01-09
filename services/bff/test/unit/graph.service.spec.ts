@@ -18,6 +18,7 @@ describe("GraphService", () => {
   let service: GraphService;
   let mock: MockAdapter;
   const testAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
+  const toAddress = "0x8ba1f109551bD432803012645Ac136ddd64DBA72";
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -104,10 +105,10 @@ describe("GraphService", () => {
   });
 
   describe("findPath", () => {
-    const toAddress = "0x8ba1f109551bD432803012645Ac136ddd64DBA72";
-
     it("should find path between addresses", async () => {
-      mock.onGet("/api/v1/graph/path").reply(200, fixtures.mockPathResponse);
+      mock.onGet(`/api/v1/graph/path/${testAddress}/${toAddress}`).reply(200, 
+        fixtures.mockPathResponse,
+      );
 
       const result = await service.findPath(testAddress, toAddress);
 
@@ -116,7 +117,7 @@ describe("GraphService", () => {
     });
 
     it("should pass maxDepth parameter", async () => {
-      mock.onGet("/api/v1/graph/path").reply((config) => {
+      mock.onGet(`/api/v1/graph/path/${testAddress}/${toAddress}`).reply((config) => {
         expect(config.params.maxDepth).toBe(3);
         return [200, fixtures.mockPathResponse];
       });
@@ -137,7 +138,7 @@ describe("GraphService", () => {
 
   describe("getHighRiskAddresses", () => {
     it("should return high risk addresses", async () => {
-      mock.onGet("/api/v1/graph/high-risk").reply(200, [
+      mock.onGet("/api/v1/graph/addresses/high-risk").reply(200, [
         fixtures.mockGraphAddressInfo,
       ]);
 
@@ -147,7 +148,7 @@ describe("GraphService", () => {
     });
 
     it("should pass threshold parameter", async () => {
-      mock.onGet("/api/v1/graph/high-risk").reply((config) => {
+      mock.onGet("/api/v1/graph/addresses/high-risk").reply((config) => {
         expect(config.params.threshold).toBe(0.9);
         return [200, []];
       });

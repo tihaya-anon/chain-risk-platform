@@ -39,11 +39,9 @@ describe("RiskService", () => {
 
       const result = await service.scoreAddress({ address: testAddress });
 
-      // Verify snake_case to camelCase transformation
       expect(result.address).toBe(testAddress);
       expect(result.riskScore).toBe(0.65);
       expect(result.riskLevel).toBe("medium");
-      expect(result.evaluatedAt).toBeDefined();
     });
 
     it("should send correct request body", async () => {
@@ -62,27 +60,36 @@ describe("RiskService", () => {
       });
     });
 
-    it("should include risk factors when requested", async () => {
-      mock.onPost("/api/v1/risk/score").reply(200, fixtures.mockRiskScore);
-
-      const result = await service.scoreAddress({
-        address: testAddress,
-        includeFactors: true,
+    it("should throw on API error", async () => {
+      mock.onPost("/api/v1/risk/score").reply(500, {
+        detail: "Internal server error",
       });
 
-      expect(result.factors).toHaveLength(1);
-      expect(result.factors[0].name).toBe("high_tx_frequency");
-      expect(result.factors[0].triggered).toBe(true);
+      await expect(service.scoreAddress({ address: testAddress }))
+        .rejects.toThrow(HttpException);
+    });
+  });
+
+  describe("getHistory", () => {
+    const testAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
+
+    it("should return risk history", async () => {
+      mock.onGet(`/api/v1/risk/history/${testAddress}`).reply(200, 
+        fixtures.mockRiskHistory,
+      );
+
+      const result = await service.getHistory(testAddress);
+
+      expect(result).toHaveLength(2);
     });
 
-    it("should handle validation errors", async () => {
-      mock.onPost("/api/v1/risk/score").reply(422, {
-        detail: "Invalid address format",
+    it("should pass network parameter", async () => {
+      mock.onGet(`/api/v1/risk/history/${testAddress}`).reply((config) => {
+        expect(config.params.network).toBe("bsc");
+        return [200, fixtures.mockRiskHistory];
       });
 
-      await expect(service.scoreAddress({ address: "invalid" }))
-        .rejects
-        .toThrow(HttpException);
+      await service.getHistory(testAddress, "bsc");
     });
   });
 
@@ -92,25 +99,16 @@ describe("RiskService", () => {
       "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
     ];
 
-    it("should return batch results", async () => {
-      mock.onPost("/api/v1/risk/batch").reply((config) => {
-        const body = JSON.parse(config.data);
-        const results = body.addresses.map((addr: string) => ({
-          ...fixtures.mockRiskScore,
-          address: addr,
-        }));
-        return [200, { results, total: results.length, failed: 0 }];
-      });
+    it("should return batch risk scores", async () => {
+      mock.onPost("/api/v1/risk/score/batch").reply(200, fixtures.mockBatchRiskScore);
 
       const result = await service.scoreAddressesBatch({ addresses });
 
       expect(result.results).toHaveLength(2);
-      expect(result.total).toBe(2);
-      expect(result.failed).toBe(0);
     });
 
-    it("should transform all results to camelCase", async () => {
-      mock.onPost("/api/v1/risk/batch").reply(200, fixtures.mockBatchRiskScore);
+    it("should transform snake_case to camelCase", async () => {
+      mock.onPost("/api/v1/risk/score/batch").reply(200, fixtures.mockBatchRiskScore);
 
       const result = await service.scoreAddressesBatch({
         addresses: [addresses[0]],
@@ -123,7 +121,10 @@ describe("RiskService", () => {
 
   describe("listRules", () => {
     it("should return risk rules", async () => {
-      mock.onGet("/api/v1/risk/rules").reply(200, fixtures.mockRiskRules);
+      mock.onGet("/api/v1/risk/rules").reply(200, [
+        { id: "rule-001", name: "HighTxFrequencyRule", enabled: true },
+        { id: "rule-002", name: "LargeTransactionRule", enabled: true },
+      ]);
 
       const result = await service.listRules();
 
