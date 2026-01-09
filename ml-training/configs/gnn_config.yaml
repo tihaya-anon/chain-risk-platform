@@ -1,0 +1,119 @@
+# GNN Training Configuration
+
+# Data sources
+data:
+  source: neo4j  # neo4j, parquet
+
+  neo4j:
+    uri: bolt://localhost:17687
+    user: neo4j
+    password: chainrisk123
+
+  trino:
+    host: localhost
+    port: 18081
+    user: admin
+    catalog: hudi
+    schema: chainrisk
+
+  parquet:
+    graph_dir: data/graph/
+
+# Graph building options
+graph:
+  network: ethereum
+  min_tx_count: 2
+  limit: null  # null for all nodes, integer for testing
+  feature_version: v1
+
+# Feature configuration
+features:
+  version: v1
+  normalize: true
+  normalize_method: standard  # standard, minmax
+  columns:
+    - tx_count
+    - sent_count
+    - received_count
+    - unique_counterparties
+    - avg_tx_value
+    - max_tx_value
+    - tx_value_stddev
+    - address_age_days
+    - sent_ratio
+    - round_amount_ratio
+    - small_tx_ratio
+    - large_tx_ratio
+    - in_degree
+    - out_degree
+    - in_out_ratio
+    - unique_in_neighbors
+
+# Model configuration
+model:
+  type: sage  # gcn, gat, sage
+  hidden_dim: 128
+  num_layers: 2
+  dropout: 0.3
+  
+  # GCN specific
+  gcn:
+    improved: true
+    cached: false
+
+  # GAT specific
+  gat:
+    heads: 4
+    concat: true
+    negative_slope: 0.2
+
+  # GraphSAGE specific
+  sage:
+    aggregator: mean  # mean, max, lstm
+
+# Training configuration
+training:
+  epochs: 200
+  lr: 0.001
+  weight_decay: 5e-4
+  patience: 20  # early stopping patience
+  min_delta: 0.001  # minimum improvement for early stopping
+
+  # Data split
+  train_ratio: 0.6
+  val_ratio: 0.2
+  test_ratio: 0.2
+  stratified: true
+  random_state: 42
+
+  # Class imbalance handling
+  use_class_weights: true
+
+  # Mini-batch (for large graphs)
+  batch_size: 512
+  num_neighbors: [10, 5]  # neighbors per layer for sampling
+
+# Evaluation
+evaluation:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+    - auc
+  threshold: 0.5
+
+# Model registry (MinIO)
+registry:
+  type: minio
+  endpoint: localhost:19000
+  access_key: minioadmin
+  secret_key: minioadmin123
+  bucket: ml-models
+  secure: false
+
+# Output
+output:
+  models_dir: models/
+  logs_dir: logs/
+  checkpoints_dir: models/checkpoints/
