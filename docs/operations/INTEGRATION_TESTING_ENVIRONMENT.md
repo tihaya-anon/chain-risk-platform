@@ -50,76 +50,77 @@ This document describes the integration testing strategy for Chain Risk Platform
 
 ## Remote Infrastructure Connection
 
-### Environment Setup
+### Configuration
 
-Create environment file for remote infrastructure:
+**Method 1: Using `.env.local`**
 
 ```bash
-# scripts/env-remote.sh
-export REMOTE_HOST="${1:-192.168.1.100}"  # Your Windows WSL IP
+# .env.local
+DOCKER_HOST_IP=192.168.1.100
+```
 
-# Kafka
-export KAFKA_BROKERS="${REMOTE_HOST}:19092"
+**Method 2: Command line argument**
 
-# Databases
-export POSTGRES_HOST="${REMOTE_HOST}"
-export POSTGRES_PORT="15432"
-export POSTGRES_URL="jdbc:postgresql://${REMOTE_HOST}:15432/chainrisk"
-export NEO4J_URI="bolt://${REMOTE_HOST}:17687"
-export REDIS_HOST="${REMOTE_HOST}"
-export REDIS_PORT="16379"
-
-# Data Lake
-export MINIO_ENDPOINT="http://${REMOTE_HOST}:19000"
-export HIVE_METASTORE_URI="thrift://${REMOTE_HOST}:19083"
-export TRINO_URL="http://${REMOTE_HOST}:18081"
-
-# Service Discovery
-export NACOS_SERVER="${REMOTE_HOST}:18848"
-
-# Monitoring
-export PROMETHEUS_URL="http://${REMOTE_HOST}:19090"
-export GRAFANA_URL="http://${REMOTE_HOST}:13001"
-export JAEGER_URL="http://${REMOTE_HOST}:26686"
+```bash
+source scripts/load-env.sh 192.168.1.100
 ```
 
 ### Usage
 
 ```bash
-# Source environment
-source scripts/env-remote.sh 192.168.1.100
+# Load environment (reads from .env.local or argument)
+source scripts/load-env.sh
+
+# Or specify IP directly
+source scripts/load-env.sh 192.168.1.100
 
 # Verify connectivity
-make infra-check-remote
+make infra-check
 ```
+
+### Environment Variables
+
+`scripts/load-env.sh` exports all necessary variables:
+
+| Category | Variables |
+|----------|-----------|
+| **Kafka** | `KAFKA_BROKERS` |
+| **PostgreSQL** | `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD` |
+| **Neo4j** | `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` |
+| **Redis** | `REDIS_HOST`, `REDIS_PORT` |
+| **MinIO** | `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` |
+| **Hive** | `HIVE_METASTORE_URI` |
+| **Trino** | `TRINO_HOST`, `TRINO_PORT` |
+| **Nacos** | `NACOS_SERVER` |
+| **Jaeger** | `JAEGER_AGENT_HOST`, `JAEGER_ENDPOINT` |
 
 ## Port Reference
 
 | Service | Port | URL |
 |---------|------|-----|
 | **Message Queue** |||
-| Kafka | 19092 | `${REMOTE_HOST}:19092` |
-| Zookeeper | 12181 | `${REMOTE_HOST}:12181` |
-| Kafka UI | 18080 | `http://${REMOTE_HOST}:18080` |
+| Kafka | 19092 | `${DOCKER_HOST_IP}:19092` |
+| Zookeeper | 12181 | `${DOCKER_HOST_IP}:12181` |
+| Kafka UI | 18080 | `http://${DOCKER_HOST_IP}:18080` |
 | **Databases** |||
-| PostgreSQL | 15432 | `${REMOTE_HOST}:15432` |
-| Neo4j HTTP | 17474 | `http://${REMOTE_HOST}:17474` |
-| Neo4j Bolt | 17687 | `bolt://${REMOTE_HOST}:17687` |
-| Redis | 16379 | `${REMOTE_HOST}:16379` |
+| PostgreSQL | 15432 | `${DOCKER_HOST_IP}:15432` |
+| Neo4j HTTP | 17474 | `http://${DOCKER_HOST_IP}:17474` |
+| Neo4j Bolt | 17687 | `bolt://${DOCKER_HOST_IP}:17687` |
+| Redis | 16379 | `${DOCKER_HOST_IP}:16379` |
 | **Data Lake** |||
-| MinIO API | 19000 | `http://${REMOTE_HOST}:19000` |
-| MinIO Console | 19001 | `http://${REMOTE_HOST}:19001` |
-| Hive Metastore | 19083 | `thrift://${REMOTE_HOST}:19083` |
-| Trino | 18081 | `http://${REMOTE_HOST}:18081` |
+| MinIO API | 19000 | `http://${DOCKER_HOST_IP}:19000` |
+| MinIO Console | 19001 | `http://${DOCKER_HOST_IP}:19001` |
+| Hive Metastore | 19083 | `thrift://${DOCKER_HOST_IP}:19083` |
+| Trino | 18081 | `http://${DOCKER_HOST_IP}:18081` |
 | **Service Discovery** |||
-| Nacos | 18848 | `http://${REMOTE_HOST}:18848/nacos` |
+| Nacos | 18848 | `http://${DOCKER_HOST_IP}:18848/nacos` |
 | **Monitoring** |||
-| Prometheus | 19090 | `http://${REMOTE_HOST}:19090` |
-| Grafana | 13001 | `http://${REMOTE_HOST}:13001` |
-| Jaeger | 26686 | `http://${REMOTE_HOST}:26686` |
+| Prometheus | 19090 | `http://${DOCKER_HOST_IP}:19090` |
+| Grafana | 13001 | `http://${DOCKER_HOST_IP}:13001` |
+| Jaeger | 26686 | `http://${DOCKER_HOST_IP}:26686` |
 | **UI Tools** |||
-| pgAdmin | 15050 | `http://${REMOTE_HOST}:15050` |
-| RedisInsight | 15540 | `http://${REMOTE_HOST}:15540` |
+| pgAdmin | 15050 | `http://${DOCKER_HOST_IP}:15050` |
+| RedisInsight | 15540 | `http://${DOCKER_HOST_IP}:15540` |
 
 ### Credentials
 
@@ -259,8 +260,6 @@ CALL apoc.periodic.iterate(
 ### Cleanup Cron Jobs
 
 ```bash
-# infra/scripts/cleanup-cron.sh
-
 # PostgreSQL partition maintenance (daily at 3 AM)
 0 3 * * * psql -h $POSTGRES_HOST -U chainrisk -c "SELECT partman.run_maintenance();"
 
@@ -268,133 +267,86 @@ CALL apoc.periodic.iterate(
 0 4 * * * cypher-shell -a $NEO4J_URI -u neo4j -p chainrisk123 < /scripts/neo4j-cleanup.cypher
 
 # Hudi compaction and clean (daily at 2 AM)
-0 2 * * * spark-submit --class com.chainrisk.batch.HudiMaintenanceJob batch-processor.jar
+0 2 * * * make batch-archive
 ```
 
 ## Monitoring Integration
 
 ### Prometheus Targets
 
-All services export metrics to Prometheus:
-
-```yaml
-# infra/prometheus/prometheus.yml
-scrape_configs:
-  - job_name: 'kafka'
-    static_configs:
-      - targets: ['kafka-exporter:9308']
-      
-  - job_name: 'postgres'
-    static_configs:
-      - targets: ['postgres-exporter:9187']
-      
-  - job_name: 'query-service'
-    static_configs:
-      - targets: ['host.docker.internal:8081']
-      
-  - job_name: 'risk-service'
-    static_configs:
-      - targets: ['host.docker.internal:8082']
-      
-  - job_name: 'alert-service'
-    static_configs:
-      - targets: ['host.docker.internal:8083']
-```
+All services export metrics to Prometheus. Configuration in `infra/prometheus/prometheus.yml`.
 
 ### Grafana Dashboards
 
-Pre-configured dashboards:
+Pre-configured dashboards in `infra/grafana/provisioning/dashboards/`:
 
 | Dashboard | Description |
 |-----------|-------------|
 | Data Pipeline Overview | Kafka lag, throughput, error rates |
 | Service Health | Service status, latency, error rates |
 | Database Metrics | PostgreSQL, Neo4j, Redis stats |
-| Alert System | Alert triggers, notification status |
 
 ### Jaeger Tracing
 
-Services instrumented with OpenTelemetry:
-
-```go
-// Go services
-import "go.opentelemetry.io/otel"
-
-tracer := otel.Tracer("query-service")
-ctx, span := tracer.Start(ctx, "GetAddress")
-defer span.End()
-```
-
-```python
-# Python services
-from opentelemetry import trace
-
-tracer = trace.get_tracer("risk-service")
-with tracer.start_as_current_span("calculate_risk"):
-    # ...
-```
+Access Jaeger UI at `http://${DOCKER_HOST_IP}:26686` to trace requests across services.
 
 ## Testing Workflows
 
 ### 1. Service Development Testing
 
 ```bash
-# 1. Connect to remote infra
-source scripts/env-remote.sh 192.168.1.100
+# 1. Configure remote infrastructure
+echo "DOCKER_HOST_IP=192.168.1.100" > .env.local
 
-# 2. Start data generator (low volume)
-make run-generator MODE=scenario SPEED=0.1
+# 2. Verify connectivity
+make infra-check
 
 # 3. Run your service locally
-cd services/query-service && go run ./cmd/main.go
+make query-run   # or risk-run, alert-run, etc.
 
-# 4. Verify in Grafana
-open http://${REMOTE_HOST}:13001
+# 4. Check Grafana
+open http://192.168.1.100:13001
 ```
 
 ### 2. Integration Testing
 
 ```bash
+# Run full integration test
+make test-integration
+
+# Or run specific phases
+make test-integration-phase1  # Ingestion → Kafka
+make test-integration-phase2  # Flink → PostgreSQL
+make test-integration-phase3  # Batch → Hudi + Neo4j
+```
+
+### 3. Full Pipeline Testing
+
+```bash
 # 1. Start all services
 make run-svc
 
-# 2. Run data generator
-make run-generator MODE=hybrid SPEED=1
+# 2. Start Flink processor
+make flink-run
 
-# 3. Monitor pipeline
-open http://${REMOTE_HOST}:13001/d/pipeline-overview
+# 3. Start data ingestion
+make ingestion-run
 
-# 4. Check traces
-open http://${REMOTE_HOST}:26686
+# 4. Monitor pipeline in Grafana
+open http://${DOCKER_HOST_IP}:13001/d/pipeline-overview
+
+# 5. Check traces in Jaeger
+open http://${DOCKER_HOST_IP}:26686
 ```
 
-### 3. E2E Testing
+### 4. Cleanup Testing Environment
 
 ```bash
-# 1. Run specific scenario
-make run-generator SCENARIOS=high_risk_cluster SPEED=1
+# Clean all data (Kafka, PostgreSQL, Neo4j, Hudi)
+make cleanup
 
-# 2. Verify alert triggers
-curl http://localhost:8083/api/v1/alerts/history
-
-# 3. Check graph updates
-curl http://localhost:8084/api/v1/clusters
-
-# 4. Validate risk scores
-curl http://localhost:8082/api/v1/risk/address/0x...
-```
-
-### 4. Stress Testing
-
-```bash
-# High-throughput test
-make run-generator MODE=stress SPEED=10
-
-# Monitor system resources
-open http://${REMOTE_HOST}:13001/d/system-resources
-
-# Check Kafka lag
-open http://${REMOTE_HOST}:18080
+# Force clean without confirmation
+make cleanup-all
 ```
 
 ## Troubleshooting
@@ -403,20 +355,20 @@ open http://${REMOTE_HOST}:18080
 
 ```bash
 # Check network connectivity
-ping ${REMOTE_HOST}
+ping ${DOCKER_HOST_IP}
 
 # Test specific port
-nc -zv ${REMOTE_HOST} 19092
+nc -zv ${DOCKER_HOST_IP} 19092
 
-# Check Docker network on WSL
-wsl -d Ubuntu docker network ls
+# Verify environment loaded
+echo $KAFKA_BROKERS
 ```
 
 ### Kafka connection issues
 
 ```bash
 # Verify Kafka is accessible
-kafkacat -b ${REMOTE_HOST}:19092 -L
+kafkacat -b ${DOCKER_HOST_IP}:19092 -L
 
 # Check advertised listeners in docker-compose
 # KAFKA_ADVERTISED_LISTENERS should include external IP
@@ -425,14 +377,14 @@ kafkacat -b ${REMOTE_HOST}:19092 -L
 ### Data not flowing through pipeline
 
 ```bash
-# Check Kafka topics
-kafka-topics.sh --list --bootstrap-server ${REMOTE_HOST}:19092
+# Check Kafka UI for topics and messages
+open http://${DOCKER_HOST_IP}:18080
 
-# Check consumer groups
-kafka-consumer-groups.sh --list --bootstrap-server ${REMOTE_HOST}:19092
+# View service logs
+make logs-all
 
-# View Kafka UI for message inspection
-open http://${REMOTE_HOST}:18080
+# Check Flink job status
+make flink-logs
 ```
 
 ## References
