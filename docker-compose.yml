@@ -270,6 +270,12 @@ services:
       - ./infra/trino/etc/jvm.config:/etc/trino/jvm.config:ro
       - ./infra/trino/etc/log.properties:/etc/trino/log.properties:ro
       - ./infra/trino/catalog:/etc/trino/catalog:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
 volumes:
