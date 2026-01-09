@@ -12,9 +12,9 @@ import (
 
 // ReceivedAlert stores received webhook payloads
 type ReceivedAlert struct {
-	Timestamp time.Time              `json:"timestamp"`
-	Headers   map[string]string      `json:"headers"`
-	Body      map[string]interface{} `json:"body"`
+	Timestamp time.Time         `json:"timestamp"`
+	Headers   map[string]string `json:"headers"`
+	Body      map[string]any    `json:"body"`
 }
 
 var (
@@ -42,7 +42,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var body map[string]interface{}
+	var body map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -76,7 +76,7 @@ func handleReceived(w http.ResponseWriter, r *http.Request) {
 	defer mu.RUnlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]any{
 		"count":  len(alerts),
 		"alerts": alerts,
 	})

@@ -5,22 +5,22 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/0ksks/chain-risk-platform/data-ingestion/internal/nacos"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 // AdminHandler handles admin API requests
 type AdminHandler struct {
-	nacosClient  *nacos.Client
-	logger       *zap.Logger
-	
+	nacosClient *nacos.Client
+	logger      *zap.Logger
+
 	// Manual control flags
 	manualPaused atomic.Bool
-	
+
 	// Service status
-	startTime    time.Time
-	
+	startTime time.Time
+
 	// Callbacks for service control
 	getLastBlock func() uint64
 }
@@ -52,19 +52,19 @@ func (h *AdminHandler) RegisterRoutes(r *gin.Engine) {
 
 // StatusResponse represents the service status
 type StatusResponse struct {
-	Service         string                 `json:"service"`
-	Status          string                 `json:"status"`
-	EffectiveStatus string                 `json:"effectiveStatus"`
-	NacosConfig     map[string]interface{} `json:"nacosConfig"`
-	ManualControl   map[string]interface{} `json:"manualControl"`
-	Runtime         map[string]interface{} `json:"runtime"`
-	Timestamp       int64                  `json:"timestamp"`
+	Service         string         `json:"service"`
+	Status          string         `json:"status"`
+	EffectiveStatus string         `json:"effectiveStatus"`
+	NacosConfig     map[string]any `json:"nacosConfig"`
+	ManualControl   map[string]any `json:"manualControl"`
+	Runtime         map[string]any `json:"runtime"`
+	Timestamp       int64          `json:"timestamp"`
 }
 
 // GetStatus returns the current service status
 func (h *AdminHandler) GetStatus(c *gin.Context) {
 	config := h.nacosClient.GetConfig()
-	
+
 	// Determine effective status
 	effectiveStatus := "running"
 	if !config.Pipeline.Enabled || !config.Pipeline.Ingestion.Enabled {
@@ -72,33 +72,33 @@ func (h *AdminHandler) GetStatus(c *gin.Context) {
 	} else if h.manualPaused.Load() {
 		effectiveStatus = "paused_manually"
 	}
-	
+
 	var lastBlock uint64
 	if h.getLastBlock != nil {
 		lastBlock = h.getLastBlock()
 	}
-	
+
 	response := StatusResponse{
 		Service:         "data-ingestion",
 		Status:          "healthy",
 		EffectiveStatus: effectiveStatus,
-		NacosConfig: map[string]interface{}{
+		NacosConfig: map[string]any{
 			"pipelineEnabled":  config.Pipeline.Enabled,
 			"ingestionEnabled": config.Pipeline.Ingestion.Enabled,
 			"batchSize":        config.Pipeline.Ingestion.Polling.BatchSize,
 			"intervalMs":       config.Pipeline.Ingestion.Polling.IntervalMs,
 			"network":          config.Pipeline.Ingestion.Network,
 		},
-		ManualControl: map[string]interface{}{
+		ManualControl: map[string]any{
 			"paused": h.manualPaused.Load(),
 		},
-		Runtime: map[string]interface{}{
-			"uptime":         time.Since(h.startTime).String(),
-			"lastBlock":      lastBlock,
+		Runtime: map[string]any{
+			"uptime":    time.Since(h.startTime).String(),
+			"lastBlock": lastBlock,
 		},
 		Timestamp: time.Now().UnixMilli(),
 	}
-	
+
 	c.JSON(http.StatusOK, response)
 }
 
@@ -112,7 +112,7 @@ func (h *AdminHandler) GetConfig(c *gin.Context) {
 func (h *AdminHandler) Pause(c *gin.Context) {
 	h.manualPaused.Store(true)
 	h.logger.Info("Ingestion paused via Admin API")
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"action":    "pause",
 		"status":    "paused",
@@ -125,7 +125,7 @@ func (h *AdminHandler) Pause(c *gin.Context) {
 func (h *AdminHandler) Resume(c *gin.Context) {
 	h.manualPaused.Store(false)
 	h.logger.Info("Ingestion resumed via Admin API")
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"action":    "resume",
 		"status":    "running",

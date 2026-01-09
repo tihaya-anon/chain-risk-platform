@@ -35,15 +35,15 @@ func (n *WebhookNotifier) Type() string {
 
 // WebhookPayload represents the payload sent to webhooks
 type WebhookPayload struct {
-	AlertID    *int64                 `json:"alert_id,omitempty"`
-	Type       string                 `json:"type"`
-	Severity   string                 `json:"severity"`
-	EntityType string                 `json:"entity_type"`
-	EntityID   string                 `json:"entity_id"`
-	Title      string                 `json:"title"`
-	Message    string                 `json:"message"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
-	Timestamp  time.Time              `json:"timestamp"`
+	AlertID    *int64         `json:"alert_id,omitempty"`
+	Type       string         `json:"type"`
+	Severity   string         `json:"severity"`
+	EntityType string         `json:"entity_type"`
+	EntityID   string         `json:"entity_id"`
+	Title      string         `json:"title"`
+	Message    string         `json:"message"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
+	Timestamp  time.Time      `json:"timestamp"`
 }
 
 // Send sends an alert via webhook
@@ -81,7 +81,7 @@ func (n *WebhookNotifier) Send(ctx context.Context, alert *model.Alert, config m
 	req.Header.Set("Content-Type", "application/json")
 
 	// Add custom headers
-	if headers, ok := config["headers"].(map[string]interface{}); ok {
+	if headers, ok := config["headers"].(map[string]any); ok {
 		for k, v := range headers {
 			if s, ok := v.(string); ok {
 				req.Header.Set(k, s)

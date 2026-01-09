@@ -162,7 +162,7 @@ func main() {
 
 		// Parse for manifest
 		var txResp struct {
-			Result []interface{} `json:"result"`
+			Result []any `json:"result"`
 		}
 		json.Unmarshal(raw, &txResp)
 
@@ -228,9 +228,9 @@ func fetchAndSaveBlock(ctx context.Context, f fetcher.Fetcher, store storage.Sto
 	// Parse block for manifest
 	var blockData struct {
 		Result struct {
-			Hash         string        `json:"hash"`
-			Timestamp    string        `json:"timestamp"`
-			Transactions []interface{} `json:"transactions"`
+			Hash         string `json:"hash"`
+			Timestamp    string `json:"timestamp"`
+			Transactions []any  `json:"transactions"`
 		} `json:"result"`
 	}
 	json.Unmarshal(blockResp, &blockData)
@@ -251,7 +251,7 @@ func fetchAndSaveBlock(ctx context.Context, f fetcher.Fetcher, store storage.Sto
 	// Fetch internal transactions if requested
 	if includeInternalTxs {
 		for _, tx := range blockData.Result.Transactions {
-			txMap, ok := tx.(map[string]interface{})
+			txMap, ok := tx.(map[string]any)
 			if !ok {
 				continue
 			}

@@ -247,7 +247,7 @@ func (s *AlertService) SendTestAlert(ctx context.Context, channelType string, co
 		EntityID:   fmt.Sprintf("test-%d", time.Now().Unix()),
 		Title:      "Test Alert",
 		Message:    message,
-		Metadata:   map[string]interface{}{"test": true},
+		Metadata:   map[string]any{"test": true},
 	}
 
 	return s.dispatcher.SendDirect(ctx, alert, channelType, config)

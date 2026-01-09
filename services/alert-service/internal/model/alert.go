@@ -8,7 +8,7 @@ import (
 )
 
 // JSONB is a custom type for PostgreSQL JSONB columns
-type JSONB map[string]interface{}
+type JSONB map[string]any
 
 // Value implements the driver.Valuer interface
 func (j JSONB) Value() (driver.Value, error) {
@@ -19,7 +19,7 @@ func (j JSONB) Value() (driver.Value, error) {
 }
 
 // Scan implements the sql.Scanner interface
-func (j *JSONB) Scan(value interface{}) error {
+func (j *JSONB) Scan(value any) error {
 	if value == nil {
 		*j = nil
 		return nil
@@ -48,20 +48,20 @@ type AlertRule struct {
 
 // AlertHistory represents a triggered alert record
 type AlertHistory struct {
-	ID              int64      `json:"id" db:"id"`
-	RuleID          *int64     `json:"rule_id" db:"rule_id"`
-	AlertType       string     `json:"alert_type" db:"alert_type"`
-	Severity        string     `json:"severity" db:"severity"`
-	EntityType      string     `json:"entity_type" db:"entity_type"`
-	EntityID        string     `json:"entity_id" db:"entity_id"`
-	Title           string     `json:"title" db:"title"`
-	Message         string     `json:"message" db:"message"`
-	Metadata        JSONB      `json:"metadata" db:"metadata"`
-	Status          string     `json:"status" db:"status"`
-	NotifiedAt      *time.Time `json:"notified_at" db:"notified_at"`
-	AcknowledgedAt  *time.Time `json:"acknowledged_at" db:"acknowledged_at"`
-	AcknowledgedBy  *string    `json:"acknowledged_by" db:"acknowledged_by"`
-	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+	ID             int64      `json:"id" db:"id"`
+	RuleID         *int64     `json:"rule_id" db:"rule_id"`
+	AlertType      string     `json:"alert_type" db:"alert_type"`
+	Severity       string     `json:"severity" db:"severity"`
+	EntityType     string     `json:"entity_type" db:"entity_type"`
+	EntityID       string     `json:"entity_id" db:"entity_id"`
+	Title          string     `json:"title" db:"title"`
+	Message        string     `json:"message" db:"message"`
+	Metadata       JSONB      `json:"metadata" db:"metadata"`
+	Status         string     `json:"status" db:"status"`
+	NotifiedAt     *time.Time `json:"notified_at" db:"notified_at"`
+	AcknowledgedAt *time.Time `json:"acknowledged_at" db:"acknowledged_at"`
+	AcknowledgedBy *string    `json:"acknowledged_by" db:"acknowledged_by"`
+	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
 }
 
 // AlertSubscription represents a user's subscription to an alert rule
@@ -85,7 +85,7 @@ type Alert struct {
 	EntityID   string
 	Title      string
 	Message    string
-	Metadata   map[string]interface{}
+	Metadata   map[string]any
 }
 
 // RuleType constants

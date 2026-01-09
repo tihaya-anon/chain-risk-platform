@@ -31,11 +31,11 @@ type AlertHistoryFilters struct {
 }
 
 type AlertStats struct {
-	Total            int64            `json:"total"`
-	BySeverity       map[string]int64 `json:"by_severity"`
-	ByStatus         map[string]int64 `json:"by_status"`
-	ByType           map[string]int64 `json:"by_type"`
-	AveragePerHour   float64          `json:"average_per_hour"`
+	Total          int64            `json:"total"`
+	BySeverity     map[string]int64 `json:"by_severity"`
+	ByStatus       map[string]int64 `json:"by_status"`
+	ByType         map[string]int64 `json:"by_type"`
+	AveragePerHour float64          `json:"average_per_hour"`
 }
 
 type alertHistoryRepository struct {
@@ -94,7 +94,7 @@ func (r *alertHistoryRepository) List(ctx context.Context, filters AlertHistoryF
 		WHERE 1=1
 	`
 
-	args := []interface{}{}
+	args := []any{}
 	argIndex := 1
 
 	if filters.RuleID != nil {

@@ -378,6 +378,6 @@ type zapLogAdapter struct {
 	logger *zap.Logger
 }
 
-func (l *zapLogAdapter) Printf(format string, args ...interface{}) {
+func (l *zapLogAdapter) Printf(format string, args ...any) {
 	l.logger.Sugar().Infof(format, args...)
 }

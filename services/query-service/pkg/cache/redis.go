@@ -29,7 +29,7 @@ func NewRedisCache(client *redis.Client) *RedisCache {
 }
 
 // Get retrieves a value from cache
-func (c *RedisCache) Get(ctx context.Context, key string, dest interface{}) error {
+func (c *RedisCache) Get(ctx context.Context, key string, dest any) error {
 	val, err := c.client.Get(ctx, key).Result()
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func (c *RedisCache) Get(ctx context.Context, key string, dest interface{}) erro
 }
 
 // Set stores a value in cache with TTL
-func (c *RedisCache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+func (c *RedisCache) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("marshal cache value: %w", err)
@@ -47,7 +47,7 @@ func (c *RedisCache) Set(ctx context.Context, key string, value interface{}, ttl
 }
 
 // SetNX stores a value only if the key does not exist
-func (c *RedisCache) SetNX(ctx context.Context, key string, value interface{}, ttl time.Duration) (bool, error) {
+func (c *RedisCache) SetNX(ctx context.Context, key string, value any, ttl time.Duration) (bool, error) {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return false, fmt.Errorf("marshal cache value: %w", err)

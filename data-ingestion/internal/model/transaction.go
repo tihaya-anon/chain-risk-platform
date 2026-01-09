@@ -87,15 +87,15 @@ type TokenTransfer struct {
 
 // ChainEvent is the unified event structure sent to Kafka
 type ChainEvent struct {
-	EventType   string      `json:"eventType"` // "transaction", "transfer", "internal_tx"
-	Network     string      `json:"network"`   // "ethereum", "bsc"
-	BlockNumber uint64      `json:"blockNumber"`
-	Timestamp   time.Time   `json:"timestamp"`
-	Data        interface{} `json:"data"`
+	EventType   string    `json:"eventType"` // "transaction", "transfer", "internal_tx"
+	Network     string    `json:"network"`   // "ethereum", "bsc"
+	BlockNumber uint64    `json:"blockNumber"`
+	Timestamp   time.Time `json:"timestamp"`
+	Data        any       `json:"data"`
 }
 
 // NewChainEvent creates a new ChainEvent
-func NewChainEvent(eventType, network string, blockNumber uint64, timestamp time.Time, data interface{}) *ChainEvent {
+func NewChainEvent(eventType, network string, blockNumber uint64, timestamp time.Time, data any) *ChainEvent {
 	return &ChainEvent{
 		EventType:   eventType,
 		Network:     network,

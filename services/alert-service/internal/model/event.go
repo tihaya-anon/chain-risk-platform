@@ -29,7 +29,7 @@ func (e *RiskScoreEvent) ToEvent() Event {
 	return Event{
 		Type:      EventTypeRiskScore,
 		Timestamp: e.Timestamp,
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"address": e.Address,
 			"network": e.Network,
 			"score":   e.Score,
@@ -43,7 +43,7 @@ func (e *TransferEvent) ToEvent() Event {
 	return Event{
 		Type:      EventTypeTransfer,
 		Timestamp: time.Unix(e.Timestamp, 0),
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"tx_hash":      e.TxHash,
 			"from_address": e.FromAddress,
 			"to_address":   e.ToAddress,
@@ -60,7 +60,7 @@ func (e *TransferEvent) ToEvent() Event {
 type Event struct {
 	Type      string
 	Timestamp time.Time
-	Data      map[string]interface{}
+	Data      map[string]any
 }
 
 // Event type constants
@@ -110,7 +110,7 @@ func (e *Event) GetStringSlice(key string) []string {
 	if v, ok := e.Data[key].([]string); ok {
 		return v
 	}
-	if v, ok := e.Data[key].([]interface{}); ok {
+	if v, ok := e.Data[key].([]any); ok {
 		result := make([]string, 0, len(v))
 		for _, item := range v {
 			if s, ok := item.(string); ok {

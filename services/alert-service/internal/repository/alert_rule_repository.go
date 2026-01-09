@@ -66,7 +66,7 @@ func (r *alertRuleRepository) List(ctx context.Context, enabled *bool) ([]*model
 		FROM alert.alert_rules
 	`
 
-	args := []interface{}{}
+	args := []any{}
 	if enabled != nil {
 		query += " WHERE enabled = $1"
 		args = append(args, *enabled)

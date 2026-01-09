@@ -64,7 +64,7 @@ func (e *TagMatchEvaluator) parseConditions(cond model.JSONB) (*model.TagMatchCo
 	}
 
 	// Parse tags array
-	if v, ok := cond["tags"].([]interface{}); ok {
+	if v, ok := cond["tags"].([]any); ok {
 		for _, t := range v {
 			if s, ok := t.(string); ok {
 				conditions.Tags = append(conditions.Tags, s)
@@ -163,7 +163,7 @@ func (e *TagMatchEvaluator) createAlert(event model.Event, rule *model.AlertRule
 		EntityID:   entityID,
 		Title:      title,
 		Message:    e.buildMessage(address, matchedTags, conditions),
-		Metadata: map[string]interface{}{
+		Metadata: map[string]any{
 			"address":      address,
 			"matched_tags": matchedTags,
 			"rule_tags":    conditions.Tags,

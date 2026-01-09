@@ -132,7 +132,7 @@ func (e *ClusterRiskEvaluator) compare(score, threshold float64, operator string
 	}
 }
 
-func (e *ClusterRiskEvaluator) createAlert(event model.Event, rule *model.AlertRule, address string, cluster *client.ClusterRiskResponse, conditions *ClusterRiskConditions) *model.Alert {
+func (e *ClusterRiskEvaluator) createAlert(_ model.Event, rule *model.AlertRule, address string, cluster *client.ClusterRiskResponse, conditions *ClusterRiskConditions) *model.Alert {
 	return &model.Alert{
 		RuleID:     &rule.ID,
 		Type:       model.RuleTypeClusterRisk,
@@ -141,13 +141,13 @@ func (e *ClusterRiskEvaluator) createAlert(event model.Event, rule *model.AlertR
 		EntityID:   cluster.ClusterID,
 		Title:      fmt.Sprintf("High risk cluster detected: %.2f", cluster.RiskScore),
 		Message:    e.buildMessage(address, cluster, conditions),
-		Metadata: map[string]interface{}{
-			"cluster_id":     cluster.ClusterID,
-			"cluster_score":  cluster.RiskScore,
-			"address_count":  cluster.AddressCount,
-			"cluster_tags":   cluster.Tags,
+		Metadata: map[string]any{
+			"cluster_id":      cluster.ClusterID,
+			"cluster_score":   cluster.RiskScore,
+			"address_count":   cluster.AddressCount,
+			"cluster_tags":    cluster.Tags,
 			"trigger_address": address,
-			"threshold":      conditions.Threshold,
+			"threshold":       conditions.Threshold,
 		},
 	}
 }

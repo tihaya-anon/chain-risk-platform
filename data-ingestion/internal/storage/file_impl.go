@@ -50,7 +50,7 @@ func (s *FileStorage) SaveBlock(ctx context.Context, blockNumber uint64, data js
 	path := filepath.Join(s.blocksDir, filename)
 
 	// Pretty print JSON
-	var prettyData interface{}
+	var prettyData any
 	if err := json.Unmarshal(data, &prettyData); err != nil {
 		return fmt.Errorf("unmarshal data: %w", err)
 	}
@@ -69,7 +69,7 @@ func (s *FileStorage) SaveInternalTx(ctx context.Context, txHash string, data js
 	path := filepath.Join(s.internalDir, filename)
 
 	// Pretty print JSON
-	var prettyData interface{}
+	var prettyData any
 	if err := json.Unmarshal(data, &prettyData); err != nil {
 		return fmt.Errorf("unmarshal data: %w", err)
 	}
@@ -88,7 +88,7 @@ func (s *FileStorage) SaveAddressTxs(ctx context.Context, address string, startB
 	path := filepath.Join(s.addressesDir, filename)
 
 	// Pretty print JSON
-	var prettyData interface{}
+	var prettyData any
 	if err := json.Unmarshal(data, &prettyData); err != nil {
 		return fmt.Errorf("unmarshal data: %w", err)
 	}

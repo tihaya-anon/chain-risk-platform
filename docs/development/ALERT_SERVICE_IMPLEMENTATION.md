@@ -27,23 +27,23 @@ Alert Service is a real-time notification system that monitors blockchain transa
 
 ### Core Capabilities
 
-| Capability | Description |
-|------------|-------------|
+| Capability            | Description                                             |
+| --------------------- | ------------------------------------------------------- |
 | **Event Consumption** | Kafka consumer for `risk-scores` and `transfers` topics |
-| **Rule Evaluation** | Flexible rule engine supporting 6 rule types |
-| **Notification** | Multi-channel: Email, Webhook, Slack |
-| **Deduplication** | Redis-based time window deduplication |
-| **History & Audit** | PostgreSQL persistence for compliance |
+| **Rule Evaluation**   | Flexible rule engine supporting 6 rule types            |
+| **Notification**      | Multi-channel: Email, Webhook, Slack                    |
+| **Deduplication**     | Redis-based time window deduplication                   |
+| **History & Audit**   | PostgreSQL persistence for compliance                   |
 
 ### Dependencies
 
-| Service | Purpose | Protocol |
-|---------|---------|----------|
-| Kafka | Event streaming | Consumer |
-| PostgreSQL | Rule/history storage | SQL |
-| Redis | Deduplication cache | Key-Value |
-| Risk Service | Risk score queries | HTTP |
-| Graph Service | Tag/cluster queries | HTTP |
+| Service       | Purpose              | Protocol  |
+| ------------- | -------------------- | --------- |
+| Kafka         | Event streaming      | Consumer  |
+| PostgreSQL    | Rule/history storage | SQL       |
+| Redis         | Deduplication cache  | Key-Value |
+| Risk Service  | Risk score queries   | HTTP      |
+| Graph Service | Tag/cluster queries  | HTTP      |
 
 ---
 
@@ -78,70 +78,70 @@ Alert Service is a real-time notification system that monitors blockchain transa
 
 ### Phase 1: Core Infrastructure (Tasks 1-5)
 
-| # | Task | Priority | Est. |
-|---|------|----------|------|
-| 1 | Kafka Consumer Setup | P0 | 2h |
-| 2 | Event Models & Parsing | P0 | 1h |
-| 3 | Service Layer Structure | P0 | 1h |
-| 4 | Handler Layer Refactor | P0 | 2h |
-| 5 | Wire Dependencies (main.go) | P0 | 1h |
+| #   | Task                        | Priority | Est. |
+| --- | --------------------------- | -------- | ---- |
+| 1   | Kafka Consumer Setup        | P0       | 2h   |
+| 2   | Event Models & Parsing      | P0       | 1h   |
+| 3   | Service Layer Structure     | P0       | 1h   |
+| 4   | Handler Layer Refactor      | P0       | 2h   |
+| 5   | Wire Dependencies (main.go) | P0       | 1h   |
 
 ### Phase 2: Alert Engine (Tasks 6-10)
 
-| # | Task | Priority | Est. |
-|---|------|----------|------|
-| 6 | Rule Evaluator Interface | P0 | 1h |
-| 7 | RiskScore Evaluator | P0 | 2h |
-| 8 | TransactionValue Evaluator | P0 | 1h |
-| 9 | TagMatch Evaluator | P1 | 2h |
-| 10 | Alert Engine Orchestrator | P0 | 2h |
+| #   | Task                       | Priority | Est. |
+| --- | -------------------------- | -------- | ---- |
+| 6   | Rule Evaluator Interface   | P0       | 1h   |
+| 7   | RiskScore Evaluator        | P0       | 2h   |
+| 8   | TransactionValue Evaluator | P0       | 1h   |
+| 9   | TagMatch Evaluator         | P1       | 2h   |
+| 10  | Alert Engine Orchestrator  | P0       | 2h   |
 
 ### Phase 3: Deduplication & Persistence (Tasks 11-13)
 
-| # | Task | Priority | Est. |
-|---|------|----------|------|
-| 11 | Redis Deduplicator | P0 | 2h |
-| 12 | Alert Creation Flow | P0 | 1h |
-| 13 | Subscription Repository | P1 | 1h |
+| #   | Task                    | Priority | Est. |
+| --- | ----------------------- | -------- | ---- |
+| 11  | Redis Deduplicator      | P0       | 2h   |
+| 12  | Alert Creation Flow     | P0       | 1h   |
+| 13  | Subscription Repository | P1       | 1h   |
 
 ### Phase 4: Notification Dispatcher (Tasks 14-18)
 
-| # | Task | Priority | Est. |
-|---|------|----------|------|
-| 14 | Notifier Interface | P0 | 1h |
-| 15 | Webhook Notifier | P0 | 2h |
-| 16 | Email Notifier | P1 | 2h |
-| 17 | Slack Notifier | P1 | 1h |
-| 18 | Dispatcher with Retry | P0 | 2h |
+| #   | Task                  | Priority | Est. |
+| --- | --------------------- | -------- | ---- |
+| 14  | Notifier Interface    | P0       | 1h   |
+| 15  | Webhook Notifier      | P0       | 2h   |
+| 16  | Email Notifier        | P1       | 2h   |
+| 17  | Slack Notifier        | P1       | 1h   |
+| 18  | Dispatcher with Retry | P0       | 2h   |
 
 ### Phase 5: REST API (Tasks 19-24)
 
-| # | Task | Priority | Est. |
-|---|------|----------|------|
-| 19 | Alert Rules CRUD Handler | P0 | 2h |
-| 20 | Alert History Handler | P0 | 2h |
-| 21 | Subscription Handler | P1 | 2h |
-| 22 | Stats & Dashboard API | P1 | 1h |
-| 23 | Test Alert Endpoint | P1 | 1h |
-| 24 | OpenAPI Documentation | P2 | 2h |
+| #   | Task                     | Priority | Est. |
+| --- | ------------------------ | -------- | ---- |
+| 19  | Alert Rules CRUD Handler | P0       | 2h   |
+| 20  | Alert History Handler    | P0       | 2h   |
+| 21  | Subscription Handler     | P1       | 2h   |
+| 22  | Stats & Dashboard API    | P1       | 1h   |
+| 23  | Test Alert Endpoint      | P1       | 1h   |
+| 24  | OpenAPI Documentation    | P2       | 2h   |
 
 ### Phase 6: Advanced Rules (Tasks 25-27)
 
-| # | Task | Priority | Est. |
-|---|------|----------|------|
-| 25 | Velocity Evaluator | P1 | 2h |
-| 26 | External Service Clients | P1 | 2h |
-| 27 | ClusterRisk Evaluator | P2 | 2h |
+| #   | Task                     | Priority | Est. |
+| --- | ------------------------ | -------- | ---- |
+| 25  | Velocity Evaluator       | P1       | 2h   |
+| 26  | External Service Clients | P1       | 2h   |
+| 27  | ClusterRisk Evaluator    | P2       | 2h   |
 
 ### Phase 7: Testing & Polish (Tasks 28-32)
 
-| # | Task | Priority | Est. |
-|---|------|----------|------|
-| 28 | Unit Tests - Evaluators | P0 | 3h |
-| 29 | Unit Tests - Notifiers | P0 | 2h |
-| 30 | Integration Tests | P1 | 3h |
-| 31 | Nacos Integration | P1 | 1h |
-| 32 | Dockerfile & Makefile | P1 | 1h |
+| #   | Task                    | Priority | Est. |
+| --- | ----------------------- | -------- | ---- |
+| 28  | Unit Tests - Evaluators | P0       | 3h   |
+| 29  | Unit Tests - Notifiers  | P0       | 2h   |
+| 30  | Integration Tests       | P1       | 3h   |
+| 31  | Nacos Integration       | P1       | 1h   |
+| 32  | Dockerfile & Makefile   | P1       | 1h   |
 
 **Total Estimated Time**: ~48 hours
 
@@ -300,7 +300,7 @@ func main() {
 type Event struct {
     Type      string                 // "risk_score", "transfer"
     Timestamp time.Time
-    Data      map[string]interface{}
+    Data      map[string]any
 }
 
 // EvaluationResult contains matched alerts
@@ -607,7 +607,7 @@ func (n *WebhookNotifier) Type() string {
 func (n *WebhookNotifier) Send(ctx context.Context, alert *model.Alert, config model.JSONB) error {
     // 1. Parse config (url, headers)
     url := config["url"].(string)
-    headers, _ := config["headers"].(map[string]interface{})
+    headers, _ := config["headers"].(map[string]any)
     
     // 2. Build payload
     payload := WebhookPayload{
@@ -634,7 +634,7 @@ type WebhookPayload struct {
     EntityID   string                 `json:"entity_id"`
     Title      string                 `json:"title"`
     Message    string                 `json:"message"`
-    Metadata   map[string]interface{} `json:"metadata,omitempty"`
+    Metadata   map[string]any `json:"metadata,omitempty"`
     Timestamp  time.Time              `json:"timestamp"`
 }
 ```
@@ -1018,39 +1018,39 @@ services/alert-service/
 
 ### Alert Rules
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/alert-rules` | List all rules |
-| GET | `/api/v1/alert-rules/:id` | Get rule by ID |
-| POST | `/api/v1/alert-rules` | Create new rule |
-| PUT | `/api/v1/alert-rules/:id` | Update rule |
-| DELETE | `/api/v1/alert-rules/:id` | Delete rule |
-| POST | `/api/v1/alert-rules/:id/enable` | Enable rule |
-| POST | `/api/v1/alert-rules/:id/disable` | Disable rule |
+| Method | Path                              | Description     |
+| ------ | --------------------------------- | --------------- |
+| GET    | `/api/v1/alert-rules`             | List all rules  |
+| GET    | `/api/v1/alert-rules/:id`         | Get rule by ID  |
+| POST   | `/api/v1/alert-rules`             | Create new rule |
+| PUT    | `/api/v1/alert-rules/:id`         | Update rule     |
+| DELETE | `/api/v1/alert-rules/:id`         | Delete rule     |
+| POST   | `/api/v1/alert-rules/:id/enable`  | Enable rule     |
+| POST   | `/api/v1/alert-rules/:id/disable` | Disable rule    |
 
 ### Alert History
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/alerts` | List alert history |
-| GET | `/api/v1/alerts/:id` | Get alert details |
-| GET | `/api/v1/alerts/stats` | Get alert statistics |
-| POST | `/api/v1/alerts/:id/acknowledge` | Acknowledge alert |
+| Method | Path                             | Description          |
+| ------ | -------------------------------- | -------------------- |
+| GET    | `/api/v1/alerts`                 | List alert history   |
+| GET    | `/api/v1/alerts/:id`             | Get alert details    |
+| GET    | `/api/v1/alerts/stats`           | Get alert statistics |
+| POST   | `/api/v1/alerts/:id/acknowledge` | Acknowledge alert    |
 
 ### Subscriptions
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/subscriptions` | List subscriptions |
-| POST | `/api/v1/subscriptions` | Create subscription |
+| Method | Path                        | Description         |
+| ------ | --------------------------- | ------------------- |
+| GET    | `/api/v1/subscriptions`     | List subscriptions  |
+| POST   | `/api/v1/subscriptions`     | Create subscription |
 | DELETE | `/api/v1/subscriptions/:id` | Delete subscription |
 
 ### Utility
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check |
-| POST | `/api/v1/alerts/test` | Test notification |
+| Method | Path                  | Description       |
+| ------ | --------------------- | ----------------- |
+| GET    | `/health`             | Health check      |
+| POST   | `/api/v1/alerts/test` | Test notification |
 
 ---
 
@@ -1073,7 +1073,7 @@ func TestRiskScoreEvaluator_Evaluate(t *testing.T) {
             name: "score above threshold triggers alert",
             event: Event{
                 Type: "risk_score",
-                Data: map[string]interface{}{"score": 85.0, "address": "0x123"},
+                Data: map[string]any{"score": 85.0, "address": "0x123"},
             },
             rule: &model.AlertRule{
                 RuleType:   model.RuleTypeRiskScore,

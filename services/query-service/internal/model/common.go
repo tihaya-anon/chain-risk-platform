@@ -44,10 +44,10 @@ type TransferFilter struct {
 
 // APIResponse is the standard API response wrapper
 type APIResponse struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   *APIError   `json:"error,omitempty"`
-	Meta    interface{} `json:"meta,omitempty"`
+	Success bool      `json:"success"`
+	Data    any       `json:"data,omitempty"`
+	Error   *APIError `json:"error,omitempty"`
+	Meta    any       `json:"meta,omitempty"`
 }
 
 // APIError represents an API error
@@ -57,7 +57,7 @@ type APIError struct {
 }
 
 // NewSuccessResponse creates a success response
-func NewSuccessResponse(data interface{}, meta interface{}) APIResponse {
+func NewSuccessResponse(data any, meta any) APIResponse {
 	return APIResponse{
 		Success: true,
 		Data:    data,

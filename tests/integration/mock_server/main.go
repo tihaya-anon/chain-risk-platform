@@ -223,7 +223,7 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 	store.mu.RLock()
 	defer store.mu.RUnlock()
 
-	status := map[string]interface{}{
+	status := map[string]any{
 		"fixturesDir":  store.fixturesDir,
 		"fallbackMode": store.fallbackMode,
 		"blocksLoaded": len(store.blocks),
@@ -248,7 +248,7 @@ func handleGetLatestBlockNumber(w http.ResponseWriter, r *http.Request) {
 		latestBlock = *startBlock + uint64(*numBlocks) - 1
 	}
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"jsonrpc": "2.0",
 		"id":      1,
 		"result":  fmt.Sprintf("0x%x", latestBlock),
@@ -277,7 +277,7 @@ func handleGetBlockByNumber(w http.ResponseWriter, r *http.Request) {
 	// Fallback to generated data
 	if store.fallbackMode {
 		if blockNum < *startBlock || blockNum >= *startBlock+uint64(*numBlocks) {
-			response := map[string]interface{}{
+			response := map[string]any{
 				"jsonrpc": "2.0",
 				"id":      1,
 				"result":  nil,
@@ -287,7 +287,7 @@ func handleGetBlockByNumber(w http.ResponseWriter, r *http.Request) {
 		}
 
 		block := generateMockBlock(blockNum)
-		response := map[string]interface{}{
+		response := map[string]any{
 			"jsonrpc": "2.0",
 			"id":      1,
 			"result":  block,
@@ -297,7 +297,7 @@ func handleGetBlockByNumber(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// No fixture and no fallback
-	response := map[string]interface{}{
+	response := map[string]any{
 		"jsonrpc": "2.0",
 		"id":      1,
 		"result":  nil,
@@ -317,10 +317,10 @@ func handleGetInternalTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return empty result
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":  "0",
 		"message": "No transactions found",
-		"result":  []interface{}{},
+		"result":  []any{},
 	}
 	json.NewEncoder(w).Encode(response)
 }
@@ -345,10 +345,10 @@ func handleGetAddressTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return empty result
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":  "0",
 		"message": "No transactions found",
-		"result":  []interface{}{},
+		"result":  []any{},
 	}
 	json.NewEncoder(w).Encode(response)
 }
@@ -356,18 +356,18 @@ func handleGetAddressTransactions(w http.ResponseWriter, r *http.Request) {
 // ============== Fallback Generated Data ==============
 
 // generateMockBlock creates a mock block with predictable test data
-func generateMockBlock(blockNum uint64) map[string]interface{} {
+func generateMockBlock(blockNum uint64) map[string]any {
 	timestamp := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Add(time.Duration(blockNum-*startBlock) * 12 * time.Second)
 
 	// Generate 2-5 transactions per block
 	numTxs := int((blockNum % 4) + 2)
-	transactions := make([]map[string]interface{}, numTxs)
+	transactions := make([]map[string]any, numTxs)
 
 	for i := 0; i < numTxs; i++ {
 		transactions[i] = generateMockTransaction(blockNum, i)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"number":       fmt.Sprintf("0x%x", blockNum),
 		"hash":         fmt.Sprintf("0x%064x", blockNum),
 		"parentHash":   fmt.Sprintf("0x%064x", blockNum-1),
@@ -380,7 +380,7 @@ func generateMockBlock(blockNum uint64) map[string]interface{} {
 }
 
 // generateMockTransaction creates a mock transaction with predictable test data
-func generateMockTransaction(blockNum uint64, txIndex int) map[string]interface{} {
+func generateMockTransaction(blockNum uint64, txIndex int) map[string]any {
 	// Generate deterministic addresses based on block and tx index
 	fromAddr := fmt.Sprintf("0x%040x", blockNum*100+uint64(txIndex))
 	toAddr := fmt.Sprintf("0x%040x", blockNum*100+uint64(txIndex)+1)
@@ -401,7 +401,7 @@ func generateMockTransaction(blockNum uint64, txIndex int) map[string]interface{
 		input = "0x"
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"hash":             fmt.Sprintf("0x%064x", blockNum*1000+uint64(txIndex)),
 		"blockNumber":      fmt.Sprintf("0x%x", blockNum),
 		"blockHash":        fmt.Sprintf("0x%064x", blockNum),

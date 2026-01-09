@@ -88,7 +88,7 @@ func (r *alertSubscriptionRepository) ListByUserID(ctx context.Context, userID s
 
 func (r *alertSubscriptionRepository) ListByRuleID(ctx context.Context, ruleID *int64) ([]*model.AlertSubscription, error) {
 	var query string
-	var args []interface{}
+	var args []any
 
 	if ruleID != nil {
 		query = `
@@ -97,7 +97,7 @@ func (r *alertSubscriptionRepository) ListByRuleID(ctx context.Context, ruleID *
 			WHERE rule_id = $1 AND enabled = true
 			ORDER BY created_at DESC
 		`
-		args = []interface{}{*ruleID}
+		args = []any{*ruleID}
 	} else {
 		query = `
 			SELECT id, user_id, rule_id, channel_type, channel_config, enabled, created_at, updated_at

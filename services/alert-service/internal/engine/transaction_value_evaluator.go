@@ -53,7 +53,7 @@ func (e *TransactionValueEvaluator) Evaluate(ctx context.Context, event model.Ev
 		EntityID:   txHash,
 		Title:      fmt.Sprintf("Large transaction detected: $%.2f", valueUSD),
 		Message:    e.buildMessage(event, conditions),
-		Metadata: map[string]interface{}{
+		Metadata: map[string]any{
 			"value_usd":    valueUSD,
 			"threshold":    conditions.Threshold,
 			"currency":     conditions.Currency,

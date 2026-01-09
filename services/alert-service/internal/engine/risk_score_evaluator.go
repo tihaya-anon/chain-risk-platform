@@ -51,7 +51,7 @@ func (e *RiskScoreEvaluator) Evaluate(ctx context.Context, event model.Event, ru
 		EntityID:   address,
 		Title:      fmt.Sprintf("High risk score detected: %.2f", score),
 		Message:    e.buildMessage(event, conditions),
-		Metadata: map[string]interface{}{
+		Metadata: map[string]any{
 			"score":     score,
 			"threshold": conditions.Threshold,
 			"operator":  conditions.Operator,

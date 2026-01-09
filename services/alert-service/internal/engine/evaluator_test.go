@@ -30,7 +30,7 @@ func TestRiskScoreEvaluator_Evaluate(t *testing.T) {
 			event: model.Event{
 				Type:      model.EventTypeRiskScore,
 				Timestamp: time.Now(),
-				Data: map[string]interface{}{
+				Data: map[string]any{
 					"address": "0x123",
 					"network": "ethereum",
 					"score":   85.0,
@@ -52,7 +52,7 @@ func TestRiskScoreEvaluator_Evaluate(t *testing.T) {
 			event: model.Event{
 				Type:      model.EventTypeRiskScore,
 				Timestamp: time.Now(),
-				Data: map[string]interface{}{
+				Data: map[string]any{
 					"address": "0x456",
 					"network": "ethereum",
 					"score":   70.0,
@@ -73,7 +73,7 @@ func TestRiskScoreEvaluator_Evaluate(t *testing.T) {
 			event: model.Event{
 				Type:      model.EventTypeTransfer,
 				Timestamp: time.Now(),
-				Data:      map[string]interface{}{},
+				Data:      map[string]any{},
 			},
 			rule: &model.AlertRule{
 				ID:         3,
@@ -90,7 +90,7 @@ func TestRiskScoreEvaluator_Evaluate(t *testing.T) {
 			event: model.Event{
 				Type:      model.EventTypeRiskScore,
 				Timestamp: time.Now(),
-				Data: map[string]interface{}{
+				Data: map[string]any{
 					"address": "0x789",
 					"score":   80.0,
 				},
@@ -110,7 +110,7 @@ func TestRiskScoreEvaluator_Evaluate(t *testing.T) {
 			event: model.Event{
 				Type:      model.EventTypeRiskScore,
 				Timestamp: time.Now(),
-				Data: map[string]interface{}{
+				Data: map[string]any{
 					"address": "0xabc",
 					"score":   95.0,
 				},
@@ -130,7 +130,7 @@ func TestRiskScoreEvaluator_Evaluate(t *testing.T) {
 			event: model.Event{
 				Type:      model.EventTypeRiskScore,
 				Timestamp: time.Now(),
-				Data: map[string]interface{}{
+				Data: map[string]any{
 					"address": "0xdef",
 					"score":   85.0,
 				},
@@ -202,7 +202,7 @@ func TestTransactionValueEvaluator_Evaluate(t *testing.T) {
 			event: model.Event{
 				Type:      model.EventTypeTransfer,
 				Timestamp: time.Now(),
-				Data: map[string]interface{}{
+				Data: map[string]any{
 					"tx_hash":      "0xabc123",
 					"from_address": "0x111",
 					"to_address":   "0x222",
@@ -227,7 +227,7 @@ func TestTransactionValueEvaluator_Evaluate(t *testing.T) {
 			event: model.Event{
 				Type:      model.EventTypeTransfer,
 				Timestamp: time.Now(),
-				Data: map[string]interface{}{
+				Data: map[string]any{
 					"tx_hash":      "0xdef456",
 					"from_address": "0x333",
 					"to_address":   "0x444",
@@ -249,7 +249,7 @@ func TestTransactionValueEvaluator_Evaluate(t *testing.T) {
 			event: model.Event{
 				Type:      model.EventTypeRiskScore,
 				Timestamp: time.Now(),
-				Data:      map[string]interface{}{},
+				Data:      map[string]any{},
 			},
 			rule: &model.AlertRule{
 				ID:         3,
@@ -321,7 +321,7 @@ func TestEvaluatorRegistry(t *testing.T) {
 		event := model.Event{
 			Type:      model.EventTypeRiskScore,
 			Timestamp: time.Now(),
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"address": "0x123",
 				"score":   85.0,
 			},

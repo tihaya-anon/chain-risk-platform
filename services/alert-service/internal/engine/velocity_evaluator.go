@@ -54,7 +54,7 @@ func (e *VelocityEvaluator) Evaluate(ctx context.Context, event model.Event, rul
 
 		count, err := e.incrementCounter(ctx, address, conditions.Window)
 		if err != nil {
-			e.logger.Warn("Failed to increment velocity counter", 
+			e.logger.Warn("Failed to increment velocity counter",
 				zap.String("address", address),
 				zap.Error(err))
 			continue
@@ -134,12 +134,12 @@ func (e *VelocityEvaluator) createAlert(event model.Event, rule *model.AlertRule
 		EntityID:   address,
 		Title:      fmt.Sprintf("High transaction velocity: %d transactions", count),
 		Message:    e.buildMessage(address, count, conditions),
-		Metadata: map[string]interface{}{
-			"address":     address,
-			"count":       count,
-			"threshold":   conditions.Count,
-			"window":      conditions.Window,
-			"last_tx":     event.GetString("tx_hash"),
+		Metadata: map[string]any{
+			"address":   address,
+			"count":     count,
+			"threshold": conditions.Count,
+			"window":    conditions.Window,
+			"last_tx":   event.GetString("tx_hash"),
 		},
 	}
 }

@@ -63,7 +63,7 @@ func TestWebhookNotifier_Send(t *testing.T) {
 			},
 			config: model.JSONB{
 				"url": "",
-				"headers": map[string]interface{}{
+				"headers": map[string]any{
 					"Authorization": "Bearer token123",
 				},
 			},
