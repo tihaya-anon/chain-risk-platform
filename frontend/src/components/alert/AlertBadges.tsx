@@ -3,9 +3,8 @@ import type {
   AlertHistoryResponseSeverity,
   AlertHistoryResponseStatus,
 } from "@/api/generated"
-import { RISK_COLORS, type RiskLevel } from "@/lib/palette"
+import { SEVERITY_COLORS, type RiskLevel } from "@/lib/palette"
 
-// Severity maps to RiskLevel (same enum values)
 type Severity = AlertHistoryResponseSeverity | RiskLevel
 
 interface SeverityBadgeProps {
@@ -13,13 +12,12 @@ interface SeverityBadgeProps {
   size?: "sm" | "md" | "lg"
 }
 
-// Use RISK_COLORS for consistency with RiskBadge
 const severityStyles: Record<RiskLevel, string> = {
-  critical: `${RISK_COLORS.critical.bg} ${RISK_COLORS.critical.textDark} ${RISK_COLORS.critical.borderTw}`,
-  high: `${RISK_COLORS.high.bg} ${RISK_COLORS.high.textDark} ${RISK_COLORS.high.borderTw}`,
-  medium: `${RISK_COLORS.medium.bg} ${RISK_COLORS.medium.textDark} ${RISK_COLORS.medium.borderTw}`,
-  low: `${RISK_COLORS.low.bg} ${RISK_COLORS.low.textDark} ${RISK_COLORS.low.borderTw}`,
-  unknown: `${RISK_COLORS.unknown.bg} ${RISK_COLORS.unknown.textDark} ${RISK_COLORS.unknown.borderTw}`,
+  critical: `${SEVERITY_COLORS.critical.bg} ${SEVERITY_COLORS.critical.textDark} ${SEVERITY_COLORS.critical.borderTw}`,
+  high: `${SEVERITY_COLORS.high.bg} ${SEVERITY_COLORS.high.textDark} ${SEVERITY_COLORS.high.borderTw}`,
+  medium: `${SEVERITY_COLORS.medium.bg} ${SEVERITY_COLORS.medium.textDark} ${SEVERITY_COLORS.medium.borderTw}`,
+  low: `${SEVERITY_COLORS.low.bg} ${SEVERITY_COLORS.low.textDark} ${SEVERITY_COLORS.low.borderTw}`,
+  unknown: `${SEVERITY_COLORS.unknown.bg} ${SEVERITY_COLORS.unknown.textDark} ${SEVERITY_COLORS.unknown.borderTw}`,
 }
 
 const severityLabels: Record<RiskLevel, string> = {
@@ -52,7 +50,6 @@ export function SeverityBadge({ severity, size = "md" }: SeverityBadgeProps) {
   )
 }
 
-// Status Badge (separate color scheme)
 interface StatusBadgeProps {
   status: AlertHistoryResponseStatus | string
   size?: "sm" | "md"

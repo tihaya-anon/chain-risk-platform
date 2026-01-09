@@ -186,21 +186,23 @@ export function AlertsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
           {activeTab === "overview" && (
             <>
               <AlertStatsCards stats={alertStats} isLoading={statsLoading} />
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                 <SeverityChart bySeverity={alertStats.bySeverity} isLoading={statsLoading} />
-                <AlertHistoryTable
-                  alerts={alertHistory.slice(0, 5)}
-                  total={Math.min(historyTotal, 5)}
-                  page={1}
-                  pageSize={5}
-                  onPageChange={() => setActiveTab("history")}
-                  onViewDetails={handleViewDetails}
-                  isLoading={historyLoading}
-                />
+                <div className="xl:col-span-2">
+                  <AlertHistoryTable
+                    alerts={alertHistory.slice(0, 5)}
+                    total={Math.min(historyTotal, 5)}
+                    page={1}
+                    pageSize={5}
+                    onPageChange={() => setActiveTab("history")}
+                    onViewDetails={handleViewDetails}
+                    isLoading={historyLoading}
+                  />
+                </div>
               </div>
             </>
           )}

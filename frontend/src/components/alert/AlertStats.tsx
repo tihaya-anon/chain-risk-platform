@@ -1,5 +1,6 @@
 import { AlertTriangle, Bell, Clock, TrendingUp } from "lucide-react"
 import { Card } from "@/components/common/Card"
+import { SEVERITY_COLORS, type SeverityLevel } from "@/lib/palette"
 
 interface AlertStats {
   total: number
@@ -41,29 +42,25 @@ export function AlertStatsCards({ stats, isLoading }: AlertStatsCardsProps) {
         icon={Bell}
         label="Total Alerts"
         value={stats?.total || 0}
-        iconColor="text-blue-500"
-        bgColor="bg-blue-100 dark:bg-blue-900/30"
+        level="info"
       />
       <StatCard
         icon={AlertTriangle}
         label="Critical / High"
         value={`${criticalCount} / ${highCount}`}
-        iconColor="text-red-500"
-        bgColor="bg-red-100 dark:bg-red-900/30"
+        level="critical"
       />
       <StatCard
         icon={Clock}
         label="Pending"
         value={pendingCount + sentCount}
-        iconColor="text-yellow-500"
-        bgColor="bg-yellow-100 dark:bg-yellow-900/30"
+        level="medium"
       />
       <StatCard
         icon={TrendingUp}
         label="Avg/Hour"
         value={stats?.averagePerHour?.toFixed(1) || "0"}
-        iconColor="text-green-500"
-        bgColor="bg-green-100 dark:bg-green-900/30"
+        level="low"
       />
     </div>
   )
@@ -73,16 +70,16 @@ interface StatCardProps {
   icon: typeof AlertTriangle
   label: string
   value: string | number
-  iconColor: string
-  bgColor: string
+  level: SeverityLevel
 }
 
-function StatCard({ icon: Icon, label, value, iconColor, bgColor }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, level }: StatCardProps) {
+  const colors = SEVERITY_COLORS[level]
   return (
     <Card>
       <div className="flex items-center gap-4">
-        <div className={`p-3 rounded-lg ${bgColor}`}>
-          <Icon className={`w-6 h-6 ${iconColor}`} />
+        <div className={`p-3 rounded-lg ${colors.bg}`}>
+          <Icon className={`w-6 h-6 ${colors.text}`} />
         </div>
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
@@ -116,11 +113,11 @@ export function SeverityChart({ bySeverity, isLoading }: SeverityChartProps) {
 
   const total = Object.values(bySeverity).reduce((a, b) => a + b, 0)
 
-  const severities = [
-    { key: "critical", label: "Critical", color: "bg-red-500" },
-    { key: "high", label: "High", color: "bg-orange-500" },
-    { key: "medium", label: "Medium", color: "bg-yellow-500" },
-    { key: "low", label: "Low", color: "bg-blue-500" },
+  const severities: { key: string; label: string; level: SeverityLevel }[] = [
+    { key: "critical", label: "Critical", level: "critical" },
+    { key: "high", label: "High", level: "high" },
+    { key: "medium", label: "Medium", level: "medium" },
+    { key: "low", label: "Low", level: "low" },
   ]
 
   return (
@@ -129,20 +126,18 @@ export function SeverityChart({ bySeverity, isLoading }: SeverityChartProps) {
         <p className="text-gray-500 dark:text-gray-400 text-sm">No alerts in the selected period</p>
       ) : (
         <div className="space-y-3">
-          {severities.map(({ key, label, color }) => {
+          {severities.map(({ key, label, level }) => {
             const count = bySeverity[key] || 0
             const percent = total > 0 ? (count / total) * 100 : 0
             return (
               <div key={key}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-600 dark:text-gray-300">{label}</span>
-                  <span className="text-gray-900 dark:text-white font-medium">
-                    {count} ({percent.toFixed(0)}%)
-                  </span>
+                  <span className="text-gray-900 dark:text-white font-medium mr-1">{count}</span>
                 </div>
                 <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${color} transition-all duration-300`}
+                    className={`h-full rounded-full ${SEVERITY_COLORS[level].bgSolid} transition-all duration-300`}
                     style={{ width: `${percent}%` }}
                   />
                 </div>
