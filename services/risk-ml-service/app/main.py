@@ -1,51 +1,52 @@
+"""
+Risk ML Service - Main Application
+"""
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
-from app.core.config import get_config
-from app.core.logging import setup_logging, get_logger
-from app.core.nacos import get_nacos_client
-from app.api.v1.risk import router as risk_router, get_risk_service
+from prometheus_fastapi_instrumentator.metrics import default
 
-# Setup logging first
+from app.api.v1.risk import router as risk_router
+from app.core.config import config
+from app.core.logging import setup_logging, get_logger
+from app.core.nacos import register_with_nacos
+from app.ml.ensemble import EnsembleScorer
+from app.services.risk_service import RiskService, get_risk_service
+
+# Setup logging
 setup_logging()
 logger = get_logger(__name__)
-config = get_config()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
-    logger.info(
-        "Starting Risk ML Service",
-        app_name=config.server.name,
-        env=config.server.env,
-        port=config.server.port,
-    )
+    logger.info("Starting Risk ML Service", version="1.0.0")
     
-    # Initialize Nacos
-    nacos_client = get_nacos_client()
-    await nacos_client.init()
+    # Register with Nacos if configured
+    if config.nacos.server:
+        await register_with_nacos()
+    
+    # Initialize ensemble scorer (preload models if available)
+    try:
+        scorer = EnsembleScorer()
+        app.state.ensemble_scorer = scorer
+        logger.info("Ensemble scorer initialized")
+    except Exception as e:
+        logger.warning(f"Ensemble scorer initialization skipped: {e}")
+        app.state.ensemble_scorer = None
     
     yield
     
-    # Cleanup
     logger.info("Shutting down Risk ML Service")
-    
-    # Close Nacos
-    await nacos_client.close()
-    
-    # Close risk service
-    service = get_risk_service()
-    await service.close()
 
 
 app = FastAPI(
     title="Risk ML Service",
-    description="Risk scoring service with rule engine and ML models for blockchain address analysis",
-    version="0.1.0",
-    docs_url="/docs" if config.server.env != "production" else None,
-    redoc_url="/redoc" if config.server.env != "production" else None,
+    description="Machine Learning based risk scoring service",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
@@ -67,9 +68,7 @@ instrumentator = Instrumentator(
     inprogress_name="risk_ml_service_http_requests_inprogress",
     inprogress_labels=True,
 )
-instrumentator.add(
-    instrumentator.metrics.default(),
-).instrument(app).expose(app, endpoint="/metrics")
+instrumentator.add(default()).instrument(app).expose(app, endpoint="/metrics")
 
 
 @app.get("/health")
@@ -78,37 +77,44 @@ async def health_check():
     return {"status": "ok", "service": config.server.name}
 
 
-@app.get("/admin/status")
-async def admin_status():
-    """Admin status endpoint with Nacos info."""
-    nacos_client = get_nacos_client()
-    return {
-        **nacos_client.get_status(),
-        "status": "healthy",
-        "timestamp": __import__("time").time() * 1000,
-    }
-
-
 @app.get("/")
 async def root():
-    """Root endpoint with service info."""
+    """Root endpoint."""
     return {
-        "service": config.server.name,
-        "version": "0.1.0",
-        "docs": "/docs" if config.server.env != "production" else "disabled",
+        "service": "risk-ml-service",
+        "version": "1.0.0",
+        "docs": "/docs",
     }
 
 
 # Include routers
-app.include_router(risk_router, prefix="/api/v1")
+app.include_router(risk_router, prefix="/api/v1/risk", tags=["risk"])
 
 
-if __name__ == "__main__":
-    import uvicorn
+# Legacy endpoint for backward compatibility
+@app.get("/api/v1/risk/{address}")
+async def get_risk_score_legacy(address: str):
+    """
+    Get risk score for an address (legacy endpoint).
+    """
+    try:
+        service = get_risk_service()
+        result = await service.get_risk_score(address)
+        return result
+    except Exception as e:
+        logger.error(f"Error getting risk score: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=config.server.port,
-        reload=config.server.env == "development",
-    )
+
+@app.post("/api/v1/risk/batch")
+async def batch_risk_score(addresses: list[str]):
+    """
+    Get risk scores for multiple addresses.
+    """
+    try:
+        service = get_risk_service()
+        results = await service.batch_risk_score(addresses)
+        return {"results": results}
+    except Exception as e:
+        logger.error(f"Error getting batch risk scores: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
