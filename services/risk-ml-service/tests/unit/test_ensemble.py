@@ -161,7 +161,22 @@ class TestEnsemblePredict:
 
     @pytest.mark.asyncio
     async def test_predict_no_models_fallback(self):
-        """Fallback when no models available."""
+        """Fallback when no models and no rule_score."""
+        from app.ml.ensemble import EnsemblePredictor
+
+        predictor = EnsemblePredictor()
+        predictor.gnn_predictor = None
+        predictor.xgb_predictor = None
+
+        # No rule_score means truly no scores available
+        result = await predictor.predict("0x1234")
+
+        assert result["score"] == pytest.approx(0.5)  # Default fallback
+        assert result["method"] == "fallback"
+
+    @pytest.mark.asyncio
+    async def test_predict_only_rule_score(self):
+        """When only rule_score available, uses ensemble with rules."""
         from app.ml.ensemble import EnsemblePredictor
 
         predictor = EnsemblePredictor()
@@ -171,7 +186,7 @@ class TestEnsemblePredict:
         result = await predictor.predict("0x1234", rule_score=0.7)
 
         assert result["score"] == pytest.approx(0.7)
-        assert result["method"] == "fallback"
+        assert result["models_used"] == ["rules"]
 
     @pytest.mark.asyncio
     async def test_predict_include_details(self):
