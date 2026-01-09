@@ -1,130 +1,88 @@
 # Development Status
 
-> Current development status and recent changes
+> Current development status and checkpoint progress
 
 **Last Updated**: 2026-01-09
 
 ---
 
-## Current Status
+## Component Status
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Data Ingestion | ✅ | Go, Etherscan API |
-| Stream Processing | ✅ | Flink, dual-write |
+| Component | Status | Tech |
+|-----------|--------|------|
+| Data Ingestion | ✅ | Go |
+| Stream Processing | ✅ | Flink |
 | Query Service | ✅ | Go/Gin |
 | Risk Service | ✅ | Python/FastAPI |
 | Graph Service | ✅ | Java/Neo4j |
-| Alert Service | ✅ | Go/Gin, Kafka consumer |
+| Alert Service | ✅ | Go/Gin |
 | BFF | ✅ | TypeScript/NestJS |
 | Frontend | ✅ | React |
-| ML Pipeline | ✅ | XGBoost + Isolation Forest |
-| GNN Integration | 🔶 | Dev complete, pending E2E tests |
+| ML Pipeline | ✅ | XGBoost + IF |
+| GNN | ✅ | PyTorch Geometric |
+
+---
+
+## Phase 7 Progress
+
+### Checkpoint Status
+
+| CP | Name | Status | Notes |
+|----|------|--------|-------|
+| 1 | Remote Infra Verify | ⏳ | WSL connectivity |
+| 2 | Data Generator | ⏳ | Scenario + random modes |
+| 3 | Rolling Cleanup | ⏳ | PG partition, Neo4j TTL |
+| 4 | Metrics Export | ⏳ | Prometheus endpoints |
+| 5 | E2E Test Suite | ⏳ | Full pipeline tests |
+| 6 | GNN E2E Tests | ⏳ | GNN validation |
+| 7 | K8s Manifests | ⏳ | Kustomize overlays |
+| 8 | Grafana Dashboards | ⏳ | 4 dashboards |
+| 9 | Staging Deploy | ⏳ | Final validation |
+
+### Next Actions
+
+1. Verify remote infrastructure connectivity (CP-1)
+2. Start Data Generator implementation (CP-2)
+3. Set up rolling cleanup scripts (CP-3)
 
 ---
 
 ## Recent Changes
 
-### 2026-01-09: GNN Development Complete
+### 2026-01-09
+- Created Phase 7 Roadmap with DAG
+- Updated development documentation
+- Added integration testing environment guide
 
-**Completed**:
-- GNN model architecture (GraphSAGE, GAT)
-- Training pipeline with feature extraction
-- GNN predictor for risk scoring
-- Ensemble model combining XGBoost + GNN
-- Unit tests passing
-
-**Pending**:
-- End-to-end tests
-
-**Branches**:
-- `feature/gnn-development` ✅
-- `feature/gnn-testing` ✅
-
-### 2026-01-09: Alert Service Complete
-
-**32 tasks completed**:
-- Kafka consumer for `risk-scores` and `transfers` topics
-- Rule engine with 6 evaluator types
-- Multi-channel notifications (Webhook, Email, Slack)
-- Redis deduplication
-- Full REST API
-- Unit + Integration tests passing
-
-**Files Added**:
-```
-services/alert-service/
-├── cmd/main.go
-├── internal/
-│   ├── config/
-│   ├── engine/         # Rule evaluators
-│   ├── handler/        # REST API
-│   ├── kafka/          # Consumer
-│   ├── model/
-│   ├── notifier/       # Webhook, Email, Slack
-│   ├── repository/
-│   └── service/
-├── configs/
-└── docs/openapi.json
-```
-
-### 2026-01-06: Graph Service Refactoring
-
-- Moved `processing/graph-engine` → `services/graph-service`
-- Removed deprecated PostgreSQL → Neo4j sync
-- Data now via Flink dual-write
+### 2026-01-09 (earlier)
+- ✅ GNN development complete
+- ✅ Alert Service complete
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Data Sources                             │
-│  Etherscan API → Kafka → Flink → PostgreSQL + Neo4j        │
-└─────────────────────────────────────────────────────────────┘
-                              │
-    ┌─────────────────────────┼─────────────────────────┐
-    │                         │                         │
-    ▼                         ▼                         ▼
-┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-│  Query   │  │  Graph   │  │   Risk   │  │  Alert   │
-│ Service  │  │ Service  │  │ Service  │  │ Service  │
-│  (Go)    │  │  (Java)  │  │ (Python) │  │  (Go)    │
-└──────────┘  └──────────┘  └──────────┘  └──────────┘
-    │                         │                         │
-    └─────────────────────────┼─────────────────────────┘
-                              │
-                              ▼
-                     ┌─────────────────┐
-                     │      BFF        │
-                     │  (TypeScript)   │
-                     └─────────────────┘
-                              │
-                              ▼
-                     ┌─────────────────┐
-                     │    Frontend     │
-                     │    (React)      │
-                     └─────────────────┘
+Data Sources → Kafka → Flink → PostgreSQL/Neo4j
+                                      │
+              ┌───────────────────────┼───────────────────────┐
+              │           │           │           │           │
+           Query       Graph        Risk       Alert        GNN
+           Service    Service     Service    Service     Predictor
+              │           │           │           │           │
+              └───────────────────────┼───────────────────────┘
+                                      │
+                                     BFF → Frontend
 ```
-
----
-
-## Pending Tasks
-
-| Task | Priority | Notes |
-|------|----------|-------|
-| GNN E2E tests | High | End-to-end validation |
-| K8s deployment | Low | Production readiness |
-| Prometheus + Grafana | Low | Monitoring |
 
 ---
 
 ## Branch Status
 
-| Branch | Focus | Status |
-|--------|-------|--------|
-| `main` | Production | ✅ Stable |
-| `feature/alert-service` | Alert Service | ✅ Complete |
-| `feature/gnn-development` | GNN Models | ✅ Complete |
-| `feature/gnn-testing` | GNN Unit Tests | ✅ Complete |
+| Branch | Status |
+|--------|--------|
+| `main` | ✅ Stable |
+| `feature/alert-service` | ✅ Merged |
+| `feature/gnn-development` | ✅ Merged |
+| `feature/gnn-testing` | ✅ Merged |
+| `feature/phase7` | 🔶 Active |

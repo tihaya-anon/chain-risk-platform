@@ -4,7 +4,7 @@
 
 ---
 
-## Phase 1: Core Data Flow ✅ Complete
+## Phase 1: Core Data Flow ✅
 
 **Goal**: Chain data → Kafka → Flink → DB pipeline
 
@@ -15,7 +15,7 @@
 
 ---
 
-## Phase 2: Query & Risk Services ✅ Complete
+## Phase 2: Query & Risk Services ✅
 
 **Goal**: Basic query API and risk scoring
 
@@ -26,93 +26,87 @@
 
 ---
 
-## Phase 3: BFF & Frontend 🔶 80%
+## Phase 3: BFF & Frontend ✅
 
 **Goal**: Demonstrable product
 
-### Completed
 - [x] BFF (TypeScript/NestJS) - API aggregation, Gateway trust mode
 - [x] Frontend (React) - Dashboard, Address, Risk, Graph pages
 - [x] Dark mode support
 
-### Pending
-- [ ] K8s deployment
-- [ ] Monitoring (Prometheus + Grafana)
+---
+
+## Phase 4: Advanced Features ✅
+
+- [x] Graph Service - Neo4j, clustering, tag propagation
+- [x] ML Risk Model - Feature pipeline, XGBoost, Isolation Forest
+- [x] Batch Processing - Archive, correction, feature compute jobs
 
 ---
 
-## Phase 4: Advanced Features ✅ Complete
-
-### 4.1 Graph Service ✅ Complete
-- [x] Neo4j integration
-- [x] Address clustering (Union-Find)
-- [x] Tag propagation (BFS)
-- [x] Graph query API
-
-### 4.2 ML Risk Model ✅ Complete
-- [x] Feature pipeline (Spark batch jobs)
-- [x] Label ingestion (OFAC, Tornado Cash, Exchange)
-- [x] Training data preparation
-- [x] XGBoost model training
-- [x] Isolation Forest training
-- [x] Model serving
-
-### 4.3 Batch Processing ✅ Complete
-- [x] Archive job (PostgreSQL → Hudi)
-- [x] Correction job (risk scoring)
-- [x] Feature compute job
-
----
-
-## Phase 5: Alert Service ✅ Complete
-
-**Goal**: Real-time alerting and notification system
+## Phase 5: Alert Service ✅
 
 **Completed**: 2026-01-09
 
-### Delivered
 - [x] Kafka consumer (risk-scores, transfers topics)
-- [x] Alert engine with rule evaluators
-- [x] 6 rule types: risk_score, transaction_value, tag_match, velocity, cluster_risk
-- [x] Multi-channel notifications: Webhook, Email, Slack
-- [x] Redis deduplication
-- [x] PostgreSQL persistence (rules, history, subscriptions)
-- [x] REST API (CRUD for rules, subscriptions, history)
-- [x] Nacos integration
-- [x] OpenAPI documentation
-- [x] Unit tests (evaluators, notifiers)
-- [x] Integration tests
-
-**Documentation**: [Alert Service Implementation Guide](./ALERT_SERVICE_IMPLEMENTATION.md)
+- [x] Alert engine with rule evaluators (6 types)
+- [x] Multi-channel notifications (Webhook, Email, Slack)
+- [x] REST API + Nacos integration
 
 ---
 
-## Phase 6: ML with GNN 🔶 90%
+## Phase 6: ML with GNN ✅
 
-**Goal**: Graph Neural Networks for enhanced risk detection
+**Completed**: 2026-01-09
 
-### Completed
 - [x] GNN model architecture (GraphSAGE, GAT)
-- [x] GNN training pipeline
-- [x] GNN predictor integration
+- [x] Training pipeline + predictor integration
 - [x] Ensemble model (XGBoost + GNN)
 - [x] Unit tests
 
-### Pending
-- [ ] End-to-end tests
+---
+
+## Phase 7: Production Readiness 🔶 In Progress
+
+**Goal**: Integration testing, deployment, monitoring
+
+See [ROADMAP_PHASE7.md](./ROADMAP_PHASE7.md) for detailed checkpoint breakdown.
+
+### Checkpoint Status
+
+| CP | Name | Status | Depends |
+|----|------|--------|---------|
+| 1 | Remote Infra Verify | ⏳ | - |
+| 2 | Data Generator | ⏳ | 1 |
+| 3 | Rolling Cleanup | ⏳ | 1 |
+| 4 | Metrics Export | ⏳ | 1 |
+| 5 | E2E Test Suite | ⏳ | 2, 3 |
+| 6 | GNN E2E Tests | ⏳ | 5 |
+| 7 | K8s Manifests | ⏳ | 6 |
+| 8 | Grafana Dashboards | ⏳ | 4, 6 |
+| 9 | Staging Deploy | ⏳ | 7, 8 |
+
+### DAG
+
+```
+CP-1 ──┬── CP-2 ──┐
+       ├── CP-3 ──┼── CP-5 ── CP-6 ──┬── CP-7 ──┐
+       └── CP-4 ──┘            │     └── CP-8 ──┼── CP-9
+                               └────────────────┘
+```
 
 ---
 
-## Timeline
+## Timeline Summary
 
-```
-Week 1-3:   Phase 1 - Core Data Flow ✅
-Week 4-6:   Phase 2 - Query & Risk Services ✅
-Week 7-8:   Phase 3 - BFF & Frontend 🔶 (80%)
-Week 9-12:  Phase 4 - Advanced Features ✅
-Week 13-14: Phase 5 - Alert Service ✅
-Week 15+:   Phase 6 - ML with GNN 🔶 (90%)
-```
+| Phase | Duration | Status |
+|-------|----------|--------|
+| Phase 1-2 | Week 1-6 | ✅ |
+| Phase 3 | Week 7-8 | ✅ |
+| Phase 4 | Week 9-12 | ✅ |
+| Phase 5 | Week 13-14 | ✅ |
+| Phase 6 | Week 15-16 | ✅ |
+| Phase 7 | Week 17-19 | 🔶 |
 
 ---
 
@@ -120,41 +114,10 @@ Week 15+:   Phase 6 - ML with GNN 🔶 (90%)
 
 | Milestone | Criteria | Status |
 |-----------|----------|--------|
-| M1 | Data ingestion → DB | ✅ |
-| M2 | Query API + Risk scoring | ✅ |
-| M3 | Demonstrable demo | 🔶 80% |
+| M1 | Data pipeline functional | ✅ |
+| M2 | Query + Risk APIs | ✅ |
+| M3 | Demonstrable demo | ✅ |
 | M4 | Graph + ML features | ✅ |
 | M5 | Alert Service | ✅ |
-| M6 | GNN integration | 🔶 90% |
-
----
-
-## Remaining Tasks
-
-| Task | Priority | Phase |
-|------|----------|-------|
-| GNN end-to-end tests | High | 6 |
-| K8s deployment | Low | 3 |
-| Monitoring setup | Low | 3 |
-
----
-
-## Recent Updates
-
-### 2026-01-09
-- ✅ **GNN development completed** (feature/gnn-development, feature/gnn-testing)
-  - GNN model training and prediction
-  - Ensemble integration
-  - Unit tests passing
-  - Pending: End-to-end tests
-
-- ✅ **Alert Service completed** (32 tasks)
-  - Full implementation with Kafka consumer, rule engine, notifications
-  - Unit tests + Integration tests passing
-  - OpenAPI documentation
-
-### 2026-01-06
-- ✅ Graph Service refactoring (moved to `services/graph-service`)
-
-### 2026-01-05
-- ✅ ML Feature Pipeline (FeatureComputeJob, LabelIngestionJob, TrainingDataPrepareJob)
+| M6 | GNN integration | ✅ |
+| M7 | Production ready | 🔶 |
