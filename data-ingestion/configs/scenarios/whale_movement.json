@@ -1,0 +1,33 @@
+{
+  "name": "whale_movement",
+  "description": "Simulates large value transfers from whale addresses",
+  "loop": true,
+  "events": [
+    {
+      "type": "pattern",
+      "count": 5,
+      "pattern": {
+        "type": "whale_movement",
+        "addresses": [
+          "0xwhale0000000000000000000000000000000001"
+        ],
+        "txCount": 3
+      }
+    },
+    {
+      "type": "block",
+      "count": 10
+    },
+    {
+      "type": "pattern",
+      "count": 3,
+      "pattern": {
+        "type": "whale_movement",
+        "addresses": [
+          "0xwhale0000000000000000000000000000000002"
+        ],
+        "txCount": 5
+      }
+    }
+  ]
+}

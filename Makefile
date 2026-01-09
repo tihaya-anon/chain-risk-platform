@@ -58,6 +58,13 @@ help:
 	@echo "🚪 Orchestrator (Java):    orchestrator-{build,run,test,clean}"
 	@echo "🔗 Graph Service (Java):   graph-{build,run,test,clean}"
 	@echo ""
+	@echo "🎲 Data Generator:"
+	@echo "  make generator-build      Build data generator"
+	@echo "  make generator-run        Run generator (random mode, 10 TPS)"
+	@echo "  make generator-scenario   Run generator with scenario"
+	@echo "  make generator-stress     Run stress test (100 TPS)"
+	@echo "  make generator-dry        Dry run (no Kafka)"
+	@echo ""
 	@echo "⚡ Stream Processor (Flink):"
 	@echo "  make flink-build     Build stream processor"
 	@echo "  make flink-run       Run Flink job (tmux)"
@@ -124,6 +131,39 @@ ingestion-test:
 
 ingestion-clean:
 	@rm -rf $(DIR_INGESTION)/bin
+
+# ============================================
+# Data Generator (Go)
+# ============================================
+
+generator-build:
+	@echo "🔨 Building data-generator..."
+	@cd $(DIR_INGESTION) && mkdir -p bin && go build -o bin/generator ./cmd/generator
+	@echo "✅ data-generator built"
+
+generator-run: generator-build
+	@echo "🎲 Running generator (random mode, 10 TPS)..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=10'
+
+generator-scenario: generator-build
+	@echo "🎲 Running generator (scenario mode)..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=scenario -scenario=$(SCENARIO) -tps=$(or $(TPS),10)'
+
+generator-stress: generator-build
+	@echo "🎲 Running stress test (100 TPS)..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=100 -duration=$(or $(DURATION),60)'
+
+generator-dry: generator-build
+	@echo "🎲 Running generator (dry-run mode)..."
+	@bash -c 'cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=50 -dry-run -duration=10'
+
+generator-high-risk: generator-build
+	@echo "🎲 Running high-risk cluster scenario..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=scenario -scenario=configs/scenarios/high_risk_cluster.json -tps=$(or $(TPS),10)'
+
+generator-whale: generator-build
+	@echo "🎲 Running whale movement scenario..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=scenario -scenario=configs/scenarios/whale_movement.json -tps=$(or $(TPS),10)'
 
 # ============================================
 # Query Service (Go)
@@ -311,7 +351,7 @@ frontend-clean:
 # Batch Operations
 # ============================================
 
-init-all: ingestion-build query-build alert-build risk-build bff-build orchestrator-build graph-build flink-build batch-build frontend-build
+init-all: ingestion-build query-build alert-build risk-build bff-build orchestrator-build graph-build flink-build batch-build frontend-build generator-build
 
 build-all: init-all
 
