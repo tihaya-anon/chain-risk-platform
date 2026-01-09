@@ -139,6 +139,11 @@ export function AlertsPage() {
   const alertHistory = historyData?.data || []
   const historyTotal = historyData?.total || 0
 
+  // Page accent: orange (consistent with alert/warning theme)
+  const accentBg = "bg-orange-100 dark:bg-orange-900/30"
+  const accentText = "text-orange-600 dark:text-orange-400"
+  const accentBorder = "border-orange-500"
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -146,8 +151,8 @@ export function AlertsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <Bell className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+              <div className={`p-2 rounded-lg ${accentBg}`}>
+                <Bell className={`w-6 h-6 ${accentText}`} />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Alerts</h1>
@@ -171,7 +176,7 @@ export function AlertsPage() {
                   onClick={() => setActiveTab(id)}
                   className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === id
-                      ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                      ? `${accentBorder} ${accentText}`
                       : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                   }`}
                 >

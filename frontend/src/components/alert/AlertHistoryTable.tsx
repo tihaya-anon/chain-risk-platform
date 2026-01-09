@@ -1,5 +1,6 @@
+import { Link } from "react-router-dom"
 import { formatDistanceToNow } from "date-fns"
-import { Eye, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { Eye, CheckCircle, ChevronLeft, ChevronRight, ExternalLink, Network } from "lucide-react"
 import { Card } from "@/components/common/Card"
 import { Button } from "@/components/common/Button"
 import { SeverityBadge, StatusBadge } from "./AlertBadges"
@@ -35,33 +36,35 @@ export function AlertHistoryTable({
     return id
   }
 
+  const isAddress = (entityType: string) => entityType === "address"
+
   return (
     <Card title="Alert History" subtitle={`${total} alerts total`}>
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Time
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Severity
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Title
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Entity
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Status
               </th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
@@ -78,31 +81,58 @@ export function AlertHistoryTable({
               alerts.map((alert) => (
                 <tr
                   key={alert.id}
-                  className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
-                  <td className="py-3 px-4">
+                  <td className="px-4 py-3">
                     <span className="text-sm text-gray-600 dark:text-gray-300">
                       {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}
                     </span>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="px-4 py-3">
                     <SeverityBadge severity={alert.severity} size="sm" />
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="px-4 py-3">
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
                       {alert.title}
                     </span>
                   </td>
-                  <td className="py-3 px-4">
-                    <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-gray-700 dark:text-gray-300">
-                      {formatEntityId(alert.entityId)}
-                    </code>
+                  <td className="px-4 py-3">
+                    {isAddress(alert.entityType) ? (
+                      <Link
+                        to={`/address?q=${alert.entityId}`}
+                        className="font-mono text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline"
+                      >
+                        {formatEntityId(alert.entityId)}
+                      </Link>
+                    ) : (
+                      <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-gray-700 dark:text-gray-300">
+                        {formatEntityId(alert.entityId)}
+                      </code>
+                    )}
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="px-4 py-3">
                     <StatusBadge status={alert.status} size="sm" />
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      {isAddress(alert.entityType) && (
+                        <>
+                          <Link
+                            to={`/address?q=${alert.entityId}`}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+                            title="View Address"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </Link>
+                          <Link
+                            to={`/graph?address=${alert.entityId}`}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded transition-colors"
+                            title="View Graph"
+                          >
+                            <Network className="w-3 h-3" />
+                          </Link>
+                        </>
+                      )}
                       {onViewDetails && (
                         <Button
                           variant="ghost"
@@ -173,6 +203,7 @@ export function AlertDetailModal({ alert, onClose, onAcknowledge }: AlertDetailM
   if (!alert) return null
 
   const metadata = alert.metadata as Record<string, unknown> | undefined
+  const isAddress = alert.entityType === "address"
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -225,9 +256,31 @@ export function AlertDetailModal({ alert, onClose, onAcknowledge }: AlertDetailM
             <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Entity ID
             </label>
-            <code className="mt-1 block text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded font-mono text-gray-700 dark:text-gray-300 break-all">
-              {alert.entityId}
-            </code>
+            <div className="mt-1 flex items-center gap-2">
+              <code className="flex-1 text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded font-mono text-gray-700 dark:text-gray-300 break-all">
+                {alert.entityId}
+              </code>
+              {isAddress && (
+                <div className="flex gap-1 flex-shrink-0">
+                  <Link
+                    to={`/address?q=${alert.entityId}`}
+                    className="inline-flex items-center gap-1 px-2 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+                    onClick={onClose}
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Details
+                  </Link>
+                  <Link
+                    to={`/graph?address=${alert.entityId}`}
+                    className="inline-flex items-center gap-1 px-2 py-1.5 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded transition-colors"
+                    onClick={onClose}
+                  >
+                    <Network className="w-3 h-3" />
+                    Graph
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {metadata && Object.keys(metadata).length > 0 && (

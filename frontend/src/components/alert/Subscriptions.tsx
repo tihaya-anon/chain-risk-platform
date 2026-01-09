@@ -75,27 +75,27 @@ export function SubscriptionsTable({
       }
     >
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Channel
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Destination
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Rule
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Status
               </th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
@@ -115,9 +115,9 @@ export function SubscriptionsTable({
                 return (
                   <tr
                     key={sub.id}
-                    className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                   >
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Icon className="w-4 h-4 text-gray-500" />
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -125,17 +125,17 @@ export function SubscriptionsTable({
                         </span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3">
                       <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-gray-700 dark:text-gray-300">
                         {getChannelDisplay(sub)}
                       </code>
                     </td>
-                    <td className="py-3 px-4">
-                      <span className="text-sm text-gray-600 dark:text-gray-300">
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
                         {getRuleName(sub.ruleId)}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3">
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
                           sub.enabled
@@ -146,7 +146,7 @@ export function SubscriptionsTable({
                         {sub.enabled ? "Active" : "Disabled"}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
                         {onDelete && (
                           <Button variant="ghost" size="sm" onClick={() => onDelete(sub.id)}>
@@ -191,7 +191,7 @@ export function SubscriptionFormModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave({
-      userId: "", // Will be set by BFF from auth context
+      userId: "",
       channelType,
       ruleId: ruleId || undefined,
       channelConfig,

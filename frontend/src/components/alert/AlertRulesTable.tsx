@@ -50,30 +50,30 @@ export function AlertRulesTable({
       }
     >
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Status
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Name
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Type
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Severity
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Conditions
               </th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
@@ -90,9 +90,9 @@ export function AlertRulesTable({
               rules.map((rule) => (
                 <tr
                   key={rule.id}
-                  className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
-                  <td className="py-3 px-4">
+                  <td className="px-4 py-3">
                     <button
                       onClick={() => onToggle?.(rule.id, !rule.enabled)}
                       className="flex items-center"
@@ -105,7 +105,7 @@ export function AlertRulesTable({
                       )}
                     </button>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="px-4 py-3">
                     <div>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {rule.name}
@@ -117,20 +117,20 @@ export function AlertRulesTable({
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       {ruleTypeLabels[rule.ruleType] || rule.ruleType}
                     </span>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="px-4 py-3">
                     <SeverityBadge severity={rule.severity} size="sm" />
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="px-4 py-3">
                     <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-gray-700 dark:text-gray-300">
                       {formatConditions(rule.conditions as Record<string, unknown>)}
                     </code>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
                       {onEdit && (
                         <Button variant="ghost" size="sm" onClick={() => onEdit(rule)}>
