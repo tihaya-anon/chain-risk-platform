@@ -1,9 +1,7 @@
 import os
-import sys
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
-from functools import lru_cache
 
 import yaml
 from dotenv import load_dotenv
@@ -69,6 +67,46 @@ class LoggingConfig:
 
 
 @dataclass
+class MinIOConfig:
+    endpoint: str = "localhost:19000"
+    access_key: str = "minioadmin"
+    secret_key: str = "minioadmin123"
+    bucket: str = "ml-models"
+    secure: bool = False
+
+
+@dataclass
+class TrinoConfig:
+    host: str = "localhost"
+    port: int = 18081
+    user: str = "admin"
+    catalog: str = "hudi"
+    schema: str = "chainrisk"
+
+
+@dataclass
+class Neo4jConfig:
+    uri: str = "bolt://localhost:17687"
+    user: str = "neo4j"
+    password: str = "chainrisk123"
+
+
+@dataclass
+class MLConfig:
+    enabled: bool = True
+    gnn_enabled: bool = True
+    xgb_enabled: bool = True
+    gnn_model: str = "gnn_sage"
+    xgb_model: str = "xgboost"
+    ensemble_strategy: str = "weighted_avg"
+    gnn_weight: float = 0.4
+    xgb_weight: float = 0.4
+    rules_weight: float = 0.2
+    device: str = "cpu"
+    model_check_interval: int = 300  # seconds
+
+
+@dataclass
 class Config:
     server: ServerConfig = field(default_factory=ServerConfig)
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
@@ -76,6 +114,10 @@ class Config:
     query_service: QueryServiceConfig = field(default_factory=QueryServiceConfig)
     risk: RiskConfig = field(default_factory=RiskConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    minio: MinIOConfig = field(default_factory=MinIOConfig)
+    trino: TrinoConfig = field(default_factory=TrinoConfig)
+    neo4j: Neo4jConfig = field(default_factory=Neo4jConfig)
+    ml: MLConfig = field(default_factory=MLConfig)
 
 
 def load_config(config_path: Optional[str] = None) -> Config:
@@ -98,7 +140,6 @@ def load_config(config_path: Optional[str] = None) -> Config:
     # Load YAML config
     config_file = Path(config_path)
     if not config_file.is_absolute():
-        # Try relative to service directory
         service_dir = Path(__file__).parent.parent.parent
         config_file = service_dir / config_path
 
@@ -115,6 +156,10 @@ def load_config(config_path: Optional[str] = None) -> Config:
         query_service=_build_query_service_config(yaml_config.get("queryService", {})),
         risk=_build_risk_config(yaml_config.get("risk", {})),
         logging=_build_logging_config(yaml_config.get("logging", {})),
+        minio=_build_minio_config(yaml_config.get("minio", {})),
+        trino=_build_trino_config(yaml_config.get("trino", {})),
+        neo4j=_build_neo4j_config(yaml_config.get("neo4j", {})),
+        ml=_build_ml_config(yaml_config.get("ml", {})),
     )
 
     # Override with environment variables
@@ -175,6 +220,50 @@ def _build_logging_config(data: dict) -> LoggingConfig:
     )
 
 
+def _build_minio_config(data: dict) -> MinIOConfig:
+    return MinIOConfig(
+        endpoint=data.get("endpoint", "localhost:19000"),
+        access_key=data.get("accessKey", "minioadmin"),
+        secret_key=data.get("secretKey", "minioadmin123"),
+        bucket=data.get("bucket", "ml-models"),
+        secure=data.get("secure", False),
+    )
+
+
+def _build_trino_config(data: dict) -> TrinoConfig:
+    return TrinoConfig(
+        host=data.get("host", "localhost"),
+        port=data.get("port", 18081),
+        user=data.get("user", "admin"),
+        catalog=data.get("catalog", "hudi"),
+        schema=data.get("schema", "chainrisk"),
+    )
+
+
+def _build_neo4j_config(data: dict) -> Neo4jConfig:
+    return Neo4jConfig(
+        uri=data.get("uri", "bolt://localhost:17687"),
+        user=data.get("user", "neo4j"),
+        password=data.get("password", "chainrisk123"),
+    )
+
+
+def _build_ml_config(data: dict) -> MLConfig:
+    return MLConfig(
+        enabled=data.get("enabled", True),
+        gnn_enabled=data.get("gnnEnabled", True),
+        xgb_enabled=data.get("xgbEnabled", True),
+        gnn_model=data.get("gnnModel", "gnn_sage"),
+        xgb_model=data.get("xgbModel", "xgboost"),
+        ensemble_strategy=data.get("ensembleStrategy", "weighted_avg"),
+        gnn_weight=data.get("gnnWeight", 0.4),
+        xgb_weight=data.get("xgbWeight", 0.4),
+        rules_weight=data.get("rulesWeight", 0.2),
+        device=data.get("device", "cpu"),
+        model_check_interval=data.get("modelCheckInterval", 300),
+    )
+
+
 def _override_from_env(config: Config) -> None:
     """Override config values from environment variables."""
     # Server
@@ -212,8 +301,34 @@ def _override_from_env(config: Config) -> None:
         config.risk.high_risk_threshold = float(env_val)
     if env_val := os.getenv("MEDIUM_RISK_THRESHOLD"):
         config.risk.medium_risk_threshold = float(env_val)
-    if env_val := os.getenv("LARGE_TX_THRESHOLD"):
-        config.risk.large_tx_threshold = env_val
+
+    # MinIO
+    if env_val := os.getenv("MINIO_ENDPOINT"):
+        config.minio.endpoint = env_val
+    if env_val := os.getenv("MINIO_ACCESS_KEY"):
+        config.minio.access_key = env_val
+    if env_val := os.getenv("MINIO_SECRET_KEY"):
+        config.minio.secret_key = env_val
+
+    # Trino
+    if env_val := os.getenv("TRINO_HOST"):
+        config.trino.host = env_val
+    if env_val := os.getenv("TRINO_PORT"):
+        config.trino.port = int(env_val)
+
+    # Neo4j
+    if env_val := os.getenv("NEO4J_URI"):
+        config.neo4j.uri = env_val
+    if env_val := os.getenv("NEO4J_USER"):
+        config.neo4j.user = env_val
+    if env_val := os.getenv("NEO4J_PASSWORD"):
+        config.neo4j.password = env_val
+
+    # ML
+    if env_val := os.getenv("ML_ENABLED"):
+        config.ml.enabled = env_val.lower() in ("true", "1", "yes")
+    if env_val := os.getenv("ML_DEVICE"):
+        config.ml.device = env_val
 
     # Logging
     if env_val := os.getenv("LOG_LEVEL"):
