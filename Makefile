@@ -45,6 +45,7 @@ help:
 	@echo "  make infra-down      Stop infrastructure"
 	@echo "  make infra-check     Check infrastructure status"
 	@echo "  make cleanup         Clean all data (Kafka, PostgreSQL, Neo4j, Hudi)"
+	@echo "  make cleanup-rolling Rolling cleanup (retention-based)"
 	@echo ""
 	@echo "🚀 Services:"
 	@echo "  make run-svc         Run all backend services"
@@ -83,6 +84,10 @@ help:
 	@echo "  make test-integration-phase1  Phase 1: Ingestion → Kafka"
 	@echo "  make test-integration-phase2  Phase 2: Flink → PostgreSQL"
 	@echo "  make test-integration-phase3  Phase 3: Batch → Hudi + Neo4j"
+	@echo "  make test-e2e                 Full E2E test suite"
+	@echo "  make test-e2e-pipeline        E2E pipeline tests only"
+	@echo "  make test-e2e-services        E2E service tests only"
+	@echo "  make test-e2e-bff             E2E BFF tests only"
 	@echo ""
 	@echo "🔧 Batch Operations:"
 	@echo "  make init-all        Initialize all services"
@@ -113,6 +118,9 @@ cleanup:
 
 cleanup-all:
 	@bash -c '$(LOAD_ENV) ./scripts/cleanup.sh --all -y'
+
+cleanup-rolling:
+	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
 
 # ============================================
 # Data Ingestion (Go)
@@ -411,6 +419,30 @@ test-integration-phase2:
 test-integration-phase3:
 	@bash -c '$(LOAD_ENV) ./scripts/test/test-integration-phase3.sh'
 
+# ============================================
+# E2E Tests
+# ============================================
+
+test-e2e: generator-build
+	@echo "🧪 Running E2E test suite..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh all'
+
+test-e2e-pipeline: generator-build
+	@echo "🧪 Running E2E pipeline tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh pipeline'
+
+test-e2e-services:
+	@echo "🧪 Running E2E service tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh services'
+
+test-e2e-bff:
+	@echo "🧪 Running E2E BFF tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh bff'
+
+# ============================================
+# Mock Servers
+# ============================================
+
 mock-server-build:
 	@cd tests/integration/mock_server && mkdir -p bin && go build -o bin/mock_server .
 
@@ -423,29 +455,3 @@ mock-server-run: mock-server-build
 
 trino:
 	@bash -c '$(LOAD_ENV) ./scripts/trino-query.sh "$(Q)"'
-
-# ============================================
-# Rolling Data Cleanup (Phase 7)
-# ============================================
-
-cleanup-rolling:
-	@echo "🧹 Running rolling data cleanup..."
-	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh'
-
-cleanup-rolling-pg:
-	@echo "🧹 Running PostgreSQL cleanup only..."
-	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --postgres-only'
-
-cleanup-rolling-neo4j:
-	@echo "🧹 Running Neo4j cleanup only..."
-	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --neo4j-only'
-
-cleanup-disk-usage:
-	@echo "📊 Checking disk usage..."
-	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --disk-usage'
-
-partition-setup:
-	@echo "📦 Setting up PostgreSQL partitions..."
-	@bash -c '$(LOAD_ENV) psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${POSTGRES_HOST}:$${POSTGRES_PORT}/$${POSTGRES_DB}" -f ./scripts/db/pg-partition-setup.sql'
-	@bash -c '$(LOAD_ENV) psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${POSTGRES_HOST}:$${POSTGRES_PORT}/$${POSTGRES_DB}" -f ./scripts/db/pg-cleanup.sql'
-	@echo "✅ Partition setup complete"
