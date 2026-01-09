@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stream-processor
+  namespace: chain-risk
+  labels:
+    app: stream-processor
+    app.kubernetes.io/name: stream-processor
+    app.kubernetes.io/component: processing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stream-processor
+  template:
+    metadata:
+      labels:
+        app: stream-processor
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8086"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: stream-processor
+          image: chain-risk/stream-processor:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8086
+              name: http
+          envFrom:
+            - configMapRef:
+                name: chain-risk-config
+            - secretRef:
+                name: chain-risk-secrets
+          env:
+            - name: FLINK_PROPERTIES
+              value: |
+                jobmanager.rpc.address: localhost
+                taskmanager.numberOfTaskSlots: 4
+                parallelism.default: 2
+            - name: JAVA_OPTS
+              value: "-Xms1g -Xmx2g"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "3Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8086
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8086
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stream-processor
+  namespace: chain-risk
+  labels:
+    app: stream-processor
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8086
+      targetPort: 8086
+      protocol: TCP
+      name: http
+  selector:
+    app: stream-processor

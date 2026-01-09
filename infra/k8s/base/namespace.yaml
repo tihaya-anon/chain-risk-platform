@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chain-risk
+  labels:
+    app.kubernetes.io/name: chain-risk-platform
+    app.kubernetes.io/part-of: chain-risk
