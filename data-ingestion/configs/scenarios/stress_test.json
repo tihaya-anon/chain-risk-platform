@@ -1,0 +1,11 @@
+{
+  "name": "stress_test",
+  "description": "High volume stress test scenario",
+  "loop": true,
+  "events": [
+    {
+      "type": "block",
+      "count": 1000
+    }
+  ]
+}

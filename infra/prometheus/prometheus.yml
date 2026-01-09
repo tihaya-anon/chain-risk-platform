@@ -7,7 +7,8 @@ scrape_configs:
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
-  # Dataflow
+
+  # Infrastructure Services
   # Kafka
   - job_name: "kafka-exporter"
     static_configs:
@@ -45,15 +46,36 @@ scrape_configs:
         target_label: instance
         replacement: "trino"
 
-  # Application services (uncomment when ready to monitor these services)
-  # - job_name: "query-service"
-  #   static_configs:
-  #     - targets: ["query-service:8081"]
+  # Application Services
+  - job_name: "query-service"
+    static_configs:
+      - targets: ["query-service:8081"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "query-service"
 
-  # - job_name: "risk-ml-service"
-  #   static_configs:
-  #     - targets: ["risk-ml-service:8082"]
+  - job_name: "risk-ml-service"
+    static_configs:
+      - targets: ["risk-ml-service:8082"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "risk-ml-service"
 
-  # - job_name: "alert-service"
-  #   static_configs:
-  #     - targets: ["alert-service:8083"]
+  - job_name: "alert-service"
+    static_configs:
+      - targets: ["alert-service:8083"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "alert-service"
+
+  - job_name: "graph-service"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["graph-service:8084"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "graph-service"

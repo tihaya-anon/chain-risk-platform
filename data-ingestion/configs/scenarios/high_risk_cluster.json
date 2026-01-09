@@ -1,0 +1,26 @@
+{
+  "name": "high_risk_cluster",
+  "description": "Simulates high-risk address cluster with interconnected transactions",
+  "loop": true,
+  "events": [
+    {
+      "type": "pattern",
+      "count": 10,
+      "pattern": {
+        "type": "high_risk_cluster",
+        "addresses": [
+          "0x1111111111111111111111111111111111111111",
+          "0x2222222222222222222222222222222222222222",
+          "0x3333333333333333333333333333333333333333",
+          "0x4444444444444444444444444444444444444444",
+          "0x5555555555555555555555555555555555555555"
+        ],
+        "txCount": 8
+      }
+    },
+    {
+      "type": "block",
+      "count": 5
+    }
+  ]
+}

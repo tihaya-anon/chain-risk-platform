@@ -1,0 +1,52 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: chain-risk-staging
+
+resources:
+  - ../../base
+
+namePrefix: staging-
+
+commonLabels:
+  environment: staging
+
+patches:
+  # Staging replicas (moderate)
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+    target:
+      kind: Deployment
+      name: query-service
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+    target:
+      kind: Deployment
+      name: risk-service
+
+configMapGenerator:
+  - name: chain-risk-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+
+images:
+  - name: chain-risk/query-service
+    newTag: staging
+  - name: chain-risk/risk-service
+    newTag: staging
+  - name: chain-risk/alert-service
+    newTag: staging
+  - name: chain-risk/graph-service
+    newTag: staging
+  - name: chain-risk/bff
+    newTag: staging
+  - name: chain-risk/orchestrator
+    newTag: staging
+  - name: chain-risk/stream-processor
+    newTag: staging

@@ -45,6 +45,7 @@ help:
 	@echo "  make infra-down      Stop infrastructure"
 	@echo "  make infra-check     Check infrastructure status"
 	@echo "  make cleanup         Clean all data (Kafka, PostgreSQL, Neo4j, Hudi)"
+	@echo "  make cleanup-rolling Rolling cleanup (retention-based)"
 	@echo ""
 	@echo "🚀 Services:"
 	@echo "  make run-svc         Run all backend services"
@@ -57,6 +58,13 @@ help:
 	@echo "🌐 BFF Service (TS):       bff-{build,run,test,clean}"
 	@echo "🚪 Orchestrator (Java):    orchestrator-{build,run,test,clean}"
 	@echo "🔗 Graph Service (Java):   graph-{build,run,test,clean}"
+	@echo ""
+	@echo "🎲 Data Generator:"
+	@echo "  make generator-build      Build data generator"
+	@echo "  make generator-run        Run generator (random mode, 10 TPS)"
+	@echo "  make generator-scenario   Run generator with scenario"
+	@echo "  make generator-stress     Run stress test (100 TPS)"
+	@echo "  make generator-dry        Dry run (no Kafka)"
 	@echo ""
 	@echo "⚡ Stream Processor (Flink):"
 	@echo "  make flink-build     Build stream processor"
@@ -73,9 +81,11 @@ help:
 	@echo ""
 	@echo "🧪 Testing:"
 	@echo "  make test-integration         Full integration test"
-	@echo "  make test-integration-phase1  Phase 1: Ingestion → Kafka"
-	@echo "  make test-integration-phase2  Phase 2: Flink → PostgreSQL"
-	@echo "  make test-integration-phase3  Phase 3: Batch → Hudi + Neo4j"
+	@echo "  make test-e2e                 Full E2E test suite"
+	@echo "  make test-e2e-pipeline        E2E pipeline tests"
+	@echo "  make test-e2e-services        E2E service tests"
+	@echo "  make test-e2e-bff             E2E BFF tests"
+	@echo "  make test-e2e-gnn             E2E GNN/ML tests"
 	@echo ""
 	@echo "🔧 Batch Operations:"
 	@echo "  make init-all        Initialize all services"
@@ -107,6 +117,9 @@ cleanup:
 cleanup-all:
 	@bash -c '$(LOAD_ENV) ./scripts/cleanup.sh --all -y'
 
+cleanup-rolling:
+	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
+
 # ============================================
 # Data Ingestion (Go)
 # ============================================
@@ -124,6 +137,39 @@ ingestion-test:
 
 ingestion-clean:
 	@rm -rf $(DIR_INGESTION)/bin
+
+# ============================================
+# Data Generator (Go)
+# ============================================
+
+generator-build:
+	@echo "🔨 Building data-generator..."
+	@cd $(DIR_INGESTION) && mkdir -p bin && go build -o bin/generator ./cmd/generator
+	@echo "✅ data-generator built"
+
+generator-run: generator-build
+	@echo "🎲 Running generator (random mode, 10 TPS)..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=10'
+
+generator-scenario: generator-build
+	@echo "🎲 Running generator (scenario mode)..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=scenario -scenario=$(SCENARIO) -tps=$(or $(TPS),10)'
+
+generator-stress: generator-build
+	@echo "🎲 Running stress test (100 TPS)..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=100 -duration=$(or $(DURATION),60)'
+
+generator-dry: generator-build
+	@echo "🎲 Running generator (dry-run mode)..."
+	@bash -c 'cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=50 -dry-run -duration=10'
+
+generator-high-risk: generator-build
+	@echo "🎲 Running high-risk cluster scenario..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=scenario -scenario=configs/scenarios/high_risk_cluster.json -tps=$(or $(TPS),10)'
+
+generator-whale: generator-build
+	@echo "🎲 Running whale movement scenario..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=scenario -scenario=configs/scenarios/whale_movement.json -tps=$(or $(TPS),10)'
 
 # ============================================
 # Query Service (Go)
@@ -311,7 +357,7 @@ frontend-clean:
 # Batch Operations
 # ============================================
 
-init-all: ingestion-build query-build alert-build risk-build bff-build orchestrator-build graph-build flink-build batch-build frontend-build
+init-all: ingestion-build query-build alert-build risk-build bff-build orchestrator-build graph-build flink-build batch-build frontend-build generator-build
 
 build-all: init-all
 
@@ -371,6 +417,38 @@ test-integration-phase2:
 test-integration-phase3:
 	@bash -c '$(LOAD_ENV) ./scripts/test/test-integration-phase3.sh'
 
+# ============================================
+# E2E Tests
+# ============================================
+
+test-e2e: generator-build
+	@echo "🧪 Running E2E test suite..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh all'
+
+test-e2e-pipeline: generator-build
+	@echo "🧪 Running E2E pipeline tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh pipeline'
+
+test-e2e-services:
+	@echo "🧪 Running E2E service tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh services'
+
+test-e2e-bff:
+	@echo "🧪 Running E2E BFF tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh bff'
+
+test-e2e-gnn:
+	@echo "🧪 Running GNN E2E tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh gnn'
+
+test-e2e-validation:
+	@echo "🧪 Running validation tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh validation'
+
+# ============================================
+# Mock Servers
+# ============================================
+
 mock-server-build:
 	@cd tests/integration/mock_server && mkdir -p bin && go build -o bin/mock_server .
 
@@ -383,3 +461,38 @@ mock-server-run: mock-server-build
 
 trino:
 	@bash -c '$(LOAD_ENV) ./scripts/trino-query.sh "$(Q)"'
+
+# ============================================
+# Staging Deployment
+# ============================================
+
+staging-deploy:
+	@echo "🚀 Deploying to staging..."
+	@./scripts/deploy/staging-deploy.sh deploy
+
+staging-verify:
+	@echo "✅ Verifying staging deployment..."
+	@./scripts/deploy/staging-deploy.sh verify
+
+staging-rollback:
+	@echo "⏪ Rolling back staging..."
+	@./scripts/deploy/staging-deploy.sh rollback
+
+staging-status:
+	@./scripts/deploy/staging-deploy.sh status
+
+staging-e2e:
+	@echo "🧪 Running staging E2E tests..."
+	@./scripts/deploy/staging-e2e.sh all
+
+staging-smoke:
+	@echo "💨 Running staging smoke tests..."
+	@./scripts/deploy/staging-e2e.sh smoke
+
+staging-monitoring:
+	@echo "📊 Verifying monitoring..."
+	@./scripts/deploy/verify-monitoring.sh report
+
+staging-load-test:
+	@echo "⚡ Running load test..."
+	@k6 run tests/load/staging-load.js
