@@ -1,0 +1,34 @@
+{
+  "description": "Known low-risk addresses for E2E validation",
+  "addresses": [
+    {
+      "address": "0x4444444444444444444444444444444444444444",
+      "expected_risk": "low",
+      "max_score": 0.3,
+      "pattern": "normal_user",
+      "reason": "Regular user with normal transaction patterns"
+    },
+    {
+      "address": "0x5555555555555555555555555555555555555555",
+      "expected_risk": "low",
+      "max_score": 0.25,
+      "pattern": "verified_contract",
+      "reason": "Verified smart contract with clean history"
+    },
+    {
+      "address": "0x6666666666666666666666666666666666666666",
+      "expected_risk": "low",
+      "max_score": 0.2,
+      "pattern": "exchange_deposit",
+      "reason": "Known exchange deposit address"
+    }
+  ],
+  "verified_entities": [
+    {
+      "address": "0x5555555555555555555555555555555555555555",
+      "name": "Verified DEX Router",
+      "type": "contract",
+      "verified": true
+    }
+  ]
+}

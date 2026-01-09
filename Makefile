@@ -81,13 +81,11 @@ help:
 	@echo ""
 	@echo "🧪 Testing:"
 	@echo "  make test-integration         Full integration test"
-	@echo "  make test-integration-phase1  Phase 1: Ingestion → Kafka"
-	@echo "  make test-integration-phase2  Phase 2: Flink → PostgreSQL"
-	@echo "  make test-integration-phase3  Phase 3: Batch → Hudi + Neo4j"
 	@echo "  make test-e2e                 Full E2E test suite"
-	@echo "  make test-e2e-pipeline        E2E pipeline tests only"
-	@echo "  make test-e2e-services        E2E service tests only"
-	@echo "  make test-e2e-bff             E2E BFF tests only"
+	@echo "  make test-e2e-pipeline        E2E pipeline tests"
+	@echo "  make test-e2e-services        E2E service tests"
+	@echo "  make test-e2e-bff             E2E BFF tests"
+	@echo "  make test-e2e-gnn             E2E GNN/ML tests"
 	@echo ""
 	@echo "🔧 Batch Operations:"
 	@echo "  make init-all        Initialize all services"
@@ -438,6 +436,14 @@ test-e2e-services:
 test-e2e-bff:
 	@echo "🧪 Running E2E BFF tests..."
 	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh bff'
+
+test-e2e-gnn:
+	@echo "🧪 Running GNN E2E tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh gnn'
+
+test-e2e-validation:
+	@echo "🧪 Running validation tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh validation'
 
 # ============================================
 # Mock Servers

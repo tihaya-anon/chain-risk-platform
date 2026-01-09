@@ -7,6 +7,7 @@
 #   ./tests/e2e/run_e2e.sh pipeline  # Run pipeline tests only
 #   ./tests/e2e/run_e2e.sh services  # Run service tests only
 #   ./tests/e2e/run_e2e.sh bff       # Run BFF tests only
+#   ./tests/e2e/run_e2e.sh gnn       # Run GNN E2E tests only
 # ============================================================
 
 set -e
@@ -18,12 +19,6 @@ PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 source "$PROJECT_ROOT/scripts/common.sh"
 
 cd "$SCRIPT_DIR"
-
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
 
 log_section "E2E Test Suite"
 
@@ -51,25 +46,38 @@ export GENERATOR_BIN
 
 # Determine which tests to run
 TEST_PATTERN=""
+TEST_DIRS="./..."
 case "${1:-all}" in
     pipeline)
         TEST_PATTERN="-run TestPipeline"
+        TEST_DIRS="./"
         log_info "Running pipeline tests..."
         ;;
     services)
         TEST_PATTERN="-run TestServices"
+        TEST_DIRS="./"
         log_info "Running service tests..."
         ;;
     bff)
         TEST_PATTERN="-run TestBFF"
+        TEST_DIRS="./"
         log_info "Running BFF tests..."
+        ;;
+    gnn)
+        TEST_DIRS="./gnn/..."
+        log_info "Running GNN E2E tests..."
+        ;;
+    validation)
+        TEST_PATTERN="-run TestValidation"
+        TEST_DIRS="./gnn/..."
+        log_info "Running validation tests..."
         ;;
     all)
         log_info "Running all E2E tests..."
         ;;
     *)
         log_error "Unknown test suite: $1"
-        echo "Usage: $0 [pipeline|services|bff|all]"
+        echo "Usage: $0 [pipeline|services|bff|gnn|validation|all]"
         exit 1
         ;;
 esac
@@ -78,7 +86,7 @@ esac
 log_section "Running Tests"
 
 set +e
-go test -v -timeout 10m $TEST_PATTERN ./...
+go test -v -timeout 10m $TEST_PATTERN $TEST_DIRS
 TEST_EXIT=$?
 set -e
 

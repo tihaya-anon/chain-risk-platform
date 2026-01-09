@@ -1,0 +1,45 @@
+{
+  "description": "Known high-risk addresses for E2E validation",
+  "addresses": [
+    {
+      "address": "0x1111111111111111111111111111111111111111",
+      "expected_risk": "high",
+      "min_score": 0.7,
+      "pattern": "high_risk_cluster",
+      "reason": "Part of known scam cluster"
+    },
+    {
+      "address": "0x2222222222222222222222222222222222222222",
+      "expected_risk": "high",
+      "min_score": 0.6,
+      "pattern": "mixer_interaction",
+      "reason": "Direct interaction with mixing service"
+    },
+    {
+      "address": "0x3333333333333333333333333333333333333333",
+      "expected_risk": "high",
+      "min_score": 0.65,
+      "pattern": "whale_suspicious",
+      "reason": "Large transfers to unverified addresses"
+    }
+  ],
+  "graph_patterns": [
+    {
+      "name": "scam_cluster",
+      "center": "0x1111111111111111111111111111111111111111",
+      "nodes": [
+        "0x1111111111111111111111111111111111111111",
+        "0xaaaa111111111111111111111111111111111111",
+        "0xbbbb111111111111111111111111111111111111",
+        "0xcccc111111111111111111111111111111111111"
+      ],
+      "edges": [
+        {"from": "0x1111111111111111111111111111111111111111", "to": "0xaaaa111111111111111111111111111111111111", "value": "100"},
+        {"from": "0xaaaa111111111111111111111111111111111111", "to": "0xbbbb111111111111111111111111111111111111", "value": "95"},
+        {"from": "0xbbbb111111111111111111111111111111111111", "to": "0xcccc111111111111111111111111111111111111", "value": "90"},
+        {"from": "0xcccc111111111111111111111111111111111111", "to": "0x1111111111111111111111111111111111111111", "value": "85"}
+      ],
+      "expected_detection": true
+    }
+  ]
+}
