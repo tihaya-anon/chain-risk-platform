@@ -12,6 +12,7 @@ import {
   User,
   Settings,
   Tag,
+  Bell,
 } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { Button, ThemeToggle } from "@/components/common"
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { path: "/tags", label: "Tags", icon: Tag },
   { path: "/risk", label: "Risk", icon: AlertTriangle },
   { path: "/high-risk", label: "High Risk", icon: ShieldAlert },
+  { path: "/alerts", label: "Alerts", icon: Bell },
   { path: "/admin", label: "Admin", icon: Settings, adminOnly: true },
 ]
 

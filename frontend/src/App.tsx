@@ -11,6 +11,7 @@ import {
   HighRiskNetworkPage,
   AdminPage,
   TagSearchPage,
+  AlertsPage,
 } from "@/pages"
 import type { ReactNode } from "react"
 
@@ -90,6 +91,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <HighRiskNetworkPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/alerts"
+        element={
+          <ProtectedRoute>
+            <AlertsPage />
           </ProtectedRoute>
         }
       />
