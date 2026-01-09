@@ -11,9 +11,8 @@ from prometheus_fastapi_instrumentator.metrics import default
 from app.api.v1.risk import router as risk_router
 from app.core.config import get_config
 from app.core.logging import setup_logging, get_logger
-from app.core.nacos import register_with_nacos
 from app.ml.ensemble import EnsembleScorer
-from app.services.risk_service import RiskService, get_risk_service
+from app.services.risk_service import get_risk_service
 
 # Setup logging
 setup_logging()
@@ -25,10 +24,6 @@ config = get_config()
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     logger.info("Starting Risk ML Service", version="1.0.0")
-    
-    # Register with Nacos if configured
-    if config.nacos.server:
-        await register_with_nacos()
     
     # Initialize ensemble scorer (preload models if available)
     try:
@@ -95,9 +90,7 @@ app.include_router(risk_router, prefix="/api/v1/risk", tags=["risk"])
 # Legacy endpoint for backward compatibility
 @app.get("/api/v1/risk/{address}")
 async def get_risk_score_legacy(address: str):
-    """
-    Get risk score for an address (legacy endpoint).
-    """
+    """Get risk score for an address."""
     try:
         service = get_risk_service()
         result = await service.get_risk_score(address)
@@ -109,9 +102,7 @@ async def get_risk_score_legacy(address: str):
 
 @app.post("/api/v1/risk/batch")
 async def batch_risk_score(addresses: list[str]):
-    """
-    Get risk scores for multiple addresses.
-    """
+    """Get risk scores for multiple addresses."""
     try:
         service = get_risk_service()
         results = await service.batch_risk_score(addresses)
