@@ -461,3 +461,38 @@ mock-server-run: mock-server-build
 
 trino:
 	@bash -c '$(LOAD_ENV) ./scripts/trino-query.sh "$(Q)"'
+
+# ============================================
+# Staging Deployment
+# ============================================
+
+staging-deploy:
+	@echo "🚀 Deploying to staging..."
+	@./scripts/deploy/staging-deploy.sh deploy
+
+staging-verify:
+	@echo "✅ Verifying staging deployment..."
+	@./scripts/deploy/staging-deploy.sh verify
+
+staging-rollback:
+	@echo "⏪ Rolling back staging..."
+	@./scripts/deploy/staging-deploy.sh rollback
+
+staging-status:
+	@./scripts/deploy/staging-deploy.sh status
+
+staging-e2e:
+	@echo "🧪 Running staging E2E tests..."
+	@./scripts/deploy/staging-e2e.sh all
+
+staging-smoke:
+	@echo "💨 Running staging smoke tests..."
+	@./scripts/deploy/staging-e2e.sh smoke
+
+staging-monitoring:
+	@echo "📊 Verifying monitoring..."
+	@./scripts/deploy/verify-monitoring.sh report
+
+staging-load-test:
+	@echo "⚡ Running load test..."
+	@k6 run tests/load/staging-load.js
