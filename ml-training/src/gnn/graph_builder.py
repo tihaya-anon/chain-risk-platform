@@ -12,6 +12,39 @@ from neo4j import GraphDatabase
 log = logging.getLogger(__name__)
 
 
+# Feature columns to load from Trino (excluding metadata columns)
+FEATURE_COLUMNS = [
+    "tx_count",
+    "sent_count",
+    "received_count",
+    "unique_counterparties",
+    "avg_tx_value",
+    "max_tx_value",
+    "tx_value_stddev",
+    "address_age_days",
+    "sent_ratio",
+    "round_amount_ratio",
+    "small_tx_ratio",
+    "large_tx_ratio",
+    "in_degree",
+    "out_degree",
+    "in_out_ratio",
+    "unique_in_neighbors",
+]
+
+# High-risk labels for binary classification
+HIGH_RISK_LABELS = {
+    "OFAC SDN - Sanctioned Wallet",
+    "OFAC SDN - Test Entity 1",
+    "OFAC SDN - Test Entity 2",
+    "OFAC SDN - Blocked Entity",
+    "Tornado Cash Deposit",
+    "Tornado Cash Contract",
+    "Mixer Service",
+    "Privacy Protocol",
+}
+
+
 @dataclass
 class GraphData:
     """Container for graph data before PyG conversion."""
@@ -106,7 +139,6 @@ class GraphBuilder:
         self,
         network: str = "ethereum",
         limit: Optional[int] = None,
-        min_tx_count: int = 1,
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Load graph structure from Neo4j.
@@ -117,213 +149,243 @@ class GraphBuilder:
         """
         driver = self._get_neo4j_driver()
 
-        # Query nodes (addresses with transactions)
-        node_query = """
-        MATCH (a:Address {network: $network})
-        WHERE a.tx_count >= $min_tx_count
+        # Query nodes
+        node_query = f"""
+        MATCH (a:Address {{network: $network}})
         RETURN a.address AS address, a.network AS network
-        """ + (f"LIMIT {limit}" if limit else "")
+        {"LIMIT " + str(limit) if limit else ""}
+        """
 
-        # Query edges (transfers)
-        edge_query = """
-        MATCH (from:Address {network: $network})-[t:TRANSFERRED_TO]->(to:Address {network: $network})
-        WHERE from.tx_count >= $min_tx_count OR to.tx_count >= $min_tx_count
+        # Query edges (TRANSFER relationship)
+        edge_query = f"""
+        MATCH (from:Address {{network: $network}})-[t:TRANSFER]->(to:Address {{network: $network}})
         RETURN from.address AS source, to.address AS target, 
-               toFloat(t.total_value) AS weight, toInteger(t.tx_count) AS tx_count
-        """ + (f"LIMIT {limit * 10}" if limit else "")
+               toFloat(t.amount) AS weight
+        {"LIMIT " + str(limit * 10) if limit else ""}
+        """
 
         with driver.session() as session:
             log.info("Loading nodes from Neo4j...")
-            nodes_result = session.run(node_query, network=network, min_tx_count=min_tx_count)
+            nodes_result = session.run(node_query, network=network)
             nodes_data = [dict(record) for record in nodes_result]
-            nodes_df = pd.DataFrame(nodes_data)
+            nodes_df = pd.DataFrame(nodes_data) if nodes_data else pd.DataFrame(columns=["address", "network"])
             log.info(f"Loaded {len(nodes_df)} nodes")
 
             log.info("Loading edges from Neo4j...")
-            edges_result = session.run(edge_query, network=network, min_tx_count=min_tx_count)
+            edges_result = session.run(edge_query, network=network)
             edges_data = [dict(record) for record in edges_result]
-            edges_df = pd.DataFrame(edges_data)
+            edges_df = pd.DataFrame(edges_data) if edges_data else pd.DataFrame(columns=["source", "target", "weight"])
             log.info(f"Loaded {len(edges_df)} edges")
 
         return nodes_df, edges_df
 
     def load_features_from_trino(
         self,
-        addresses: Optional[list[str]] = None,
-        feature_version: str = "v1",
+        addresses: list[str],
+        network: str = "ethereum",
+        feature_columns: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         """
-        Load precomputed features from Hudi via Trino.
+        Load address features from Trino/Hudi.
 
         Args:
-            addresses: Optional list of addresses to filter
-            feature_version: Feature version to load
+            addresses: List of addresses to load features for
+            network: Network name
+            feature_columns: Feature columns to load (default: FEATURE_COLUMNS)
 
         Returns:
             DataFrame with address and feature columns
         """
+        if not addresses:
+            return pd.DataFrame()
+
+        feature_columns = feature_columns or FEATURE_COLUMNS
+        columns = ["address"] + feature_columns
+
         conn = self._get_trino_connection()
         cursor = conn.cursor()
 
-        feature_cols = [
-            "address",
-            "network",
-            "tx_count",
-            "sent_count",
-            "received_count",
-            "unique_counterparties",
-            "avg_tx_value",
-            "max_tx_value",
-            "tx_value_stddev",
-            "address_age_days",
-            "sent_ratio",
-            "round_amount_ratio",
-            "small_tx_ratio",
-            "large_tx_ratio",
-            "in_degree",
-            "out_degree",
-            "in_out_ratio",
-            "unique_in_neighbors",
-        ]
-
+        # Build query with address filter
+        addr_list = ",".join([f"'{addr}'" for addr in addresses])
         query = f"""
-        SELECT {', '.join(feature_cols)}
+        SELECT {", ".join(columns)}
         FROM address_features
-        WHERE feature_version = '{feature_version}'
+        WHERE network = '{network}'
+        AND address IN ({addr_list})
         """
 
-        if addresses:
-            addr_list = ", ".join(f"'{a}'" for a in addresses)
-            query += f" AND address IN ({addr_list})"
-
-        log.info("Loading features from Trino...")
+        log.info(f"Loading features for {len(addresses)} addresses from Trino...")
         cursor.execute(query)
         rows = cursor.fetchall()
-        df = pd.DataFrame(rows, columns=feature_cols)
+
+        df = pd.DataFrame(rows, columns=columns)
         log.info(f"Loaded features for {len(df)} addresses")
 
         return df
 
-    def load_labels_from_trino(self) -> pd.DataFrame:
+    def load_labels_from_trino(
+        self,
+        addresses: Optional[list[str]] = None,
+        high_risk_labels: Optional[set[str]] = None,
+    ) -> pd.DataFrame:
         """
-        Load labels from Hudi via Trino.
+        Load address labels from Trino/Hudi and convert to binary labels.
+
+        Args:
+            addresses: Optional list of addresses to filter
+            high_risk_labels: Set of label names considered high-risk
 
         Returns:
-            DataFrame with address, label columns (1=risky, 0=normal)
+            DataFrame with address and binary label (0=low risk, 1=high risk)
         """
+        high_risk_labels = high_risk_labels or HIGH_RISK_LABELS
+
         conn = self._get_trino_connection()
         cursor = conn.cursor()
 
-        query = """
-        SELECT address,
-               CASE 
-                   WHEN label_type IN ('sanctioned', 'mixer') THEN 1
-                   WHEN label_type = 'exchange' THEN 0
-                   ELSE NULL
-               END AS label,
-               label_type,
-               source
-        FROM address_labels
-        """
+        query = "SELECT address, label FROM address_labels"
+        if addresses:
+            addr_list = ",".join([f"'{addr}'" for addr in addresses])
+            query += f" WHERE address IN ({addr_list})"
 
         log.info("Loading labels from Trino...")
         cursor.execute(query)
         rows = cursor.fetchall()
-        df = pd.DataFrame(rows, columns=["address", "label", "label_type", "source"])
-        df = df[df["label"].notna()]
-        log.info(f"Loaded {len(df)} labeled addresses")
 
-        return df
+        df = pd.DataFrame(rows, columns=["address", "label_name"])
+
+        # Convert to binary: 1 = high risk, 0 = low risk
+        df["label"] = df["label_name"].apply(lambda x: 1 if x in high_risk_labels else 0)
+        log.info(f"Loaded {len(df)} labels: {df['label'].sum()} high-risk, {(df['label'] == 0).sum()} low-risk")
+
+        # Aggregate by address (take max label if address has multiple labels)
+        label_df = df.groupby("address")["label"].max().reset_index()
+
+        return label_df
 
     def build_graph_data(
         self,
         network: str = "ethereum",
         limit: Optional[int] = None,
-        min_tx_count: int = 1,
-        feature_version: str = "v1",
-        include_labels: bool = True,
+        feature_columns: Optional[list[str]] = None,
     ) -> GraphData:
         """
         Build complete graph data with features and labels.
 
         Args:
-            network: Blockchain network
-            limit: Limit number of nodes (for testing)
-            min_tx_count: Minimum transaction count filter
-            feature_version: Feature version to load
-            include_labels: Whether to include labels
+            network: Network name
+            limit: Optional limit on nodes/edges
+            feature_columns: Feature columns to load
 
         Returns:
-            GraphData object
+            GraphData object ready for PyG conversion
         """
         # Load graph structure
-        nodes_df, edges_df = self.load_graph_from_neo4j(
-            network=network, limit=limit, min_tx_count=min_tx_count
-        )
+        nodes_df, edges_df = self.load_graph_from_neo4j(network=network, limit=limit)
 
         if nodes_df.empty:
-            raise ValueError("No nodes found in Neo4j")
+            log.warning("No nodes found in Neo4j")
+            return GraphData(nodes=nodes_df, edges=edges_df)
+
+        addresses = nodes_df["address"].tolist()
 
         # Load features
-        addresses = nodes_df["address"].tolist()
         features_df = self.load_features_from_trino(
-            addresses=addresses, feature_version=feature_version
+            addresses=addresses,
+            network=network,
+            feature_columns=feature_columns,
         )
 
-        # Merge nodes with features
-        nodes_df = nodes_df.merge(features_df, on=["address", "network"], how="left")
+        # Merge features into nodes
+        if not features_df.empty:
+            nodes_df = nodes_df.merge(features_df, on="address", how="left")
+            # Fill missing features with 0
+            feature_cols = feature_columns or FEATURE_COLUMNS
+            for col in feature_cols:
+                if col in nodes_df.columns:
+                    nodes_df[col] = nodes_df[col].fillna(0)
 
-        # Filter edges to only include known nodes
-        known_addresses = set(nodes_df["address"])
+        # Load labels
+        labels_df = self.load_labels_from_trino(addresses=addresses)
+
+        # Filter edges to only include nodes in our node set
+        valid_nodes = set(nodes_df["address"])
         edges_df = edges_df[
-            edges_df["source"].isin(known_addresses) & edges_df["target"].isin(known_addresses)
+            edges_df["source"].isin(valid_nodes) & edges_df["target"].isin(valid_nodes)
         ]
-
-        # Load labels if requested
-        labels_df = None
-        if include_labels:
-            labels_df = self.load_labels_from_trino()
-            labels_df = labels_df[labels_df["address"].isin(known_addresses)]
 
         log.info(
             f"Built graph: {len(nodes_df)} nodes, {len(edges_df)} edges, "
-            f"{len(labels_df) if labels_df is not None else 0} labels"
+            f"{len(labels_df)} labeled nodes"
         )
 
-        return GraphData(nodes=nodes_df, edges=edges_df, node_labels=labels_df)
+        return GraphData(
+            nodes=nodes_df,
+            edges=edges_df,
+            node_labels=labels_df if not labels_df.empty else None,
+        )
 
-    def export_to_files(
+    def load_subgraph_for_address(
         self,
-        graph_data: GraphData,
-        output_dir: str,
-        prefix: str = "graph",
-    ):
-        """Export graph data to parquet files."""
-        from pathlib import Path
+        address: str,
+        network: str = "ethereum",
+        hops: int = 2,
+        max_neighbors: int = 50,
+    ) -> GraphData:
+        """
+        Load a subgraph centered on a specific address (for inference).
 
-        output_path = Path(output_dir)
-        output_path.mkdir(parents=True, exist_ok=True)
+        Args:
+            address: Center address
+            network: Network name
+            hops: Number of hops to expand
+            max_neighbors: Max neighbors per hop
 
-        graph_data.nodes.to_parquet(output_path / f"{prefix}_nodes.parquet", index=False)
-        graph_data.edges.to_parquet(output_path / f"{prefix}_edges.parquet", index=False)
-        if graph_data.node_labels is not None:
-            graph_data.node_labels.to_parquet(
-                output_path / f"{prefix}_labels.parquet", index=False
-            )
+        Returns:
+            GraphData for the subgraph
+        """
+        driver = self._get_neo4j_driver()
 
-        log.info(f"Exported graph data to {output_dir}")
+        # Multi-hop query to get neighborhood
+        query = f"""
+        MATCH path = (center:Address {{address: $address, network: $network}})-[:TRANSFER*1..{hops}]-(neighbor:Address)
+        WITH center, neighbor, length(path) as dist
+        ORDER BY dist
+        WITH center, collect(DISTINCT neighbor)[0..{max_neighbors * hops}] as neighbors
+        UNWIND [center] + neighbors as node
+        WITH collect(DISTINCT node) as all_nodes
+        UNWIND all_nodes as n
+        RETURN n.address as address
+        """
 
-    @classmethod
-    def load_from_files(cls, input_dir: str, prefix: str = "graph") -> GraphData:
-        """Load graph data from parquet files."""
-        from pathlib import Path
+        with driver.session() as session:
+            result = session.run(query, address=address, network=network)
+            addresses = [record["address"] for record in result]
 
-        input_path = Path(input_dir)
+        if not addresses:
+            # If no subgraph found, return just the center node
+            addresses = [address]
 
-        nodes_df = pd.read_parquet(input_path / f"{prefix}_nodes.parquet")
-        edges_df = pd.read_parquet(input_path / f"{prefix}_edges.parquet")
+        # Load edges between these nodes
+        edge_query = """
+        MATCH (from:Address)-[t:TRANSFER]->(to:Address)
+        WHERE from.address IN $addresses AND to.address IN $addresses
+        RETURN from.address AS source, to.address AS target, toFloat(t.amount) AS weight
+        """
 
-        labels_path = input_path / f"{prefix}_labels.parquet"
-        labels_df = pd.read_parquet(labels_path) if labels_path.exists() else None
+        with driver.session() as session:
+            result = session.run(edge_query, addresses=addresses)
+            edges_data = [dict(record) for record in result]
 
-        return GraphData(nodes=nodes_df, edges=edges_df, node_labels=labels_df)
+        nodes_df = pd.DataFrame({"address": addresses, "network": network})
+        edges_df = pd.DataFrame(edges_data) if edges_data else pd.DataFrame(columns=["source", "target", "weight"])
+
+        # Load features
+        features_df = self.load_features_from_trino(addresses=addresses, network=network)
+        if not features_df.empty:
+            nodes_df = nodes_df.merge(features_df, on="address", how="left")
+            for col in FEATURE_COLUMNS:
+                if col in nodes_df.columns:
+                    nodes_df[col] = nodes_df[col].fillna(0)
+
+        return GraphData(nodes=nodes_df, edges=edges_df)
