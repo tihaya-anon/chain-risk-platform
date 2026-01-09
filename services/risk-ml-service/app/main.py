@@ -9,7 +9,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_fastapi_instrumentator.metrics import default
 
 from app.api.v1.risk import router as risk_router
-from app.core.config import config
+from app.core.config import get_config
 from app.core.logging import setup_logging, get_logger
 from app.core.nacos import register_with_nacos
 from app.ml.ensemble import EnsembleScorer
@@ -18,6 +18,7 @@ from app.services.risk_service import RiskService, get_risk_service
 # Setup logging
 setup_logging()
 logger = get_logger(__name__)
+config = get_config()
 
 
 @asynccontextmanager
