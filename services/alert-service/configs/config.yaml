@@ -1,0 +1,85 @@
+server:
+  port: 8083
+  mode: release  # debug, release
+  read_timeout: 30s
+  write_timeout: 30s
+
+kafka:
+  brokers:
+    - localhost:19092
+  topics:
+    risk_scores: risk-scores
+    transfers: transfers
+  group_id: alert-service
+  session_timeout: 10s
+  heartbeat_interval: 3s
+
+database:
+  host: localhost
+  port: 15432
+  database: chainrisk
+  user: chainrisk
+  password: chainrisk123
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 5m
+
+redis:
+  host: localhost
+  port: 16379
+  password: ""
+  db: 2  # Use DB 2 for alert service
+  pool_size: 10
+
+alert:
+  dedup_window: 5m           # Deduplication time window
+  batch_size: 100            # Batch size for processing
+  retry_attempts: 3          # Retry attempts for failed notifications
+  retry_delay: 5s            # Delay between retries
+  max_alerts_per_minute: 100 # Rate limiting
+
+notifiers:
+  email:
+    enabled: false
+    smtp_host: smtp.gmail.com
+    smtp_port: 587
+    smtp_user: ""
+    smtp_password: ""
+    from: alerts@chainrisk.com
+    
+  webhook:
+    enabled: true
+    timeout: 10s
+    max_retries: 3
+    
+  slack:
+    enabled: false
+    timeout: 5s
+    default_webhook_url: ""
+
+logging:
+  level: info  # debug, info, warn, error
+  encoding: json  # json, console
+  output_paths:
+    - stdout
+    - logs/alert-service.log
+  error_output_paths:
+    - stderr
+    - logs/alert-service-error.log
+
+nacos:
+  enabled: false
+  server_addr: localhost:18848
+  namespace: public
+  group: DEFAULT_GROUP
+  data_id: alert-service
+  timeout: 5s
+
+services:
+  risk_service:
+    url: http://localhost:8082
+    timeout: 10s
+  
+  graph_service:
+    url: http://localhost:8084
+    timeout: 10s
