@@ -15,14 +15,14 @@ import (
 
 // TestEnv holds all test environment connections
 type TestEnv struct {
-	Config      *Config
-	DB          *sql.DB
-	Redis       *redis.Client
-	Neo4j       neo4j.DriverWithContext
-	KafkaAdmin  sarama.ClusterAdmin
-	HTTPClient  *http.Client
-	ctx         context.Context
-	cancel      context.CancelFunc
+	Config     *Config
+	DB         *sql.DB
+	Redis      *redis.Client
+	Neo4j      neo4j.DriverWithContext
+	Kafka      sarama.ClusterAdmin
+	HTTPClient *http.Client
+	ctx        context.Context
+	cancel     context.CancelFunc
 }
 
 // Config holds test configuration
@@ -67,7 +67,7 @@ func LoadConfig() *Config {
 		QueryServiceURL:  getEnv("QUERY_SERVICE_URL", "http://localhost:8081"),
 		RiskServiceURL:   getEnv("RISK_SERVICE_URL", "http://localhost:8082"),
 		GraphServiceURL:  getEnv("GRAPH_SERVICE_URL", "http://localhost:8084"),
-		AlertServiceURL:  getEnv("ALERT_SERVICE_URL", "http://localhost:8085"),
+		AlertServiceURL:  getEnv("ALERT_SERVICE_URL", "http://localhost:8083"),
 		BFFURL:           getEnv("BFF_URL", "http://localhost:3001"),
 		GeneratorBin:     getEnv("GENERATOR_BIN", "../data-ingestion/bin/generator"),
 	}
@@ -78,6 +78,13 @@ func getEnv(key, defaultVal string) string {
 		return val
 	}
 	return defaultVal
+}
+
+// Neo4jSessionConfig returns default session config
+func Neo4jSessionConfig() neo4j.SessionConfig {
+	return neo4j.SessionConfig{
+		DatabaseName: "neo4j",
+	}
 }
 
 // Setup initializes test environment
@@ -129,50 +136,45 @@ func Setup(ctx context.Context) (*TestEnv, error) {
 	kafkaCfg.Version = sarama.V2_8_0_0
 	admin, err := sarama.NewClusterAdmin(cfg.KafkaBrokers, kafkaCfg)
 	if err != nil {
-		return nil, fmt.Errorf("connect kafka admin: %w", err)
+		// Kafka is optional for some tests
+		fmt.Printf("Warning: Kafka connection failed: %v\n", err)
+	} else {
+		env.Kafka = admin
 	}
-	env.KafkaAdmin = admin
 
 	return env, nil
 }
 
-// Teardown cleans up test environment
-func (e *TestEnv) Teardown() error {
-	var errs []error
-
-	if e.DB != nil {
-		if err := e.DB.Close(); err != nil {
-			errs = append(errs, fmt.Errorf("close postgres: %w", err))
+// WaitForServiceReady waits for HTTP service to be ready
+func (e *TestEnv) WaitForServiceReady(ctx context.Context, url string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		resp, err := e.HTTPClient.Get(url)
+		if err == nil && resp.StatusCode < 500 {
+			resp.Body.Close()
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Second):
 		}
 	}
-
-	if e.Redis != nil {
-		if err := e.Redis.Close(); err != nil {
-			errs = append(errs, fmt.Errorf("close redis: %w", err))
-		}
-	}
-
-	if e.Neo4j != nil {
-		if err := e.Neo4j.Close(e.ctx); err != nil {
-			errs = append(errs, fmt.Errorf("close neo4j: %w", err))
-		}
-	}
-
-	if e.KafkaAdmin != nil {
-		if err := e.KafkaAdmin.Close(); err != nil {
-			errs = append(errs, fmt.Errorf("close kafka: %w", err))
-		}
-	}
-
-	e.cancel()
-
-	if len(errs) > 0 {
-		return fmt.Errorf("teardown errors: %v", errs)
-	}
-	return nil
+	return fmt.Errorf("service not ready: %s", url)
 }
 
-// Context returns the test context
-func (e *TestEnv) Context() context.Context {
-	return e.ctx
+// WaitForCondition waits for condition with timeout
+func (e *TestEnv) WaitForCondition(ctx context.Context, condition func() bool, timeout time.Duration) bool {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if condition() {
+			return true
+		}
+		select {
+		case <-ctx.Done():
+			return false
+		case <-time.After(time.Second):
+		}
+	}
+	return false
 }
