@@ -77,7 +77,7 @@ describe("RiskService", () => {
     ];
 
     it("should return batch risk scores", async () => {
-      mock.onPost("/api/v1/risk/score/batch").reply(200, fixtures.mockBatchRiskScore);
+      mock.onPost("/api/v1/risk/batch").reply(200, fixtures.mockBatchRiskScore);
 
       const result = await service.scoreAddressesBatch({ addresses });
 
@@ -85,7 +85,7 @@ describe("RiskService", () => {
     });
 
     it("should transform snake_case to camelCase", async () => {
-      mock.onPost("/api/v1/risk/score/batch").reply(200, fixtures.mockBatchRiskScore);
+      mock.onPost("/api/v1/risk/batch").reply(200, fixtures.mockBatchRiskScore);
 
       const result = await service.scoreAddressesBatch({
         addresses: [addresses[0]],
