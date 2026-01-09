@@ -42,15 +42,23 @@ graph:
     # Minimum score threshold to continue propagation
     min-threshold: ${pipeline.propagation.minThreshold:0.1}
 
-# Actuator
+# Actuator & Prometheus Metrics
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,refresh
+        include: health,info,metrics,prometheus,refresh
   endpoint:
     health:
       show-details: when_authorized
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: graph-service
+    export:
+      prometheus:
+        enabled: true
 
 # Logging
 logging:
