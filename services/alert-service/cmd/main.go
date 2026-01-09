@@ -11,9 +11,17 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/chain-risk-platform/alert-service/internal/client"
 	"github.com/chain-risk-platform/alert-service/internal/config"
+	"github.com/chain-risk-platform/alert-service/internal/dedup"
+	"github.com/chain-risk-platform/alert-service/internal/engine"
+	"github.com/chain-risk-platform/alert-service/internal/handler"
+	"github.com/chain-risk-platform/alert-service/internal/kafka"
+	"github.com/chain-risk-platform/alert-service/internal/notifier"
 	"github.com/chain-risk-platform/alert-service/internal/repository"
+	"github.com/chain-risk-platform/alert-service/internal/service"
 	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -52,10 +60,81 @@ func main() {
 	}
 
 	// Initialize repositories
-	alertRuleRepo := repository.NewAlertRuleRepository(db)
-	alertHistoryRepo := repository.NewAlertHistoryRepository(db)
+	ruleRepo := repository.NewAlertRuleRepository(db)
+	historyRepo := repository.NewAlertHistoryRepository(db)
+	subsRepo := repository.NewAlertSubscriptionRepository(db)
 
 	logger.Info("Repositories initialized")
+
+	// Initialize external clients
+	graphClient := client.NewGraphServiceClient(
+		cfg.Services.GraphService.URL,
+		cfg.Services.GraphService.Timeout,
+		logger,
+	)
+
+	// Initialize evaluators
+	evalRegistry := engine.NewEvaluatorRegistry()
+	evalRegistry.Register(engine.NewRiskScoreEvaluator())
+	evalRegistry.Register(engine.NewTransactionValueEvaluator())
+	evalRegistry.Register(engine.NewTagMatchEvaluator(graphClient))
+
+	logger.Info("Evaluators registered",
+		zap.Strings("types", evalRegistry.SupportedRuleTypes()))
+
+	// Initialize deduplicator
+	deduplicator := dedup.NewDeduplicator(redisClient, cfg.Alert.DedupWindow, logger)
+
+	// Initialize alert engine
+	alertEngine := engine.NewAlertEngine(evalRegistry, ruleRepo, deduplicator, logger)
+
+	// Initialize notifiers
+	notifierRegistry := notifier.NewNotifierRegistry()
+
+	if cfg.Notifiers.Webhook.Enabled {
+		notifierRegistry.Register(notifier.NewWebhookNotifier(cfg.Notifiers.Webhook.Timeout, logger))
+	}
+
+	if cfg.Notifiers.Email.Enabled {
+		notifierRegistry.Register(notifier.NewEmailNotifier(notifier.EmailConfig{
+			SMTPHost:     cfg.Notifiers.Email.SMTPHost,
+			SMTPPort:     cfg.Notifiers.Email.SMTPPort,
+			SMTPUser:     cfg.Notifiers.Email.SMTPUser,
+			SMTPPassword: cfg.Notifiers.Email.SMTPPassword,
+			From:         cfg.Notifiers.Email.From,
+		}, logger))
+	}
+
+	if cfg.Notifiers.Slack.Enabled {
+		notifierRegistry.Register(notifier.NewSlackNotifier(cfg.Notifiers.Slack.Timeout, logger))
+	}
+
+	logger.Info("Notifiers registered",
+		zap.Strings("channels", notifierRegistry.SupportedChannels()))
+
+	// Initialize dispatcher
+	dispatcher := notifier.NewDispatcher(
+		notifierRegistry,
+		cfg.Alert.RetryAttempts,
+		cfg.Alert.RetryDelay,
+		logger,
+	)
+
+	// Initialize service
+	alertService := service.NewAlertService(
+		ruleRepo,
+		historyRepo,
+		subsRepo,
+		alertEngine,
+		dispatcher,
+		logger,
+	)
+
+	// Initialize handlers
+	ruleHandler := handler.NewAlertRuleHandler(alertService, logger)
+	historyHandler := handler.NewAlertHistoryHandler(alertService, logger)
+	subsHandler := handler.NewSubscriptionHandler(alertService, logger)
+	testHandler := handler.NewTestAlertHandler(alertService, logger)
 
 	// Initialize Gin router
 	if cfg.Server.Mode == "release" {
@@ -75,46 +154,12 @@ func main() {
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
-	{
-		// Alert rules
-		rules := v1.Group("/alert-rules")
-		{
-			rules.GET("", func(c *gin.Context) {
-				rules, err := alertRuleRepo.List(c.Request.Context(), nil)
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-					return
-				}
-				c.JSON(http.StatusOK, rules)
-			})
-
-			rules.GET("/:id", func(c *gin.Context) {
-				var id int64
-				if err := c.ShouldBindUri(&struct{ ID int64 `uri:"id" binding:"required"`}{ID: id}); err != nil {
-					c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-					return
-				}
-				// TODO: Implement get by ID
-				c.JSON(http.StatusOK, gin.H{"message": "Not implemented yet"})
-			})
-		}
-
-		// Alert history
-		alerts := v1.Group("/alerts")
-		{
-			alerts.GET("", func(c *gin.Context) {
-				filters := repository.AlertHistoryFilters{
-					Limit: 100,
-				}
-				alerts, err := alertHistoryRepo.List(c.Request.Context(), filters)
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-					return
-				}
-				c.JSON(http.StatusOK, alerts)
-			})
-		}
-	}
+	handler.RegisterAll(v1,
+		ruleHandler,
+		historyHandler,
+		subsHandler,
+		testHandler,
+	)
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -124,7 +169,34 @@ func main() {
 		WriteTimeout: cfg.Server.WriteTimeout,
 	}
 
-	// Start server in goroutine
+	// Context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Initialize Kafka consumer
+	var kafkaConsumer *kafka.Consumer
+	if len(cfg.Kafka.Brokers) > 0 {
+		kafkaConsumer = kafka.NewConsumer(kafka.Config{
+			Brokers:           cfg.Kafka.Brokers,
+			GroupID:           cfg.Kafka.GroupID,
+			RiskScoresTopic:   cfg.Kafka.Topics.RiskScores,
+			TransfersTopic:    cfg.Kafka.Topics.Transfers,
+			SessionTimeout:    cfg.Kafka.SessionTimeout,
+			HeartbeatInterval: cfg.Kafka.HeartbeatInterval,
+		}, alertService, logger)
+
+		// Start Kafka consumer
+		go func() {
+			logger.Info("Starting Kafka consumer")
+			if err := kafkaConsumer.Start(ctx); err != nil && err != context.Canceled {
+				logger.Error("Kafka consumer error", zap.Error(err))
+			}
+		}()
+	} else {
+		logger.Warn("Kafka not configured, running in API-only mode")
+	}
+
+	// Start HTTP server
 	go func() {
 		logger.Info("HTTP server starting", zap.Int("port", cfg.Server.Port))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -139,11 +211,21 @@ func main() {
 
 	logger.Info("Shutting down server...")
 
-	// Graceful shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	// Cancel context to stop Kafka consumer
+	cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	// Stop Kafka consumer
+	if kafkaConsumer != nil {
+		if err := kafkaConsumer.Stop(); err != nil {
+			logger.Error("Failed to stop Kafka consumer", zap.Error(err))
+		}
+	}
+
+	// Graceful HTTP shutdown
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Fatal("Server forced to shutdown", zap.Error(err))
 	}
 
@@ -151,7 +233,6 @@ func main() {
 }
 
 func initLogger(cfg config.LoggingConfig) *zap.Logger {
-	// Parse log level
 	level := zapcore.InfoLevel
 	switch cfg.Level {
 	case "debug":
@@ -162,7 +243,6 @@ func initLogger(cfg config.LoggingConfig) *zap.Logger {
 		level = zapcore.ErrorLevel
 	}
 
-	// Create logger config
 	zapCfg := zap.Config{
 		Level:            zap.NewAtomicLevelAt(level),
 		Development:      false,
@@ -186,12 +266,10 @@ func initDatabase(cfg *config.Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Set connection pool settings
 	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
 	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
 	db.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
 
-	// Test connection
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
@@ -200,23 +278,19 @@ func initDatabase(cfg *config.Config) (*sql.DB, error) {
 }
 
 func initRedis(cfg *config.Config) *redis.Client {
-	client := redis.NewClient(&redis.Options{
+	return redis.NewClient(&redis.Options{
 		Addr:     cfg.GetRedisAddr(),
 		Password: cfg.Redis.Password,
 		DB:       cfg.Redis.DB,
 		PoolSize: cfg.Redis.PoolSize,
 	})
-
-	return client
 }
 
 func testConnections(db *sql.DB, redisClient *redis.Client) error {
-	// Test database
 	if err := db.Ping(); err != nil {
 		return fmt.Errorf("database connection failed: %w", err)
 	}
 
-	// Test Redis
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

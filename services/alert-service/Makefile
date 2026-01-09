@@ -1,67 +1,93 @@
-.PHONY: help build run test clean docker-build docker-run
+.PHONY: build run test lint clean docker docker-push
 
-help:
-	@echo "Alert Service Makefile"
-	@echo ""
-	@echo "Usage:"
-	@echo "  make build         Build the service"
-	@echo "  make run           Run the service"
-	@echo "  make test          Run tests"
-	@echo "  make clean         Clean build artifacts"
-	@echo "  make docker-build  Build Docker image"
-	@echo "  make docker-run    Run in Docker"
+# Variables
+APP_NAME := alert-service
+VERSION := 1.0.0
+BUILD_DIR := bin
+DOCKER_IMAGE := chain-risk/$(APP_NAME)
 
+# Go parameters
+GOCMD := go
+GOBUILD := $(GOCMD) build
+GOTEST := $(GOCMD) test
+GOMOD := $(GOCMD) mod
+GOVET := $(GOCMD) vet
+
+# Build flags
+LDFLAGS := -ldflags "-X main.version=$(VERSION)"
+
+# Default target
+all: build
+
+# Build the application
 build:
-	@echo "Building alert-service..."
-	@go build -o bin/alert-service cmd/main.go
-	@echo "Build complete: bin/alert-service"
+	@echo "Building $(APP_NAME)..."
+	@mkdir -p $(BUILD_DIR)
+	$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) ./cmd/main.go
 
+# Run the application
 run:
-	@echo "Running alert-service..."
-	@go run cmd/main.go
+	$(GOCMD) run ./cmd/main.go
 
+# Run tests
 test:
-	@echo "Running tests..."
-	@go test -v ./...
+	$(GOTEST) -v -cover ./...
 
+# Run tests with coverage report
 test-coverage:
-	@echo "Running tests with coverage..."
-	@go test -v -coverprofile=coverage.out ./...
-	@go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report: coverage.html"
+	$(GOTEST) -v -coverprofile=coverage.out ./...
+	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 
+# Run linter
+lint:
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run; \
+	else \
+		echo "golangci-lint not installed, running go vet instead"; \
+		$(GOVET) ./...; \
+	fi
+
+# Download dependencies
+deps:
+	$(GOMOD) download
+	$(GOMOD) tidy
+
+# Clean build artifacts
 clean:
 	@echo "Cleaning..."
-	@rm -rf bin/
+	@rm -rf $(BUILD_DIR)
 	@rm -f coverage.out coverage.html
-	@echo "Clean complete"
 
-lint:
-	@echo "Running linter..."
-	@golangci-lint run ./...
+# Build Docker image
+docker:
+	docker build -t $(DOCKER_IMAGE):$(VERSION) .
+	docker tag $(DOCKER_IMAGE):$(VERSION) $(DOCKER_IMAGE):latest
 
-fmt:
-	@echo "Formatting code..."
-	@go fmt ./...
+# Push Docker image
+docker-push: docker
+	docker push $(DOCKER_IMAGE):$(VERSION)
+	docker push $(DOCKER_IMAGE):latest
 
-tidy:
-	@echo "Tidying dependencies..."
-	@go mod tidy
-
-docker-build:
-	@echo "Building Docker image..."
-	@docker build -t alert-service:latest .
-
-docker-run:
-	@echo "Running in Docker..."
-	@docker run -p 8083:8083 --env-file .env alert-service:latest
-
+# Run with hot reload (requires air)
 dev:
-	@echo "Running with hot reload (requires air)..."
-	@air
+	@if command -v air >/dev/null 2>&1; then \
+		air; \
+	else \
+		echo "air not installed, run: go install github.com/cosmtrek/air@latest"; \
+		exit 1; \
+	fi
 
-install-tools:
-	@echo "Installing development tools..."
-	@go install github.com/cosmtrek/air@latest
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	@echo "Tools installed"
+# Help
+help:
+	@echo "Available targets:"
+	@echo "  build         - Build the application"
+	@echo "  run           - Run the application"
+	@echo "  test          - Run tests"
+	@echo "  test-coverage - Run tests with coverage report"
+	@echo "  lint          - Run linter"
+	@echo "  deps          - Download dependencies"
+	@echo "  clean         - Clean build artifacts"
+	@echo "  docker        - Build Docker image"
+	@echo "  docker-push   - Push Docker image"
+	@echo "  dev           - Run with hot reload"
+	@echo "  help          - Show this help"
