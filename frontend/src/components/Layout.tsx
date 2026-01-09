@@ -151,7 +151,7 @@ export function Layout({ children }: LayoutProps) {
       <footer className="flex-shrink-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-            Chain Risk Platform © 2024
+            Chain Risk Platform © 2026
           </p>
         </div>
       </footer>
