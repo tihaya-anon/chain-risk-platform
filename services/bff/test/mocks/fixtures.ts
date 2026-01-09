@@ -1,7 +1,5 @@
 /**
  * Service Mock Fixtures
- *
- * Pre-generated mock data based on OpenAPI schemas for consistent testing.
  */
 
 // ============== Query Service Fixtures ==============
@@ -16,6 +14,11 @@ export const mockAddressInfo = {
   totalTxCount: 350,
   uniqueInteracted: 85,
 };
+
+export const createMockAddress = (overrides: Partial<typeof mockAddressInfo> = {}) => ({
+  ...mockAddressInfo,
+  ...overrides,
+});
 
 export const mockAddressStats = {
   totalValueSent: "1250.5",
@@ -114,6 +117,17 @@ export const mockRiskHistory = [
   },
 ];
 
+export const mockRiskRules = {
+  rules: [
+    {
+      id: "rule-001",
+      name: "High Risk Threshold",
+      enabled: true,
+      threshold: 0.8,
+    },
+  ],
+};
+
 // ============== Graph Service Fixtures ==============
 
 export const mockGraphAddressInfo = {
@@ -125,15 +139,6 @@ export const mockGraphAddressInfo = {
   totalValue: "3500.5",
   firstSeen: "2023-01-15T10:30:00Z",
   lastSeen: "2024-01-10T14:20:00Z",
-};
-
-export const mockNeighborInfo = {
-  address: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
-  txCount: 5,
-  totalValue: "15.5",
-  direction: "both",
-  riskScore: 0.3,
-  tags: ["defi"],
 };
 
 export const mockGraphNode = {
@@ -157,15 +162,6 @@ export const mockAddressNeighbors = {
   edges: [mockGraphEdge],
 };
 
-export const mockPathNode = {
-  address: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
-  txHash: "0xabc123",
-  value: "1.5",
-  timestamp: "2024-01-10T14:20:00Z",
-  riskScore: 0.65,
-  tags: ["exchange"],
-};
-
 export const mockPathResponse = {
   found: true,
   fromAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
@@ -173,31 +169,26 @@ export const mockPathResponse = {
   pathLength: 2,
   maxDepth: 5,
   message: "Path found",
-  path: [mockPathNode],
+  path: [{
+    address: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
+    txHash: "0xabc123",
+    value: "1.5",
+    timestamp: "2024-01-10T14:20:00Z",
+    riskScore: 0.65,
+    tags: ["exchange"],
+  }],
 };
 
 export const mockCluster = {
-  id: "cluster-001",
+  clusterId: "cluster-001",
   label: "Exchange Hot Wallet",
   memberCount: 25,
   totalVolume: "50000.0",
   avgRisk: 0.35,
-  members: [
+  addresses: [
     "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
     "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
   ],
-};
-
-export const mockSubgraph = {
-  centerAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
-  depth: 2,
-  nodes: [mockGraphNode],
-  edges: [mockGraphEdge],
-  stats: {
-    nodeCount: 1,
-    edgeCount: 1,
-    avgRisk: 0.3,
-  },
 };
 
 // ============== Alert Service Fixtures ==============
