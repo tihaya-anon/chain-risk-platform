@@ -3,100 +3,48 @@
 > Graph Neural Network integration for blockchain address risk analysis
 
 **Created**: 2026-01-09  
-**Status**: Planning  
+**Updated**: 2026-01-09  
+**Status**: Phase 1-5 Complete  
 **Branch**: `feature/gnn-development`
 
 ---
 
 ## Overview
 
-Integrate Graph Neural Networks (GNN) into the existing ML pipeline to leverage graph topology for risk prediction. GNN captures relational patterns that traditional tabular models (XGBoost) cannot.
-
-### Goals
-
-1. Build GNN training pipeline in `ml-training/`
-2. Support node-level risk classification
-3. Generate address embeddings as features for ensemble
-4. Integrate GNN inference into `risk-ml-service`
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         Data Sources                                    │
-│                                                                         │
-│   Neo4j (Graph)              Hudi (Features)           Labels           │
-│   ├─ Nodes: addresses        ├─ address_features       ├─ OFAC          │
-│   └─ Edges: transfers        └─ 16 features            ├─ Tornado Cash  │
-│                                                        └─ Exchanges     │
-└───────────────┬─────────────────────┬─────────────────────┬─────────────┘
-                │                     │                     │
-                └──────────┬──────────┴──────────┬──────────┘
-                           │                     │
-                           ▼                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      ml-training/src/gnn/                               │
-│                                                                         │
-│   ┌──────────────┐    ┌──────────────┐    ┌──────────────┐              │
-│   │ GraphBuilder │───▶│  GNN Models  │───▶│   Trainer    │              │
-│   │ (Neo4j→PyG)  │    │ GCN/GAT/SAGE │    │              │              │
-│   └──────────────┘    └──────────────┘    └──────┬───────┘              │
-│                                                  │                      │
-│                                                  ▼                      │
-│                                           ┌──────────────┐              │
-│                                           │    MinIO     │              │
-│                                           │  (Registry)  │              │
-│                                           └──────────────┘              │
-└─────────────────────────────────────────────────────────────────────────┘
-                                                  │
-                                                  │ Download
-                                                  ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     risk-ml-service/app/ml/                             │
-│                                                                         │
-│   Request ──▶ Load Graph ──▶ GNN Inference ──▶ Ensemble ──▶ Response    │
-│              (subgraph)      (embedding)       + XGBoost                │
-│                                                + Rules                  │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+Integrate Graph Neural Networks (GNN) into the existing ML pipeline to leverage graph topology for risk prediction.
 
 ---
 
 ## Development Phases
 
-### Phase 1: Data Layer (Week 1)
+### Phase 1: Data Layer ✅ Complete
 
-Build graph data loading and preprocessing infrastructure.
+| Task | Status |
+|------|--------|
+| Neo4j graph exporter | ✅ |
+| PyTorch Geometric data converter | ✅ |
+| Feature alignment (Hudi → node features) | ✅ |
+| Label alignment | ✅ |
+| Train/val/test split strategy | ✅ |
 
-| Task | Description | Dependency |
-|------|-------------|------------|
-| 1.1 | Neo4j graph exporter | None |
-| 1.2 | PyTorch Geometric data converter | 1.1 |
-| 1.3 | Feature alignment (Hudi → node features) | 1.1 |
-| 1.4 | Label alignment (training_dataset → node labels) | 1.1 |
-| 1.5 | Train/val/test split strategy | 1.2, 1.3, 1.4 |
-
-**Deliverables**:
+**Files**:
 - `ml-training/src/gnn/graph_builder.py`
 - `ml-training/src/gnn/data_utils.py`
+- `ml-training/src/gnn/pyg_converter.py`
 
 ---
 
-### Phase 2: Model Implementation (Week 2)
+### Phase 2: Model Implementation ✅ Complete
 
-Implement core GNN architectures.
+| Task | Status |
+|------|--------|
+| Base GNN model class | ✅ |
+| GCN implementation | ✅ |
+| GAT implementation | ✅ |
+| GraphSAGE implementation | ✅ |
+| Model factory function | ✅ |
 
-| Task | Description | Dependency |
-|------|-------------|------------|
-| 2.1 | Base GNN model class | Phase 1 |
-| 2.2 | GCN (Graph Convolutional Network) | 2.1 |
-| 2.3 | GAT (Graph Attention Network) | 2.1 |
-| 2.4 | GraphSAGE (inductive learning) | 2.1 |
-| 2.5 | Model configuration system | 2.2, 2.3, 2.4 |
-
-**Deliverables**:
+**Files**:
 - `ml-training/src/gnn/models/base.py`
 - `ml-training/src/gnn/models/gcn.py`
 - `ml-training/src/gnn/models/gat.py`
@@ -104,247 +52,177 @@ Implement core GNN architectures.
 
 ---
 
-### Phase 3: Training Pipeline (Week 3)
+### Phase 3: Training Pipeline ✅ Complete
 
-Build end-to-end training workflow.
+| Task | Status |
+|------|--------|
+| Training loop | ✅ |
+| Evaluation metrics | ✅ |
+| Early stopping | ✅ |
+| Checkpointing | ✅ |
+| Training entry point | ✅ |
 
-| Task | Description | Dependency |
-|------|-------------|------------|
-| 3.1 | Training loop implementation | Phase 2 |
-| 3.2 | Evaluation metrics (AUC, F1, Precision, Recall) | 3.1 |
-| 3.3 | Early stopping & checkpointing | 3.1 |
-| 3.4 | Hyperparameter configuration | 3.1 |
-| 3.5 | Training logging & visualization | 3.2 |
-| 3.6 | Model export (state_dict + config) | 3.3 |
-
-**Deliverables**:
+**Files**:
 - `ml-training/src/gnn/trainer.py`
 - `ml-training/src/gnn/evaluate.py`
+- `ml-training/src/train_gnn.py`
 - `ml-training/configs/gnn_config.yaml`
-- `ml-training/src/train_gnn.py` (entry point)
 
 ---
 
-### Phase 4: Model Registry Integration (Week 4)
+### Phase 4: Model Registry ✅ Complete
 
-Integrate with existing MinIO model registry.
+| Task | Status |
+|------|--------|
+| GNN model serialization | ✅ |
+| MinIO upload/download | ✅ |
+| Metadata schema | ✅ |
+| Version management | ✅ |
 
-| Task | Description | Dependency |
-|------|-------------|------------|
-| 4.1 | GNN model serialization format | Phase 3 |
-| 4.2 | Upload to MinIO with versioning | 4.1 |
-| 4.3 | Metadata schema (architecture, hyperparams, metrics) | 4.1 |
-| 4.4 | Download & load utility | 4.2 |
-
-**Deliverables**:
-- Update `ml-training/src/model_registry.py`
-- GNN models in `s3://ml-models/gnn/`
+**Files**:
+- `ml-training/src/model_registry.py` (extended)
 
 ---
 
-### Phase 5: Inference Service (Week 5)
+### Phase 5: Inference Service ✅ Complete
 
-Integrate GNN into risk-ml-service.
+| Task | Status |
+|------|--------|
+| Model loader | ✅ |
+| Feature client | ✅ |
+| GNN predictor | ✅ |
+| XGBoost predictor | ✅ |
+| Ensemble predictor | ✅ |
+| Risk service integration | ✅ |
 
-| Task | Description | Dependency |
-|------|-------------|------------|
-| 5.1 | GNN model loader | Phase 4 |
-| 5.2 | Subgraph extraction (k-hop neighbors) | 5.1 |
-| 5.3 | Real-time inference pipeline | 5.2 |
-| 5.4 | Embedding extraction mode | 5.3 |
-| 5.5 | Ensemble integration (GNN + XGBoost + Rules) | 5.4 |
-| 5.6 | API endpoint updates | 5.5 |
-
-**Deliverables**:
+**Files**:
+- `services/risk-ml-service/app/ml/model_loader.py`
+- `services/risk-ml-service/app/ml/feature_client.py`
+- `services/risk-ml-service/app/ml/gnn_models.py`
 - `services/risk-ml-service/app/ml/gnn_predictor.py`
-- `services/risk-ml-service/app/ml/graph_client.py`
+- `services/risk-ml-service/app/ml/xgb_predictor.py`
 - `services/risk-ml-service/app/ml/ensemble.py`
-- Update `services/risk-ml-service/app/services/risk_service.py`
+- `services/risk-ml-service/app/services/risk_service.py`
+- `services/risk-ml-service/app/core/config.py`
 
 ---
 
-### Phase 6: Testing & Optimization (Week 6)
+### Phase 6: Testing ⏳ Pending
 
-Validation and performance tuning.
-
-| Task | Description | Dependency |
-|------|-------------|------------|
-| 6.1 | Unit tests for GNN modules | Phase 5 |
-| 6.2 | Integration tests | 6.1 |
-| 6.3 | Performance benchmarking | 6.2 |
-| 6.4 | Inference latency optimization | 6.3 |
-| 6.5 | Documentation | 6.4 |
-
-**Deliverables**:
-- `ml-training/tests/test_gnn_*.py`
-- `services/risk-ml-service/tests/test_gnn_*.py`
-- `docs/architecture/GNN_ARCHITECTURE.md`
+| Task | Status |
+|------|--------|
+| Unit tests | ⏳ |
+| Integration tests | ⏳ |
+| Performance benchmarks | ⏳ |
+| Documentation | ⏳ |
 
 ---
 
-## Technical Specifications
+## Usage
 
-### Graph Schema
+### Training
 
-```
-Node (Address):
-  - address: string (primary key)
-  - network: string
-  - features: float[16] (from address_features)
-  - label: int (0=normal, 1=risky, null=unknown)
+```bash
+cd ml-training
 
-Edge (Transfer):
-  - from_address → to_address
-  - value: float (ETH)
-  - timestamp: long
-  - tx_hash: string
+# Train GNN model
+uv run python src/train_gnn.py \
+  --config configs/gnn_config.yaml \
+  --version v1 \
+  --upload  # upload to MinIO
 ```
 
-### Model Architectures
+### Configuration
 
-| Model | Use Case | Pros | Cons |
-|-------|----------|------|------|
-| **GCN** | Baseline | Simple, fast | Limited expressiveness |
-| **GAT** | Attention-based | Learns edge importance | Higher memory |
-| **GraphSAGE** | Inductive | Works on unseen nodes | Sampling overhead |
-
-**Recommended**: Start with GraphSAGE for production (supports new addresses without retraining).
-
-### Hyperparameters (Default)
+Edit `ml-training/configs/gnn_config.yaml`:
 
 ```yaml
 model:
-  type: sage
+  type: sage  # gcn, gat, sage
   hidden_dim: 128
   num_layers: 2
   dropout: 0.3
-  aggregator: mean
 
 training:
   epochs: 200
   lr: 0.001
-  weight_decay: 5e-4
-  batch_size: 512  # for mini-batch training
-  patience: 20     # early stopping
+  patience: 20
 ```
 
-### Inference Modes
+### Inference Service
 
-| Mode | Description | Latency |
-|------|-------------|---------|
-| **Direct** | Full GNN forward pass | ~50ms |
-| **Embedding** | Pre-computed embeddings + MLP | ~5ms |
-| **Hybrid** | Cached embeddings + incremental update | ~10ms |
+The risk-ml-service automatically loads ML models on startup when `ML_ENABLED=true`.
 
----
-
-## Directory Structure
-
-```
-ml-training/
-├── src/
-│   ├── gnn/
-│   │   ├── __init__.py
-│   │   ├── graph_builder.py      # Neo4j → PyG conversion
-│   │   ├── data_utils.py         # Dataset utilities
-│   │   ├── models/
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py           # Base GNN class
-│   │   │   ├── gcn.py
-│   │   │   ├── gat.py
-│   │   │   └── sage.py
-│   │   ├── trainer.py            # Training loop
-│   │   └── evaluate.py           # Metrics
-│   ├── train_gnn.py              # Entry point
-│   └── ...
-├── configs/
-│   ├── training_config.yaml
-│   └── gnn_config.yaml           # NEW
-└── ...
-
-services/risk-ml-service/
-├── app/
-│   ├── ml/                       # NEW directory
-│   │   ├── __init__.py
-│   │   ├── model_loader.py       # Load models from MinIO
-│   │   ├── gnn_predictor.py      # GNN inference
-│   │   ├── graph_client.py       # Neo4j subgraph extraction
-│   │   ├── xgb_predictor.py      # XGBoost inference
-│   │   └── ensemble.py           # Score combination
-│   ├── services/
-│   │   └── risk_service.py       # Updated with ML
-│   └── ...
-└── ...
+```bash
+cd services/risk-ml-service
+uv run uvicorn app.main:app --port 8082
 ```
 
 ---
 
-## Dependencies
+## Architecture
 
-### ml-training (Python)
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         ml-training/                                    │
+│                                                                         │
+│   Neo4j + Trino ──▶ GraphBuilder ──▶ PyG Data ──▶ GNN Training         │
+│                                                         │               │
+│                                                         ▼               │
+│                                                   MinIO Registry        │
+└─────────────────────────────────────────────────────────────────────────┘
+                                                         │
+                                                         ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     risk-ml-service                                     │
+│                                                                         │
+│   Request ──▶ FeatureClient ──▶ GNNPredictor ──▶ Ensemble ──▶ Response │
+│                                  XGBPredictor      + Rules              │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Model Performance (Expected)
+
+| Metric | Target | Notes |
+|--------|--------|-------|
+| AUC-ROC | > 0.90 | With sufficient labeled data |
+| Precision@0.5 | > 0.80 | |
+| Recall@0.5 | > 0.75 | |
+| Inference P95 | < 100ms | Single node prediction |
+
+---
+
+## Dependencies Added
+
+### ml-training
 
 ```toml
-# pyproject.toml additions
-[project.optional-dependencies]
-gnn = [
-    "torch>=2.0.0",
-    "torch-geometric>=2.4.0",
-    "torch-scatter",
-    "torch-sparse",
-    "neo4j>=5.0.0",
-    "networkx>=3.0",
-]
+torch>=2.9.1
+torch-geometric>=2.4.0
+neo4j>=6.0.3
+networkx>=3.0
 ```
 
-### risk-ml-service (Python)
+### risk-ml-service (optional ml extra)
 
 ```toml
-# pyproject.toml additions
-[project.optional-dependencies]
-ml = [
-    "torch>=2.0.0",
-    "torch-geometric>=2.4.0",
-    "xgboost>=2.0.0",
-    "joblib>=1.3.0",
-    "neo4j>=5.0.0",
-]
+torch>=2.9.1
+torch-geometric>=2.4.0
+neo4j>=6.0.3
 ```
 
 ---
 
-## Risk & Mitigation
+## Next Steps
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Large graph memory | High | Mini-batch sampling (GraphSAGE) |
-| Cold start (new addresses) | Medium | Inductive model + fallback to rules |
-| Inference latency | Medium | Pre-compute embeddings, caching |
-| Label imbalance | Medium | Class weights, oversampling |
-| Graph quality (noise) | Low | Edge filtering, confidence threshold |
-
----
-
-## Success Metrics
-
-| Metric | Target | Current (XGBoost) |
-|--------|--------|-------------------|
-| AUC-ROC | > 0.90 | ~0.85 |
-| Precision@0.5 | > 0.80 | ~0.75 |
-| Recall@0.5 | > 0.75 | ~0.70 |
-| Inference P95 | < 100ms | N/A |
-
----
-
-## Timeline Summary
-
-| Week | Phase | Focus |
-|------|-------|-------|
-| 1 | Data Layer | Graph building, feature alignment |
-| 2 | Models | GCN, GAT, GraphSAGE implementation |
-| 3 | Training | Pipeline, evaluation, export |
-| 4 | Registry | MinIO integration, versioning |
-| 5 | Inference | Service integration, ensemble |
-| 6 | Testing | Tests, benchmarks, docs |
+1. **Populate Neo4j** with graph data via Flink stream processor
+2. **Run feature pipeline** to populate address_features table
+3. **Ingest labels** from OFAC, Tornado Cash, exchanges
+4. **Train GNN model** with real data
+5. **Write tests** for GNN module
+6. **Benchmark inference** performance
 
 ---
 
@@ -352,5 +230,4 @@ ml = [
 
 - [ML Risk Model Architecture](../architecture/ML_RISK_MODEL_ARCHITECTURE.md)
 - [ML Feature Pipeline](./ML_FEATURE_PIPELINE.md)
-- [Project Overview](../architecture/PROJECT_OVERVIEW.md)
 - [PyTorch Geometric Docs](https://pytorch-geometric.readthedocs.io/)
