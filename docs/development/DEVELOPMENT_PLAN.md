@@ -26,18 +26,19 @@
 
 ---
 
-## Phase 3: BFF & Frontend ✅ Complete (90%)
+## Phase 3: BFF & Frontend ✅ Complete
 
 **Goal**: Demonstrable product
 
 - [x] BFF (TypeScript/NestJS) - API aggregation, Gateway trust mode
 - [x] Frontend (React) - Dashboard, Address, Risk, Graph pages
+- [x] Dark mode support
 - [ ] K8s deployment
 - [ ] Monitoring (Prometheus + Grafana)
 
 ---
 
-## Phase 4: Advanced Features ✅ Complete (90%)
+## Phase 4: Advanced Features ✅ Complete
 
 **Goal**: Core competitive features
 
@@ -64,9 +65,28 @@
 - [x] Feature compute job
 - [x] Unified script: `./scripts/run-batch-processor.sh <job>`
 
-### 4.4 Alert Service 🔶 In Progress (separate branch)
-- [ ] Alert rule engine
-- [ ] Multi-channel notification
+### 4.4 Alert Service 🔶 In Progress
+- [x] Alert rule engine (Go/Gin)
+- [x] Multi-channel notification (Email, Webhook, Slack, Telegram)
+- [x] Alert history and subscriptions
+- [x] BFF integration
+- [x] Frontend UI (AlertsPage with tabs)
+- [ ] Kafka event consumer
+- [ ] Deduplication and aggregation
+
+**See**: [Alert Service Development Plan](./ALERT_SERVICE_PLAN.md)
+
+---
+
+## Phase 5: Production Readiness 🚀 Next
+
+**Goal**: Production deployment and monitoring
+
+- [ ] K8s deployment manifests
+- [ ] Prometheus + Grafana monitoring
+- [ ] Alert Service Kafka integration
+- [ ] End-to-end testing
+- [ ] Performance optimization
 
 ---
 
@@ -75,8 +95,9 @@
 ```
 Week 1-3:   Phase 1 - Core Data Flow ✅
 Week 4-6:   Phase 2 - Query & Risk Services ✅
-Week 7-8:   Phase 3 - BFF & Frontend ✅ (90%)
-Week 9+:    Phase 4 - Advanced Features ✅ (90%)
+Week 7-8:   Phase 3 - BFF & Frontend ✅
+Week 9-12:  Phase 4 - Advanced Features ✅
+Week 13+:   Phase 5 - Production Readiness 🚀
 ```
 
 ---
@@ -88,11 +109,19 @@ Week 9+:    Phase 4 - Advanced Features ✅ (90%)
 | M1 | Data ingestion → DB | ✅ |
 | M2 | Query API + Risk scoring | ✅ |
 | M3 | Demonstrable demo | ✅ |
-| M4 | Graph + ML features | ✅ |
+| M4 | Graph + ML + Alert features | ✅ |
+| M5 | Production deployment | 🚀 |
 
 ---
 
 ## Recent Updates
+
+### 2026-01-09
+- ✅ Alert Service Frontend Complete
+  - AlertsPage with Overview/History/Rules/Subscriptions tabs
+  - Unified table styles with AddressTable
+  - Address entity clickable links
+  - SEVERITY_COLORS palette refactoring
 
 ### 2026-01-09
 - ✅ ML Training Pipeline Complete
@@ -108,6 +137,7 @@ Week 9+:    Phase 4 - Advanced Features ✅ (90%)
 
 ## Related Documentation
 
+- [Alert Service Plan](./ALERT_SERVICE_PLAN.md)
 - [ML Feature Pipeline](./ML_FEATURE_PIPELINE.md)
 - [GNN Development Plan](./GNN_DEVELOPMENT_PLAN.md)
 - [Project Overview](../architecture/PROJECT_OVERVIEW.md)
