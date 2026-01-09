@@ -11,7 +11,6 @@ from prometheus_fastapi_instrumentator.metrics import default
 from app.api.v1.risk import router as risk_router
 from app.core.config import get_config
 from app.core.logging import setup_logging, get_logger
-from app.ml.ensemble import EnsembleScorer
 from app.services.risk_service import get_risk_service
 
 # Setup logging
@@ -24,18 +23,7 @@ config = get_config()
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     logger.info("Starting Risk ML Service", version="1.0.0")
-    
-    # Initialize ensemble scorer (preload models if available)
-    try:
-        scorer = EnsembleScorer()
-        app.state.ensemble_scorer = scorer
-        logger.info("Ensemble scorer initialized")
-    except Exception as e:
-        logger.warning(f"Ensemble scorer initialization skipped: {e}")
-        app.state.ensemble_scorer = None
-    
     yield
-    
     logger.info("Shutting down Risk ML Service")
 
 
