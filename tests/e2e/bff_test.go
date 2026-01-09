@@ -233,11 +233,12 @@ func TestBFF_GraphQL(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusOK:
 		t.Log("GraphQL endpoint available")
-	} else if resp.StatusCode == http.StatusNotFound {
+	case http.StatusNotFound:
 		t.Log("GraphQL endpoint not available")
-	} else {
+	default:
 		t.Logf("GraphQL status: %d", resp.StatusCode)
 	}
 }
