@@ -6,6 +6,7 @@ import { RiskModule } from "./modules/risk/risk.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { GraphModule } from "./modules/graph/graph.module";
 import { TransfersModule } from "./modules/transfers/transfers.module";
+import { AlertModule } from "./modules/alert/alert.module";
 import { NacosService } from "./common/nacos.service";
 import { getConfig } from "./config/config";
 
@@ -26,6 +27,7 @@ const config = getConfig();
     TransfersModule,
     RiskModule,
     GraphModule,
+    AlertModule,
   ],
   providers: [
     // Nacos service for service discovery and config

@@ -17,6 +17,7 @@ export interface ServicesConfig {
   query: ServiceEndpoint;
   risk: ServiceEndpoint;
   graph: ServiceEndpoint;
+  alert: ServiceEndpoint;
 }
 
 export interface JwtConfig {
@@ -92,6 +93,10 @@ export function loadConfig(): AppConfig {
         url: yamlConfig.services?.graph?.url || "http://localhost:8084",
         timeout: yamlConfig.services?.graph?.timeout || 15000,
       },
+      alert: {
+        url: yamlConfig.services?.alert?.url || "http://localhost:8083",
+        timeout: yamlConfig.services?.alert?.timeout || 10000,
+      },
     },
     jwt: {
       secret: yamlConfig.jwt?.secret || "default-secret-change-me",
@@ -147,6 +152,9 @@ function overrideFromEnv(config: AppConfig): void {
   }
   if (process.env.GRAPH_SERVICE_URL) {
     config.services.graph.url = process.env.GRAPH_SERVICE_URL;
+  }
+  if (process.env.ALERT_SERVICE_URL) {
+    config.services.alert.url = process.env.ALERT_SERVICE_URL;
   }
 
   // JWT
