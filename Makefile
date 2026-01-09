@@ -423,3 +423,29 @@ mock-server-run: mock-server-build
 
 trino:
 	@bash -c '$(LOAD_ENV) ./scripts/trino-query.sh "$(Q)"'
+
+# ============================================
+# Rolling Data Cleanup (Phase 7)
+# ============================================
+
+cleanup-rolling:
+	@echo "🧹 Running rolling data cleanup..."
+	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh'
+
+cleanup-rolling-pg:
+	@echo "🧹 Running PostgreSQL cleanup only..."
+	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --postgres-only'
+
+cleanup-rolling-neo4j:
+	@echo "🧹 Running Neo4j cleanup only..."
+	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --neo4j-only'
+
+cleanup-disk-usage:
+	@echo "📊 Checking disk usage..."
+	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --disk-usage'
+
+partition-setup:
+	@echo "📦 Setting up PostgreSQL partitions..."
+	@bash -c '$(LOAD_ENV) psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${POSTGRES_HOST}:$${POSTGRES_PORT}/$${POSTGRES_DB}" -f ./scripts/db/pg-partition-setup.sql'
+	@bash -c '$(LOAD_ENV) psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${POSTGRES_HOST}:$${POSTGRES_PORT}/$${POSTGRES_DB}" -f ./scripts/db/pg-cleanup.sql'
+	@echo "✅ Partition setup complete"
