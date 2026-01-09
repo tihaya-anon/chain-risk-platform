@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+import torch
 
 log = logging.getLogger(__name__)
 
@@ -232,8 +233,6 @@ class GNNTrainer:
 
     def save_checkpoint(self, path: str):
         """Save model checkpoint."""
-        import torch
-
         torch.save(
             {
                 "model_state_dict": self.model.state_dict(),
@@ -245,16 +244,7 @@ class GNNTrainer:
 
     def load_checkpoint(self, path: str):
         """Load model checkpoint."""
-        import torch
-
         checkpoint = torch.load(path, map_location=self.device)
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.metrics = checkpoint.get("metrics", TrainingMetrics())
-
-
-# Import torch at module level for type hints
-try:
-    import torch
-except ImportError:
-    pass
