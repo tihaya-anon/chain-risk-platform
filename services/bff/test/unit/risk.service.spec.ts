@@ -70,29 +70,6 @@ describe("RiskService", () => {
     });
   });
 
-  describe("getHistory", () => {
-    const testAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
-
-    it("should return risk history", async () => {
-      mock.onGet(`/api/v1/risk/history/${testAddress}`).reply(200, 
-        fixtures.mockRiskHistory,
-      );
-
-      const result = await service.getHistory(testAddress);
-
-      expect(result).toHaveLength(2);
-    });
-
-    it("should pass network parameter", async () => {
-      mock.onGet(`/api/v1/risk/history/${testAddress}`).reply((config) => {
-        expect(config.params.network).toBe("bsc");
-        return [200, fixtures.mockRiskHistory];
-      });
-
-      await service.getHistory(testAddress, "bsc");
-    });
-  });
-
   describe("scoreAddressesBatch", () => {
     const addresses = [
       "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",

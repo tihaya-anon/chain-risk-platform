@@ -138,7 +138,7 @@ describe("GraphService", () => {
 
   describe("getHighRiskAddresses", () => {
     it("should return high risk addresses", async () => {
-      mock.onGet("/api/v1/graph/addresses/high-risk").reply(200, [
+      mock.onGet("/api/v1/graph/search/high-risk").reply(200, [
         fixtures.mockGraphAddressInfo,
       ]);
 
@@ -148,7 +148,7 @@ describe("GraphService", () => {
     });
 
     it("should pass threshold parameter", async () => {
-      mock.onGet("/api/v1/graph/addresses/high-risk").reply((config) => {
+      mock.onGet("/api/v1/graph/search/high-risk").reply((config) => {
         expect(config.params.threshold).toBe(0.9);
         return [200, []];
       });
