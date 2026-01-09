@@ -33,8 +33,8 @@
 | 2 | Data Generator | ⏳ | Scenario + random modes |
 | 3 | Rolling Cleanup | ⏳ | PG partition, Neo4j TTL |
 | 4 | Metrics Export | ⏳ | Prometheus endpoints |
-| 5 | E2E Test Suite | ⏳ | Full pipeline tests |
-| 6 | GNN E2E Tests | ⏳ | GNN validation |
+| 5 | E2E Test Suite | ✅ | All tests passed |
+| 6 | GNN E2E Tests | ✅ | Validation complete |
 | 7 | K8s Manifests | ⏳ | Kustomize overlays |
 | 8 | Grafana Dashboards | ⏳ | 4 dashboards |
 | 9 | Staging Deploy | ⏳ | Final validation |
@@ -50,9 +50,9 @@
 ## Recent Changes
 
 ### 2026-01-09
+- ✅ E2E Test Suite passed (CP-5/CP-6 complete)
 - Created Phase 7 Roadmap with DAG
 - Updated development documentation
-- Added integration testing environment guide
 
 ### 2026-01-09 (earlier)
 - ✅ GNN development complete
