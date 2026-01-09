@@ -18,11 +18,28 @@
 | Alert Service | ✅ | Go/Gin, Kafka consumer |
 | BFF | ✅ | TypeScript/NestJS |
 | Frontend | ✅ | React |
-| ML Pipeline | 🔶 | Feature pipeline done, training pending |
+| ML Pipeline | ✅ | XGBoost + Isolation Forest |
+| GNN Integration | 🔶 | Dev complete, pending E2E tests |
 
 ---
 
 ## Recent Changes
+
+### 2026-01-09: GNN Development Complete
+
+**Completed**:
+- GNN model architecture (GraphSAGE, GAT)
+- Training pipeline with feature extraction
+- GNN predictor for risk scoring
+- Ensemble model combining XGBoost + GNN
+- Unit tests passing
+
+**Pending**:
+- End-to-end tests
+
+**Branches**:
+- `feature/gnn-development` ✅
+- `feature/gnn-testing` ✅
 
 ### 2026-01-09: Alert Service Complete
 
@@ -97,9 +114,7 @@ services/alert-service/
 
 | Task | Priority | Notes |
 |------|----------|-------|
-| XGBoost model training | Medium | After feature pipeline |
-| Isolation Forest training | Medium | Anomaly detection |
-| Model serving API | Medium | risk-ml-service |
+| GNN E2E tests | High | End-to-end validation |
 | K8s deployment | Low | Production readiness |
 | Prometheus + Grafana | Low | Monitoring |
 
@@ -109,5 +124,7 @@ services/alert-service/
 
 | Branch | Focus | Status |
 |--------|-------|--------|
+| `main` | Production | ✅ Stable |
 | `feature/alert-service` | Alert Service | ✅ Complete |
-| `feature/ml-gnn` | GNN Integration | 🔶 In Progress |
+| `feature/gnn-development` | GNN Models | ✅ Complete |
+| `feature/gnn-testing` | GNN Unit Tests | ✅ Complete |

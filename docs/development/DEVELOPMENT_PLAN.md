@@ -41,7 +41,7 @@
 
 ---
 
-## Phase 4: Advanced Features 🔶 70%
+## Phase 4: Advanced Features ✅ Complete
 
 ### 4.1 Graph Service ✅ Complete
 - [x] Neo4j integration
@@ -49,13 +49,13 @@
 - [x] Tag propagation (BFS)
 - [x] Graph query API
 
-### 4.2 ML Risk Model 🔶 30%
+### 4.2 ML Risk Model ✅ Complete
 - [x] Feature pipeline (Spark batch jobs)
 - [x] Label ingestion (OFAC, Tornado Cash, Exchange)
 - [x] Training data preparation
-- [ ] XGBoost model training
-- [ ] Isolation Forest training
-- [ ] Model serving
+- [x] XGBoost model training
+- [x] Isolation Forest training
+- [x] Model serving
 
 ### 4.3 Batch Processing ✅ Complete
 - [x] Archive job (PostgreSQL → Hudi)
@@ -87,11 +87,19 @@
 
 ---
 
-## Phase 6: ML with GNN 🔀 Separate Branch
+## Phase 6: ML with GNN 🔶 90%
 
 **Goal**: Graph Neural Networks for enhanced risk detection
 
-**Branch**: `feature/ml-gnn`
+### Completed
+- [x] GNN model architecture (GraphSAGE, GAT)
+- [x] GNN training pipeline
+- [x] GNN predictor integration
+- [x] Ensemble model (XGBoost + GNN)
+- [x] Unit tests
+
+### Pending
+- [ ] End-to-end tests
 
 ---
 
@@ -101,9 +109,9 @@
 Week 1-3:   Phase 1 - Core Data Flow ✅
 Week 4-6:   Phase 2 - Query & Risk Services ✅
 Week 7-8:   Phase 3 - BFF & Frontend 🔶 (80%)
-Week 9-12:  Phase 4 - Advanced Features 🔶 (70%)
+Week 9-12:  Phase 4 - Advanced Features ✅
 Week 13-14: Phase 5 - Alert Service ✅
-Week 15+:   Phase 6 - ML with GNN (separate branch)
+Week 15+:   Phase 6 - ML with GNN 🔶 (90%)
 ```
 
 ---
@@ -115,9 +123,9 @@ Week 15+:   Phase 6 - ML with GNN (separate branch)
 | M1 | Data ingestion → DB | ✅ |
 | M2 | Query API + Risk scoring | ✅ |
 | M3 | Demonstrable demo | 🔶 80% |
-| M4 | Graph + ML features | 🔶 70% |
+| M4 | Graph + ML features | ✅ |
 | M5 | Alert Service | ✅ |
-| M6 | GNN integration | 🔀 separate branch |
+| M6 | GNN integration | 🔶 90% |
 
 ---
 
@@ -125,9 +133,7 @@ Week 15+:   Phase 6 - ML with GNN (separate branch)
 
 | Task | Priority | Phase |
 |------|----------|-------|
-| XGBoost model training | Medium | 4.2 |
-| Isolation Forest training | Medium | 4.2 |
-| Model serving API | Medium | 4.2 |
+| GNN end-to-end tests | High | 6 |
 | K8s deployment | Low | 3 |
 | Monitoring setup | Low | 3 |
 
@@ -136,6 +142,12 @@ Week 15+:   Phase 6 - ML with GNN (separate branch)
 ## Recent Updates
 
 ### 2026-01-09
+- ✅ **GNN development completed** (feature/gnn-development, feature/gnn-testing)
+  - GNN model training and prediction
+  - Ensemble integration
+  - Unit tests passing
+  - Pending: End-to-end tests
+
 - ✅ **Alert Service completed** (32 tasks)
   - Full implementation with Kafka consumer, rule engine, notifications
   - Unit tests + Integration tests passing
