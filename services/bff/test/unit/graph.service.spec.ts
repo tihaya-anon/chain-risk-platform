@@ -66,8 +66,9 @@ describe("GraphService", () => {
 
         const result = await service.getAddressNeighbors(testAddress);
 
-        expect(result.neighbors).toHaveLength(1);
-        expect(result.totalCount).toBe(85);
+        expect(result.nodes).toHaveLength(1);
+        expect(result.edges).toHaveLength(1);
+        expect(result.depth).toBe(1);
       });
 
       it("should pass depth and limit params", async () => {
@@ -95,207 +96,216 @@ describe("GraphService", () => {
     });
 
     describe("addAddressTags", () => {
-      it("should add tags and return updated address", async () => {
-        mock.onPost(`/api/v1/graph/address/${testAddress}/tags`).reply((config) => {
-          const body = JSON.parse(config.data);
-          expect(body.tags).toContain("new_tag");
-          return [200, {
-            ...fixtures.mockGraphAddressInfo,
-            tags: [...fixtures.mockGraphAddressInfo.tags, "new_tag"],
-          }];
+      it("should add tags and return success", async () => {
+        mock.onPost(`/api/v1/graph/address/${testAddress}/tags`).reply(200, {
+          success: true,
+          tags: ["exchange", "high_volume", "new_tag"],
         });
 
-        const result = await service.addAddressTags(testAddress, {
-          tags: ["new_tag"],
-          source: "manual",
-          confidence: 1.0,
-        });
+        const result = await service.addAddressTags(testAddress, ["new_tag"]);
 
-        expect(result.tags).toContain("new_tag");
-      });
-    });
-
-    describe("removeAddressTag", () => {
-      it("should remove tag successfully", async () => {
-        mock.onDelete(`/api/v1/graph/address/${testAddress}/tags/old_tag`).reply(200);
-
-        await expect(service.removeAddressTag(testAddress, "old_tag"))
-          .resolves
-          .not.toThrow();
-      });
-    });
-
-    describe("getAddressCluster", () => {
-      it("should return cluster info", async () => {
-        mock.onGet(`/api/v1/graph/address/${testAddress}/cluster`).reply(200,
-          fixtures.mockCluster,
-        );
-
-        const result = await service.getAddressCluster(testAddress);
-
-        expect(result.clusterId).toBe("cluster_001");
-        expect(result.size).toBe(15);
+        expect(result.success).toBe(true);
       });
     });
   });
 
   describe("Path Operations", () => {
-    const fromAddr = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
-    const toAddr = "0x8ba1f109551bD432803012645Ac136ddd64DBA72";
+    const fromAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
+    const toAddress = "0x8ba1f109551bD432803012645Ac136ddd64DBA72";
 
     describe("findPath", () => {
       it("should find path between addresses", async () => {
-        mock.onGet(`/api/v1/graph/path/${fromAddr}/${toAddr}`).reply(200,
-          fixtures.mockPathResponse,
-        );
+        mock.onGet("/api/v1/graph/path").reply(200, fixtures.mockPathResponse);
 
-        const result = await service.findPath(fromAddr, toAddr);
+        const result = await service.findPath(fromAddress, toAddress);
 
         expect(result.found).toBe(true);
-        expect(result.pathLength).toBe(2);
+        expect(result.fromAddress).toBe(fromAddress);
+        expect(result.toAddress).toBe(toAddress);
+        expect(result.path).toHaveLength(1);
       });
 
-      it("should pass maxDepth param", async () => {
-        mock.onGet(`/api/v1/graph/path/${fromAddr}/${toAddr}`).reply((config) => {
+      it("should return not found for no path", async () => {
+        mock.onGet("/api/v1/graph/path").reply(200, {
+          found: false,
+          fromAddress,
+          toAddress,
+          pathLength: 0,
+          maxDepth: 5,
+          message: "No path found",
+          path: [],
+        });
+
+        const result = await service.findPath(fromAddress, toAddress);
+
+        expect(result.found).toBe(false);
+        expect(result.path).toHaveLength(0);
+      });
+
+      it("should pass maxDepth parameter", async () => {
+        mock.onGet("/api/v1/graph/path").reply((config) => {
+          expect(config.params.from).toBe(fromAddress);
+          expect(config.params.to).toBe(toAddress);
           expect(config.params.maxDepth).toBe(3);
           return [200, fixtures.mockPathResponse];
         });
 
-        await service.findPath(fromAddr, toAddr, 3);
+        await service.findPath(fromAddress, toAddress, 3);
+      });
+    });
+  });
+
+  describe("Subgraph Operations", () => {
+    const testAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
+
+    describe("getSubgraph", () => {
+      it("should return subgraph for address", async () => {
+        mock.onGet(`/api/v1/graph/subgraph/${testAddress}`).reply(200,
+          fixtures.mockSubgraph,
+        );
+
+        const result = await service.getSubgraph(testAddress);
+
+        expect(result.centerAddress).toBe(testAddress);
+        expect(result.nodes).toBeDefined();
+        expect(result.edges).toBeDefined();
       });
 
-      it("should handle no path found", async () => {
-        mock.onGet(`/api/v1/graph/path/${fromAddr}/${toAddr}`).reply(200, {
-          found: false,
-          fromAddress: fromAddr,
-          toAddress: toAddr,
-          message: "No path found within depth limit",
+      it("should pass depth and limit parameters", async () => {
+        mock.onGet(`/api/v1/graph/subgraph/${testAddress}`).reply((config) => {
+          expect(config.params.depth).toBe(3);
+          expect(config.params.limit).toBe(200);
+          return [200, fixtures.mockSubgraph];
         });
 
-        const result = await service.findPath(fromAddr, toAddr);
-
-        expect(result.found).toBe(false);
+        await service.getSubgraph(testAddress, 3, 200);
       });
     });
   });
 
   describe("Cluster Operations", () => {
+    const testAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
+
     describe("getCluster", () => {
-      it("should return cluster by ID", async () => {
-        mock.onGet("/api/v1/graph/cluster/cluster_001").reply(200, fixtures.mockCluster);
+      it("should return cluster info for address", async () => {
+        mock.onGet(`/api/v1/graph/cluster/${testAddress}`).reply(200,
+          fixtures.mockCluster,
+        );
 
-        const result = await service.getCluster("cluster_001");
+        const result = await service.getCluster(testAddress);
 
-        expect(result.clusterId).toBe("cluster_001");
-        expect(result.addresses).toHaveLength(1);
+        expect(result.id).toBe("cluster-001");
+        expect(result.members).toContain(testAddress);
       });
 
-      it("should handle cluster not found", async () => {
-        mock.onGet("/api/v1/graph/cluster/nonexistent").reply(404, {
-          message: "Cluster not found",
+      it("should throw NOT_FOUND when address not in cluster", async () => {
+        mock.onGet(`/api/v1/graph/cluster/${testAddress}`).reply(404, {
+          message: "Address not found in any cluster",
         });
 
-        await expect(service.getCluster("nonexistent"))
+        await expect(service.getCluster(testAddress))
           .rejects
           .toThrow(HttpException);
       });
     });
 
-    describe("runClustering", () => {
-      it("should trigger clustering and return result", async () => {
-        mock.onPost("/api/v1/graph/cluster/run").reply(200, fixtures.mockClusteringResult);
-
-        const result = await service.runClustering();
-
-        expect(result.status).toBe("completed");
-        expect(result.clustersCreated).toBe(25);
-      });
-    });
-
-    describe("manualCluster", () => {
-      it("should create manual cluster", async () => {
-        const addresses = ["0xabc", "0xdef"];
-        mock.onPost("/api/v1/graph/cluster/manual").reply((config) => {
-          expect(JSON.parse(config.data)).toEqual(addresses);
-          return [200, fixtures.mockClusteringResult];
+    describe("detectClusters", () => {
+      it("should detect clusters for addresses", async () => {
+        mock.onPost("/api/v1/graph/cluster/detect").reply(200, {
+          clusters: [fixtures.mockCluster],
+          algorithm: "louvain",
         });
 
-        const result = await service.manualCluster(addresses);
+        const result = await service.detectClusters([testAddress]);
 
-        expect(result.status).toBe("completed");
+        expect(result.clusters).toHaveLength(1);
+        expect(result.algorithm).toBe("louvain");
       });
     });
   });
 
-  describe("Search Operations", () => {
-    describe("searchByTag", () => {
-      it("should return addresses with tag", async () => {
-        mock.onGet("/api/v1/graph/search/tag/exchange").reply(200, 
-          [fixtures.mockGraphAddressInfo],
-        );
-
-        const result = await service.searchByTag("exchange");
-
-        expect(result).toHaveLength(1);
-        expect(result[0].tags).toContain("exchange");
-      });
-
-      it("should pass limit param", async () => {
-        mock.onGet("/api/v1/graph/search/tag/exchange").reply((config) => {
-          expect(config.params.limit).toBe(100);
-          return [200, []];
+  describe("Statistics Operations", () => {
+    describe("getGraphStats", () => {
+      it("should return graph statistics", async () => {
+        mock.onGet("/api/v1/graph/stats").reply(200, {
+          totalNodes: 1000000,
+          totalEdges: 5000000,
+          avgDegree: 10.5,
+          avgRisk: 0.35,
+          highRiskCount: 5000,
         });
 
-        await service.searchByTag("exchange", 100);
+        const result = await service.getGraphStats();
+
+        expect(result.totalNodes).toBe(1000000);
+        expect(result.totalEdges).toBe(5000000);
       });
     });
 
     describe("getHighRiskAddresses", () => {
       it("should return high risk addresses", async () => {
-        mock.onGet("/api/v1/graph/search/high-risk").reply(200,
-          [fixtures.mockGraphAddressInfo],
-        );
-
-        const result = await service.getHighRiskAddresses();
-
-        expect(result).toHaveLength(1);
-      });
-
-      it("should pass threshold and limit", async () => {
-        mock.onGet("/api/v1/graph/search/high-risk").reply((config) => {
-          expect(config.params.threshold).toBe(0.8);
-          expect(config.params.limit).toBe(20);
-          return [200, []];
+        mock.onGet("/api/v1/graph/high-risk").reply(200, {
+          addresses: [
+            { address: testAddress, riskScore: 0.95, tags: ["mixer"] },
+          ],
+          total: 1,
         });
 
-        await service.getHighRiskAddresses(0.8, 20);
+        const testAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
+        const result = await service.getHighRiskAddresses();
+
+        expect(result.addresses).toHaveLength(1);
+        expect(result.addresses[0].riskScore).toBeGreaterThan(0.8);
+      });
+
+      it("should pass threshold parameter", async () => {
+        mock.onGet("/api/v1/graph/high-risk").reply((config) => {
+          expect(config.params.threshold).toBe(0.9);
+          return [200, { addresses: [], total: 0 }];
+        });
+
+        await service.getHighRiskAddresses(0.9);
       });
     });
   });
 
-  describe("Propagation Operations", () => {
-    describe("propagateTags", () => {
-      it("should trigger propagation", async () => {
-        mock.onPost("/api/v1/graph/propagate").reply(200, fixtures.mockPropagationResult);
+  describe("Error Handling", () => {
+    const testAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
 
-        const result = await service.propagateTags();
-
-        expect(result.status).toBe("completed");
-        expect(result.addressesAffected).toBe(150);
+    it("should throw BAD_REQUEST on 400", async () => {
+      mock.onGet(`/api/v1/graph/address/${testAddress}`).reply(400, {
+        message: "Invalid address format",
       });
+
+      await expect(service.getAddressInfo(testAddress))
+        .rejects
+        .toThrow(HttpException);
     });
 
-    describe("propagateFromAddress", () => {
-      it("should propagate from specific address", async () => {
-        const addr = "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00";
-        mock.onPost(`/api/v1/graph/propagate/${addr}`).reply(200,
-          fixtures.mockPropagationResult,
-        );
-
-        const result = await service.propagateFromAddress(addr);
-
-        expect(result.status).toBe("completed");
+    it("should throw INTERNAL_SERVER_ERROR on 500", async () => {
+      mock.onGet(`/api/v1/graph/address/${testAddress}`).reply(500, {
+        message: "Internal server error",
       });
+
+      await expect(service.getAddressInfo(testAddress))
+        .rejects
+        .toThrow(HttpException);
+    });
+
+    it("should throw SERVICE_UNAVAILABLE on network error", async () => {
+      mock.onGet(`/api/v1/graph/address/${testAddress}`).networkError();
+
+      await expect(service.getAddressInfo(testAddress))
+        .rejects
+        .toThrow(HttpException);
+    });
+
+    it("should throw SERVICE_UNAVAILABLE on timeout", async () => {
+      mock.onGet(`/api/v1/graph/address/${testAddress}`).timeout();
+
+      await expect(service.getAddressInfo(testAddress))
+        .rejects
+        .toThrow(HttpException);
     });
   });
 });

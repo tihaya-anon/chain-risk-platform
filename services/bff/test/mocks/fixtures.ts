@@ -79,30 +79,38 @@ export const mockRiskScore = {
   network: "ethereum",
   risk_score: 0.65,
   risk_level: "medium",
+  confidence: 0.85,
+  model_version: "gnn-v1.2.0",
   factors: [mockRiskFactor],
-  tags: ["high_activity", "defi_user"],
-  evaluated_at: "2024-01-10T15:00:00Z",
-  cached: false,
+  computed_at: "2024-01-10T14:20:00Z",
 };
 
 export const mockBatchRiskScore = {
-  results: [mockRiskScore],
-  total: 1,
-  failed: 0,
+  results: [
+    {
+      address: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
+      risk_score: 0.65,
+      risk_level: "medium",
+    },
+    {
+      address: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+      risk_score: 0.25,
+      risk_level: "low",
+    },
+  ],
+  model_version: "gnn-v1.2.0",
 };
 
-export const mockRiskRules = [
+export const mockRiskHistory = [
   {
-    name: "HighTxFrequencyRule",
-    description: "Detects high transaction frequency",
-    weight: 1.5,
-    enabled: true,
+    risk_score: 0.65,
+    risk_level: "medium",
+    computed_at: "2024-01-10T14:20:00Z",
   },
   {
-    name: "LargeValueRule",
-    description: "Detects large value transfers",
-    weight: 2.0,
-    enabled: true,
+    risk_score: 0.58,
+    risk_level: "medium",
+    computed_at: "2024-01-09T10:00:00Z",
   },
 ];
 
@@ -110,32 +118,43 @@ export const mockRiskRules = [
 
 export const mockGraphAddressInfo = {
   address: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
-  firstSeen: "2023-01-15T10:30:00Z",
-  lastSeen: "2024-01-10T14:20:00Z",
-  txCount: 350,
   riskScore: 0.65,
   tags: ["exchange", "high_volume"],
-  clusterId: "cluster_001",
-  network: "ethereum",
-  incomingCount: 200,
-  outgoingCount: 150,
+  inDegree: 150,
+  outDegree: 200,
+  totalValue: "3500.5",
+  firstSeen: "2023-01-15T10:30:00Z",
+  lastSeen: "2024-01-10T14:20:00Z",
 };
 
 export const mockNeighborInfo = {
   address: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
-  direction: "outgoing",
-  transferCount: 25,
-  totalValue: "150.5",
-  lastTransfer: "2024-01-10T14:20:00Z",
+  txCount: 5,
+  totalValue: "15.5",
+  direction: "both",
   riskScore: 0.3,
   tags: ["defi"],
 };
 
+export const mockGraphNode = {
+  id: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+  address: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+  riskScore: 0.3,
+  tags: ["defi"],
+};
+
+export const mockGraphEdge = {
+  source: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
+  target: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+  txCount: 5,
+  totalValue: "15.5",
+};
+
 export const mockAddressNeighbors = {
   address: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
-  neighbors: [mockNeighborInfo],
-  totalCount: 85,
   depth: 1,
+  nodes: [mockGraphNode],
+  edges: [mockGraphEdge],
 };
 
 export const mockPathNode = {
@@ -158,54 +177,66 @@ export const mockPathResponse = {
 };
 
 export const mockCluster = {
-  clusterId: "cluster_001",
-  size: 15,
-  riskScore: 0.55,
-  label: "Exchange Cluster",
-  category: "exchange",
-  tags: ["high_volume", "verified"],
-  addresses: ["0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00"],
+  id: "cluster-001",
+  label: "Exchange Hot Wallet",
+  memberCount: 25,
+  totalVolume: "50000.0",
+  avgRisk: 0.35,
+  members: [
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
+    "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+  ],
+};
+
+export const mockSubgraph = {
+  centerAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
+  depth: 2,
+  nodes: [mockGraphNode],
+  edges: [mockGraphEdge],
+  stats: {
+    nodeCount: 1,
+    edgeCount: 1,
+    avgRisk: 0.3,
+  },
+};
+
+// ============== Alert Service Fixtures ==============
+
+export const mockAlert = {
+  id: "alert-12345",
+  type: "high_risk_transaction",
+  severity: "high",
+  status: "open",
+  address: "0x742d35Cc6634C0532925a3b844Bc9e7595f8fE00",
+  txHash: "0xabc123def456789abc123def456789abc123def456789abc123def456789abcd",
+  riskScore: 0.85,
+  message: "High risk transaction detected",
+  details: {
+    value: "500.0",
+    counterparty: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+  },
+  createdAt: "2024-01-10T14:20:00Z",
+  updatedAt: "2024-01-10T14:20:00Z",
+};
+
+export const mockAlertList = {
+  items: [mockAlert],
+  pagination: {
+    page: 1,
+    pageSize: 20,
+    total: 45,
+    totalPages: 3,
+  },
+};
+
+export const mockAlertRule = {
+  id: "rule-001",
+  name: "High Risk Transaction",
+  type: "risk_threshold",
+  enabled: true,
+  conditions: {
+    riskScore: { gte: 0.8 },
+  },
+  actions: ["create_alert", "notify_slack"],
   createdAt: "2023-06-01T00:00:00Z",
-  updatedAt: "2024-01-10T00:00:00Z",
-  network: "ethereum",
 };
-
-export const mockPropagationResult = {
-  status: "completed",
-  addressesAffected: 150,
-  tagsPropagated: 45,
-  maxHops: 3,
-  decayFactor: 0.5,
-  durationMs: 2500,
-  startedAt: "2024-01-10T15:00:00Z",
-  completedAt: "2024-01-10T15:00:02.5Z",
-  errorMessage: null,
-};
-
-export const mockClusteringResult = {
-  status: "completed",
-  clustersCreated: 25,
-  addressesClustered: 500,
-  durationMs: 5000,
-  startedAt: "2024-01-10T15:00:00Z",
-  completedAt: "2024-01-10T15:00:05Z",
-  errorMessage: null,
-};
-
-// ============== Factory Functions ==============
-
-export function createMockAddress(overrides: Partial<typeof mockAddressInfo> = {}) {
-  return { ...mockAddressInfo, ...overrides };
-}
-
-export function createMockRiskScore(overrides: Partial<typeof mockRiskScore> = {}) {
-  return { ...mockRiskScore, ...overrides };
-}
-
-export function createMockTransfer(overrides: Partial<typeof mockTransfer> = {}) {
-  return { ...mockTransfer, ...overrides };
-}
-
-export function createMockCluster(overrides: Partial<typeof mockCluster> = {}) {
-  return { ...mockCluster, ...overrides };
-}
