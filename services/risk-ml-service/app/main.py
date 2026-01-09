@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from app.core.config import get_config
 from app.core.logging import setup_logging, get_logger
 from app.core.nacos import get_nacos_client
@@ -56,6 +57,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Prometheus metrics instrumentation
+instrumentator = Instrumentator(
+    should_group_status_codes=True,
+    should_ignore_untemplated=True,
+    should_instrument_requests_inprogress=True,
+    excluded_handlers=["/health", "/metrics"],
+    inprogress_name="risk_ml_service_http_requests_inprogress",
+    inprogress_labels=True,
+)
+instrumentator.add(
+    instrumentator.metrics.default(),
+).instrument(app).expose(app, endpoint="/metrics")
 
 
 @app.get("/health")

@@ -18,6 +18,7 @@ import (
 	"github.com/chain-risk-platform/alert-service/internal/engine"
 	"github.com/chain-risk-platform/alert-service/internal/handler"
 	"github.com/chain-risk-platform/alert-service/internal/kafka"
+	"github.com/chain-risk-platform/alert-service/internal/metrics"
 	"github.com/chain-risk-platform/alert-service/internal/notifier"
 	"github.com/chain-risk-platform/alert-service/internal/repository"
 	"github.com/chain-risk-platform/alert-service/internal/service"
@@ -146,7 +147,11 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	router := gin.Default()
+	router := gin.New()
+
+	// Middleware
+	router.Use(gin.Recovery())
+	router.Use(metrics.Middleware())
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
@@ -156,6 +161,9 @@ func main() {
 			"time":    time.Now().Format(time.RFC3339),
 		})
 	})
+
+	// Prometheus metrics endpoint
+	router.GET("/metrics", metrics.Handler())
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")

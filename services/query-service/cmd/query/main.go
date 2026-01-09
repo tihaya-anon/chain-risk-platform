@@ -15,6 +15,7 @@ import (
 
 	"github.com/0ksks/chain-risk-platform/query-service/internal/config"
 	"github.com/0ksks/chain-risk-platform/query-service/internal/handler"
+	"github.com/0ksks/chain-risk-platform/query-service/internal/metrics"
 	"github.com/0ksks/chain-risk-platform/query-service/internal/nacos"
 	"github.com/0ksks/chain-risk-platform/query-service/internal/repository"
 	"github.com/0ksks/chain-risk-platform/query-service/internal/service"
@@ -293,6 +294,7 @@ func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, a
 
 	// Middleware
 	router.Use(gin.Recovery())
+	router.Use(metrics.Middleware())
 	router.Use(requestLogger(zapLogger))
 	router.Use(corsMiddleware())
 
@@ -300,6 +302,9 @@ func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, a
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// Prometheus metrics endpoint
+	router.GET("/metrics", metrics.Handler())
 
 	// Admin status endpoint (if Nacos is enabled)
 	if nacosClient != nil {
