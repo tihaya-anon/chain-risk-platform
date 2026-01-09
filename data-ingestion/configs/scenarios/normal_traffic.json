@@ -1,0 +1,12 @@
+{
+  "name": "normal_traffic",
+  "description": "Normal blockchain traffic with mixed transaction sizes",
+  "loop": true,
+  "events": [
+    {
+      "type": "block",
+      "count": 100,
+      "delay": 0
+    }
+  ]
+}
