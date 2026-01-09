@@ -11,12 +11,22 @@ from prometheus_fastapi_instrumentator.metrics import default
 from app.api.v1.risk import router as risk_router
 from app.core.config import get_config
 from app.core.logging import setup_logging, get_logger
-from app.services.risk_service import get_risk_service
+from app.services.risk_service import RiskService
 
 # Setup logging
 setup_logging()
 logger = get_logger(__name__)
 config = get_config()
+
+# Global service instance
+_risk_service: RiskService | None = None
+
+
+def get_risk_service() -> RiskService:
+    global _risk_service
+    if _risk_service is None:
+        _risk_service = RiskService()
+    return _risk_service
 
 
 @asynccontextmanager
@@ -25,6 +35,8 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Risk ML Service", version="1.0.0")
     yield
     logger.info("Shutting down Risk ML Service")
+    if _risk_service:
+        await _risk_service.close()
 
 
 app = FastAPI(
@@ -75,13 +87,12 @@ async def root():
 app.include_router(risk_router, prefix="/api/v1/risk", tags=["risk"])
 
 
-# Legacy endpoint for backward compatibility
 @app.get("/api/v1/risk/{address}")
-async def get_risk_score_legacy(address: str):
+async def get_risk_score(address: str):
     """Get risk score for an address."""
     try:
         service = get_risk_service()
-        result = await service.get_risk_score(address)
+        result = await service.score_address(address)
         return result
     except Exception as e:
         logger.error(f"Error getting risk score: {e}")
@@ -89,11 +100,12 @@ async def get_risk_score_legacy(address: str):
 
 
 @app.post("/api/v1/risk/batch")
-async def batch_risk_score(addresses: list[str]):
+async def batch_risk_score(request: dict):
     """Get risk scores for multiple addresses."""
     try:
+        addresses = request.get("addresses", [])
         service = get_risk_service()
-        results = await service.batch_risk_score(addresses)
+        results = await service.score_addresses_batch(addresses)
         return {"results": results}
     except Exception as e:
         logger.error(f"Error getting batch risk scores: {e}")
