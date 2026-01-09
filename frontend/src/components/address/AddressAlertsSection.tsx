@@ -1,22 +1,12 @@
 import { Link } from "react-router-dom"
 import { formatDistanceToNow } from "date-fns"
-import { Bell, AlertTriangle, ArrowRight } from "lucide-react"
+import { Bell, ArrowRight } from "lucide-react"
 import { LoadingSpinner } from "@/components/common"
-import {
-  useAlertControllerListHistory,
-  type AlertHistoryResponse,
-  type AlertHistoryResponseSeverity,
-} from "@/api/generated"
+import { SeverityBadge, StatusBadge } from "@/components/alert/AlertBadges"
+import { useAlertControllerListHistory, type AlertHistoryResponse } from "@/api/generated"
 
 interface AddressAlertsSectionProps {
   address: string
-}
-
-const severityStyles: Record<AlertHistoryResponseSeverity, string> = {
-  critical: "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300",
-  high: "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300",
-  medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300",
-  low: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
 }
 
 export function AddressAlertsSection({ address }: AddressAlertsSectionProps) {
@@ -74,22 +64,9 @@ export function AddressAlertsSection({ address }: AddressAlertsSectionProps) {
 function AlertItem({ alert }: { alert: AlertHistoryResponse }) {
   return (
     <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-      <AlertTriangle
-        className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-          alert.severity === "critical" || alert.severity === "high"
-            ? "text-red-500"
-            : "text-yellow-500"
-        }`}
-      />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
-              severityStyles[alert.severity]
-            }`}
-          >
-            {alert.severity}
-          </span>
+          <SeverityBadge severity={alert.severity} size="sm" />
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}
           </span>
@@ -97,17 +74,7 @@ function AlertItem({ alert }: { alert: AlertHistoryResponse }) {
         <p className="text-sm font-medium text-gray-900 dark:text-white">{alert.title}</p>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{alert.message}</p>
       </div>
-      <span
-        className={`text-xs px-2 py-0.5 rounded-full ${
-          alert.status === "acknowledged"
-            ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300"
-            : alert.status === "pending"
-              ? "bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-300"
-              : "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
-        }`}
-      >
-        {alert.status}
-      </span>
+      <StatusBadge status={alert.status} size="sm" />
     </div>
   )
 }
