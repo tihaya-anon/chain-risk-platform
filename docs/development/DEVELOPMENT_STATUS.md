@@ -2,56 +2,64 @@
 
 > Current development status and recent changes
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-01-09
 
 ---
 
-## Current Focus
+## Current Status
 
-Codebase cleanup and documentation after graph-service refactoring.
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Data Ingestion | ✅ | Go, Etherscan API |
+| Stream Processing | ✅ | Flink, dual-write |
+| Query Service | ✅ | Go/Gin |
+| Risk Service | ✅ | Python/FastAPI |
+| Graph Service | ✅ | Java/Neo4j |
+| Alert Service | ✅ | Go/Gin, Kafka consumer |
+| BFF | ✅ | TypeScript/NestJS |
+| Frontend | ✅ | React |
+| ML Pipeline | 🔶 | Feature pipeline done, training pending |
 
 ---
 
-## Recent Changes (2026-01-06)
+## Recent Changes
 
-### Graph Service Refactoring
+### 2026-01-09: Alert Service Complete
 
-Moved `graph-engine` from `processing/` to `services/` and removed deprecated PostgreSQL sync code:
+**32 tasks completed**:
+- Kafka consumer for `risk-scores` and `transfers` topics
+- Rule engine with 6 evaluator types
+- Multi-channel notifications (Webhook, Email, Slack)
+- Redis deduplication
+- Full REST API
+- Unit + Integration tests passing
 
-| Change | Description |
-|--------|-------------|
-| Directory move | `processing/graph-engine` → `services/graph-service` |
-| Remove sync layer | Deleted PostgreSQL → Neo4j sync (replaced by Flink dual-write) |
-| Rename application | `GraphEngineApplication` → `GraphServiceApplication` |
-| Update Nacos | `spring.application.name: graph-service` |
-| Update BFF | Removed deprecated `/sync` endpoints |
-| Update Nacos config | Removed `graph-sync` section from pipeline config |
-
-**Deleted Files**:
-- `sync/PostgresTransferReader.java`
-- `sync/SyncStateTracker.java`
-- `service/GraphSyncService.java`
-- `service/impl/GraphSyncServiceImpl.java`
-- `model/dto/SyncStatusResponse.java`
-
-**Data Flow Change**:
+**Files Added**:
 ```
-Before: Flink → PostgreSQL → GraphSyncService → Neo4j
-After:  Flink → PostgreSQL + Neo4j (dual-write)
+services/alert-service/
+├── cmd/main.go
+├── internal/
+│   ├── config/
+│   ├── engine/         # Rule evaluators
+│   ├── handler/        # REST API
+│   ├── kafka/          # Consumer
+│   ├── model/
+│   ├── notifier/       # Webhook, Email, Slack
+│   ├── repository/
+│   └── service/
+├── configs/
+└── docs/openapi.json
 ```
 
-### ML Feature Pipeline (Earlier)
+### 2026-01-06: Graph Service Refactoring
 
-| Component | Status |
-|-----------|--------|
-| FeatureComputeJob | ✅ Done |
-| LabelIngestionJob | ✅ Done |
-| TrainingDataPrepareJob | ✅ Done |
-| data_loader.py | ✅ Done |
+- Moved `processing/graph-engine` → `services/graph-service`
+- Removed deprecated PostgreSQL → Neo4j sync
+- Data now via Flink dual-write
 
 ---
 
-## Architecture Reference
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -59,20 +67,27 @@ After:  Flink → PostgreSQL + Neo4j (dual-write)
 │  Etherscan API → Kafka → Flink → PostgreSQL + Neo4j        │
 └─────────────────────────────────────────────────────────────┘
                               │
-         ┌────────────────────┼────────────────────┐
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│  Query Service  │  │  Graph Service  │  │  Risk Service   │
-│  (Go)           │  │  (Java/Neo4j)   │  │  (Python)       │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
-         │                    │                    │
-         └────────────────────┼────────────────────┘
+    ┌─────────────────────────┼─────────────────────────┐
+    │                         │                         │
+    ▼                         ▼                         ▼
+┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│  Query   │  │  Graph   │  │   Risk   │  │  Alert   │
+│ Service  │  │ Service  │  │ Service  │  │ Service  │
+│  (Go)    │  │  (Java)  │  │ (Python) │  │  (Go)    │
+└──────────┘  └──────────┘  └──────────┘  └──────────┘
+    │                         │                         │
+    └─────────────────────────┼─────────────────────────┘
                               │
                               ▼
                      ┌─────────────────┐
                      │      BFF        │
                      │  (TypeScript)   │
+                     └─────────────────┘
+                              │
+                              ▼
+                     ┌─────────────────┐
+                     │    Frontend     │
+                     │    (React)      │
                      └─────────────────┘
 ```
 
@@ -82,15 +97,17 @@ After:  Flink → PostgreSQL + Neo4j (dual-write)
 
 | Task | Priority | Notes |
 |------|----------|-------|
-| End-to-end ML pipeline test | High | Full pipeline validation |
-| XGBoost model training | Medium | After data pipeline verified |
-| Isolation Forest training | Medium | After data pipeline verified |
-| Add unit tests for graph-service | Low | Post-refactoring validation |
+| XGBoost model training | Medium | After feature pipeline |
+| Isolation Forest training | Medium | Anomaly detection |
+| Model serving API | Medium | risk-ml-service |
+| K8s deployment | Low | Production readiness |
+| Prometheus + Grafana | Low | Monitoring |
 
 ---
 
-## Related Documentation
+## Branch Status
 
-- [ML Feature Pipeline](./ML_FEATURE_PIPELINE.md)
-- [Lambda Architecture](../architecture/LAMBDA_ARCHITECTURE.md)
-- [Project Overview](../architecture/PROJECT_OVERVIEW.md)
+| Branch | Focus | Status |
+|--------|-------|--------|
+| `feature/alert-service` | Alert Service | ✅ Complete |
+| `feature/ml-gnn` | GNN Integration | 🔶 In Progress |
