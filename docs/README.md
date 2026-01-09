@@ -16,16 +16,15 @@
 ### 📅 Development Plans
 
 - **[Development Plan](./development/DEVELOPMENT_PLAN.md)** - MVP phased development plan
-- **[Progress](./development/PROGRESS.md)** - Real-time progress tracking
+- **[Development Status](./development/DEVELOPMENT_STATUS.md)** - Current status and recent changes
 - **[Phase 1 Test Plan](./development/PHASE1_TEST_PLAN.md)** - Core data flow test plan
 - **[Hudi Batch Layer](./development/HUDI_BATCH_LAYER.md)** - Batch processing with Hudi data lake
 
 ### 🛠️ Operations Guides
 
-- **[Scripts Quick Reference](./operations/SCRIPTS_QUICK_REFERENCE.md)** - Common commands quick lookup
-- **[Scripts Refactoring](./operations/SCRIPTS_REFACTORING.md)** - Scripts and Makefile summary
-- **[Git Workflow](./operations/GIT_WORKFLOW.md)** - Branch strategy, commit conventions
+- **[Integration Testing Environment](./operations/INTEGRATION_TESTING_ENVIRONMENT.md)** - Testing environment setup, data generator, rolling cleanup
 - **[Nacos Integration](./operations/NACOS_INTEGRATION.md)** - Config center and service discovery
+- **[Git Workflow](./operations/GIT_WORKFLOW.md)** - Branch strategy, commit conventions
 
 ### 📡 API Documentation
 
@@ -35,12 +34,12 @@
 
 ### 📝 Changelog
 
-- **[Scripts Changelog](./changelog/CHANGELOG_SCRIPTS.md)** - Scripts and Makefile change history
 - **[Docs Restructure Changelog](./changelog/CHANGELOG_DOCS_RESTRUCTURE.md)** - Documentation restructure record
 
 ### 📦 Archive
 
 - **[Session Archive 2024-12-30](./archive/SESSION_ARCHIVE_20241230.md)** - Integration test framework setup
+- **[Session Archive 2026-01-05](./archive/SESSION_ARCHIVE_20260105_ML_DESIGN.md)** - ML design session
 
 ---
 
@@ -48,8 +47,9 @@
 
 | Role | Start Here |
 |------|------------|
-| **New Users** | [Project Overview](./architecture/PROJECT_OVERVIEW.md) → [Lambda Architecture](./architecture/LAMBDA_ARCHITECTURE.md) → [Scripts Quick Reference](./operations/SCRIPTS_QUICK_REFERENCE.md) |
-| **Developers** | [Git Workflow](./operations/GIT_WORKFLOW.md) → [Progress](./development/PROGRESS.md) → [API Quick Reference](./api-specs/API_SPECS_QUICK_REF.md) |
+| **New Users** | [Project Overview](./architecture/PROJECT_OVERVIEW.md) → [Lambda Architecture](./architecture/LAMBDA_ARCHITECTURE.md) |
+| **Developers** | [Git Workflow](./operations/GIT_WORKFLOW.md) → [Development Status](./development/DEVELOPMENT_STATUS.md) → [API Quick Reference](./api-specs/API_SPECS_QUICK_REF.md) |
+| **Testing** | [Integration Testing Environment](./operations/INTEGRATION_TESTING_ENVIRONMENT.md) → [Phase 1 Test Plan](./development/PHASE1_TEST_PLAN.md) |
 | **Architects** | [Tech Decisions](./architecture/TECH_DECISIONS.md) → [Lambda Architecture](./architecture/LAMBDA_ARCHITECTURE.md) → [ML Risk Model Architecture](./architecture/ML_RISK_MODEL_ARCHITECTURE.md) |
 
 ---
@@ -68,11 +68,11 @@ docs/
 │   └── TECH_DECISIONS.md
 ├── development/                 # Development plans
 │   ├── DEVELOPMENT_PLAN.md
-│   ├── PROGRESS.md
+│   ├── DEVELOPMENT_STATUS.md
 │   ├── PHASE1_TEST_PLAN.md
 │   └── HUDI_BATCH_LAYER.md
 ├── operations/                  # Operations guides
-│   ├── SCRIPTS_QUICK_REFERENCE.md
+│   ├── INTEGRATION_TESTING_ENVIRONMENT.md
 │   ├── GIT_WORKFLOW.md
 │   └── NACOS_INTEGRATION.md
 ├── api-specs/                   # API documentation
@@ -82,4 +82,4 @@ docs/
 
 ---
 
-**Last Updated**: 2026-01-05
+**Last Updated**: 2026-01-09
