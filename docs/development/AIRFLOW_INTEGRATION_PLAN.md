@@ -9,67 +9,148 @@
 
 ## Overview
 
-Integrate Apache Airflow to orchestrate batch processing jobs with proper dependency management, scheduling, and monitoring.
+Integrate Apache Airflow to orchestrate batch processing jobs with proper dependency management.
+
+---
+
+## Speed Layer vs Batch Layer
+
+### Flink Speed Layer (Real-time)
+
+```
+Kafka → Flink → PostgreSQL (source='stream')
+                     │
+                     └→ Neo4j (via stream, optional)
+```
+
+**Limitations**:
+- `confirmations = 12` blocks, but reorgs still possible
+- Limited window size for aggregations
+- Simple rule-based processing only
+- No complex ML scoring
+
+### Spark Batch Layer (Correction)
+
+```
+PostgreSQL (cold) → archive → Hudi
+                               │
+Hudi → correct → Hudi (risk_score, labels applied)
+```
+
+**Purpose of Correction Job**:
+1. Handle block reorg inconsistencies
+2. Recalculate risk scores with updated rules
+3. Apply retroactive address labels/tags
+4. Fix data quality issues from stream processing
 
 ---
 
 ## Batch Jobs Inventory
 
-| Job | Command | Input | Output |
-|-----|---------|-------|--------|
-| archive | `batch-archive` | PostgreSQL (cold data) | Hudi transfers |
-| correct | `batch-correct` | Hudi transfers | Hudi transfers (with risk_score) |
-| features | `batch-features` | Hudi transfers | Hudi address_features |
-| labels | `batch-labels` | Public APIs | Hudi address_labels |
-| training | `batch-training` | address_features + address_labels | Hudi training_dataset |
-| neo4j | `batch-neo4j` | Hudi transfers | Neo4j graph |
+| Job | Input | Output | Purpose |
+|-----|-------|--------|---------|
+| **archive** | PostgreSQL (cold) | Hudi transfers | Move old data to data lake |
+| **correct** | Hudi transfers | Hudi transfers (+corrections) | Fix stream layer inaccuracies |
+| **features** | Hudi transfers | Hudi address_features | Compute ML features |
+| **labels** | Public APIs | Hudi address_labels | Ingest OFAC/mixer/exchange labels |
+| **training** | features + labels | Hudi training_dataset | Prepare ML training data |
+| **neo4j** | Hudi transfers | Neo4j graph | Sync corrected data to graph |
 
 ---
 
 ## DAG Design
 
-### DAG 1: Daily Data Pipeline (`chain_risk_daily`)
+### DAG 1: Daily Archive + Correction (`chain_risk_archive`)
 
-Runs daily at 02:00 UTC.
-
-```
-                    ┌─────────────┐
-                    │   archive   │
-                    │  (02:00)    │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-              ▼            ▼            ▼
-        ┌──────────┐ ┌──────────┐ ┌──────────┐
-        │ correct  │ │ features │ │  neo4j   │
-        └──────────┘ └────┬─────┘ └──────────┘
-                          │
-                          ▼
-                    ┌──────────┐
-                    │ training │
-                    └──────────┘
-```
-
-**Dependency Logic**:
-- `archive` runs first (PostgreSQL → Hudi)
-- After archive completes:
-  - `correct`: apply risk scoring
-  - `features`: compute ML features
-  - `neo4j`: sync to graph DB
-- `training` waits for `features` (labels ingested separately)
-
-### DAG 2: Weekly Label Refresh (`chain_risk_labels`)
-
-Runs weekly on Sunday at 01:00 UTC.
+**Schedule**: Daily 02:00 UTC
 
 ```
-┌──────────┐     ┌──────────┐
-│  labels  │ ──▶ │ training │
-└──────────┘     └──────────┘
+┌──────────┐
+│ archive  │  PostgreSQL → Hudi
+└────┬─────┘
+     │
+     ▼
+┌──────────┐
+│ correct  │  Apply risk scores, handle reorgs
+└────┬─────┘
+     │
+     ▼
+┌──────────┐
+│  neo4j   │  Sync corrected data to graph
+└──────────┘
 ```
 
-**Note**: `training` also in daily DAG, but weekly refresh ensures label updates propagate.
+**Rationale**: 
+- `archive` moves cold data to Hudi first
+- `correct` fixes stream inaccuracies on archived data
+- `neo4j` syncs corrected (not raw) data to graph DB
+
+### DAG 2: ML Feature Pipeline (`chain_risk_ml`)
+
+**Schedule**: Daily 04:00 UTC (after archive+correct)
+
+```
+┌──────────┐
+│ features │  Compute from corrected Hudi data
+└────┬─────┘
+     │
+     ▼
+┌──────────┐
+│ training │  Join with labels
+└──────────┘
+```
+
+**Rationale**:
+- Features computed from **corrected** Hudi data (not raw stream data)
+- Runs after correction completes
+
+### DAG 3: Weekly Label Refresh (`chain_risk_labels`)
+
+**Schedule**: Weekly Sunday 01:00 UTC
+
+```
+┌──────────┐
+│  labels  │  Fetch from OFAC, Tornado Cash, Exchanges
+└────┬─────┘
+     │
+     ▼
+┌──────────┐
+│ training │  Regenerate training dataset
+└──────────┘
+```
+
+**Rationale**:
+- Labels change infrequently (sanctions lists, new exchanges)
+- Weekly refresh sufficient
+
+---
+
+## Dependency Summary
+
+```
+             ┌─────────────────────────────────────────────────────────┐
+             │                    DAG 1 (02:00)                        │
+             │                                                         │
+             │  archive ──▶ correct ──▶ neo4j                         │
+             │                                                         │
+             └─────────────────────────┬───────────────────────────────┘
+                                       │
+                                       │ ExternalTaskSensor
+                                       ▼
+             ┌─────────────────────────────────────────────────────────┐
+             │                    DAG 2 (04:00)                        │
+             │                                                         │
+             │  features ──▶ training                                  │
+             │                                                         │
+             └─────────────────────────────────────────────────────────┘
+
+             ┌─────────────────────────────────────────────────────────┐
+             │                  DAG 3 (Sunday 01:00)                   │
+             │                                                         │
+             │  labels ──▶ training                                    │
+             │                                                         │
+             └─────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -79,119 +160,50 @@ Runs weekly on Sunday at 01:00 UTC.
 
 | Task | Description |
 |------|-------------|
-| 1.1 | Add Airflow to docker-compose (webserver, scheduler, worker) |
-| 1.2 | Configure PostgreSQL as Airflow metadata DB |
-| 1.3 | Configure connections (Spark, PostgreSQL, MinIO, Neo4j) |
-| 1.4 | Set up Airflow variables for environment config |
+| 1.1 | Add Airflow to docker-compose |
+| 1.2 | Configure Airflow metadata DB (separate PostgreSQL DB or SQLite for dev) |
+| 1.3 | Set up Airflow connections (Spark submit, env vars) |
+| 1.4 | Mount project directory for batch scripts |
 
 ### Phase 2: DAG Development
 
 | Task | Description |
 |------|-------------|
-| 2.1 | Create `chain_risk_daily` DAG |
-| 2.2 | Create `chain_risk_labels` DAG |
-| 2.3 | Implement SparkSubmitOperator for batch jobs |
-| 2.4 | Add alerting on failure (Slack/Email) |
+| 2.1 | Create `chain_risk_archive` DAG |
+| 2.2 | Create `chain_risk_ml` DAG with ExternalTaskSensor |
+| 2.3 | Create `chain_risk_labels` DAG |
+| 2.4 | Add failure alerting |
 
 ### Phase 3: Operations
 
 | Task | Description |
 |------|-------------|
-| 3.1 | Add Grafana dashboard for Airflow metrics |
-| 3.2 | Document runbook for DAG operations |
-| 3.3 | E2E test for full pipeline execution |
-
----
-
-## Technical Decisions
-
-### Airflow Executor
-
-**CeleryExecutor** for production (scalable), **LocalExecutor** for development.
-
-### Operator Choice
-
-**SparkSubmitOperator** via `apache-airflow-providers-apache-spark`:
-- Submits to Spark standalone/YARN/K8s
-- Handles logging and status tracking
-
-Alternative: **BashOperator** with `make batch-*` commands (simpler, less monitoring).
-
-### Retry Strategy
-
-```python
-default_args = {
-    'retries': 2,
-    'retry_delay': timedelta(minutes=10),
-    'retry_exponential_backoff': True,
-}
-```
-
-### Alerting
-
-```python
-from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
-
-def notify_failure(context):
-    SlackWebhookOperator(
-        task_id='slack_alert',
-        slack_webhook_conn_id='slack_default',
-        message=f"Task {context['task_instance'].task_id} failed",
-    ).execute(context)
-```
+| 3.1 | Add Airflow metrics to Prometheus |
+| 3.2 | Create Grafana dashboard for DAG monitoring |
+| 3.3 | Document runbook |
 
 ---
 
 ## File Structure
 
 ```
-infra/
-└── airflow/
-    ├── docker-compose.airflow.yml
-    ├── Dockerfile
-    ├── requirements.txt
-    └── dags/
-        ├── chain_risk_daily.py
-        └── chain_risk_labels.py
-
-scripts/
-└── airflow-init.sh
-```
-
----
-
-## docker-compose Addition
-
-```yaml
-# infra/airflow/docker-compose.airflow.yml
-services:
-  airflow-webserver:
-    image: apache/airflow:2.8.0
-    environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-    ports:
-      - "18082:8080"
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-    depends_on:
-      - postgres
-
-  airflow-scheduler:
-    image: apache/airflow:2.8.0
-    command: scheduler
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
+infra/airflow/
+├── docker-compose.airflow.yml
+├── Dockerfile
+├── requirements.txt
+└── dags/
+    ├── chain_risk_archive.py
+    ├── chain_risk_ml.py
+    └── chain_risk_labels.py
 ```
 
 ---
 
 ## DAG Code (Draft)
 
+### chain_risk_archive.py
+
 ```python
-# dags/chain_risk_daily.py
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.bash import BashOperator
@@ -205,13 +217,13 @@ default_args = {
 }
 
 with DAG(
-    'chain_risk_daily',
+    'chain_risk_archive',
     default_args=default_args,
-    description='Daily batch processing pipeline',
+    description='Daily archive and correction pipeline',
     schedule_interval='0 2 * * *',
     start_date=datetime(2026, 1, 1),
     catchup=False,
-    tags=['batch', 'daily'],
+    tags=['batch', 'daily', 'archive'],
 ) as dag:
 
     archive = BashOperator(
@@ -224,14 +236,53 @@ with DAG(
         bash_command=f'cd {PROJECT_ROOT} && make batch-correct',
     )
 
-    features = BashOperator(
-        task_id='compute_features',
-        bash_command=f'cd {PROJECT_ROOT} && make batch-features',
-    )
-
     neo4j_sync = BashOperator(
         task_id='neo4j_sync',
         bash_command=f'cd {PROJECT_ROOT} && make batch-neo4j',
+    )
+
+    archive >> correct >> neo4j_sync
+```
+
+### chain_risk_ml.py
+
+```python
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.operators.bash import BashOperator
+from airflow.sensors.external_task import ExternalTaskSensor
+
+PROJECT_ROOT = "/opt/chainrisk"
+
+default_args = {
+    'owner': 'chainrisk',
+    'retries': 2,
+    'retry_delay': timedelta(minutes=10),
+}
+
+with DAG(
+    'chain_risk_ml',
+    default_args=default_args,
+    description='ML feature pipeline (after correction)',
+    schedule_interval='0 4 * * *',
+    start_date=datetime(2026, 1, 1),
+    catchup=False,
+    tags=['batch', 'daily', 'ml'],
+) as dag:
+
+    # Wait for archive DAG to complete
+    wait_for_correction = ExternalTaskSensor(
+        task_id='wait_for_correction',
+        external_dag_id='chain_risk_archive',
+        external_task_id='batch_correction',
+        execution_delta=timedelta(hours=2),  # DAG 1 runs at 02:00, DAG 2 at 04:00
+        timeout=3600,
+        poke_interval=60,
+    )
+
+    features = BashOperator(
+        task_id='compute_features',
+        bash_command=f'cd {PROJECT_ROOT} && make batch-features',
     )
 
     training = BashOperator(
@@ -239,29 +290,42 @@ with DAG(
         bash_command=f'cd {PROJECT_ROOT} && make batch-training',
     )
 
-    # Dependencies
-    archive >> [correct, features, neo4j_sync]
-    features >> training
+    wait_for_correction >> features >> training
 ```
 
 ---
 
 ## Schedule Summary
 
-| DAG | Schedule | Duration (est.) |
-|-----|----------|-----------------|
-| chain_risk_daily | 02:00 UTC daily | ~30-60 min |
-| chain_risk_labels | 01:00 UTC Sunday | ~10 min |
+| DAG | Schedule | Est. Duration | Depends On |
+|-----|----------|---------------|------------|
+| chain_risk_archive | 02:00 daily | 30-60 min | - |
+| chain_risk_ml | 04:00 daily | 20-30 min | archive.correct |
+| chain_risk_labels | 01:00 Sunday | 10 min | - |
+
+---
+
+## Current Correction Job Simplification
+
+The current `HudiBatchCorrectionJob` is simplified for MVP:
+- Risk score based on transfer value thresholds only
+- Hardcoded exchange addresses
+- No actual reorg detection
+
+**Future Enhancements**:
+- Query address_labels for dynamic label lookup
+- Compare stream vs archive data for reorg detection
+- Integrate with Risk ML Service for scoring
 
 ---
 
 ## Success Criteria
 
-- [ ] Airflow UI accessible at `:18082`
-- [ ] DAGs visible and schedulable
-- [ ] Archive → Correct/Features/Neo4j → Training executes in order
-- [ ] Failure alerts sent to configured channel
-- [ ] Grafana dashboard shows DAG metrics
+- [ ] Airflow UI accessible
+- [ ] DAGs visible and properly scheduled
+- [ ] archive → correct → neo4j executes in sequence
+- [ ] features waits for correct completion
+- [ ] Failure alerts configured
 
 ---
 
@@ -270,4 +334,3 @@ with DAG(
 - [Lambda Architecture](../architecture/LAMBDA_ARCHITECTURE.md)
 - [Hudi Batch Layer](./HUDI_BATCH_LAYER.md)
 - [ML Feature Pipeline](./ML_FEATURE_PIPELINE.md)
-- [Data Retention Policy](../operations/DATA_RETENTION_POLICY.md)
