@@ -204,4 +204,66 @@ public class BffClient {
                 .map(list -> (List<Map<String, Object>>) list)
                 .doOnError(error -> log.error("Failed to get high-risk addresses: {}", error.getMessage()));
     }
+
+    // ============== Alert APIs ==============
+
+    /**
+     * Get alert statistics
+     */
+    public Mono<Map<String, Object>> getAlertStats(Integer hours, Map<String, String> userHeaders) {
+        return bffWebClient
+                .get()
+                .uri(uriBuilder -> {
+                    var builder = uriBuilder.path("/api/v1/alerts/stats");
+                    if (hours != null) {
+                        builder.queryParam("hours", hours);
+                    }
+                    return builder.build();
+                })
+                .headers(headers -> userHeaders.forEach(headers::add))
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
+                .doOnError(error -> log.error("Failed to get alert stats: {}", error.getMessage()));
+    }
+
+    /**
+     * Get alerts by entity ID (address or tx hash)
+     */
+    public Mono<Map<String, Object>> getAlertsByEntity(String entityId, int page, int pageSize, Map<String, String> userHeaders) {
+        return bffWebClient
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/alerts/history")
+                        .queryParam("entityId", entityId)
+                        .queryParam("page", page)
+                        .queryParam("pageSize", pageSize)
+                        .build())
+                .headers(headers -> userHeaders.forEach(headers::add))
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
+                .doOnError(error -> log.error("Failed to get alerts by entity: {}", error.getMessage()));
+    }
+
+    /**
+     * Get recent alerts
+     */
+    public Mono<Map<String, Object>> getRecentAlerts(int limit, Map<String, String> userHeaders) {
+        return bffWebClient
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/alerts/history")
+                        .queryParam("page", 1)
+                        .queryParam("pageSize", limit)
+                        .build())
+                .headers(headers -> userHeaders.forEach(headers::add))
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .map(map -> (Map<String, Object>) map)
+                .doOnError(error -> log.error("Failed to get recent alerts: {}", error.getMessage()));
+    }
 }
