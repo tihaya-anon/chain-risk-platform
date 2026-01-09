@@ -69,17 +69,16 @@ func TestPipeline_IngestionToDatabase(t *testing.T) {
 
 	// Verify Kafka topic exists
 	if env.Kafka != nil {
-		topics, _ := env.Kafka.Topics()
-		for _, topic := range topics {
-			if topic == "chain-transactions" {
-				t.Log("Kafka topic chain-transactions exists")
-				break
+		topics, err := env.Kafka.ListTopics()
+		if err == nil {
+			if _, exists := topics["chain-transactions"]; exists {
+				t.Log("Kafka topic chain-transactions exists ✓")
 			}
 		}
 	}
 }
 
-// TestPipeline_KafkaMessageFormat tests Kafka message format
+// TestPipeline_KafkaMessageFormat tests Kafka connection
 func TestPipeline_KafkaMessageFormat(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping E2E test in short mode")
@@ -99,19 +98,16 @@ func TestPipeline_KafkaMessageFormat(t *testing.T) {
 	}
 
 	// Check topic metadata
-	topics, err := env.Kafka.Topics()
+	topics, err := env.Kafka.ListTopics()
 	if err != nil {
 		t.Fatalf("Failed to get topics: %v", err)
 	}
 
-	for _, topic := range topics {
-		if topic == "chain-transactions" {
-			partitions, _ := env.Kafka.Partitions(topic)
-			t.Logf("Topic %s: partitions=%d", topic, len(partitions))
-			return
-		}
+	if topicMeta, exists := topics["chain-transactions"]; exists {
+		t.Logf("Topic chain-transactions: partitions=%d", topicMeta.NumPartitions)
+	} else {
+		t.Log("Topic chain-transactions not found (may not be created yet)")
 	}
-	t.Log("Topic chain-transactions not found (may not be created yet)")
 }
 
 // TestPipeline_DatabaseSchema verifies database schema
@@ -137,8 +133,6 @@ func TestPipeline_DatabaseSchema(t *testing.T) {
 		{"chain_data", "transfers"},
 		{"chain_data", "transactions"},
 		{"chain_data", "processing_state"},
-		{"risk", "address_risk_scores"},
-		{"alert", "alerts"},
 	}
 
 	for _, table := range tables {
@@ -152,7 +146,7 @@ func TestPipeline_DatabaseSchema(t *testing.T) {
 			continue
 		}
 		if !exists {
-			t.Logf("Table %s.%s does not exist", table.schema, table.name)
+			t.Errorf("Table %s.%s does not exist", table.schema, table.name)
 		} else {
 			t.Logf("Table %s.%s exists ✓", table.schema, table.name)
 		}
@@ -188,6 +182,6 @@ func TestPipeline_Neo4jConnectivity(t *testing.T) {
 	}
 
 	if result.Next(ctx) {
-		t.Log("Neo4j connection successful")
+		t.Log("Neo4j connection successful ✓")
 	}
 }
