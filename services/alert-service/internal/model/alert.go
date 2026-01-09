@@ -68,7 +68,7 @@ type AlertHistory struct {
 type AlertSubscription struct {
 	ID            int64     `json:"id" db:"id"`
 	UserID        string    `json:"user_id" db:"user_id"`
-	RuleID        int64     `json:"rule_id" db:"rule_id"`
+	RuleID        *int64    `json:"rule_id" db:"rule_id"` // Nullable for global subscriptions
 	ChannelType   string    `json:"channel_type" db:"channel_type"`
 	ChannelConfig JSONB     `json:"channel_config" db:"channel_config"`
 	Enabled       bool      `json:"enabled" db:"enabled"`
@@ -90,12 +90,12 @@ type Alert struct {
 
 // RuleType constants
 const (
-	RuleTypeRiskScore       = "risk_score"
+	RuleTypeRiskScore        = "risk_score"
 	RuleTypeTransactionValue = "transaction_value"
-	RuleTypeTagMatch        = "tag_match"
-	RuleTypeGraphPattern    = "graph_pattern"
-	RuleTypeVelocity        = "velocity"
-	RuleTypeClusterRisk     = "cluster_risk"
+	RuleTypeTagMatch         = "tag_match"
+	RuleTypeGraphPattern     = "graph_pattern"
+	RuleTypeVelocity         = "velocity"
+	RuleTypeClusterRisk      = "cluster_risk"
 )
 
 // Severity constants

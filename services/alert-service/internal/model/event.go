@@ -6,7 +6,7 @@ import "time"
 type RiskScoreEvent struct {
 	Address   string    `json:"address"`
 	Network   string    `json:"network"`
-	Score     float64   `json:"score"`
+	Score     float64   `json:"risk_score"` // Matches actual Kafka message field
 	Factors   []string  `json:"factors,omitempty"`
 	Timestamp time.Time `json:"timestamp"`
 }

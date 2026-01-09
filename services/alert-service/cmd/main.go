@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,8 +29,12 @@ import (
 )
 
 func main() {
+	// Parse command-line flags
+	configPath := flag.String("config", "configs/config.yaml", "Path to config file")
+	flag.Parse()
+
 	// Load configuration
-	cfg, err := config.Load("configs/config.yaml")
+	cfg, err := config.Load(*configPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}

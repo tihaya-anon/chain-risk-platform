@@ -17,42 +17,26 @@ type SubscriptionHandler struct {
 }
 
 // NewSubscriptionHandler creates a new subscription handler
-func NewSubscriptionHandler(service *service.AlertService, logger *zap.Logger) *SubscriptionHandler {
-	return &SubscriptionHandler{
-		service: service,
-		logger:  logger,
-	}
+func NewSubscriptionHandler(svc *service.AlertService, logger *zap.Logger) *SubscriptionHandler {
+	return &SubscriptionHandler{service: svc, logger: logger}
 }
 
-// RegisterRoutes returns the route configuration
+// RegisterRoutes returns the route group for subscriptions
 func (h *SubscriptionHandler) RegisterRoutes() RouteGroup {
 	return RouteGroup{
 		Prefix: "/subscriptions",
 		Routes: []Route{
-			{Method: GET, Path: "", Handler: h.List},
-			{Method: GET, Path: "/:id", Handler: h.GetByID},
-			{Method: POST, Path: "", Handler: h.Create},
-			{Method: DELETE, Path: "/:id", Handler: h.Delete},
+			{GET, "", h.List},
+			{GET, "/:id", h.GetByID},
+			{POST, "", h.Create},
+			{DELETE, "/:id", h.Delete},
 		},
 	}
-}
-
-// CreateSubscriptionRequest represents create subscription request
-type CreateSubscriptionRequest struct {
-	UserID        string      `json:"user_id" binding:"required"`
-	RuleID        *int64      `json:"rule_id"`
-	ChannelType   string      `json:"channel_type" binding:"required"`
-	ChannelConfig model.JSONB `json:"channel_config" binding:"required"`
-	Enabled       *bool       `json:"enabled"`
 }
 
 // List returns subscriptions for a user
 func (h *SubscriptionHandler) List(c *gin.Context) {
 	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-Id")
-	}
-
 	if userID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id required"})
 		return
@@ -67,7 +51,16 @@ func (h *SubscriptionHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": subs})
 }
 
-// GetByID returns a single subscription
+// CreateSubscriptionRequest represents a create subscription request
+type CreateSubscriptionRequest struct {
+	UserID        string      `json:"user_id" binding:"required"`
+	RuleID        *int64      `json:"rule_id"`
+	ChannelType   string      `json:"channel_type" binding:"required"`
+	ChannelConfig model.JSONB `json:"channel_config" binding:"required"`
+	Enabled       *bool       `json:"enabled"`
+}
+
+// GetByID returns a subscription by ID
 func (h *SubscriptionHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -111,7 +104,7 @@ func (h *SubscriptionHandler) Create(c *gin.Context) {
 
 	sub := &model.AlertSubscription{
 		UserID:        req.UserID,
-		RuleID:        safeDerefInt64(req.RuleID),
+		RuleID:        req.RuleID,
 		ChannelType:   req.ChannelType,
 		ChannelConfig: req.ChannelConfig,
 		Enabled:       enabled,
@@ -175,11 +168,4 @@ type configError struct {
 
 func (e *configError) Error() string {
 	return e.msg
-}
-
-func safeDerefInt64(p *int64) int64 {
-	if p == nil {
-		return 0
-	}
-	return *p
 }

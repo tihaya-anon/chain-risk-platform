@@ -50,13 +50,20 @@ func (r *alertSubscriptionRepository) GetByID(ctx context.Context, id int64) (*m
 	`
 
 	sub := &model.AlertSubscription{}
+	var ruleID sql.NullInt64
+
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&sub.ID, &sub.UserID, &sub.RuleID, &sub.ChannelType,
+		&sub.ID, &sub.UserID, &ruleID, &sub.ChannelType,
 		&sub.ChannelConfig, &sub.Enabled, &sub.CreatedAt, &sub.UpdatedAt,
 	)
 
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("subscription not found: %d", id)
+	}
+
+	if ruleID.Valid {
+		ruleIDVal := ruleID.Int64
+		sub.RuleID = &ruleIDVal
 	}
 
 	return sub, err
@@ -92,7 +99,6 @@ func (r *alertSubscriptionRepository) ListByRuleID(ctx context.Context, ruleID *
 		`
 		args = []interface{}{*ruleID}
 	} else {
-		// Get subscriptions without specific rule (global subscriptions)
 		query = `
 			SELECT id, user_id, rule_id, channel_type, channel_config, enabled, created_at, updated_at
 			FROM alert.alert_subscriptions
@@ -183,13 +189,21 @@ func (r *alertSubscriptionRepository) scanRows(rows *sql.Rows) ([]*model.AlertSu
 	var subs []*model.AlertSubscription
 	for rows.Next() {
 		sub := &model.AlertSubscription{}
+		var ruleID sql.NullInt64
+
 		err := rows.Scan(
-			&sub.ID, &sub.UserID, &sub.RuleID, &sub.ChannelType,
+			&sub.ID, &sub.UserID, &ruleID, &sub.ChannelType,
 			&sub.ChannelConfig, &sub.Enabled, &sub.CreatedAt, &sub.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		if ruleID.Valid {
+			ruleIDVal := ruleID.Int64
+			sub.RuleID = &ruleIDVal
+		}
+
 		subs = append(subs, sub)
 	}
 	return subs, rows.Err()
