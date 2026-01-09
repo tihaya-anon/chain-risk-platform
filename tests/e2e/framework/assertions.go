@@ -6,65 +6,47 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
-
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-// Assertion helpers for E2E tests
-
-// WaitForCondition waits for a condition to be true
-func WaitForCondition(ctx context.Context, interval, timeout time.Duration, condition func() (bool, error)) error {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
-	timeoutCh := time.After(timeout)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-timeoutCh:
-			return fmt.Errorf("timeout waiting for condition")
-		case <-ticker.C:
-			ok, err := condition()
-			if err != nil {
-				return err
-			}
-			if ok {
-				return nil
-			}
-		}
-	}
-}
-
-// AssertPostgresRowCount checks row count in a table
-func (e *TestEnv) AssertPostgresRowCount(ctx context.Context, table string, minCount int) error {
+// AssertDatabaseCount checks record count in a table
+func (e *TestEnv) AssertDatabaseCount(ctx context.Context, schema, table string, minCount int) error {
 	var count int
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.%s", schema, table)
 	if err := e.DB.QueryRowContext(ctx, query).Scan(&count); err != nil {
-		return fmt.Errorf("query count: %w", err)
+		return fmt.Errorf("count query failed: %w", err)
 	}
 	if count < minCount {
-		return fmt.Errorf("expected at least %d rows in %s, got %d", minCount, table, count)
+		return fmt.Errorf("expected at least %d records in %s.%s, got %d", minCount, schema, table, count)
 	}
 	return nil
 }
 
-// AssertNeo4jNodeCount checks node count with a label
+// AssertRedisKeyExists checks if a Redis key exists
+func (e *TestEnv) AssertRedisKeyExists(ctx context.Context, key string) error {
+	exists, err := e.Redis.Exists(ctx, key).Result()
+	if err != nil {
+		return fmt.Errorf("redis exists check failed: %w", err)
+	}
+	if exists == 0 {
+		return fmt.Errorf("redis key %s does not exist", key)
+	}
+	return nil
+}
+
+// AssertNeo4jNodeCount checks node count with label
 func (e *TestEnv) AssertNeo4jNodeCount(ctx context.Context, label string, minCount int) error {
-	session := e.Neo4j.NewSession(ctx, neo4j.SessionConfig{})
+	session := e.Neo4j.NewSession(ctx, Neo4jSessionConfig())
 	defer session.Close(ctx)
 
-	query := fmt.Sprintf("MATCH (n:%s) RETURN count(n) as cnt", label)
-	result, err := session.Run(ctx, query, nil)
+	result, err := session.Run(ctx, fmt.Sprintf("MATCH (n:%s) RETURN COUNT(n) as count", label), nil)
 	if err != nil {
-		return fmt.Errorf("neo4j query: %w", err)
+		return fmt.Errorf("neo4j query failed: %w", err)
 	}
 
 	if result.Next(ctx) {
-		count, _ := result.Record().Get("cnt")
-		if cnt, ok := count.(int64); ok && int(cnt) >= minCount {
+		record := result.Record()
+		count, _ := record.Get("count")
+		if c, ok := count.(int64); ok && int(c) >= minCount {
 			return nil
 		}
 		return fmt.Errorf("expected at least %d nodes with label %s, got %v", minCount, label, count)
@@ -72,89 +54,86 @@ func (e *TestEnv) AssertNeo4jNodeCount(ctx context.Context, label string, minCou
 	return fmt.Errorf("no result from neo4j")
 }
 
-// AssertKafkaTopicMessages checks message count in topic
-func (e *TestEnv) AssertKafkaTopicMessages(topic string, minCount int64) error {
-	offsets, err := e.KafkaAdmin.ListConsumerGroupOffsets("", map[string][]int32{topic: {0}})
-	if err != nil {
-		// Try getting topic metadata instead
-		topics, err := e.KafkaAdmin.ListTopics()
-		if err != nil {
-			return fmt.Errorf("list topics: %w", err)
-		}
-		if _, exists := topics[topic]; !exists {
-			return fmt.Errorf("topic %s does not exist", topic)
-		}
-		return nil // Topic exists, can't easily count messages
+// AssertKafkaTopicExists checks if topic exists
+func (e *TestEnv) AssertKafkaTopicExists(topic string) error {
+	if e.Kafka == nil {
+		return fmt.Errorf("kafka not connected")
 	}
-	_ = offsets
+	topics, err := e.Kafka.ListTopics()
+	if err != nil {
+		return fmt.Errorf("list topics: %w", err)
+	}
+	if _, exists := topics[topic]; !exists {
+		return fmt.Errorf("topic %s does not exist", topic)
+	}
 	return nil
 }
 
-// AssertHTTPEndpoint checks HTTP endpoint response
-func (e *TestEnv) AssertHTTPEndpoint(ctx context.Context, method, url string, expectedStatus int) error {
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+// AssertHTTPStatus checks HTTP endpoint returns expected status
+func (e *TestEnv) AssertHTTPStatus(ctx context.Context, url string, expectedStatus int) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
 
 	resp, err := e.HTTPClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("http request: %w", err)
+		return fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != expectedStatus {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("expected status %d, got %d: %s", expectedStatus, resp.StatusCode, string(body))
+		return fmt.Errorf("expected status %d, got %d", expectedStatus, resp.StatusCode)
 	}
 	return nil
 }
 
-// AssertJSONResponse checks HTTP endpoint returns valid JSON
-func (e *TestEnv) AssertJSONResponse(ctx context.Context, url string, target interface{}) error {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+// AssertJSONResponse checks JSON response contains expected field
+func (e *TestEnv) AssertJSONResponse(ctx context.Context, url string, field string) (interface{}, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return nil, fmt.Errorf("create request: %w", err)
 	}
 
 	resp, err := e.HTTPClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("http request: %w", err)
+		return nil, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("expected 200, got %d: %s", resp.StatusCode, string(body))
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read body: %w", err)
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
-		return fmt.Errorf("decode json: %w", err)
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("parse json: %w", err)
+	}
+
+	value, exists := result[field]
+	if !exists {
+		return nil, fmt.Errorf("field %s not found in response", field)
+	}
+	return value, nil
+}
+
+// AssertRiskScore checks risk score is within range
+func (e *TestEnv) AssertRiskScore(ctx context.Context, address string, minScore, maxScore float64) error {
+	url := fmt.Sprintf("%s/api/v1/risk/%s", e.Config.RiskServiceURL, address)
+
+	value, err := e.AssertJSONResponse(ctx, url, "score")
+	if err != nil {
+		return err
+	}
+
+	score, ok := value.(float64)
+	if !ok {
+		return fmt.Errorf("score is not a number: %v", value)
+	}
+
+	if score < minScore || score > maxScore {
+		return fmt.Errorf("score %.4f not in range [%.4f, %.4f]", score, minScore, maxScore)
 	}
 	return nil
-}
-
-// WaitForPostgresRows waits for minimum row count
-func (e *TestEnv) WaitForPostgresRows(ctx context.Context, table string, minCount int, timeout time.Duration) error {
-	return WaitForCondition(ctx, time.Second, timeout, func() (bool, error) {
-		var count int
-		query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
-		if err := e.DB.QueryRowContext(ctx, query).Scan(&count); err != nil {
-			return false, nil // Table might not exist yet
-		}
-		return count >= minCount, nil
-	})
-}
-
-// WaitForServiceReady waits for service health endpoint
-func (e *TestEnv) WaitForServiceReady(ctx context.Context, healthURL string, timeout time.Duration) error {
-	return WaitForCondition(ctx, time.Second, timeout, func() (bool, error) {
-		req, _ := http.NewRequestWithContext(ctx, "GET", healthURL, nil)
-		resp, err := e.HTTPClient.Do(req)
-		if err != nil {
-			return false, nil
-		}
-		defer resp.Body.Close()
-		return resp.StatusCode == http.StatusOK, nil
-	})
 }
