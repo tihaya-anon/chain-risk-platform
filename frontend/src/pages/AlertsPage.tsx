@@ -139,116 +139,106 @@ export function AlertsPage() {
   const alertHistory = historyData?.data || []
   const historyTotal = historyData?.total || 0
 
-  // Page accent: orange (consistent with alert/warning theme)
-  const accentBg = "bg-orange-100 dark:bg-orange-900/30"
-  const accentText = "text-orange-600 dark:text-orange-400"
-  const accentBorder = "border-orange-500"
-
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${accentBg}`}>
-                <Bell className={`w-6 h-6 ${accentText}`} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Alerts</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Manage alert rules and notifications
-                </p>
-              </div>
-            </div>
-            <Button variant="secondary" onClick={handleRefresh}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Bell className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+              Alerts
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Manage alert rules and notifications
+            </p>
           </div>
+          <Button variant="secondary" onClick={handleRefresh}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
 
-          {/* Tabs */}
-          <div className="mt-4 border-b border-gray-200 dark:border-gray-700 -mb-px">
-            <nav className="flex gap-4">
-              {tabs.map(({ id, label, icon: Icon }) => (
+        {/* Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex space-x-8">
+            {tabs.map(({ id, label, icon: Icon }) => {
+              const isActive = activeTab === id
+              return (
                 <button
                   key={id}
                   onClick={() => setActiveTab(id)}
-                  className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === id
-                      ? `${accentBorder} ${accentText}`
-                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    isActive
+                      ? "border-orange-500 text-orange-600 dark:text-orange-400"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
                   {label}
                 </button>
-              ))}
-            </nav>
-          </div>
+              )
+            })}
+          </nav>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
-          {activeTab === "overview" && (
-            <>
-              <AlertStatsCards stats={alertStats} isLoading={statsLoading} />
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                <SeverityChart bySeverity={alertStats.bySeverity} isLoading={statsLoading} />
-                <div className="xl:col-span-2">
-                  <AlertHistoryTable
-                    alerts={alertHistory.slice(0, 5)}
-                    total={Math.min(historyTotal, 5)}
-                    page={1}
-                    pageSize={5}
-                    onPageChange={() => setActiveTab("history")}
-                    onViewDetails={handleViewDetails}
-                    isLoading={historyLoading}
-                  />
-                </div>
+        {/* Content */}
+        {activeTab === "overview" && (
+          <div className="space-y-6">
+            <AlertStatsCards stats={alertStats} isLoading={statsLoading} />
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <SeverityChart bySeverity={alertStats.bySeverity} isLoading={statsLoading} />
+              <div className="xl:col-span-2">
+                <AlertHistoryTable
+                  alerts={alertHistory.slice(0, 5)}
+                  total={Math.min(historyTotal, 5)}
+                  page={1}
+                  pageSize={5}
+                  onPageChange={() => setActiveTab("history")}
+                  onViewDetails={handleViewDetails}
+                  isLoading={historyLoading}
+                />
               </div>
-            </>
-          )}
+            </div>
+          </div>
+        )}
 
-          {activeTab === "history" && (
-            <AlertHistoryTable
-              alerts={alertHistory}
-              total={historyTotal}
-              page={historyPage}
-              pageSize={pageSize}
-              onPageChange={setHistoryPage}
-              onAcknowledge={handleAcknowledge}
-              onViewDetails={handleViewDetails}
-              isLoading={historyLoading}
-            />
-          )}
+        {activeTab === "history" && (
+          <AlertHistoryTable
+            alerts={alertHistory}
+            total={historyTotal}
+            page={historyPage}
+            pageSize={pageSize}
+            onPageChange={setHistoryPage}
+            onAcknowledge={handleAcknowledge}
+            onViewDetails={handleViewDetails}
+            isLoading={historyLoading}
+          />
+        )}
 
-          {activeTab === "rules" && (
-            <AlertRulesTable
-              rules={rules || []}
-              onEdit={handleEditRule}
-              onDelete={handleDeleteRule}
-              onToggle={handleToggleRule}
-              onCreate={() => {
-                setEditingRule(null)
-                setShowRuleForm(true)
-              }}
-              isLoading={rulesLoading}
-            />
-          )}
+        {activeTab === "rules" && (
+          <AlertRulesTable
+            rules={rules || []}
+            onEdit={handleEditRule}
+            onDelete={handleDeleteRule}
+            onToggle={handleToggleRule}
+            onCreate={() => {
+              setEditingRule(null)
+              setShowRuleForm(true)
+            }}
+            isLoading={rulesLoading}
+          />
+        )}
 
-          {activeTab === "subscriptions" && (
-            <SubscriptionsTable
-              subscriptions={subscriptions || []}
-              rules={rules || []}
-              onDelete={handleDeleteSubscription}
-              onCreate={() => setShowSubscriptionForm(true)}
-              isLoading={subscriptionsLoading}
-            />
-          )}
-        </div>
+        {activeTab === "subscriptions" && (
+          <SubscriptionsTable
+            subscriptions={subscriptions || []}
+            rules={rules || []}
+            onDelete={handleDeleteSubscription}
+            onCreate={() => setShowSubscriptionForm(true)}
+            isLoading={subscriptionsLoading}
+          />
+        )}
       </div>
 
       {/* Modals */}
