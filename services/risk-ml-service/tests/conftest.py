@@ -1,28 +1,41 @@
 """Pytest fixtures for risk-ml-service tests."""
 
+from dataclasses import dataclass
 from typing import Optional
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import numpy as np
 import pytest
 
 
+@dataclass
+class MockModelInfo:
+    """Mock ModelInfo for testing."""
+
+    name: str = "test_model"
+    version: str = "v1"
+    model_type: str = "gnn"
+    metrics: dict = None
+    feature_cols: list = None
+    norm_params: dict = None
+    config: dict = None
+
+    def __post_init__(self):
+        if self.metrics is None:
+            self.metrics = {"auc": 0.9}
+        if self.feature_cols is None:
+            self.feature_cols = ["tx_count", "sent_count", "received_count"]
+        if self.norm_params is None:
+            self.norm_params = {
+                "tx_count": {"mean": 50.0, "std": 25.0},
+                "sent_count": {"mean": 25.0, "std": 10.0},
+            }
+
+
 @pytest.fixture
 def mock_model_info():
     """Create mock ModelInfo."""
-    from app.ml.model_loader import ModelInfo
-
-    return ModelInfo(
-        model_name="test_model",
-        version="v1",
-        model_type="gnn",
-        metrics={"auc": 0.9},
-        norm_params={
-            "tx_count": {"mean": 50.0, "std": 25.0},
-            "sent_count": {"mean": 25.0, "std": 10.0},
-        },
-        feature_cols=["tx_count", "sent_count", "received_count"],
-    )
+    return MockModelInfo()
 
 
 @pytest.fixture

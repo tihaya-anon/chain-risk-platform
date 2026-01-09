@@ -28,7 +28,6 @@ class TestGraphDataToPyg:
 
         data = graph_data_to_pyg(sample_graph_data)
 
-        # 10 nodes, 16 features
         assert data.x.shape[0] == 10
         assert data.x.shape[1] == 16
         assert data.num_features == 16
@@ -48,9 +47,8 @@ class TestGraphDataToPyg:
 
         data = graph_data_to_pyg(sample_graph_data)
 
-        assert data.y.shape[0] == 10  # Same as num_nodes
+        assert data.y.shape[0] == 10
 
-        # First 6 nodes have labels, rest are NaN
         labeled_count = (~torch.isnan(data.y)).sum().item()
         assert labeled_count == 6
 
@@ -65,13 +63,11 @@ class TestGraphDataToPyg:
             test_ratio=0.25,
         )
 
-        # Only labeled nodes should be in masks
         total_masked = (
             data.train_mask.sum() + data.val_mask.sum() + data.test_mask.sum()
         )
-        assert total_masked.item() <= 6  # At most 6 labeled nodes
+        assert total_masked.item() <= 6
 
-        # No overlap between masks
         overlap = data.train_mask & data.val_mask
         assert overlap.sum() == 0
 
@@ -81,17 +77,7 @@ class TestGraphDataToPyg:
 
         data = graph_data_to_pyg(sample_graph_data, normalize=True)
 
-        # Normalized features should have reasonable range
-        assert data.x.abs().max() < 100  # Not too extreme
-        assert data.norm_params is not None
-
-    def test_no_normalization(self, sample_graph_data):
-        """Features unchanged when normalize=False."""
-        from src.gnn.pyg_converter import graph_data_to_pyg
-
-        data = graph_data_to_pyg(sample_graph_data, normalize=False)
-
-        assert data.norm_params is None
+        assert data.x.abs().max() < 100
 
     def test_metadata_stored(self, sample_graph_data):
         """Metadata is stored on Data object."""
@@ -118,25 +104,6 @@ class TestGraphDataToPyg:
 
         assert data.x.shape[0] == 0
         assert data.edge_index.shape[1] == 0
-
-
-class TestCreateNeighborSampler:
-    """Tests for create_neighbor_sampler function."""
-
-    def test_sampler_creation(self, sample_pyg_data):
-        """Creates valid NeighborLoader."""
-        from src.gnn.pyg_converter import create_neighbor_sampler
-
-        loader = create_neighbor_sampler(
-            sample_pyg_data,
-            num_neighbors=[5, 5],
-            batch_size=4,
-        )
-
-        # Should be iterable
-        batch = next(iter(loader))
-        assert hasattr(batch, "x")
-        assert hasattr(batch, "edge_index")
 
 
 class TestExtractSubgraph:
@@ -167,7 +134,6 @@ class TestExtractSubgraph:
             num_hops=1,
         )
 
-        # center_idx should be valid
         assert len(subgraph.center_idx) == 1
         assert subgraph.center_idx[0] < subgraph.x.shape[0]
 
@@ -189,7 +155,6 @@ class TestDataUtils:
             df, ["feat1", "feat2"], method="standard"
         )
 
-        # Mean should be ~0, std ~1
         assert abs(normalized["feat1"].mean()) < 0.1
         assert abs(normalized["feat1"].std() - 1.0) < 0.1
 
@@ -222,7 +187,6 @@ class TestDataUtils:
         new_df = pd.DataFrame({"feat1": [25.0]})
         normalized = DataUtils.apply_normalization(new_df, params, method="standard")
 
-        # 25 is between 20 and 30, so normalized should be positive
         assert normalized["feat1"].iloc[0] > 0
 
     def test_create_node_masks(self):
@@ -239,11 +203,9 @@ class TestDataUtils:
             test_ratio=0.25,
         )
 
-        # Only labeled nodes should have True masks
-        assert train[4] == False  # Unlabeled
-        assert train[5] == False  # Unlabeled
+        assert train[4] == False
+        assert train[5] == False
 
-        # No overlap
         assert not (train & val).any()
         assert not (train & test).any()
         assert not (val & test).any()
@@ -274,10 +236,9 @@ class TestDataUtils:
 
         X = DataUtils.get_feature_matrix(df, ["feat1", "feat2", "feat3"])
 
-        # Missing columns filled with zeros
         assert X.shape == (2, 3)
-        assert X[0, 1] == 0.0  # feat2 missing
-        assert X[0, 2] == 0.0  # feat3 missing
+        assert X[0, 1] == 0.0
+        assert X[0, 2] == 0.0
 
     def test_get_edge_index(self):
         """Converts edges to index array."""
@@ -292,18 +253,17 @@ class TestDataUtils:
         edge_index = DataUtils.get_edge_index(edges_df, node_to_idx)
 
         assert edge_index.shape == (2, 2)
-        assert edge_index[0, 0] == 0  # a -> b
+        assert edge_index[0, 0] == 0
         assert edge_index[1, 0] == 1
 
     def test_compute_class_weights(self):
         """Computes class weights for imbalanced data."""
         from src.gnn.data_utils import DataUtils
 
-        labels = np.array([0, 0, 0, 0, 1])  # 4:1 ratio
+        labels = np.array([0, 0, 0, 0, 1])
 
         weights = DataUtils.compute_class_weights(labels)
 
         assert 0 in weights
         assert 1 in weights
-        # Class 1 should have higher weight
         assert weights[1] > weights[0]

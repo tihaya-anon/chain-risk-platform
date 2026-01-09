@@ -1,7 +1,7 @@
 """Unit tests for EnsemblePredictor."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 
 class TestEnsembleCombineScores:
@@ -18,7 +18,7 @@ class TestEnsembleCombineScores:
 
         score = predictor._combine_scores({"gnn": 0.8, "xgboost": 0.6})
 
-        assert abs(score - 0.7) < 0.01
+        assert score == pytest.approx(0.7)
 
     def test_weighted_avg_unequal_weights(self):
         """Weighted average with different weights."""
@@ -32,8 +32,7 @@ class TestEnsembleCombineScores:
         scores = {"gnn": 1.0, "xgboost": 0.0, "rules": 0.0}
         score = predictor._combine_scores(scores)
 
-        # (1.0*0.6 + 0*0.2 + 0*0.2) / 1.0 = 0.6
-        assert abs(score - 0.6) < 0.01
+        assert score == pytest.approx(0.6)
 
     def test_weighted_avg_partial_scores(self):
         """Weighted average with only some models available."""
@@ -44,12 +43,10 @@ class TestEnsembleCombineScores:
             weights={"gnn": 0.4, "xgboost": 0.4, "rules": 0.2},
         )
 
-        # Only GNN and rules available
         scores = {"gnn": 0.8, "rules": 0.5}
         score = predictor._combine_scores(scores)
 
-        # (0.8*0.4 + 0.5*0.2) / (0.4 + 0.2) = 0.42 / 0.6 = 0.7
-        assert abs(score - 0.7) < 0.01
+        assert score == pytest.approx(0.7)
 
     def test_max_strategy(self):
         """Max strategy returns highest score."""
@@ -59,7 +56,7 @@ class TestEnsembleCombineScores:
 
         score = predictor._combine_scores({"gnn": 0.3, "xgboost": 0.9, "rules": 0.5})
 
-        assert score == 0.9
+        assert score == pytest.approx(0.9)
 
     def test_min_strategy(self):
         """Min strategy returns lowest score."""
@@ -69,7 +66,7 @@ class TestEnsembleCombineScores:
 
         score = predictor._combine_scores({"gnn": 0.3, "xgboost": 0.9, "rules": 0.5})
 
-        assert score == 0.3
+        assert score == pytest.approx(0.3)
 
     def test_avg_strategy(self):
         """Avg strategy returns simple average."""
@@ -79,7 +76,7 @@ class TestEnsembleCombineScores:
 
         score = predictor._combine_scores({"gnn": 0.3, "xgboost": 0.6, "rules": 0.9})
 
-        assert abs(score - 0.6) < 0.01
+        assert score == pytest.approx(0.6)
 
     def test_voting_majority_high(self):
         """Voting returns 1.0 when majority above threshold."""
@@ -87,10 +84,9 @@ class TestEnsembleCombineScores:
 
         predictor = EnsemblePredictor(strategy="voting")
 
-        # 2 out of 3 above 0.5
         score = predictor._combine_scores({"gnn": 0.7, "xgboost": 0.6, "rules": 0.3})
 
-        assert score == 1.0
+        assert score == pytest.approx(1.0)
 
     def test_voting_majority_low(self):
         """Voting returns 0.0 when majority below threshold."""
@@ -98,10 +94,9 @@ class TestEnsembleCombineScores:
 
         predictor = EnsemblePredictor(strategy="voting")
 
-        # 2 out of 3 below 0.5
         score = predictor._combine_scores({"gnn": 0.3, "xgboost": 0.4, "rules": 0.8})
 
-        assert score == 0.0
+        assert score == pytest.approx(0.0)
 
     def test_unknown_strategy_fallback(self):
         """Unknown strategy falls back to average."""
@@ -111,27 +106,25 @@ class TestEnsembleCombineScores:
 
         score = predictor._combine_scores({"gnn": 0.4, "xgboost": 0.6})
 
-        assert abs(score - 0.5) < 0.01
+        assert score == pytest.approx(0.5)
 
 
 class TestEnsemblePredict:
     """Tests for ensemble predict method."""
 
     @pytest.mark.asyncio
-    async def test_predict_with_all_models(self, mock_gnn_model, mock_xgb_model, mock_model_info):
+    async def test_predict_with_all_models(self):
         """Predict with all models available."""
         from app.ml.ensemble import EnsemblePredictor
 
         predictor = EnsemblePredictor(strategy="weighted_avg")
 
-        # Mock GNN predictor
         predictor.gnn_predictor = MagicMock()
         predictor.gnn_predictor.is_ready.return_value = True
         predictor.gnn_predictor.predict = AsyncMock(
             return_value={"address": "0x1234", "score": 0.8, "method": "gnn"}
         )
 
-        # Mock XGB predictor
         predictor.xgb_predictor = MagicMock()
         predictor.xgb_predictor.is_ready.return_value = True
         predictor.xgb_predictor.predict = AsyncMock(
@@ -153,19 +146,17 @@ class TestEnsemblePredict:
 
         predictor = EnsemblePredictor(strategy="weighted_avg")
 
-        # Mock GNN predictor
         predictor.gnn_predictor = MagicMock()
         predictor.gnn_predictor.is_ready.return_value = True
         predictor.gnn_predictor.predict = AsyncMock(
             return_value={"address": "0x1234", "score": 0.8, "method": "gnn"}
         )
 
-        # No XGB
         predictor.xgb_predictor = None
 
         result = await predictor.predict("0x1234")
 
-        assert result["score"] == 0.8
+        assert result["score"] == pytest.approx(0.8)
         assert result["models_used"] == ["gnn"]
 
     @pytest.mark.asyncio
@@ -179,7 +170,7 @@ class TestEnsemblePredict:
 
         result = await predictor.predict("0x1234", rule_score=0.7)
 
-        assert result["score"] == 0.7
+        assert result["score"] == pytest.approx(0.7)
         assert result["method"] == "fallback"
 
     @pytest.mark.asyncio
@@ -283,8 +274,8 @@ class TestEnsembleBatchPredict:
         results = await predictor.predict_batch(["0x1", "0x2"])
 
         assert len(results) == 2
-        assert results[0]["score"] == 0.8
-        assert results[1]["score"] == 0.3
+        assert results[0]["score"] == pytest.approx(0.8)
+        assert results[1]["score"] == pytest.approx(0.3)
 
     @pytest.mark.asyncio
     async def test_predict_batch_with_rule_scores(self):
@@ -298,5 +289,5 @@ class TestEnsembleBatchPredict:
         rule_scores = {"0x1": 0.9, "0x2": 0.1}
         results = await predictor.predict_batch(["0x1", "0x2"], rule_scores=rule_scores)
 
-        assert results[0]["score"] == 0.9
-        assert results[1]["score"] == 0.1
+        assert results[0]["score"] == pytest.approx(0.9)
+        assert results[1]["score"] == pytest.approx(0.1)
