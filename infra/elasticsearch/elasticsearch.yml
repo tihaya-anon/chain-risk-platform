@@ -1,0 +1,24 @@
+# Elasticsearch configuration for Jaeger trace storage
+cluster.name: chainrisk-es
+node.name: es-node-1
+
+# Network
+network.host: 0.0.0.0
+http.port: 9200
+
+# Discovery (single-node mode)
+discovery.type: single-node
+
+# Disable security for development
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+
+# Memory settings
+bootstrap.memory_lock: true
+
+# Index lifecycle management
+xpack.ilm.enabled: true
+
+# Logging
+logger.level: INFO
+logger.org.elasticsearch: WARN

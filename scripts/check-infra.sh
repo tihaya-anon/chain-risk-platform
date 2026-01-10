@@ -89,6 +89,19 @@ check_service "KafkaExporter" "curl -s http://${DOCKER_HOST_IP}:19308/metrics >/
 check_service "PGExporter" "curl -s http://${DOCKER_HOST_IP}:19187/metrics >/dev/null" "19187" || ((FAILED++))
 
 echo ""
+echo "=== Trace Storage ==="
+# Elasticsearch
+ES_HEALTH=$(curl -s "http://${DOCKER_HOST_IP}:19200/_cluster/health" 2>/dev/null | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+if [ "$ES_HEALTH" = "green" ] || [ "$ES_HEALTH" = "yellow" ]; then
+    printf "%-15s " "Elasticsearch"
+    echo -e "${GREEN}✓ OK${NC} (port 19200, status: $ES_HEALTH)"
+else
+    printf "%-15s " "Elasticsearch"
+    echo -e "${RED}✗ FAILED${NC} (port 19200)"
+    ((FAILED++))
+fi
+
+echo ""
 echo "============================================"
 if [ $FAILED -eq 0 ]; then
     echo -e "${GREEN}All services healthy!${NC}"
@@ -116,5 +129,6 @@ echo "Monitoring:"
 echo "  Prometheus:         http://${DOCKER_HOST_IP}:19090"
 echo "  Grafana:            http://${DOCKER_HOST_IP}:13001 (admin/admin123)"
 echo "  Jaeger:             http://${DOCKER_HOST_IP}:26686"
+echo "  Elasticsearch:      http://${DOCKER_HOST_IP}:19200"
 
 exit $FAILED

@@ -90,6 +90,7 @@ help:
 	@echo ""
 	@echo "🔭 Observability:"
 	@echo "  make otel-download   Download OpenTelemetry Java Agent"
+	@echo "  make es-check        Check Elasticsearch health"
 	@echo ""
 	@echo "🧪 Testing:"
 	@echo "  make test-integration         Full integration test"
@@ -131,6 +132,16 @@ cleanup-all:
 
 cleanup-rolling:
 	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
+
+# ============================================
+# Elasticsearch
+# ============================================
+
+es-check:
+	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cluster/health?pretty"'
+
+es-indices:
+	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cat/indices?v"'
 
 # ============================================
 # OpenTelemetry Setup
