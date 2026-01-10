@@ -7,6 +7,43 @@ datasources:
     access: proxy
     url: http://prometheus:9090
     isDefault: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: "15s"
+
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - name: TraceID
+          matcherRegex: '"trace_id":"([a-f0-9]+)"'
+          url: "${__value.raw}"
+          datasourceUid: jaeger
+          urlDisplayLabel: "View Trace"
+        - name: TraceID-Plain
+          matcherRegex: 'trace_id=([a-f0-9]+)'
+          url: "${__value.raw}"
+          datasourceUid: jaeger
+          urlDisplayLabel: "View Trace"
+
+  - name: Jaeger
+    type: jaeger
+    uid: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: "-1h"
+        spanEndTimeShift: "1h"
+        filterByTraceID: true
+        filterBySpanID: false
+        customQuery: true
+        query: '{service="$${__span.tags.service}"} |= "$${__trace.traceId}"'
 
   - name: PostgreSQL
     type: postgres
@@ -18,3 +55,6 @@ datasources:
       password: chainrisk123
     jsonData:
       sslmode: disable
+      maxOpenConns: 5
+      maxIdleConns: 2
+      connMaxLifetime: 14400
