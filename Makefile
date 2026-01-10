@@ -614,3 +614,11 @@ staging-monitoring:
 staging-load-test:
 	@echo "⚡ Running load test..."
 	@k6 run tests/load/staging-load.js
+
+# ============================================
+# Phase 10 Validation
+# ============================================
+
+validate-phase10:
+	@echo "🔍 Running Phase 10 validation..."
+	@./scripts/validate-phase10.sh
