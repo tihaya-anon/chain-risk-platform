@@ -56,9 +56,14 @@ services:
     environment:
       NEO4J_AUTH: neo4j/chainrisk123
       NEO4J_PLUGINS: '["apoc"]'
+      # Enable Prometheus metrics endpoint
+      NEO4J_server_metrics_enabled: "true"
+      NEO4J_server_metrics_prometheus_enabled: "true"
+      NEO4J_server_metrics_prometheus_endpoint: "0.0.0.0:2004"
     ports:
       - "0.0.0.0:17474:7474"
       - "0.0.0.0:17687:7687"
+      - "0.0.0.0:12004:2004"  # Prometheus metrics
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
@@ -78,12 +83,15 @@ services:
     container_name: prometheus
     ports:
       - "0.0.0.0:19090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
 
   grafana:
     image: grafana/grafana:10.1.0
@@ -152,9 +160,11 @@ services:
     image: jaegertracing/all-in-one:1.50
     container_name: jaeger
     ports:
-      - "0.0.0.0:26686:16686"
-      - "0.0.0.0:14268:14268"
-      - "0.0.0.0:16831:6831/udp"
+      - "0.0.0.0:26686:16686"  # UI
+      - "0.0.0.0:14268:14268"  # HTTP collector
+      - "0.0.0.0:16831:6831/udp"  # UDP agent
+      - "0.0.0.0:4317:4317"   # OTLP gRPC
+      - "0.0.0.0:4318:4318"   # OTLP HTTP
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
 
