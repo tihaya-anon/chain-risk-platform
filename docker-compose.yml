@@ -10,6 +10,8 @@ services:
       - "0.0.0.0:12181:2181"
     volumes:
       - zookeeper_data:/var/lib/zookeeper/data
+    networks:
+      - backend
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
@@ -30,6 +32,8 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     volumes:
       - kafka_data:/var/lib/kafka/data
+    networks:
+      - backend
 
   # ============== Databases ==============
   postgres:
@@ -49,6 +53,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - backend
 
   neo4j:
     image: neo4j:5.12-community
@@ -62,6 +68,8 @@ services:
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
+    networks:
+      - backend
 
   redis:
     image: redis:7-alpine
@@ -71,6 +79,8 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    networks:
+      - backend
 
   # ============== Monitoring ==============
   prometheus:
@@ -84,6 +94,9 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+    networks:
+      - backend
+      - monitoring
 
   grafana:
     image: grafana/grafana:10.1.0
@@ -99,6 +112,8 @@ services:
     depends_on:
       - prometheus
       - loki
+    networks:
+      - monitoring
 
   # ============== Log Aggregation ==============
   loki:
@@ -116,6 +131,8 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - monitoring
 
   promtail:
     image: grafana/promtail:2.9.2
@@ -129,6 +146,9 @@ services:
       loki:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - monitoring
+      - backend
 
   # ============== Exporters (Monitoring) ==============
   kafka-exporter:
@@ -143,6 +163,9 @@ services:
     depends_on:
       - kafka
     restart: unless-stopped
+    networks:
+      - backend
+      - monitoring
 
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:latest
@@ -154,6 +177,9 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+    networks:
+      - backend
+      - monitoring
 
   # ============== Service Discovery ==============
   nacos:
@@ -177,6 +203,8 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    networks:
+      - backend
 
   # ============== Tracing ==============
   jaeger:
@@ -197,6 +225,9 @@ services:
     volumes:
       - jaeger_data:/badger
     restart: unless-stopped
+    networks:
+      - backend
+      - monitoring
 
   # ============== Hudi Data Lake Infrastructure ==============
   minio:
@@ -216,6 +247,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - backend
 
   minio-init:
     image: minio/mc:latest
@@ -230,6 +263,8 @@ services:
       mc mb myminio/chainrisk-warehouse --ignore-existing;
       exit 0;
       "
+    networks:
+      - backend
 
   hive-metastore:
     build:
@@ -253,6 +288,8 @@ services:
       - ./infra/hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
       - hive_metastore_data:/opt/hive/data
     restart: unless-stopped
+    networks:
+      - backend
 
   trino:
     image: trinodb/trino:435
@@ -275,6 +312,8 @@ services:
       retries: 3
       start_period: 30s
     restart: unless-stopped
+    networks:
+      - backend
 
   # ============== Application Services ==============
   query-service:
@@ -309,6 +348,8 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+    networks:
+      - backend
 
   alert-service:
     build: ./services/alert-service
@@ -345,6 +386,8 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+    networks:
+      - backend
 
   risk-ml-service:
     build: ./services/risk-ml-service
@@ -378,6 +421,8 @@ services:
       retries: 3
       start_period: 15s
     restart: unless-stopped
+    networks:
+      - backend
 
   graph-service:
     build: ./services/graph-service
@@ -406,6 +451,8 @@ services:
       retries: 3
       start_period: 60s
     restart: unless-stopped
+    networks:
+      - backend
 
   orchestrator:
     build: ./services/orchestrator
@@ -438,6 +485,9 @@ services:
       retries: 3
       start_period: 60s
     restart: unless-stopped
+    networks:
+      - frontend
+      - backend
 
   bff:
     build: ./services/bff
@@ -464,6 +514,9 @@ services:
       retries: 3
       start_period: 15s
     restart: unless-stopped
+    networks:
+      - frontend
+      - backend
 
 volumes:
   zookeeper_data:
@@ -481,5 +534,12 @@ volumes:
   jaeger_data:
 
 networks:
-  default:
-    name: chainrisk-network
+  frontend:
+    name: chainrisk-frontend
+    driver: bridge
+  backend:
+    name: chainrisk-backend
+    driver: bridge
+  monitoring:
+    name: chainrisk-monitoring
+    driver: bridge
