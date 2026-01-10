@@ -43,88 +43,107 @@ You are **Worker {N}**. Your checkpoints are listed below.
 
 ---
 
-## ⚠️ Environment Variables - CRITICAL
+## ⚠️ Environment & Commands - USE MAKEFILE
 
-**DO NOT** manually set environment variables or debug env issues. Use the provided scripts.
+**DO NOT** manually export environment variables. Use `make` commands.
 
-### Scripts Architecture
+### How It Works
 
 ```
-scripts/
-├── common.sh          # Shared utilities (logging, load_env, etc.)
-├── load-env.sh        # Environment variable loader
-├── run-*.sh           # Service runners (auto-load env)
+Makefile
+  └── LOAD_ENV (auto-loads .env.local + scripts/load-env.sh)
+        └── scripts/load-env.sh (sets all vars from DOCKER_HOST_IP)
+              └── .env.local (DOCKER_HOST_IP, secrets)
 ```
 
-### How to Load Environment
+Makefile 中定义了：
+```makefile
+LOAD_ENV := set -a && source .env.local && source ./scripts/load-env.sh > /dev/null &&
+```
+
+所有 `make xxx` 命令自动加载环境变量。
+
+### Correct Usage
 
 ```bash
-# Method 1: Source load-env.sh (sets all env vars)
-source scripts/load-env.sh
+# ✅ CORRECT - Use make commands
+make risk-run           # Run risk service
+make flink-run          # Run Flink processor
+make batch-archive      # Run batch job
+make test-e2e           # Run E2E tests
+make infra-up           # Start Docker infrastructure
 
-# Method 2: Use common.sh's load_env function
-source scripts/common.sh
-load_env
+# ✅ CORRECT - For custom scripts, use LOAD_ENV pattern in Makefile
+# Add to Makefile:
+my-command:
+    @bash -c '$(LOAD_ENV) ./my-script.sh'
 
-# Method 3: Pass IP directly
-source scripts/load-env.sh 100.120.144.128
+# ❌ WRONG - Manual env export
+export POSTGRES_HOST=100.120.144.128  # Don't do this!
+source scripts/load-env.sh && ./my-script.sh  # Avoid direct script calls
 ```
 
-### What load-env.sh Does
+### Key Make Commands
 
-1. Reads `DOCKER_HOST_IP` from `.env.local` (or uses argument/localhost)
-2. Sets ALL service connection variables based on `DOCKER_HOST_IP`
-3. Applies `.env.local` overrides
+| Command | Description |
+|---------|-------------|
+| `make help` | Show all available commands |
+| `make infra-up` | Start Docker infrastructure |
+| `make infra-down` | Stop infrastructure |
+| `make infra-check` | Check infrastructure status |
+| `make run-svc` | Run all backend services |
+| `make run-svc-otel` | Run services with OTel tracing |
+| `make stop-svc` | Stop all services |
+| `make build-all` | Build all services |
+| `make test-all` | Test all services |
+| `make test-e2e` | Run E2E test suite |
 
-### Key Environment Variables (Auto-set by scripts)
+### Service-Specific Commands
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DOCKER_HOST_IP` | From .env.local | Remote Docker host |
-| `POSTGRES_HOST` | $DOCKER_HOST_IP | PostgreSQL host |
-| `POSTGRES_PORT` | 15432 | PostgreSQL port |
-| `REDIS_HOST` | $DOCKER_HOST_IP | Redis host |
-| `REDIS_PORT` | 16379 | Redis port |
-| `KAFKA_BROKERS` | $DOCKER_HOST_IP:19092 | Kafka brokers |
-| `NEO4J_URI` | bolt://$DOCKER_HOST_IP:17687 | Neo4j connection |
-| `NACOS_SERVER` | $DOCKER_HOST_IP:18848 | Nacos server |
+| Service | Build | Run | Test |
+|---------|-------|-----|------|
+| Query (Go) | `make query-build` | `make query-run` | `make query-test` |
+| Risk (Python) | `make risk-build` | `make risk-run` | `make risk-test` |
+| Alert (Go) | `make alert-build` | `make alert-run` | `make alert-test` |
+| Graph (Java) | `make graph-build` | `make graph-run` | `make graph-test` |
+| Orchestrator | `make orchestrator-build` | `make orchestrator-run` | `make orchestrator-test` |
+| BFF (TS) | `make bff-build` | `make bff-run` | `make bff-test` |
+| Flink | `make flink-build` | `make flink-run` | `make flink-test` |
+| Batch | `make batch-build` | `make batch-archive` | `make batch-test` |
+
+### Adding New Commands
+
+When adding new functionality, follow this pattern:
+
+```makefile
+# In Makefile
+my-new-service-run:
+    @bash -c '$(LOAD_ENV) cd $(DIR_MY_SERVICE) && ./run.sh'
+
+my-new-script:
+    @bash -c '$(LOAD_ENV) ./scripts/my-script.sh'
+```
 
 ### .env.local File
 
-Located at project root, gitignored. Contains:
+Located at project root (gitignored):
 ```bash
 DOCKER_HOST_IP=100.120.144.128
 ETHERSCAN_API_KEY=xxxxx
 NACOS_SERVER=100.120.144.128:18848
-# ... other overrides
 ```
 
-### Running Services Correctly
+### Remote Execution
 
 ```bash
-# ✅ CORRECT - Use run scripts (auto-load env)
-./scripts/run-risk-service.sh
-./scripts/run-batch-processor.sh archive
-
-# ✅ CORRECT - Source env first, then run manually
-source scripts/load-env.sh
-cd services/risk-ml-service
-.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# ❌ WRONG - Manual env export (incomplete, error-prone)
-export POSTGRES_HOST=100.120.144.128  # Don't do this!
-```
-
-### Remote Environment
-
-When running on remote server via SSH:
-```bash
-# Sync code first
+# Sync code to remote
 rsync -avz --exclude='.git' --exclude='node_modules' --exclude='.venv' \
+  --exclude='target' --exclude='__pycache__' \
   . dev-win:~/chain-risk-platform/
 
-# Run on remote (env auto-loads from .env.local there too)
-ssh dev-win "cd ~/chain-risk-platform && source scripts/load-env.sh && ..."
+# Run make commands on remote
+ssh dev-win "cd ~/chain-risk-platform && make infra-check"
+ssh dev-win "cd ~/chain-risk-platform && make risk-run"
 ```
 
 ---
@@ -138,10 +157,10 @@ cd chain-risk-platform
 git checkout develop/phase10
 git pull
 
-# 2. Start checkpoint (replace {X} with CP number)
+# 2. Start checkpoint
 git checkout -b feature/cp{X}-description
 
-# 3. Work on checkpoint...
+# 3. Work... use make commands
 
 # 4. Complete checkpoint
 git add -A
@@ -154,12 +173,15 @@ git push
 
 ---
 
-## Key Files to Read First
+## Key Files
 
-1. **Phase Plan**: `docs/development/guides/PRODUCTION_HARDENING_PHASE10.md`
-2. **Dev SOP**: `docs/operations/runbooks/PARALLEL_DEV_SOP.md`
-3. **Environment Scripts**: `scripts/load-env.sh`, `scripts/common.sh`
-4. **Project Structure**: `docs/README.md`
+| File | Purpose |
+|------|---------|
+| `Makefile` | All commands, auto-loads env |
+| `.env.local` | Local secrets (gitignored) |
+| `scripts/load-env.sh` | Environment variable definitions |
+| `scripts/common.sh` | Shared utilities |
+| `docker-compose.yml` | Infrastructure services |
 
 ---
 
@@ -186,7 +208,7 @@ git push
                   [CP-16]
 ```
 
-**Rule**: Do not start a CP until all its dependencies are merged to `develop/phase10`.
+**Rule**: Do not start a CP until all dependencies are merged to `develop/phase10`.
 
 ---
 
@@ -213,94 +235,43 @@ git push
 
 ---
 
-## Development Environment
+## Port Reference (Remote)
 
-### Remote Server
-- SSH alias: `dev-win`
-- IP: `100.120.144.128` (configured in `.env.local`)
-
-### Port Mapping (Remote)
-
-| Service | Port | Variable |
-|---------|------|----------|
-| PostgreSQL | 15432 | `POSTGRES_PORT` |
-| Redis | 16379 | `REDIS_PORT` |
-| Kafka | 19092 | `KAFKA_BROKERS` |
-| Neo4j Bolt | 17687 | `NEO4J_PORT` |
-| Neo4j HTTP | 17474 | - |
-| Nacos | 18848 | `NACOS_SERVER` |
+| Service | Port | Make Command |
+|---------|------|--------------|
+| PostgreSQL | 15432 | - |
+| Redis | 16379 | - |
+| Kafka | 19092 | - |
+| Neo4j | 17687 | - |
+| Nacos | 18848 | - |
 | Prometheus | 19090 | - |
 | Grafana | 13001 | - |
 | Loki | 13100 | - |
-| Jaeger UI | 26686 | - |
-| Jaeger OTLP | 14317 | - |
+| Jaeger | 26686 | - |
+| Query Service | 8081 | `make query-run` |
+| Risk Service | 8082 | `make risk-run` |
+| Alert Service | 8083 | `make alert-run` |
+| Graph Service | 8084 | `make graph-run` |
+| Orchestrator | 8080 | `make orchestrator-run` |
+| BFF | 3001 | `make bff-run` |
+
+---
+
+## Common Pitfalls
+
+| ❌ Wrong | ✅ Correct |
+|----------|-----------|
+| `export POSTGRES_HOST=...` | `make xxx` (auto-loads) |
+| `source scripts/load-env.sh && ...` | Add to Makefile with `$(LOAD_ENV)` |
+| Hardcode port `15432` | Use `${POSTGRES_PORT}` in scripts |
+| Skip CP dependency | Wait for upstream merge |
 
 ---
 
 ## Code Conventions
 
-- **Go**: Standard project layout, `internal/` for private code
-- **Python**: FastAPI, Poetry/uv for deps, loguru for logging
+- **Go**: Standard layout, `internal/` for private
+- **Python**: FastAPI, uv, loguru
 - **Java**: Spring Boot 3, Maven
 - **TypeScript**: NestJS (BFF), React (Frontend)
 - **Commits**: `feat(cpX):`, `fix(cpX):`, `docs(cpX):`
-
----
-
-## Useful Commands
-
-```bash
-# Load environment
-source scripts/load-env.sh
-
-# Sync to remote
-rsync -avz --exclude='.git' --exclude='node_modules' --exclude='.venv' \
-  --exclude='target' --exclude='__pycache__' \
-  . dev-win:~/chain-risk-platform/
-
-# Run batch job
-./scripts/run-batch-processor.sh archive
-
-# Build all Docker images
-make docker-build
-
-# Deploy to remote
-ssh dev-win "cd ~/chain-risk-platform && docker-compose up -d"
-
-# Check service logs
-ssh dev-win "docker logs -f query-service"
-```
-
----
-
-## Common Pitfalls to Avoid
-
-1. **Environment Variables**
-   - ❌ Don't manually export individual env vars
-   - ✅ Use `source scripts/load-env.sh`
-
-2. **Port Conflicts**
-   - Remote uses non-standard ports (15432, 16379, etc.)
-   - Always use variables, not hardcoded ports
-
-3. **Dependencies**
-   - Don't start a CP before dependencies are merged
-   - Pull `develop/phase10` before branching
-
-4. **Testing**
-   - Test locally first, then on remote
-   - Use `scripts/common.sh` utilities for health checks
-
----
-
-## Communication Protocol
-
-When completing a checkpoint:
-1. Merge to `develop/phase10`
-2. Notify downstream workers (see Notify column in phase plan)
-3. Update checkpoint status
-
-When blocked:
-1. Check if upstream CP is merged
-2. If not, wait or coordinate with upstream owner
-3. Do NOT skip dependencies
