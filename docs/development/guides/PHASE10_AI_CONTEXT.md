@@ -43,6 +43,92 @@ You are **Worker {N}**. Your checkpoints are listed below.
 
 ---
 
+## ⚠️ Environment Variables - CRITICAL
+
+**DO NOT** manually set environment variables or debug env issues. Use the provided scripts.
+
+### Scripts Architecture
+
+```
+scripts/
+├── common.sh          # Shared utilities (logging, load_env, etc.)
+├── load-env.sh        # Environment variable loader
+├── run-*.sh           # Service runners (auto-load env)
+```
+
+### How to Load Environment
+
+```bash
+# Method 1: Source load-env.sh (sets all env vars)
+source scripts/load-env.sh
+
+# Method 2: Use common.sh's load_env function
+source scripts/common.sh
+load_env
+
+# Method 3: Pass IP directly
+source scripts/load-env.sh 100.120.144.128
+```
+
+### What load-env.sh Does
+
+1. Reads `DOCKER_HOST_IP` from `.env.local` (or uses argument/localhost)
+2. Sets ALL service connection variables based on `DOCKER_HOST_IP`
+3. Applies `.env.local` overrides
+
+### Key Environment Variables (Auto-set by scripts)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DOCKER_HOST_IP` | From .env.local | Remote Docker host |
+| `POSTGRES_HOST` | $DOCKER_HOST_IP | PostgreSQL host |
+| `POSTGRES_PORT` | 15432 | PostgreSQL port |
+| `REDIS_HOST` | $DOCKER_HOST_IP | Redis host |
+| `REDIS_PORT` | 16379 | Redis port |
+| `KAFKA_BROKERS` | $DOCKER_HOST_IP:19092 | Kafka brokers |
+| `NEO4J_URI` | bolt://$DOCKER_HOST_IP:17687 | Neo4j connection |
+| `NACOS_SERVER` | $DOCKER_HOST_IP:18848 | Nacos server |
+
+### .env.local File
+
+Located at project root, gitignored. Contains:
+```bash
+DOCKER_HOST_IP=100.120.144.128
+ETHERSCAN_API_KEY=xxxxx
+NACOS_SERVER=100.120.144.128:18848
+# ... other overrides
+```
+
+### Running Services Correctly
+
+```bash
+# ✅ CORRECT - Use run scripts (auto-load env)
+./scripts/run-risk-service.sh
+./scripts/run-batch-processor.sh archive
+
+# ✅ CORRECT - Source env first, then run manually
+source scripts/load-env.sh
+cd services/risk-ml-service
+.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# ❌ WRONG - Manual env export (incomplete, error-prone)
+export POSTGRES_HOST=100.120.144.128  # Don't do this!
+```
+
+### Remote Environment
+
+When running on remote server via SSH:
+```bash
+# Sync code first
+rsync -avz --exclude='.git' --exclude='node_modules' --exclude='.venv' \
+  . dev-win:~/chain-risk-platform/
+
+# Run on remote (env auto-loads from .env.local there too)
+ssh dev-win "cd ~/chain-risk-platform && source scripts/load-env.sh && ..."
+```
+
+---
+
 ## Git Workflow
 
 ```bash
@@ -72,8 +158,8 @@ git push
 
 1. **Phase Plan**: `docs/development/guides/PRODUCTION_HARDENING_PHASE10.md`
 2. **Dev SOP**: `docs/operations/runbooks/PARALLEL_DEV_SOP.md`
-3. **Project Structure**: `docs/README.md`
-4. **Quick Start**: `docs/getting-started/QUICK_START.md`
+3. **Environment Scripts**: `scripts/load-env.sh`, `scripts/common.sh`
+4. **Project Structure**: `docs/README.md`
 
 ---
 
@@ -129,22 +215,25 @@ git push
 
 ## Development Environment
 
-### Remote Server (for integration testing)
-- Host: Configured via SSH alias `dev-win`
-- Services accessible at `100.120.144.128:*`
+### Remote Server
+- SSH alias: `dev-win`
+- IP: `100.120.144.128` (configured in `.env.local`)
 
 ### Port Mapping (Remote)
-| Service | Port |
-|---------|------|
-| PostgreSQL | 15432 |
-| Redis | 16379 |
-| Kafka | 19092 |
-| Neo4j | 17474, 17687 |
-| Nacos | 18848 |
-| Prometheus | 19090 |
-| Grafana | 13001 |
-| Loki | 13100 |
-| Jaeger | 26686 |
+
+| Service | Port | Variable |
+|---------|------|----------|
+| PostgreSQL | 15432 | `POSTGRES_PORT` |
+| Redis | 16379 | `REDIS_PORT` |
+| Kafka | 19092 | `KAFKA_BROKERS` |
+| Neo4j Bolt | 17687 | `NEO4J_PORT` |
+| Neo4j HTTP | 17474 | - |
+| Nacos | 18848 | `NACOS_SERVER` |
+| Prometheus | 19090 | - |
+| Grafana | 13001 | - |
+| Loki | 13100 | - |
+| Jaeger UI | 26686 | - |
+| Jaeger OTLP | 14317 | - |
 
 ---
 
@@ -158,51 +247,60 @@ git push
 
 ---
 
+## Useful Commands
+
+```bash
+# Load environment
+source scripts/load-env.sh
+
+# Sync to remote
+rsync -avz --exclude='.git' --exclude='node_modules' --exclude='.venv' \
+  --exclude='target' --exclude='__pycache__' \
+  . dev-win:~/chain-risk-platform/
+
+# Run batch job
+./scripts/run-batch-processor.sh archive
+
+# Build all Docker images
+make docker-build
+
+# Deploy to remote
+ssh dev-win "cd ~/chain-risk-platform && docker-compose up -d"
+
+# Check service logs
+ssh dev-win "docker logs -f query-service"
+```
+
+---
+
+## Common Pitfalls to Avoid
+
+1. **Environment Variables**
+   - ❌ Don't manually export individual env vars
+   - ✅ Use `source scripts/load-env.sh`
+
+2. **Port Conflicts**
+   - Remote uses non-standard ports (15432, 16379, etc.)
+   - Always use variables, not hardcoded ports
+
+3. **Dependencies**
+   - Don't start a CP before dependencies are merged
+   - Pull `develop/phase10` before branching
+
+4. **Testing**
+   - Test locally first, then on remote
+   - Use `scripts/common.sh` utilities for health checks
+
+---
+
 ## Communication Protocol
 
 When completing a checkpoint:
 1. Merge to `develop/phase10`
 2. Notify downstream workers (see Notify column in phase plan)
-3. Update checkpoint status in your tracking
+3. Update checkpoint status
 
 When blocked:
 1. Check if upstream CP is merged
 2. If not, wait or coordinate with upstream owner
 3. Do NOT skip dependencies
-
----
-
-## Useful Commands
-
-```bash
-# Sync latest
-git checkout develop/phase10 && git pull
-
-# Check what's merged
-git log --oneline develop/phase10
-
-# Build all Docker images
-make docker-build
-
-# Run integration tests
-make test-integration
-
-# Deploy to remote
-rsync -avz --exclude='.git' . dev-win:~/chain-risk-platform/
-ssh dev-win "cd ~/chain-risk-platform && docker-compose up -d"
-```
-
----
-
-## Questions to Ask Yourself
-
-Before starting a CP:
-- [ ] Have all dependency CPs been merged?
-- [ ] Do I understand the "Done When" criteria?
-- [ ] Have I read the detailed spec in PRODUCTION_HARDENING_PHASE10.md?
-
-Before merging:
-- [ ] Does the code work locally?
-- [ ] Have I tested on remote (if applicable)?
-- [ ] Is the commit message following convention?
-- [ ] Have I notified downstream workers?
