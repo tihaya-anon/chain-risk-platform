@@ -44,11 +44,9 @@ scrape_configs:
             trace_id: trace_id
             span_id: span_id
             service: service
-          source: log
       # Fallback: extract level from text logs
       - regex:
           expression: '(?P<level>DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)'
-          source: log
       # Set labels from extracted values
       - labels:
           level:
@@ -61,63 +59,4 @@ scrape_configs:
           fallback_formats:
             - RFC3339
             - "2006-01-02T15:04:05.000Z07:00"
-            - "2006-01-02 15:04:05"
-
-  # Static file-based log collection for services running on host
-  - job_name: service-logs
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: query-service
-          __path__: /var/log/services/query-service/*.log
-      - targets:
-          - localhost
-        labels:
-          job: risk-ml-service
-          __path__: /var/log/services/risk-ml-service/*.log
-      - targets:
-          - localhost
-        labels:
-          job: alert-service
-          __path__: /var/log/services/alert-service/*.log
-      - targets:
-          - localhost
-        labels:
-          job: graph-service
-          __path__: /var/log/services/graph-service/*.log
-      - targets:
-          - localhost
-        labels:
-          job: orchestrator
-          __path__: /var/log/services/orchestrator/*.log
-      - targets:
-          - localhost
-        labels:
-          job: bff
-          __path__: /var/log/services/bff/*.log
-    pipeline_stages:
-      # JSON log parsing
-      - json:
-          expressions:
-            level: level
-            msg: msg
-            message: message
-            time: time
-            timestamp: timestamp
-            trace_id: trace_id
-            span_id: span_id
-          source: log
-      - regex:
-          expression: '(?P<level>DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)'
-          source: log
-      - labels:
-          level:
-          trace_id:
-          span_id:
-      - timestamp:
-          source: time
-          format: RFC3339Nano
-          fallback_formats:
-            - RFC3339
             - "2006-01-02 15:04:05"

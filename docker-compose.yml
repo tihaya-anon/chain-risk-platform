@@ -124,12 +124,6 @@ services:
       - ./infra/promtail/promtail-config.yaml:/etc/promtail/config.yml
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/log:/var/log:ro
-      - ./services/query-service/logs:/var/log/services/query-service:ro
-      - ./services/risk-ml-service/logs:/var/log/services/risk-ml-service:ro
-      - ./services/alert-service/logs:/var/log/services/alert-service:ro
-      - ./services/graph-service/logs:/var/log/services/graph-service:ro
-      - ./services/orchestrator/logs:/var/log/services/orchestrator:ro
-      - ./services/bff/logs:/var/log/services/bff:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       loki:
@@ -202,48 +196,6 @@ services:
       BADGER_DIRECTORY_KEY: /badger/key
     volumes:
       - jaeger_data:/badger
-    restart: unless-stopped
-
-  # ============== Database UI Tools ==============
-  pgadmin:
-    image: dpage/pgadmin4:8.2
-    container_name: pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@chainrisk.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-    ports:
-      - "0.0.0.0:15050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      - postgres
-    restart: unless-stopped
-
-  redisinsight:
-    image: redis/redisinsight:latest
-    container_name: redisinsight
-    ports:
-      - "0.0.0.0:15540:5540"
-    volumes:
-      - redisinsight_data:/data
-    depends_on:
-      - redis
-    restart: unless-stopped
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:v0.7.1
-    container_name: kafka-ui
-    ports:
-      - "0.0.0.0:18080:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: chainrisk-kafka
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-      DYNAMIC_CONFIG_ENABLED: "true"
-    depends_on:
-      - kafka
-      - zookeeper
     restart: unless-stopped
 
   # ============== Hudi Data Lake Infrastructure ==============
@@ -334,8 +286,6 @@ volumes:
   prometheus_data:
   grafana_data:
   nacos_data:
-  pgadmin_data:
-  redisinsight_data:
   minio_data:
   hive_metastore_data:
   loki_data:
