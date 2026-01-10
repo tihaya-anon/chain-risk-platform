@@ -1,7 +1,13 @@
 import { Controller, Post, Body, Get, UseGuards } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
-import { LoginDto, LoginResponse, UserProfileResponse } from "./auth.dto";
+import {
+  LoginDto,
+  LoginResponse,
+  UserProfileResponse,
+  RefreshTokenDto,
+  RefreshTokenResponse,
+} from "./auth.dto";
 import { GatewayAuthGuard } from "../../common/guards";
 import { GatewayUser } from "../../common/decorators/gateway-user.decorator";
 import { UserPayload } from "./auth.dto";
@@ -21,6 +27,20 @@ export class AuthController {
   @ApiResponse({ status: 401, description: "Invalid credentials" })
   async login(@Body() dto: LoginDto): Promise<LoginResponse> {
     return this.authService.login(dto);
+  }
+
+  @Post("refresh")
+  @ApiOperation({ summary: "Refresh access token" })
+  @ApiResponse({
+    status: 200,
+    description: "Token refreshed successfully",
+    type: RefreshTokenResponse,
+  })
+  @ApiResponse({ status: 401, description: "Invalid or expired refresh token" })
+  async refreshToken(
+    @Body() dto: RefreshTokenDto,
+  ): Promise<RefreshTokenResponse> {
+    return this.authService.refreshToken(dto);
   }
 
   @Get("profile")
@@ -53,7 +73,6 @@ export class AuthController {
   async getProfile(
     @GatewayUser() user: UserPayload,
   ): Promise<UserProfileResponse> {
-    // Extract user info from Gateway headers and build profile
     return this.authService.getUserProfile(user);
   }
 }
