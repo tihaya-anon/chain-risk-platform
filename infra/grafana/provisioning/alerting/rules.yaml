@@ -12,7 +12,7 @@ groups:
         data:
           - refId: A
             relativeTimeRange:
-              from: 300
+              from: 60
               to: 0
             datasourceUid: prometheus
             model:
@@ -40,10 +40,11 @@ groups:
               type: classic_conditions
         noDataState: OK
         execErrState: Error
-        for: 2m
+        for: 1m
         annotations:
           summary: "Service {{ $labels.job }} is down"
-          description: "The service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 2 minutes."
+          description: "The service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute."
+          runbook_url: "https://confluence.example.com/runbooks/service-down"
         labels:
           severity: critical
           team: platform
@@ -132,13 +133,55 @@ groups:
           severity: warning
           team: platform
 
+      - uid: infra-loki-down
+        title: Loki Down
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: up{job="loki"} == 0
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: count
+              refId: C
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Loki log aggregation is down"
+          description: "Log aggregation service is unavailable, logs may be lost."
+        labels:
+          severity: critical
+          team: platform
+
   - orgId: 1
     name: Service Alerts
     folder: Chain Risk Platform
     interval: 1m
     rules:
       - uid: svc-error-rate-high
-        title: Service Error Rate High
+        title: High Error Rate
         condition: C
         data:
           - refId: A
@@ -149,8 +192,13 @@ groups:
             model:
               expr: |
                 (
-                  sum(rate(query_service_http_requests_total{status=~"5.."}[5m])) by (job)
-                  / sum(rate(query_service_http_requests_total[5m])) by (job)
+                  sum by (job) (rate(query_service_http_requests_total{status=~"5.."}[5m]))
+                  + sum by (job) (rate(risk_ml_service_http_requests_total{status=~"5.."}[5m]))
+                  + sum by (job) (rate(alert_service_http_requests_total{status=~"5.."}[5m]))
+                ) / (
+                  sum by (job) (rate(query_service_http_requests_total[5m]))
+                  + sum by (job) (rate(risk_ml_service_http_requests_total[5m]))
+                  + sum by (job) (rate(alert_service_http_requests_total[5m]))
                 ) > 0.05
               intervalMs: 1000
               maxDataPoints: 43200
@@ -177,14 +225,14 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: "High error rate on {{ $labels.job }}"
-          description: "Service {{ $labels.job }} has error rate > 5% for the last 5 minutes."
+          summary: "High error rate detected (>5%)"
+          description: "Error rate across services exceeds 5% for 5 minutes."
         labels:
           severity: warning
           team: platform
 
       - uid: svc-latency-high
-        title: Service Latency High
+        title: High Latency (P99 > 2s)
         condition: C
         data:
           - refId: A
@@ -194,7 +242,11 @@ groups:
             datasourceUid: prometheus
             model:
               expr: |
-                histogram_quantile(0.95, sum(rate(query_service_http_request_duration_seconds_bucket[5m])) by (le)) > 1
+                histogram_quantile(0.99, 
+                  sum(rate(query_service_http_request_duration_seconds_bucket[5m])) by (le)
+                  + sum(rate(risk_ml_service_http_request_duration_seconds_bucket[5m])) by (le)
+                  + sum(rate(alert_service_http_request_duration_seconds_bucket[5m])) by (le)
+                ) > 2
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -220,8 +272,53 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: "High latency detected"
-          description: "Query service P95 latency is above 1 second."
+          summary: "Service P99 latency exceeds 2 seconds"
+          description: "High latency detected - P99 > 2s for 5 minutes."
+        labels:
+          severity: warning
+          team: platform
+
+      - uid: svc-query-service-degraded
+        title: Query Service Degraded
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: |
+                histogram_quantile(0.95, sum(rate(query_service_http_request_duration_seconds_bucket[5m])) by (le)) > 1
+                or
+                sum(rate(query_service_http_requests_total{status=~"5.."}[5m])) / sum(rate(query_service_http_requests_total[5m])) > 0.02
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: count
+              refId: C
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Query Service performance degraded"
+          description: "Query service P95 > 1s or error rate > 2%."
         labels:
           severity: warning
           team: platform
@@ -358,6 +455,50 @@ groups:
           severity: warning
           team: ml
 
+      - uid: ml-high-risk-score-spike
+        title: High Risk Score Spike
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: |
+                sum(increase(risk_ml_service_risk_score_value_bucket{le="1.0"}[5m])) 
+                - sum(increase(risk_ml_service_risk_score_value_bucket{le="0.8"}[5m])) > 100
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: count
+              refId: C
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Spike in high-risk scores detected"
+          description: "More than 100 addresses scored >0.8 risk in last 5 minutes."
+        labels:
+          severity: warning
+          team: security
+
   - orgId: 1
     name: Alert Service Alerts
     folder: Chain Risk Platform
@@ -448,3 +589,92 @@ groups:
         labels:
           severity: critical
           team: security
+
+  - orgId: 1
+    name: Observability Stack Alerts
+    folder: Chain Risk Platform
+    interval: 1m
+    rules:
+      - uid: obs-jaeger-down
+        title: Jaeger Tracing Down
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: up{job="jaeger"} == 0
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: count
+              refId: C
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "Jaeger tracing is down"
+          description: "Distributed tracing is unavailable, traces will be lost."
+        labels:
+          severity: warning
+          team: platform
+
+      - uid: obs-prometheus-target-down
+        title: Prometheus Target Down
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: up{job=~".*service.*"} == 0
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: count
+              refId: C
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Prometheus target {{ $labels.job }} is down"
+          description: "Metrics scraping failed for {{ $labels.job }}."
+        labels:
+          severity: warning
+          team: platform
