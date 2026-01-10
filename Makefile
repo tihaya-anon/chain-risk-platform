@@ -38,6 +38,10 @@ OTEL_CONFIG := $(DIR_OTEL)/otel-agent.properties
 OTEL_ENDPOINT := $${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4317}
 OTEL_OPTS = -javaagent:$(OTEL_AGENT) -Dotel.javaagent.configuration-file=$(OTEL_CONFIG) -Dotel.exporter.otlp.endpoint=$(OTEL_ENDPOINT)
 
+# Docker image configuration
+DOCKER_REGISTRY := chainrisk
+DOCKER_TAG := latest
+
 # ============================================
 # Default target
 # ============================================
@@ -53,6 +57,13 @@ help:
 	@echo "  make infra-check     Check infrastructure status"
 	@echo "  make cleanup         Clean all data (Kafka, PostgreSQL, Neo4j, Hudi)"
 	@echo "  make cleanup-rolling Rolling cleanup (retention-based)"
+	@echo ""
+	@echo "🐳 Docker:"
+	@echo "  make docker-build    Build all service Docker images"
+	@echo "  make docker-push     Push all images to registry"
+	@echo "  make docker-up       Start all services in Docker"
+	@echo "  make docker-down     Stop all Docker services"
+	@echo "  make docker-logs     View Docker service logs"
 	@echo ""
 	@echo "🚀 Services:"
 	@echo "  make run-svc         Run all backend services"
@@ -131,6 +142,70 @@ cleanup-all:
 
 cleanup-rolling:
 	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
+
+# ============================================
+# Docker Build Commands
+# ============================================
+
+docker-build: docker-build-query docker-build-alert docker-build-risk docker-build-graph docker-build-orchestrator docker-build-bff
+	@echo "✅ All Docker images built"
+
+docker-build-query:
+	@echo "🐳 Building query-service image..."
+	@docker build -t $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) $(DIR_QUERY)
+
+docker-build-alert:
+	@echo "🐳 Building alert-service image..."
+	@docker build -t $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) $(DIR_ALERT)
+
+docker-build-risk:
+	@echo "🐳 Building risk-ml-service image..."
+	@docker build -t $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) $(DIR_RISK)
+
+docker-build-graph:
+	@echo "🐳 Building graph-service image..."
+	@docker build -t $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) $(DIR_GRAPH)
+
+docker-build-orchestrator:
+	@echo "🐳 Building orchestrator image..."
+	@docker build -t $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) $(DIR_ORCHESTRATOR)
+
+docker-build-bff:
+	@echo "🐳 Building bff image..."
+	@docker build -t $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) $(DIR_BFF)
+
+docker-push: docker-build
+	@echo "🚀 Pushing images to registry..."
+	@docker push $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG)
+	@echo "✅ All images pushed"
+
+docker-up:
+	@echo "🚀 Starting all services in Docker..."
+	@docker-compose --profile services up -d
+	@echo "✅ All services started"
+
+docker-down:
+	@echo "🛑 Stopping Docker services..."
+	@docker-compose --profile services down
+	@echo "✅ Services stopped"
+
+docker-logs:
+	@docker-compose --profile services logs -f
+
+docker-clean:
+	@echo "🧹 Cleaning Docker images..."
+	@docker rmi $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) 2>/dev/null || true
+	@echo "✅ Images cleaned"
 
 # ============================================
 # OpenTelemetry Setup
