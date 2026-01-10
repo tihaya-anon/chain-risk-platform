@@ -1,8 +1,11 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { IoAdapter } from "@nestjs/platform-socket.io";
 import { AppModule } from "./app.module";
 import { NacosService } from "./common/nacos.service";
+import { AlertsGateway } from "./modules/websocket/alerts.gateway";
+import { AlertPushService } from "./modules/websocket/alert-push.service";
 import { getConfig } from "./config/config";
 import { logger } from "./common/logger";
 
@@ -12,6 +15,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ["error", "warn", "log"],
   });
+
+  // WebSocket adapter
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Global prefix
   app.setGlobalPrefix("api/v1");
@@ -33,6 +39,8 @@ async function bootstrap() {
   // Admin status endpoint
   const httpAdapter = app.getHttpAdapter();
   const nacosService = app.get(NacosService);
+  const alertsGateway = app.get(AlertsGateway);
+  const alertPushService = app.get(AlertPushService);
 
   httpAdapter.get("/admin/status", (req, res) => {
     res.json({
@@ -44,6 +52,33 @@ async function bootstrap() {
 
   httpAdapter.get("/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  // WebSocket stats endpoint
+  httpAdapter.get("/admin/ws/stats", (req, res) => {
+    res.json(alertsGateway.getStats());
+  });
+
+  // Alert push service status
+  httpAdapter.get("/admin/alerts/status", (req, res) => {
+    res.json(alertPushService.getStatus());
+  });
+
+  // Test alert endpoint (for debugging)
+  httpAdapter.post("/admin/alerts/test", (req, res) => {
+    const body = req.body || {};
+    alertPushService.pushManualAlert({
+      type: body.type || "test",
+      severity: body.severity || "low",
+      entityType: body.entityType || "address",
+      entityId: body.entityId || "0x" + "0".repeat(40),
+      title: body.title || "Test Alert",
+      message: body.message || "This is a test alert",
+      riskScore: body.riskScore,
+      address: body.address,
+      metadata: body.metadata,
+    });
+    res.json({ success: true, message: "Test alert pushed" });
   });
 
   // Swagger documentation (only in non-production)
@@ -71,6 +106,13 @@ async function bootstrap() {
     port: config.server.port,
     env: config.server.env,
     nacos: nacosService.isEnabled(),
+    websocket: {
+      namespace: "/alerts",
+      enabled: true,
+    },
+    alertPush: {
+      enabled: true,
+    },
   });
 }
 

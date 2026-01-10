@@ -32,8 +32,8 @@ import {
   TestAlertDto,
   TestAlertResponse,
 } from "./alert.dto";
-import { GatewayAuthGuard } from "../../common/guards";
-import { GatewayUser } from "../../common/decorators/gateway-user.decorator";
+import { GatewayAuthGuard, RolesGuard } from "../../common/guards";
+import { GatewayUser, Roles } from "../../common/decorators";
 import { UserPayload } from "../auth/auth.dto";
 import { getLogger } from "../../common/logger";
 
@@ -41,7 +41,7 @@ const logger = getLogger("AlertController");
 
 @ApiTags("alerts")
 @Controller("alerts")
-@UseGuards(GatewayAuthGuard)
+@UseGuards(GatewayAuthGuard, RolesGuard)
 @ApiHeader({ name: "X-User-Id", description: "User ID (from Gateway)", required: true })
 @ApiHeader({ name: "X-User-Username", description: "Username (from Gateway)", required: true })
 @ApiHeader({ name: "X-User-Role", description: "User role (from Gateway)", required: true })
@@ -51,6 +51,7 @@ export class AlertController {
   // ==================== Alert Rules ====================
 
   @Get("rules")
+  @Roles("user")
   @ApiOperation({ summary: "List alert rules" })
   @ApiQuery({ name: "enabled", required: false, type: Boolean })
   @ApiResponse({ status: 200, type: [AlertRuleResponse] })
@@ -63,6 +64,7 @@ export class AlertController {
   }
 
   @Get("rules/:id")
+  @Roles("user")
   @ApiOperation({ summary: "Get alert rule by ID" })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, type: AlertRuleResponse })
@@ -76,9 +78,11 @@ export class AlertController {
   }
 
   @Post("rules")
-  @ApiOperation({ summary: "Create alert rule" })
+  @Roles("analyst")
+  @ApiOperation({ summary: "Create alert rule (analyst+)" })
   @ApiResponse({ status: 201, type: AlertRuleResponse })
   @ApiResponse({ status: 400, description: "Invalid request" })
+  @ApiResponse({ status: 403, description: "Forbidden - requires analyst role" })
   async createRule(
     @Body() dto: CreateAlertRuleDto,
     @GatewayUser() user?: UserPayload,
@@ -88,9 +92,11 @@ export class AlertController {
   }
 
   @Put("rules/:id")
-  @ApiOperation({ summary: "Update alert rule" })
+  @Roles("analyst")
+  @ApiOperation({ summary: "Update alert rule (analyst+)" })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, type: AlertRuleResponse })
+  @ApiResponse({ status: 403, description: "Forbidden - requires analyst role" })
   @ApiResponse({ status: 404, description: "Rule not found" })
   async updateRule(
     @Param("id", ParseIntPipe) id: number,
@@ -102,9 +108,11 @@ export class AlertController {
   }
 
   @Delete("rules/:id")
-  @ApiOperation({ summary: "Delete alert rule" })
+  @Roles("admin")
+  @ApiOperation({ summary: "Delete alert rule (admin only)" })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, description: "Rule deleted" })
+  @ApiResponse({ status: 403, description: "Forbidden - requires admin role" })
   @ApiResponse({ status: 404, description: "Rule not found" })
   async deleteRule(
     @Param("id", ParseIntPipe) id: number,
@@ -116,9 +124,11 @@ export class AlertController {
   }
 
   @Post("rules/:id/enable")
-  @ApiOperation({ summary: "Enable alert rule" })
+  @Roles("analyst")
+  @ApiOperation({ summary: "Enable alert rule (analyst+)" })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, type: AlertRuleResponse })
+  @ApiResponse({ status: 403, description: "Forbidden - requires analyst role" })
   async enableRule(
     @Param("id", ParseIntPipe) id: number,
     @GatewayUser() user?: UserPayload,
@@ -128,9 +138,11 @@ export class AlertController {
   }
 
   @Post("rules/:id/disable")
-  @ApiOperation({ summary: "Disable alert rule" })
+  @Roles("analyst")
+  @ApiOperation({ summary: "Disable alert rule (analyst+)" })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, type: AlertRuleResponse })
+  @ApiResponse({ status: 403, description: "Forbidden - requires analyst role" })
   async disableRule(
     @Param("id", ParseIntPipe) id: number,
     @GatewayUser() user?: UserPayload,
@@ -142,6 +154,7 @@ export class AlertController {
   // ==================== Alert History ====================
 
   @Get("history")
+  @Roles("user")
   @ApiOperation({ summary: "List alert history" })
   @ApiResponse({ status: 200, type: AlertHistoryListResponse })
   async listHistory(
@@ -153,6 +166,7 @@ export class AlertController {
   }
 
   @Get("history/:id")
+  @Roles("user")
   @ApiOperation({ summary: "Get alert by ID" })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, type: AlertHistoryResponse })
@@ -166,9 +180,11 @@ export class AlertController {
   }
 
   @Post("history/:id/acknowledge")
-  @ApiOperation({ summary: "Acknowledge alert" })
+  @Roles("analyst")
+  @ApiOperation({ summary: "Acknowledge alert (analyst+)" })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, type: AlertHistoryResponse })
+  @ApiResponse({ status: 403, description: "Forbidden - requires analyst role" })
   async acknowledgeAlert(
     @Param("id", ParseIntPipe) id: number,
     @GatewayUser() user: UserPayload,
@@ -178,6 +194,7 @@ export class AlertController {
   }
 
   @Get("stats")
+  @Roles("user")
   @ApiOperation({ summary: "Get alert statistics" })
   @ApiQuery({ name: "hours", required: false, type: Number, description: "Hours to look back (default: 24)" })
   @ApiResponse({ status: 200, type: AlertStatsResponse })
@@ -192,6 +209,7 @@ export class AlertController {
   // ==================== Subscriptions ====================
 
   @Get("subscriptions")
+  @Roles("user")
   @ApiOperation({ summary: "List user subscriptions" })
   @ApiResponse({ status: 200, type: [SubscriptionResponse] })
   async listSubscriptions(
@@ -202,19 +220,20 @@ export class AlertController {
   }
 
   @Post("subscriptions")
+  @Roles("user")
   @ApiOperation({ summary: "Create subscription" })
   @ApiResponse({ status: 201, type: SubscriptionResponse })
   async createSubscription(
     @Body() dto: CreateSubscriptionDto,
     @GatewayUser() user: UserPayload,
   ): Promise<SubscriptionResponse> {
-    // Override userId with authenticated user
     dto.userId = user.sub;
     logger.info("Creating subscription", { userId: user.sub, channelType: dto.channelType });
     return this.alertService.createSubscription(dto);
   }
 
   @Delete("subscriptions/:id")
+  @Roles("user")
   @ApiOperation({ summary: "Delete subscription" })
   @ApiParam({ name: "id", type: Number })
   @ApiResponse({ status: 200, description: "Subscription deleted" })
@@ -230,8 +249,10 @@ export class AlertController {
   // ==================== Test ====================
 
   @Post("test")
-  @ApiOperation({ summary: "Send test alert" })
+  @Roles("analyst")
+  @ApiOperation({ summary: "Send test alert (analyst+)" })
   @ApiResponse({ status: 200, type: TestAlertResponse })
+  @ApiResponse({ status: 403, description: "Forbidden - requires analyst role" })
   async sendTestAlert(
     @Body() dto: TestAlertDto,
     @GatewayUser() user: UserPayload,

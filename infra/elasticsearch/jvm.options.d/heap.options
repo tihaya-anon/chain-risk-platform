@@ -1,0 +1,3 @@
+# Heap size (adjust based on available memory)
+-Xms1g
+-Xmx1g

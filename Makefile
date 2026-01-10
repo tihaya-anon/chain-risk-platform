@@ -38,10 +38,6 @@ OTEL_CONFIG := $(DIR_OTEL)/otel-agent.properties
 OTEL_ENDPOINT := $${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4317}
 OTEL_OPTS = -javaagent:$(OTEL_AGENT) -Dotel.javaagent.configuration-file=$(OTEL_CONFIG) -Dotel.exporter.otlp.endpoint=$(OTEL_ENDPOINT)
 
-# Docker image configuration
-DOCKER_REGISTRY := chainrisk
-DOCKER_TAG := latest
-
 # ============================================
 # Default target
 # ============================================
@@ -58,13 +54,19 @@ help:
 	@echo "  make cleanup         Clean all data (Kafka, PostgreSQL, Neo4j, Hudi)"
 	@echo "  make cleanup-rolling Rolling cleanup (retention-based)"
 	@echo ""
+	@echo "🔐 Security (Vault):"
+	@echo "  make vault-init      Initialize and configure Vault"
+	@echo "  make vault-unseal    Unseal Vault"
+	@echo "  make vault-status    Check Vault status"
+	@echo "  make vault-ui        Open Vault UI in browser"
+	@echo ""
+	@echo ""
 	@echo "🐳 Docker:"
 	@echo "  make docker-build    Build all service Docker images"
-	@echo "  make docker-push     Push all images to registry"
 	@echo "  make docker-up       Start all services in Docker"
 	@echo "  make docker-down     Stop all Docker services"
 	@echo "  make docker-logs     View Docker service logs"
-	@echo ""
+	@echo "  make validate-phase10  Run Phase 10 validation"
 	@echo "🚀 Services:"
 	@echo "  make run-svc         Run all backend services"
 	@echo "  make run-svc-otel    Run all backend services with OTel tracing"
@@ -101,6 +103,10 @@ help:
 	@echo ""
 	@echo "🔭 Observability:"
 	@echo "  make otel-download   Download OpenTelemetry Java Agent"
+	@echo "  make es-check        Check Elasticsearch health"
+	@echo "  make jaeger-verify   Verify Jaeger ES backend"
+	@echo "  make jaeger-ilm-setup   Setup trace retention policy"
+	@echo "  make jaeger-ilm-status  Check ILM status"
 	@echo ""
 	@echo "🧪 Testing:"
 	@echo "  make test-integration         Full integration test"
@@ -144,68 +150,48 @@ cleanup-rolling:
 	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
 
 # ============================================
-# Docker Build Commands
+# Vault (Security)
 # ============================================
 
-docker-build: docker-build-query docker-build-alert docker-build-risk docker-build-graph docker-build-orchestrator docker-build-bff
-	@echo "✅ All Docker images built"
+vault-init:
+	@echo "🔐 Initializing Vault..."
+	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh all'
 
-docker-build-query:
-	@echo "🐳 Building query-service image..."
-	@docker build -t $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) $(DIR_QUERY)
+vault-unseal:
+	@echo "🔓 Unsealing Vault..."
+	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh unseal'
 
-docker-build-alert:
-	@echo "🐳 Building alert-service image..."
-	@docker build -t $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) $(DIR_ALERT)
+vault-status:
+	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh status'
 
-docker-build-risk:
-	@echo "🐳 Building risk-ml-service image..."
-	@docker build -t $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) $(DIR_RISK)
+vault-ui:
+	@bash -c '$(LOAD_ENV) open "http://$${DOCKER_HOST_IP}:18200/ui"'
 
-docker-build-graph:
-	@echo "🐳 Building graph-service image..."
-	@docker build -t $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) $(DIR_GRAPH)
+vault-seed:
+	@echo "🌱 Seeding Vault secrets..."
+	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh seed'
 
-docker-build-orchestrator:
-	@echo "🐳 Building orchestrator image..."
-	@docker build -t $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) $(DIR_ORCHESTRATOR)
+# ============================================
+# Elasticsearch & Jaeger
+# ============================================
 
-docker-build-bff:
-	@echo "🐳 Building bff image..."
-	@docker build -t $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) $(DIR_BFF)
+es-check:
+	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cluster/health?pretty"'
 
-docker-push: docker-build
-	@echo "🚀 Pushing images to registry..."
-	@docker push $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG)
-	@echo "✅ All images pushed"
+es-indices:
+	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cat/indices?v"'
 
-docker-up:
-	@echo "🚀 Starting all services in Docker..."
-	@docker-compose --profile services up -d
-	@echo "✅ All services started"
+jaeger-verify:
+	@bash -c '$(LOAD_ENV) ./scripts/verify-jaeger-es.sh'
 
-docker-down:
-	@echo "🛑 Stopping Docker services..."
-	@docker-compose --profile services down
-	@echo "✅ Services stopped"
+jaeger-indices:
+	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cat/indices/jaeger*?v"'
 
-docker-logs:
-	@docker-compose --profile services logs -f
+jaeger-ilm-setup:
+	@bash -c '$(LOAD_ENV) ./scripts/setup-jaeger-ilm.sh'
 
-docker-clean:
-	@echo "🧹 Cleaning Docker images..."
-	@docker rmi $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) 2>/dev/null || true
-	@echo "✅ Images cleaned"
+jaeger-ilm-status:
+	@bash -c '$(LOAD_ENV) ./scripts/check-jaeger-ilm.sh'
 
 # ============================================
 # OpenTelemetry Setup
@@ -614,6 +600,74 @@ staging-monitoring:
 staging-load-test:
 	@echo "⚡ Running load test..."
 	@k6 run tests/load/staging-load.js
+
+# ============================================
+# Docker Build Commands
+# ============================================
+
+# Docker image configuration
+DOCKER_REGISTRY := chainrisk
+DOCKER_TAG := latest
+
+docker-build: docker-build-query docker-build-alert docker-build-risk docker-build-graph docker-build-orchestrator docker-build-bff
+	@echo "✅ All Docker images built"
+
+docker-build-query:
+	@echo "🐳 Building query-service image..."
+	@docker build -t $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) $(DIR_QUERY)
+
+docker-build-alert:
+	@echo "🐳 Building alert-service image..."
+	@docker build -t $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) $(DIR_ALERT)
+
+docker-build-risk:
+	@echo "🐳 Building risk-ml-service image..."
+	@docker build -t $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) $(DIR_RISK)
+
+docker-build-graph:
+	@echo "🐳 Building graph-service image..."
+	@docker build -t $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) $(DIR_GRAPH)
+
+docker-build-orchestrator:
+	@echo "🐳 Building orchestrator image..."
+	@docker build -t $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) $(DIR_ORCHESTRATOR)
+
+docker-build-bff:
+	@echo "🐳 Building bff image..."
+	@docker build -t $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) $(DIR_BFF)
+
+docker-push: docker-build
+	@echo "🚀 Pushing images to registry..."
+	@docker push $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG)
+	@docker push $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG)
+	@echo "✅ All images pushed"
+
+docker-up:
+	@echo "🚀 Starting all services in Docker..."
+	@docker-compose --profile services up -d
+	@echo "✅ All services started"
+
+docker-down:
+	@echo "🛑 Stopping Docker services..."
+	@docker-compose --profile services down
+	@echo "✅ Services stopped"
+
+docker-logs:
+	@docker-compose --profile services logs -f
+
+docker-clean:
+	@echo "🧹 Cleaning Docker images..."
+	@docker rmi $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) 2>/dev/null || true
+	@echo "✅ Images cleaned"
 
 # ============================================
 # Phase 10 Validation
