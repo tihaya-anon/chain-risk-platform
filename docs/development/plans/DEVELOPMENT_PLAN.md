@@ -81,17 +81,21 @@
 
 ---
 
-## Phase 8: Observability Stack ✅
+## Phase 8: Observability Stack 🔶
 
-**Completed**: 2026-01-10
+**Status**: Development complete, pending integration test
 
-- [x] Loki log aggregation (7-day retention)
-- [x] Promtail log collection (Docker + file-based)
+- [x] Loki log aggregation config (7-day retention)
+- [x] Promtail log collection config (Docker + file-based)
 - [x] Grafana datasources (Loki, Jaeger, Prometheus)
 - [x] Python OTel SDK with log-trace correlation
 - [x] Java OTel Agent configuration
 - [x] Unified observability dashboard
 - [x] Enhanced alert rules
+- [x] Static checks passed (all services compile)
+- [ ] Integration test in remote environment
+
+See [OBSERVABILITY_PHASE8_VALIDATION.md](../guides/OBSERVABILITY_PHASE8_VALIDATION.md) for test plan.
 
 ---
 
@@ -119,7 +123,7 @@ See [infra/airflow/README.md](../../../infra/airflow/README.md) for details.
 | Phase 5 | Alert Service | ✅ |
 | Phase 6 | GNN Integration | ✅ |
 | Phase 7 | Production Readiness | ✅ |
-| Phase 8 | Observability Stack | ✅ |
+| Phase 8 | Observability Stack | 🔶 Pending Test |
 | Phase 9 | Batch Orchestration | ✅ |
 
 ---
@@ -135,7 +139,7 @@ See [infra/airflow/README.md](../../../infra/airflow/README.md) for details.
 | M5 | Alert Service | ✅ |
 | M6 | GNN integration | ✅ |
 | M7 | Production ready | ✅ |
-| M8 | Full observability | ✅ |
+| M8 | Full observability | 🔶 |
 | M9 | Automated batch jobs | ✅ |
 
 ---
@@ -144,8 +148,8 @@ See [infra/airflow/README.md](../../../infra/airflow/README.md) for details.
 
 | Feature | Priority | Description |
 |---------|----------|-------------|
-| WebSocket Real-time Alerts | Medium | Push alerts to frontend via WebSocket |
 | Security Hardening | High | JWT/OAuth, Vault integration, audit logs |
+| WebSocket Real-time Alerts | Medium | Push alerts to frontend via WebSocket |
 | Multi-chain Support | Medium | Expand beyond Ethereum |
 | Report Export | Low | PDF/CSV export for compliance |
 | User Management UI | Low | Admin interface for user/role management |
