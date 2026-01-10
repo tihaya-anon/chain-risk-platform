@@ -3,7 +3,7 @@ name = "risk-ml-service"
 version = "0.1.0"
 description = "Risk scoring service with rule engine and ML models"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
@@ -27,7 +27,7 @@ dependencies = [
     "opentelemetry-instrumentation-httpx>=0.43b0",
     "opentelemetry-instrumentation-redis>=0.43b0",
     "opentelemetry-instrumentation-sqlalchemy>=0.43b0",
-    "opentelemetry-propagators-b3>=1.22.0",
+    "opentelemetry-propagator-b3>=1.22.0",
 ]
 
 [project.optional-dependencies]
@@ -36,9 +36,9 @@ ml = [
     "xgboost>=2.0.0",
     "pandas>=2.1.0",
     "numpy>=1.26.0",
-    "torch>=2.9.1",
+    "torch>=2.1.0",
     "torch-geometric>=2.4.0",
-    "neo4j>=6.0.3",
+    "neo4j>=5.0.0",
 ]
 dev = [
     "pytest>=7.4.0",
