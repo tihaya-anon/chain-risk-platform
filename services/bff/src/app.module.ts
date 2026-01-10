@@ -7,6 +7,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { GraphModule } from "./modules/graph/graph.module";
 import { TransfersModule } from "./modules/transfers/transfers.module";
 import { AlertModule } from "./modules/alert/alert.module";
+import { WebsocketModule } from "./modules/websocket/websocket.module";
 import { NacosService } from "./common/nacos.service";
 import { getConfig } from "./config/config";
 
@@ -21,6 +22,8 @@ const config = getConfig();
         limit: config.rateLimit.limit,
       },
     ]),
+    // WebSocket module
+    WebsocketModule,
     // Feature modules
     AuthModule,
     AddressModule,

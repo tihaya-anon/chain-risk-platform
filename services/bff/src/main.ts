@@ -1,8 +1,10 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { IoAdapter } from "@nestjs/platform-socket.io";
 import { AppModule } from "./app.module";
 import { NacosService } from "./common/nacos.service";
+import { AlertsGateway } from "./modules/websocket/alerts.gateway";
 import { getConfig } from "./config/config";
 import { logger } from "./common/logger";
 
@@ -12,6 +14,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ["error", "warn", "log"],
   });
+
+  // WebSocket adapter
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Global prefix
   app.setGlobalPrefix("api/v1");
@@ -33,6 +38,7 @@ async function bootstrap() {
   // Admin status endpoint
   const httpAdapter = app.getHttpAdapter();
   const nacosService = app.get(NacosService);
+  const alertsGateway = app.get(AlertsGateway);
 
   httpAdapter.get("/admin/status", (req, res) => {
     res.json({
@@ -44,6 +50,11 @@ async function bootstrap() {
 
   httpAdapter.get("/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  // WebSocket stats endpoint
+  httpAdapter.get("/admin/ws/stats", (req, res) => {
+    res.json(alertsGateway.getStats());
   });
 
   // Swagger documentation (only in non-production)
@@ -71,6 +82,10 @@ async function bootstrap() {
     port: config.server.port,
     env: config.server.env,
     nacos: nacosService.isEnabled(),
+    websocket: {
+      namespace: "/alerts",
+      enabled: true,
+    },
   });
 }
 
