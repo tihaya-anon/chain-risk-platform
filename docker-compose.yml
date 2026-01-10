@@ -276,6 +276,195 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # ============== Application Services ==============
+  query-service:
+    build: ./services/query-service
+    image: chainrisk/query-service:latest
+    container_name: query-service
+    profiles: ["services"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: chainrisk
+      POSTGRES_PASSWORD: chainrisk123
+      POSTGRES_DB: chainrisk
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NACOS_SERVER: nacos:8848
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_SERVICE_NAME: query-service
+    ports:
+      - "0.0.0.0:8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  alert-service:
+    build: ./services/alert-service
+    image: chainrisk/alert-service:latest
+    container_name: alert-service
+    profiles: ["services"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: chainrisk
+      POSTGRES_PASSWORD: chainrisk123
+      POSTGRES_DB: chainrisk
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BROKERS: kafka:29092
+      NACOS_SERVER: nacos:8848
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_SERVICE_NAME: alert-service
+    ports:
+      - "0.0.0.0:8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  risk-ml-service:
+    build: ./services/risk-ml-service
+    image: chainrisk/risk-ml-service:latest
+    container_name: risk-ml-service
+    profiles: ["services"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: chainrisk
+      POSTGRES_PASSWORD: chainrisk123
+      POSTGRES_DB: chainrisk
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NACOS_SERVER: nacos:8848
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_SERVICE_NAME: risk-ml-service
+    ports:
+      - "0.0.0.0:8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  graph-service:
+    build: ./services/graph-service
+    image: chainrisk/graph-service:latest
+    container_name: graph-service
+    profiles: ["services"]
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: chainrisk123
+      NACOS_SERVER_ADDR: nacos:8848
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_SERVICE_NAME: graph-service
+      JAVA_OPTS: "-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
+    ports:
+      - "0.0.0.0:8084:8084"
+    depends_on:
+      - neo4j
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  orchestrator:
+    build: ./services/orchestrator
+    image: chainrisk/orchestrator:latest
+    container_name: orchestrator
+    profiles: ["services"]
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      NACOS_SERVER_ADDR: nacos:8848
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_SERVICE_NAME: orchestrator
+      JAVA_OPTS: "-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
+    ports:
+      - "0.0.0.0:8080:8080"
+    depends_on:
+      nacos:
+        condition: service_healthy
+      query-service:
+        condition: service_healthy
+      risk-ml-service:
+        condition: service_healthy
+      alert-service:
+        condition: service_healthy
+      graph-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  bff:
+    build: ./services/bff
+    image: chainrisk/bff:latest
+    container_name: bff
+    profiles: ["services"]
+    environment:
+      NODE_ENV: production
+      ORCHESTRATOR_URL: http://orchestrator:8080
+      NACOS_SERVER: nacos:8848
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_SERVICE_NAME: bff
+    ports:
+      - "0.0.0.0:3001:3001"
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
 volumes:
   zookeeper_data:
   kafka_data:
