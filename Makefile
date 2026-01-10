@@ -54,6 +54,12 @@ help:
 	@echo "  make cleanup         Clean all data (Kafka, PostgreSQL, Neo4j, Hudi)"
 	@echo "  make cleanup-rolling Rolling cleanup (retention-based)"
 	@echo ""
+	@echo "🔐 Security (Vault):"
+	@echo "  make vault-init      Initialize and configure Vault"
+	@echo "  make vault-unseal    Unseal Vault"
+	@echo "  make vault-status    Check Vault status"
+	@echo "  make vault-ui        Open Vault UI in browser"
+	@echo ""
 	@echo "🚀 Services:"
 	@echo "  make run-svc         Run all backend services"
 	@echo "  make run-svc-otel    Run all backend services with OTel tracing"
@@ -131,6 +137,28 @@ cleanup-all:
 
 cleanup-rolling:
 	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
+
+# ============================================
+# Vault (Security)
+# ============================================
+
+vault-init:
+	@echo "🔐 Initializing Vault..."
+	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh all'
+
+vault-unseal:
+	@echo "🔓 Unsealing Vault..."
+	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh unseal'
+
+vault-status:
+	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh status'
+
+vault-ui:
+	@bash -c '$(LOAD_ENV) open "http://$${DOCKER_HOST_IP}:18200/ui"'
+
+vault-seed:
+	@echo "🌱 Seeding Vault secrets..."
+	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh seed'
 
 # ============================================
 # OpenTelemetry Setup
