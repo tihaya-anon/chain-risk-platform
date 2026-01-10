@@ -100,7 +100,7 @@ services:
       - monitoring
 
   jaeger:
-    image: jaegertracing/all-in-one:1.50
+    image: jaegertracing/all-in-one:1.53
     container_name: jaeger
     depends_on:
       elasticsearch:
