@@ -1,7 +1,7 @@
 # Application services
 services:
   query-service:
-    build: ./services/query-service
+    build: ../../services/query-service
     image: chainrisk/query-service:latest
     container_name: query-service
     environment:
@@ -35,7 +35,7 @@ services:
       - backend
 
   alert-service:
-    build: ./services/alert-service
+    build: ../../services/alert-service
     image: chainrisk/alert-service:latest
     container_name: alert-service
     environment:
@@ -72,7 +72,7 @@ services:
       - backend
 
   risk-ml-service:
-    build: ./services/risk-ml-service
+    build: ../../services/risk-ml-service
     image: chainrisk/risk-ml-service:latest
     container_name: risk-ml-service
     environment:
@@ -106,7 +106,7 @@ services:
       - backend
 
   graph-service:
-    build: ./services/graph-service
+    build: ../../services/graph-service
     image: chainrisk/graph-service:latest
     container_name: graph-service
     environment:
@@ -136,7 +136,7 @@ services:
       - backend
 
   orchestrator:
-    build: ./services/orchestrator
+    build: ../../services/orchestrator
     image: chainrisk/orchestrator:latest
     container_name: orchestrator
     environment:
@@ -170,7 +170,7 @@ services:
       - backend
 
   bff:
-    build: ./services/bff
+    build: ../../services/bff
     image: chainrisk/bff:latest
     container_name: bff
     environment:

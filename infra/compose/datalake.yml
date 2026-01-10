@@ -38,7 +38,7 @@ services:
 
   hive-metastore:
     build:
-      context: ./infra/hive
+      context: ../../infra/hive
       dockerfile: Dockerfile
     container_name: hive-metastore
     depends_on:
@@ -55,7 +55,7 @@ services:
     ports:
       - "0.0.0.0:19083:9083"
     volumes:
-      - ./infra/hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+      - ../../infra/hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
       - hive_metastore_data:/opt/hive/data
     restart: unless-stopped
     networks:
@@ -70,11 +70,11 @@ services:
     ports:
       - "0.0.0.0:18081:8080"
     volumes:
-      - ./infra/trino/etc/config.properties:/etc/trino/config.properties:ro
-      - ./infra/trino/etc/node.properties:/etc/trino/node.properties:ro
-      - ./infra/trino/etc/jvm.config:/etc/trino/jvm.config:ro
-      - ./infra/trino/etc/log.properties:/etc/trino/log.properties:ro
-      - ./infra/trino/catalog:/etc/trino/catalog:ro
+      - ../../infra/trino/etc/config.properties:/etc/trino/config.properties:ro
+      - ../../infra/trino/etc/node.properties:/etc/trino/node.properties:ro
+      - ../../infra/trino/etc/jvm.config:/etc/trino/jvm.config:ro
+      - ../../infra/trino/etc/log.properties:/etc/trino/log.properties:ro
+      - ../../infra/trino/catalog:/etc/trino/catalog:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/v1/info"]
       interval: 30s
