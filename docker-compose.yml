@@ -56,14 +56,9 @@ services:
     environment:
       NEO4J_AUTH: neo4j/chainrisk123
       NEO4J_PLUGINS: '["apoc"]'
-      # Enable Prometheus metrics endpoint
-      NEO4J_server_metrics_enabled: "true"
-      NEO4J_server_metrics_prometheus_enabled: "true"
-      NEO4J_server_metrics_prometheus_endpoint: "0.0.0.0:2004"
     ports:
       - "0.0.0.0:17474:7474"
       - "0.0.0.0:17687:7687"
-      - "0.0.0.0:12004:2004"  # Prometheus metrics
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
@@ -83,15 +78,12 @@ services:
     container_name: prometheus
     ports:
       - "0.0.0.0:19090:9090"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-      - "--web.enable-lifecycle"
 
   grafana:
     image: grafana/grafana:10.1.0
@@ -106,6 +98,43 @@ services:
       - ./infra/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
+      - loki
+
+  # ============== Log Aggregation ==============
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: loki
+    ports:
+      - "0.0.0.0:13100:3100"
+    volumes:
+      - ./infra/loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail
+    volumes:
+      - ./infra/promtail/promtail-config.yaml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+      - ./services/query-service/logs:/var/log/services/query-service:ro
+      - ./services/risk-ml-service/logs:/var/log/services/risk-ml-service:ro
+      - ./services/alert-service/logs:/var/log/services/alert-service:ro
+      - ./services/graph-service/logs:/var/log/services/graph-service:ro
+      - ./services/orchestrator/logs:/var/log/services/orchestrator:ro
+      - ./services/bff/logs:/var/log/services/bff:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      loki:
+        condition: service_healthy
+    restart: unless-stopped
 
   # ============== Exporters (Monitoring) ==============
   kafka-exporter:
@@ -160,13 +189,20 @@ services:
     image: jaegertracing/all-in-one:1.50
     container_name: jaeger
     ports:
-      - "0.0.0.0:26686:16686"  # UI
-      - "0.0.0.0:14268:14268"  # HTTP collector
-      - "0.0.0.0:16831:6831/udp"  # UDP agent
-      - "0.0.0.0:4317:4317"   # OTLP gRPC
-      - "0.0.0.0:4318:4318"   # OTLP HTTP
+      - "0.0.0.0:26686:16686"    # Jaeger UI
+      - "0.0.0.0:14268:14268"    # HTTP collector
+      - "0.0.0.0:16831:6831/udp" # UDP agent
+      - "0.0.0.0:14317:4317"     # OTLP gRPC
+      - "0.0.0.0:14318:4318"     # OTLP HTTP
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
+      SPAN_STORAGE_TYPE: badger
+      BADGER_EPHEMERAL: "false"
+      BADGER_DIRECTORY_VALUE: /badger/data
+      BADGER_DIRECTORY_KEY: /badger/key
+    volumes:
+      - jaeger_data:/badger
+    restart: unless-stopped
 
   # ============== Database UI Tools ==============
   pgadmin:
@@ -302,6 +338,8 @@ volumes:
   redisinsight_data:
   minio_data:
   hive_metastore_data:
+  loki_data:
+  jaeger_data:
 
 networks:
   default:
