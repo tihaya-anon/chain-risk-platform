@@ -30,6 +30,13 @@ DIR_GRAPH := services/graph-service
 DIR_FLINK := processing/stream-processor
 DIR_BATCH := processing/batch-processor
 DIR_FRONTEND := frontend
+DIR_OTEL := infra/otel
+
+# OTel Agent configuration
+OTEL_AGENT := $(DIR_OTEL)/opentelemetry-javaagent.jar
+OTEL_CONFIG := $(DIR_OTEL)/otel-agent.properties
+OTEL_ENDPOINT := $${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4317}
+OTEL_OPTS = -javaagent:$(OTEL_AGENT) -Dotel.javaagent.configuration-file=$(OTEL_CONFIG) -Dotel.exporter.otlp.endpoint=$(OTEL_ENDPOINT)
 
 # ============================================
 # Default target
@@ -49,6 +56,7 @@ help:
 	@echo ""
 	@echo "🚀 Services:"
 	@echo "  make run-svc         Run all backend services"
+	@echo "  make run-svc-otel    Run all backend services with OTel tracing"
 	@echo "  make stop-svc        Stop all backend services"
 	@echo ""
 	@echo "📊 Data Ingestion (Go):    ingestion-{build,run,test,clean}"
@@ -56,8 +64,8 @@ help:
 	@echo "⚠️  Alert Service (Go):     alert-{build,run,test,clean}"
 	@echo "🤖 Risk ML Service (Py):   risk-{build,run,test,clean}"
 	@echo "🌐 BFF Service (TS):       bff-{build,run,test,clean}"
-	@echo "🚪 Orchestrator (Java):    orchestrator-{build,run,test,clean}"
-	@echo "🔗 Graph Service (Java):   graph-{build,run,test,clean}"
+	@echo "🚪 Orchestrator (Java):    orchestrator-{build,run,run-otel,test,clean}"
+	@echo "🔗 Graph Service (Java):   graph-{build,run,run-otel,test,clean}"
 	@echo ""
 	@echo "🎲 Data Generator:"
 	@echo "  make generator-build      Build data generator"
@@ -69,6 +77,7 @@ help:
 	@echo "⚡ Stream Processor (Flink):"
 	@echo "  make flink-build     Build stream processor"
 	@echo "  make flink-run       Run Flink job (tmux)"
+	@echo "  make flink-run-otel  Run Flink job with OTel tracing"
 	@echo "  make flink-stop      Stop Flink job"
 	@echo ""
 	@echo "📊 Batch Processor (Spark):"
@@ -78,6 +87,9 @@ help:
 	@echo "  make batch-labels    Ingest label data"
 	@echo "  make batch-training  Prepare training dataset"
 	@echo "  make batch-neo4j     Sync to Neo4j"
+	@echo ""
+	@echo "🔭 Observability:"
+	@echo "  make otel-download   Download OpenTelemetry Java Agent"
 	@echo ""
 	@echo "🧪 Testing:"
 	@echo "  make test-integration         Full integration test"
@@ -119,6 +131,13 @@ cleanup-all:
 
 cleanup-rolling:
 	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
+
+# ============================================
+# OpenTelemetry Setup
+# ============================================
+
+otel-download:
+	@./scripts/download-otel-agent.sh
 
 # ============================================
 # Data Ingestion (Go)
@@ -251,6 +270,10 @@ orchestrator-build:
 orchestrator-run:
 	@bash -c '$(LOAD_ENV) cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn spring-boot:run'
 
+orchestrator-run-otel: otel-download
+	@echo "🔭 Running orchestrator with OTel agent..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) java $(OTEL_OPTS) -Dotel.service.name=orchestrator -jar target/orchestrator-1.0.0-SNAPSHOT.jar'
+
 orchestrator-test:
 	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn test'
 
@@ -269,6 +292,10 @@ graph-build:
 graph-run:
 	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java -jar target/graph-service-1.0.0-SNAPSHOT.jar'
 
+graph-run-otel: otel-download
+	@echo "🔭 Running graph-service with OTel agent..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java $(OTEL_OPTS) -Dotel.service.name=graph-service -jar target/graph-service-1.0.0-SNAPSHOT.jar'
+
 graph-test:
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn test'
 
@@ -286,6 +313,10 @@ flink-build:
 
 flink-run:
 	@bash -c '$(LOAD_ENV) ./scripts/run-flink.sh'
+
+flink-run-otel: otel-download
+	@echo "🔭 Running stream-processor with OTel agent..."
+	@bash -c '$(LOAD_ENV) OTEL_ENABLED=true ./scripts/run-flink.sh'
 
 flink-test:
 	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn test'
@@ -389,6 +420,18 @@ run-svc:
 	@sleep 2
 	@echo "✅ Services: Query(:8081) Risk(:8082) BFF(:3001) Graph(:8084)"
 	@echo "   Logs: $(LOGS_DIR)/"
+
+run-svc-otel: otel-download
+	@mkdir -p $(LOGS_DIR)
+	@echo "🚀 Starting services with OTel tracing..."
+	@bash -c '$(LOAD_ENV) cd $(DIR_QUERY) && go run ./cmd/... > ../../$(LOGS_DIR)/query.log 2>&1 &'
+	@bash -c '$(LOAD_ENV) cd $(DIR_RISK) && uv run uvicorn app.main:app --port 8082 > ../../$(LOGS_DIR)/risk.log 2>&1 &'
+	@cd $(DIR_BFF) && npm run start:dev > ../../$(LOGS_DIR)/bff.log 2>&1 &
+	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java $(OTEL_OPTS) -Dotel.service.name=graph-service -jar target/graph-service-1.0.0-SNAPSHOT.jar > ../../$(LOGS_DIR)/graph.log 2>&1 &'
+	@sleep 2
+	@echo "✅ Services: Query(:8081) Risk(:8082) BFF(:3001) Graph(:8084) [OTel enabled for Java]"
+	@echo "   Logs: $(LOGS_DIR)/"
+	@echo "   Traces: http://localhost:26686 (Jaeger UI)"
 
 stop-svc:
 	@echo "🛑 Stopping services..."
