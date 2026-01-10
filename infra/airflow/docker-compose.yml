@@ -15,7 +15,8 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - /var/run/docker.sock:/var/run/docker.sock
-  user: "${AIRFLOW_UID:-50000}:0"
+  # Run as airflow user (50000) with docker group (1001 on WSL)
+  user: "50000:1001"
   depends_on:
     &airflow-common-depends-on
     postgres-airflow:
@@ -80,10 +81,11 @@ services:
     <<: *airflow-common
     container_name: airflow-init
     entrypoint: /bin/bash
+    # Init needs root for db migration
+    user: "0:0"
     command:
       - -c
       - |
-        exec /entrypoint airflow version
         airflow db migrate
         airflow users create \
           --username admin \
