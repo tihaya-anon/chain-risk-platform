@@ -97,6 +97,7 @@ services:
     command:
       - -c
       - |
+        exec /entrypoint airflow version
         airflow db migrate
         airflow users create \
           --username admin \
@@ -104,13 +105,14 @@ services:
           --lastname User \
           --role Admin \
           --email admin@chainrisk.local \
-          --password admin
+          --password admin || true
         echo "Airflow initialization complete"
     environment:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-    user: "0:0"
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: admin
     networks:
       - chainrisk-network
 
