@@ -210,10 +210,13 @@ services:
       retries: 10
       start_period: 30s
 
-  # ============== Tracing ==============
+  # ============== Tracing (Jaeger with Elasticsearch) ==============
   jaeger:
     image: jaegertracing/all-in-one:1.50
     container_name: jaeger
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
     ports:
       - "0.0.0.0:26686:16686"    # Jaeger UI
       - "0.0.0.0:14268:14268"    # HTTP collector
@@ -222,12 +225,12 @@ services:
       - "0.0.0.0:14318:4318"     # OTLP HTTP
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
-      SPAN_STORAGE_TYPE: badger
-      BADGER_EPHEMERAL: "false"
-      BADGER_DIRECTORY_VALUE: /badger/data
-      BADGER_DIRECTORY_KEY: /badger/key
-    volumes:
-      - jaeger_data:/badger
+      SPAN_STORAGE_TYPE: elasticsearch
+      ES_SERVER_URLS: http://elasticsearch:9200
+      ES_INDEX_PREFIX: jaeger
+      ES_TAGS_AS_FIELDS_ALL: "true"
+      ES_NUM_SHARDS: 1
+      ES_NUM_REPLICAS: 0
     restart: unless-stopped
 
   # ============== Hudi Data Lake Infrastructure ==============
@@ -321,7 +324,6 @@ volumes:
   minio_data:
   hive_metastore_data:
   loki_data:
-  jaeger_data:
   elasticsearch_data:
 
 networks:
