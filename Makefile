@@ -91,6 +91,7 @@ help:
 	@echo "🔭 Observability:"
 	@echo "  make otel-download   Download OpenTelemetry Java Agent"
 	@echo "  make es-check        Check Elasticsearch health"
+	@echo "  make jaeger-verify   Verify Jaeger ES backend"
 	@echo ""
 	@echo "🧪 Testing:"
 	@echo "  make test-integration         Full integration test"
@@ -134,7 +135,7 @@ cleanup-rolling:
 	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
 
 # ============================================
-# Elasticsearch
+# Elasticsearch & Jaeger
 # ============================================
 
 es-check:
@@ -142,6 +143,12 @@ es-check:
 
 es-indices:
 	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cat/indices?v"'
+
+jaeger-verify:
+	@bash -c '$(LOAD_ENV) ./scripts/verify-jaeger-es.sh'
+
+jaeger-indices:
+	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cat/indices/jaeger*?v"'
 
 # ============================================
 # OpenTelemetry Setup
