@@ -66,47 +66,61 @@
 
 ---
 
-## Phase 7: Production Readiness 🔶 In Progress
+## Phase 7: Production Readiness ✅
 
-**Goal**: Integration testing, deployment, monitoring
+**Completed**: 2026-01-10
 
-See [ROADMAP_PHASE7.md](./ROADMAP_PHASE7.md) for detailed checkpoint breakdown.
+- [x] Remote infrastructure verification
+- [x] Data generator with scenario support
+- [x] Rolling data cleanup (PostgreSQL, Neo4j)
+- [x] Service metrics export (Prometheus)
+- [x] E2E test suite
+- [x] GNN E2E tests
+- [x] K8s manifests (base + overlays)
+- [x] Grafana dashboards
 
-### Checkpoint Status
+---
 
-| CP | Name | Status | Depends |
-|----|------|--------|---------|
-| 1 | Remote Infra Verify | ⏳ | - |
-| 2 | Data Generator | ⏳ | 1 |
-| 3 | Rolling Cleanup | ⏳ | 1 |
-| 4 | Metrics Export | ⏳ | 1 |
-| 5 | E2E Test Suite | ⏳ | 2, 3 |
-| 6 | GNN E2E Tests | ⏳ | 5 |
-| 7 | K8s Manifests | ⏳ | 6 |
-| 8 | Grafana Dashboards | ⏳ | 4, 6 |
-| 9 | Staging Deploy | ⏳ | 7, 8 |
+## Phase 8: Observability Stack ✅
 
-### DAG
+**Completed**: 2026-01-10
 
-```
-CP-1 ──┬── CP-2 ──┐
-       ├── CP-3 ──┼── CP-5 ── CP-6 ──┬── CP-7 ──┐
-       └── CP-4 ──┘            │     └── CP-8 ──┼── CP-9
-                               └────────────────┘
-```
+- [x] Loki log aggregation (7-day retention)
+- [x] Promtail log collection (Docker + file-based)
+- [x] Grafana datasources (Loki, Jaeger, Prometheus)
+- [x] Python OTel SDK with log-trace correlation
+- [x] Java OTel Agent configuration
+- [x] Unified observability dashboard
+- [x] Enhanced alert rules
+
+---
+
+## Phase 9: Batch Orchestration ✅
+
+**Completed**: 2026-01-10
+
+- [x] Airflow integration with DAGs
+- [x] `chain_risk_archive` - Daily archive pipeline (02:00 UTC)
+- [x] `chain_risk_ml` - Daily ML feature/training (04:00 UTC)
+- [x] `chain_risk_labels` - Weekly label update (Sunday 01:00 UTC)
+- [x] ExternalTaskSensor for DAG dependencies
+
+See [infra/airflow/README.md](../../../infra/airflow/README.md) for details.
 
 ---
 
 ## Timeline Summary
 
-| Phase | Duration | Status |
-|-------|----------|--------|
-| Phase 1-2 | Week 1-6 | ✅ |
-| Phase 3 | Week 7-8 | ✅ |
-| Phase 4 | Week 9-12 | ✅ |
-| Phase 5 | Week 13-14 | ✅ |
-| Phase 6 | Week 15-16 | ✅ |
-| Phase 7 | Week 17-19 | 🔶 |
+| Phase | Content | Status |
+|-------|---------|--------|
+| Phase 1-2 | Core Data Flow, Query & Risk | ✅ |
+| Phase 3 | BFF & Frontend | ✅ |
+| Phase 4 | Graph + ML Features | ✅ |
+| Phase 5 | Alert Service | ✅ |
+| Phase 6 | GNN Integration | ✅ |
+| Phase 7 | Production Readiness | ✅ |
+| Phase 8 | Observability Stack | ✅ |
+| Phase 9 | Batch Orchestration | ✅ |
 
 ---
 
@@ -120,4 +134,18 @@ CP-1 ──┬── CP-2 ──┐
 | M4 | Graph + ML features | ✅ |
 | M5 | Alert Service | ✅ |
 | M6 | GNN integration | ✅ |
-| M7 | Production ready | 🔶 |
+| M7 | Production ready | ✅ |
+| M8 | Full observability | ✅ |
+| M9 | Automated batch jobs | ✅ |
+
+---
+
+## Future Enhancements (Backlog)
+
+| Feature | Priority | Description |
+|---------|----------|-------------|
+| WebSocket Real-time Alerts | Medium | Push alerts to frontend via WebSocket |
+| Security Hardening | High | JWT/OAuth, Vault integration, audit logs |
+| Multi-chain Support | Medium | Expand beyond Ethereum |
+| Report Export | Low | PDF/CSV export for compliance |
+| User Management UI | Low | Admin interface for user/role management |
