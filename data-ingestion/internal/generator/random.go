@@ -27,12 +27,21 @@ func NewRandomGenerator(network string, logger *zap.Logger) *RandomGenerator {
 }
 
 // Generate generates a random block with transactions
+// Output format matches Etherscan API: { "id": 1, "jsonrpc": "2.0", "result": { block fields... } }
 func (g *RandomGenerator) Generate(blockNumber uint64) (*producer.RawBlockData, error) {
 	txCount := g.randomInt(1, 10)
 	txs := g.generateTransactions(txCount)
 
 	block := g.buildBlock(blockNumber, txs)
-	rawBlock, err := json.Marshal(block)
+
+	// Wrap in Etherscan API format
+	apiResponse := map[string]interface{}{
+		"id":      1,
+		"jsonrpc": "2.0",
+		"result":  block,
+	}
+
+	rawBlock, err := json.Marshal(apiResponse)
 	if err != nil {
 		return nil, fmt.Errorf("marshal block: %w", err)
 	}
@@ -46,9 +55,18 @@ func (g *RandomGenerator) Generate(blockNumber uint64) (*producer.RawBlockData, 
 }
 
 func (g *RandomGenerator) buildBlock(blockNumber uint64, transactions []map[string]interface{}) map[string]interface{} {
+	blockHash := g.randomHash()
+
+	// Update block info in transactions
+	for i := range transactions {
+		transactions[i]["blockHash"] = blockHash
+		transactions[i]["blockNumber"] = fmt.Sprintf("0x%x", blockNumber)
+		transactions[i]["transactionIndex"] = fmt.Sprintf("0x%x", i)
+	}
+
 	return map[string]interface{}{
 		"number":           fmt.Sprintf("0x%x", blockNumber),
-		"hash":             g.randomHash(),
+		"hash":             blockHash,
 		"parentHash":       g.randomHash(),
 		"nonce":            g.randomHex(8),
 		"sha3Uncles":       g.randomHash(),
@@ -83,23 +101,23 @@ func (g *RandomGenerator) generateTransactions(count int) []map[string]interface
 
 func (g *RandomGenerator) buildTransaction(from, to, value string) map[string]interface{} {
 	return map[string]interface{}{
-		"hash":                   g.randomHash(),
-		"nonce":                  fmt.Sprintf("0x%x", g.randomInt(0, 1000)),
-		"blockHash":              g.randomHash(),
-		"blockNumber":            "0x0", // will be set by caller
-		"transactionIndex":       fmt.Sprintf("0x%x", g.randomInt(0, 100)),
-		"from":                   from,
-		"to":                     to,
-		"value":                  value,
-		"gas":                    fmt.Sprintf("0x%x", g.randomInt(21000, 500000)),
-		"gasPrice":               fmt.Sprintf("0x%x", g.randomInt(1000000000, 100000000000)),
-		"input":                  "0x",
-		"v":                      "0x1b",
-		"r":                      g.randomHash(),
-		"s":                      g.randomHash(),
-		"type":                   "0x2",
-		"maxFeePerGas":           fmt.Sprintf("0x%x", g.randomInt(10000000000, 200000000000)),
-		"maxPriorityFeePerGas":   fmt.Sprintf("0x%x", g.randomInt(1000000000, 5000000000)),
+		"hash":                 g.randomHash(),
+		"nonce":                fmt.Sprintf("0x%x", g.randomInt(0, 1000)),
+		"blockHash":            "", // will be set by buildBlock
+		"blockNumber":          "", // will be set by buildBlock
+		"transactionIndex":     "", // will be set by buildBlock
+		"from":                 from,
+		"to":                   to,
+		"value":                value,
+		"gas":                  fmt.Sprintf("0x%x", g.randomInt(21000, 500000)),
+		"gasPrice":             fmt.Sprintf("0x%x", g.randomInt(1000000000, 100000000000)),
+		"input":                "0x",
+		"v":                    "0x1b",
+		"r":                    g.randomHash(),
+		"s":                    g.randomHash(),
+		"type":                 "0x2",
+		"maxFeePerGas":         fmt.Sprintf("0x%x", g.randomInt(10000000000, 200000000000)),
+		"maxPriorityFeePerGas": fmt.Sprintf("0x%x", g.randomInt(1000000000, 5000000000)),
 	}
 }
 
@@ -131,22 +149,22 @@ func (g *RandomGenerator) randomHex(length int) string {
 
 func (g *RandomGenerator) randomValue() string {
 	// Random value 0.001 - 10 ETH (in wei)
-	min := new(big.Int).Mul(big.NewInt(1e15), big.NewInt(1))   // 0.001 ETH
-	max := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(10))  // 10 ETH
+	min := new(big.Int).Mul(big.NewInt(1e15), big.NewInt(1))  // 0.001 ETH
+	max := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(10)) // 10 ETH
 	return g.randomBigIntHex(min, max)
 }
 
 func (g *RandomGenerator) randomHighValue() string {
 	// High value 10 - 100 ETH (in wei)
-	min := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(10))   // 10 ETH
-	max := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(100))  // 100 ETH
+	min := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(10))  // 10 ETH
+	max := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(100)) // 100 ETH
 	return g.randomBigIntHex(min, max)
 }
 
 func (g *RandomGenerator) randomWhaleValue() string {
 	// Whale value 100 - 10000 ETH (in wei)
-	min := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(100))    // 100 ETH
-	max := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(10000))  // 10000 ETH
+	min := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(100))   // 100 ETH
+	max := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(10000)) // 10000 ETH
 	return g.randomBigIntHex(min, max)
 }
 

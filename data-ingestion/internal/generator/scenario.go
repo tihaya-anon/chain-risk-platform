@@ -11,10 +11,10 @@ import (
 
 // Scenario defines a test scenario
 type Scenario struct {
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
 	Events      []ScenarioEvent `json:"events"`
-	Loop        bool          `json:"loop"` // loop events when finished
+	Loop        bool            `json:"loop"` // loop events when finished
 }
 
 // ScenarioEvent defines a single event in a scenario
@@ -128,7 +128,14 @@ func (r *ScenarioRunner) generateFromTemplate(blockNumber uint64, event *Scenari
 		// Override block number
 		block["number"] = fmt.Sprintf("0x%x", blockNumber)
 
-		rawBlock, err := json.Marshal(block)
+		// Wrap in Etherscan API format
+		apiResponse := map[string]interface{}{
+			"id":      1,
+			"jsonrpc": "2.0",
+			"result":  block,
+		}
+
+		rawBlock, err := json.Marshal(apiResponse)
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +171,15 @@ func (r *ScenarioRunner) generatePattern(blockNumber uint64, pattern *PatternCon
 	}
 
 	block := r.random.buildBlock(blockNumber, txs)
-	rawBlock, err := json.Marshal(block)
+
+	// Wrap in Etherscan API format
+	apiResponse := map[string]interface{}{
+		"id":      1,
+		"jsonrpc": "2.0",
+		"result":  block,
+	}
+
+	rawBlock, err := json.Marshal(apiResponse)
 	if err != nil {
 		return nil, err
 	}
