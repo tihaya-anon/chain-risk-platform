@@ -51,6 +51,12 @@ export interface VaultConfig {
   addr: string;
 }
 
+export interface KafkaConfig {
+  brokers: string[];
+  groupId: string;
+  alertTopics: string[];
+}
+
 export interface AppConfig {
   server: ServerConfig;
   services: ServicesConfig;
@@ -59,6 +65,7 @@ export interface AppConfig {
   cors: CorsConfig;
   logging: LoggingConfig;
   vault: VaultConfig;
+  kafka: KafkaConfig;
 }
 
 let cachedConfig: AppConfig | null = null;
@@ -131,6 +138,11 @@ export function loadConfig(): AppConfig {
       enabled: process.env.VAULT_ENABLED === "true",
       addr: process.env.VAULT_ADDR || "http://localhost:18200",
     },
+    kafka: {
+      brokers: yamlConfig.kafka?.brokers || ["localhost:19092"],
+      groupId: yamlConfig.kafka?.groupId || "bff-alert-push-group",
+      alertTopics: yamlConfig.kafka?.alertTopics || ["alerts", "alert-notifications"],
+    },
   };
 
   // Override with environment variables
@@ -187,6 +199,14 @@ function overrideFromEnv(config: AppConfig): void {
   // Logging
   if (process.env.LOG_LEVEL) {
     config.logging.level = process.env.LOG_LEVEL;
+  }
+
+  // Kafka
+  if (process.env.KAFKA_BROKERS) {
+    config.kafka.brokers = process.env.KAFKA_BROKERS.split(",");
+  }
+  if (process.env.KAFKA_GROUP_ID) {
+    config.kafka.groupId = process.env.KAFKA_GROUP_ID;
   }
 }
 

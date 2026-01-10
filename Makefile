@@ -96,6 +96,10 @@ help:
 	@echo ""
 	@echo "🔭 Observability:"
 	@echo "  make otel-download   Download OpenTelemetry Java Agent"
+	@echo "  make es-check        Check Elasticsearch health"
+	@echo "  make jaeger-verify   Verify Jaeger ES backend"
+	@echo "  make jaeger-ilm-setup   Setup trace retention policy"
+	@echo "  make jaeger-ilm-status  Check ILM status"
 	@echo ""
 	@echo "🧪 Testing:"
 	@echo "  make test-integration         Full integration test"
@@ -159,6 +163,28 @@ vault-ui:
 vault-seed:
 	@echo "🌱 Seeding Vault secrets..."
 	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh seed'
+
+# ============================================
+# Elasticsearch & Jaeger
+# ============================================
+
+es-check:
+	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cluster/health?pretty"'
+
+es-indices:
+	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cat/indices?v"'
+
+jaeger-verify:
+	@bash -c '$(LOAD_ENV) ./scripts/verify-jaeger-es.sh'
+
+jaeger-indices:
+	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cat/indices/jaeger*?v"'
+
+jaeger-ilm-setup:
+	@bash -c '$(LOAD_ENV) ./scripts/setup-jaeger-ilm.sh'
+
+jaeger-ilm-status:
+	@bash -c '$(LOAD_ENV) ./scripts/check-jaeger-ilm.sh'
 
 # ============================================
 # OpenTelemetry Setup

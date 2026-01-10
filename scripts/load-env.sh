@@ -66,10 +66,19 @@ export TRINO_PORT=${TRINO_PORT:-18081}
 export HIVE_METASTORE_URI=${HIVE_METASTORE_URI:-"thrift://${DOCKER_HOST_IP}:19083"}
 export RETENTION_DAYS=${RETENTION_DAYS:-7}
 
+# ==================== Elasticsearch ====================
+export ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST:-$DOCKER_HOST_IP}
+export ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT:-19200}
+export ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-"http://${DOCKER_HOST_IP}:19200"}
+export TRACE_RETENTION_DAYS=${TRACE_RETENTION_DAYS:-7}
+
 # ==================== Monitoring ====================
 export JAEGER_AGENT_HOST=${JAEGER_AGENT_HOST:-$DOCKER_HOST_IP}
 export JAEGER_AGENT_PORT=${JAEGER_AGENT_PORT:-6831}
 export JAEGER_ENDPOINT=${JAEGER_ENDPOINT:-"http://${DOCKER_HOST_IP}:14268/api/traces"}
+
+# ==================== OpenTelemetry ====================
+export OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-"http://${DOCKER_HOST_IP}:14317"}
 
 # ==================== Service Ports ====================
 export ORCHESTRATOR_PORT=${ORCHESTRATOR_PORT:-8080}
