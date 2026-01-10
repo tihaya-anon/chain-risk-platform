@@ -4,6 +4,13 @@ from prometheus_client import Counter, Histogram, Gauge
 
 # HTTP metrics are handled by prometheus-fastapi-instrumentator
 
+# Business metrics - Risk score distribution (CP-5)
+RISK_SCORE_DISTRIBUTION = Histogram(
+    "risk_score_distribution",
+    "Distribution of computed risk scores (0-1 range)",
+    buckets=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+)
+
 # Risk scoring metrics
 RISK_SCORES_COMPUTED = Counter(
     "risk_ml_service_risk_scores_computed_total",
@@ -16,12 +23,6 @@ RISK_SCORE_LATENCY = Histogram(
     "Risk score computation latency",
     ["model_type"],
     buckets=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
-)
-
-RISK_SCORE_VALUE = Histogram(
-    "risk_ml_service_risk_score_value",
-    "Distribution of computed risk scores",
-    buckets=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
 )
 
 # ML model metrics
@@ -77,7 +78,8 @@ def record_risk_score(model_type: str, score: float, latency: float):
     """Record risk score computation metrics."""
     RISK_SCORES_COMPUTED.labels(model_type=model_type).inc()
     RISK_SCORE_LATENCY.labels(model_type=model_type).observe(latency)
-    RISK_SCORE_VALUE.observe(score)
+    # Record in business metric (CP-5)
+    RISK_SCORE_DISTRIBUTION.observe(score)
 
 
 def record_model_error(model_type: str, error_type: str):
