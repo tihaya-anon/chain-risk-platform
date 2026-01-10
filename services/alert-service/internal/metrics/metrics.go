@@ -25,11 +25,11 @@ var (
 		[]string{"method", "path"},
 	)
 
-	// Alert-specific metrics
+	// Business metrics - Alerts triggered with severity (CP-5)
 	AlertsTriggeredTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "alert_service_alerts_triggered_total",
-			Help: "Total alerts triggered",
+			Name: "alerts_triggered_total",
+			Help: "Total alerts triggered by rule type and severity",
 		},
 		[]string{"rule_type", "severity"},
 	)
@@ -89,6 +89,15 @@ var (
 			Help: "Number of active alert rules",
 		},
 	)
+
+	// Alert severity distribution gauge
+	AlertsBySeverityGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "alert_service_alerts_by_severity",
+			Help: "Current count of alerts by severity in the last hour",
+		},
+		[]string{"severity"},
+	)
 )
 
 func init() {
@@ -103,6 +112,7 @@ func init() {
 		RuleEvaluationDuration,
 		KafkaMessagesConsumed,
 		ActiveRulesGauge,
+		AlertsBySeverityGauge,
 	)
 }
 

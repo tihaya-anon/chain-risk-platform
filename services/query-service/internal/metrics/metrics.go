@@ -25,6 +25,16 @@ var (
 		[]string{"method", "path"},
 	)
 
+	// Business metrics - Transfer query duration (CP-5)
+	TransferQueryDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "query_transfers_duration_seconds",
+			Help:    "Duration of transfer query operations",
+			Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
+		},
+		[]string{"operation"}, // list, by_id, by_hash, by_address
+	)
+
 	// Service-specific metrics
 	TransferQueriesTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -58,16 +68,28 @@ var (
 		},
 		[]string{"query_type"},
 	)
+
+	// Transfer result metrics
+	TransferResultCount = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "query_service_transfer_result_count",
+			Help:    "Number of transfers returned per query",
+			Buckets: []float64{0, 1, 5, 10, 20, 50, 100, 200, 500},
+		},
+		[]string{"operation"},
+	)
 )
 
 func init() {
 	prometheus.MustRegister(
 		HTTPRequestsTotal,
 		HTTPRequestDuration,
+		TransferQueryDuration,
 		TransferQueriesTotal,
 		AddressQueriesTotal,
 		CacheHitsTotal,
 		DBQueryDuration,
+		TransferResultCount,
 	)
 }
 
@@ -77,4 +99,11 @@ func Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
 	}
+}
+
+// ObserveTransferQuery records a transfer query duration
+func ObserveTransferQuery(operation string, durationSeconds float64, resultCount int) {
+	TransferQueryDuration.WithLabelValues(operation).Observe(durationSeconds)
+	TransferResultCount.WithLabelValues(operation).Observe(float64(resultCount))
+	TransferQueriesTotal.WithLabelValues(operation).Inc()
 }

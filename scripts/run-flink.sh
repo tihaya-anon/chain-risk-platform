@@ -27,6 +27,17 @@ log_info "Kafka Source: $KAFKA_BROKERS / ${KAFKA_TOPIC:-chain-transactions}"
 log_info "PostgreSQL: $POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB"
 log_info "Kafka Producer: ${ENABLE_KAFKA_PRODUCER:-false}"
 
+# OTel Agent configuration
+OTEL_AGENT="$PROJECT_ROOT/infra/otel/opentelemetry-javaagent.jar"
+OTEL_CONFIG="$PROJECT_ROOT/infra/otel/otel-agent.properties"
+OTEL_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4317}"
+
+JAVA_OPTS=""
+if [ "${OTEL_ENABLED:-false}" = "true" ] && [ -f "$OTEL_AGENT" ]; then
+    log_info "OTel tracing enabled → Jaeger at $OTEL_ENDPOINT"
+    JAVA_OPTS="-javaagent:$OTEL_AGENT -Dotel.javaagent.configuration-file=$OTEL_CONFIG -Dotel.service.name=stream-processor -Dotel.exporter.otlp.endpoint=$OTEL_ENDPOINT"
+fi
+
 JAVA_ARGS=(
     --add-opens java.base/java.util=ALL-UNNAMED
     --add-opens java.base/java.lang=ALL-UNNAMED
@@ -53,12 +64,12 @@ if command -v tmux &> /dev/null; then
     log_info "Tmux session: $TMUX_SESSION"
     
     tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
-    tmux new-session -d -s "$TMUX_SESSION" "java ${JAVA_ARGS[*]}"
+    tmux new-session -d -s "$TMUX_SESSION" "java $JAVA_OPTS ${JAVA_ARGS[*]}"
     
     log_info "Flink started in tmux"
     log_info "  Attach: tmux attach -t $TMUX_SESSION"
-    log_info "  Stop:   make stop-flink"
+    log_info "  Stop:   make flink-stop"
 else
     log_warn "tmux not installed, running in foreground"
-    java "${JAVA_ARGS[@]}"
+    java $JAVA_OPTS "${JAVA_ARGS[@]}"
 fi
