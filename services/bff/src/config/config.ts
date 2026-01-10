@@ -1,6 +1,10 @@
 import { readFileSync, existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import * as yaml from "js-yaml";
+import { getVaultClient } from "../common/vault.client";
+import { getLogger } from "../common/logger";
+
+const logger = getLogger("Config");
 
 export interface ServerConfig {
   name: string;
@@ -23,6 +27,7 @@ export interface ServicesConfig {
 export interface JwtConfig {
   secret: string;
   expiresIn: string;
+  refreshExpiresIn: string;
 }
 
 export interface RateLimitConfig {
@@ -41,6 +46,11 @@ export interface LoggingConfig {
   outputPaths: string[];
 }
 
+export interface VaultConfig {
+  enabled: boolean;
+  addr: string;
+}
+
 export interface AppConfig {
   server: ServerConfig;
   services: ServicesConfig;
@@ -48,6 +58,7 @@ export interface AppConfig {
   rateLimit: RateLimitConfig;
   cors: CorsConfig;
   logging: LoggingConfig;
+  vault: VaultConfig;
 }
 
 let cachedConfig: AppConfig | null = null;
@@ -100,7 +111,8 @@ export function loadConfig(): AppConfig {
     },
     jwt: {
       secret: yamlConfig.jwt?.secret || "default-secret-change-me",
-      expiresIn: yamlConfig.jwt?.expiresIn || "1d",
+      expiresIn: yamlConfig.jwt?.expiresIn || "1h",
+      refreshExpiresIn: yamlConfig.jwt?.refreshExpiresIn || "7d",
     },
     rateLimit: {
       ttl: yamlConfig.rateLimit?.ttl || 60000,
@@ -114,6 +126,10 @@ export function loadConfig(): AppConfig {
       level: yamlConfig.logging?.level || "info",
       format: yamlConfig.logging?.format || "console",
       outputPaths: yamlConfig.logging?.outputPaths || ["stdout"],
+    },
+    vault: {
+      enabled: process.env.VAULT_ENABLED === "true",
+      addr: process.env.VAULT_ADDR || "http://localhost:18200",
     },
   };
 
@@ -157,12 +173,15 @@ function overrideFromEnv(config: AppConfig): void {
     config.services.alert.url = process.env.ALERT_SERVICE_URL;
   }
 
-  // JWT
+  // JWT (fallback from env if Vault not enabled)
   if (process.env.JWT_SECRET) {
     config.jwt.secret = process.env.JWT_SECRET;
   }
   if (process.env.JWT_EXPIRES_IN) {
     config.jwt.expiresIn = process.env.JWT_EXPIRES_IN;
+  }
+  if (process.env.JWT_REFRESH_EXPIRES_IN) {
+    config.jwt.refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN;
   }
 
   // Logging
@@ -171,6 +190,38 @@ function overrideFromEnv(config: AppConfig): void {
   }
 }
 
+/**
+ * Load JWT config from Vault if enabled, otherwise use static config.
+ * This is async because Vault calls are async.
+ */
+export async function loadJwtConfig(): Promise<JwtConfig> {
+  const vault = getVaultClient();
+
+  if (vault.isEnabled()) {
+    try {
+      const secrets = await vault.getJWTSecrets();
+      logger.info("JWT secrets loaded from Vault");
+      return {
+        secret: secrets.secret,
+        expiresIn: secrets.expiresIn,
+        refreshExpiresIn: secrets.refreshExpiresIn,
+      };
+    } catch (error) {
+      logger.warn("Failed to load JWT secrets from Vault, using fallback", {
+        error,
+      });
+    }
+  }
+
+  // Fallback to static config
+  const config = getConfig();
+  return config.jwt;
+}
+
 export function getConfig(): AppConfig {
   return loadConfig();
+}
+
+export function resetConfig(): void {
+  cachedConfig = null;
 }

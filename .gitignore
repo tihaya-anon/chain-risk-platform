@@ -45,6 +45,7 @@ secrets/
 *.pem
 *.key
 .logs/
+.vault-keys
 
 # Large data
 tests/integration/fixtures/ethereum/
