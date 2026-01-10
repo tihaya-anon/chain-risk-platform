@@ -1,0 +1,27 @@
+# Shared networks and volumes
+networks:
+  frontend:
+    name: chainrisk-frontend
+    driver: bridge
+  backend:
+    name: chainrisk-backend
+    driver: bridge
+  monitoring:
+    name: chainrisk-monitoring
+    driver: bridge
+
+volumes:
+  zookeeper_data:
+  kafka_data:
+  postgres_data:
+  neo4j_data:
+  neo4j_logs:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  nacos_data:
+  minio_data:
+  hive_metastore_data:
+  loki_data:
+  elasticsearch_data:
+  vault_data:

@@ -32,144 +32,207 @@ DIR_BATCH := processing/batch-processor
 DIR_FRONTEND := frontend
 DIR_OTEL := infra/otel
 
-# OTel Agent configuration
+# OTel Agent
 OTEL_AGENT := $(DIR_OTEL)/opentelemetry-javaagent.jar
 OTEL_CONFIG := $(DIR_OTEL)/otel-agent.properties
 OTEL_ENDPOINT := $${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4317}
 OTEL_OPTS = -javaagent:$(OTEL_AGENT) -Dotel.javaagent.configuration-file=$(OTEL_CONFIG) -Dotel.exporter.otlp.endpoint=$(OTEL_ENDPOINT)
 
 # ============================================
-# Default target
+# Docker Compose Files
+# ============================================
+
+COMPOSE_BASE := -f infra/compose/base.yml
+COMPOSE_INFRA := $(COMPOSE_BASE) -f infra/compose/infra.yml
+COMPOSE_DATALAKE := $(COMPOSE_INFRA) -f infra/compose/datalake.yml
+COMPOSE_MONITORING := $(COMPOSE_BASE) -f infra/compose/monitoring.yml
+COMPOSE_SECURITY := $(COMPOSE_BASE) -f infra/compose/security.yml
+COMPOSE_SERVICES := $(COMPOSE_INFRA) -f infra/compose/services.yml
+COMPOSE_ALL := $(COMPOSE_BASE) -f infra/compose/infra.yml -f infra/compose/datalake.yml -f infra/compose/monitoring.yml -f infra/compose/security.yml -f infra/compose/services.yml
+
+DOCKER_REGISTRY := chainrisk
+DOCKER_TAG := latest
+
+# ============================================
+# Help
 # ============================================
 
 help:
 	@echo ""
-	@echo "Chain Risk Platform - Available Commands"
-	@echo "========================================="
+	@echo "Chain Risk Platform - Commands"
+	@echo "=============================="
 	@echo ""
-	@echo "📦 Infrastructure:"
-	@echo "  make infra-up        Start infrastructure (docker-compose)"
-	@echo "  make infra-down      Stop infrastructure"
-	@echo "  make infra-check     Check infrastructure status"
-	@echo "  make cleanup         Clean all data (Kafka, PostgreSQL, Neo4j, Hudi)"
-	@echo "  make cleanup-rolling Rolling cleanup (retention-based)"
+	@echo "🐳 Docker Compose:"
+	@echo "  make infra-up        Core infra (kafka,postgres,neo4j,redis,nacos)"
+	@echo "  make infra-down      Stop core infra"
+	@echo "  make datalake-up     Data lake (minio,hive,trino)"
+	@echo "  make monitoring-up   Monitoring (prometheus,grafana,loki,jaeger,es)"
+	@echo "  make security-up     Security (vault)"
+	@echo "  make services-up     App services (query,alert,risk,graph,orch,bff)"
+	@echo "  make up-all          Start everything"
+	@echo "  make down-all        Stop everything"
 	@echo ""
-	@echo "🔐 Security (Vault):"
-	@echo "  make vault-init      Initialize and configure Vault"
-	@echo "  make vault-unseal    Unseal Vault"
+	@echo "🔨 Docker Build:"
+	@echo "  make docker-build    Build all service images"
+	@echo "  make docker-clean    Remove all service images"
+	@echo ""
+	@echo "🔐 Vault:"
+	@echo "  make vault-init      Initialize Vault"
 	@echo "  make vault-status    Check Vault status"
-	@echo "  make vault-ui        Open Vault UI in browser"
 	@echo ""
+	@echo "🚀 Local Services:"
+	@echo "  make run-svc         Run services locally"
+	@echo "  make stop-svc        Stop local services"
 	@echo ""
-	@echo "🐳 Docker:"
-	@echo "  make docker-build    Build all service Docker images"
-	@echo "  make docker-up       Start all services in Docker"
-	@echo "  make docker-down     Stop all Docker services"
-	@echo "  make docker-logs     View Docker service logs"
-	@echo "  make validate-phase10  Run Phase 10 validation"
-	@echo "🚀 Services:"
-	@echo "  make run-svc         Run all backend services"
-	@echo "  make run-svc-otel    Run all backend services with OTel tracing"
-	@echo "  make stop-svc        Stop all backend services"
-	@echo ""
-	@echo "📊 Data Ingestion (Go):    ingestion-{build,run,test,clean}"
-	@echo "🔍 Query Service (Go):     query-{build,run,test,clean}"
-	@echo "⚠️  Alert Service (Go):     alert-{build,run,test,clean}"
-	@echo "🤖 Risk ML Service (Py):   risk-{build,run,test,clean}"
-	@echo "🌐 BFF Service (TS):       bff-{build,run,test,clean}"
-	@echo "🚪 Orchestrator (Java):    orchestrator-{build,run,run-otel,test,clean}"
-	@echo "🔗 Graph Service (Java):   graph-{build,run,run-otel,test,clean}"
-	@echo ""
-	@echo "🎲 Data Generator:"
-	@echo "  make generator-build      Build data generator"
-	@echo "  make generator-run        Run generator (random mode, 10 TPS)"
-	@echo "  make generator-scenario   Run generator with scenario"
-	@echo "  make generator-stress     Run stress test (100 TPS)"
-	@echo "  make generator-dry        Dry run (no Kafka)"
-	@echo ""
-	@echo "⚡ Stream Processor (Flink):"
-	@echo "  make flink-build     Build stream processor"
-	@echo "  make flink-run       Run Flink job (tmux)"
-	@echo "  make flink-run-otel  Run Flink job with OTel tracing"
-	@echo "  make flink-stop      Stop Flink job"
-	@echo ""
-	@echo "📊 Batch Processor (Spark):"
-	@echo "  make batch-build     Build batch processor"
-	@echo "  make batch-archive   Archive PostgreSQL → Hudi"
-	@echo "  make batch-features  Compute ML features"
-	@echo "  make batch-labels    Ingest label data"
-	@echo "  make batch-training  Prepare training dataset"
-	@echo "  make batch-neo4j     Sync to Neo4j"
-	@echo ""
-	@echo "🔭 Observability:"
-	@echo "  make otel-download   Download OpenTelemetry Java Agent"
-	@echo "  make es-check        Check Elasticsearch health"
-	@echo "  make jaeger-verify   Verify Jaeger ES backend"
-	@echo "  make jaeger-ilm-setup   Setup trace retention policy"
-	@echo "  make jaeger-ilm-status  Check ILM status"
+	@echo "📊 Individual: {svc}-{build,run,test,clean}"
+	@echo "   ingestion, query, alert, risk, bff, orchestrator, graph, flink, batch"
 	@echo ""
 	@echo "🧪 Testing:"
-	@echo "  make test-integration         Full integration test"
-	@echo "  make test-e2e                 Full E2E test suite"
-	@echo "  make test-e2e-pipeline        E2E pipeline tests"
-	@echo "  make test-e2e-services        E2E service tests"
-	@echo "  make test-e2e-bff             E2E BFF tests"
-	@echo "  make test-e2e-gnn             E2E GNN/ML tests"
-	@echo ""
-	@echo "🔧 Batch Operations:"
-	@echo "  make init-all        Initialize all services"
-	@echo "  make build-all       Build all services"
-	@echo "  make test-all        Test all services"
-	@echo "  make clean-all       Clean all artifacts"
+	@echo "  make test-e2e        Full E2E tests"
+	@echo "  make validate-phase10  Phase 10 validation"
 	@echo ""
 
 # ============================================
-# Infrastructure
+# Infrastructure (Core)
 # ============================================
 
 infra-up:
-	@echo "🚀 Starting infrastructure..."
-	@docker-compose up -d
-	@echo "✅ Infrastructure started"
+	@echo "🚀 Starting core infrastructure..."
+	@docker-compose $(COMPOSE_INFRA) up -d
+	@echo "✅ Started: zookeeper, kafka, postgres, neo4j, redis, nacos"
 
 infra-down:
-	@echo "🛑 Stopping infrastructure..."
-	@docker-compose down
-	@echo "✅ Infrastructure stopped"
+	@echo "🛑 Stopping core infrastructure..."
+	@docker-compose $(COMPOSE_INFRA) down
+
+infra-ps:
+	@docker-compose $(COMPOSE_INFRA) ps
 
 infra-check:
 	@bash -c '$(LOAD_ENV) ./scripts/check-infra.sh'
 
-cleanup:
-	@bash -c '$(LOAD_ENV) ./scripts/cleanup.sh'
+# ============================================
+# Data Lake
+# ============================================
 
-cleanup-all:
-	@bash -c '$(LOAD_ENV) ./scripts/cleanup.sh --all -y'
+datalake-up:
+	@echo "🚀 Starting data lake..."
+	@docker-compose $(COMPOSE_DATALAKE) up -d minio minio-init hive-metastore trino
+	@echo "✅ Started: minio, hive-metastore, trino"
 
-cleanup-rolling:
-	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
+datalake-down:
+	@docker-compose $(COMPOSE_DATALAKE) stop minio hive-metastore trino
 
 # ============================================
-# Vault (Security)
+# Monitoring
 # ============================================
+
+monitoring-up:
+	@echo "🚀 Starting monitoring..."
+	@docker-compose $(COMPOSE_MONITORING) up -d
+	@echo "✅ Started: prometheus, grafana, loki, promtail, elasticsearch, jaeger"
+
+monitoring-down:
+	@docker-compose $(COMPOSE_MONITORING) down
+
+monitoring-ps:
+	@docker-compose $(COMPOSE_MONITORING) ps
+
+# ============================================
+# Security (Vault)
+# ============================================
+
+security-up:
+	@echo "🚀 Starting Vault..."
+	@docker-compose $(COMPOSE_SECURITY) up -d
+	@echo "✅ Vault started on :18200"
+
+security-down:
+	@docker-compose $(COMPOSE_SECURITY) down
 
 vault-init:
-	@echo "🔐 Initializing Vault..."
 	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh all'
-
-vault-unseal:
-	@echo "🔓 Unsealing Vault..."
-	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh unseal'
 
 vault-status:
 	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh status'
 
-vault-ui:
-	@bash -c '$(LOAD_ENV) open "http://$${DOCKER_HOST_IP}:18200/ui"'
+vault-unseal:
+	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh unseal'
 
-vault-seed:
-	@echo "🌱 Seeding Vault secrets..."
-	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh seed'
+# ============================================
+# Application Services (Docker)
+# ============================================
+
+services-up:
+	@echo "🚀 Starting application services..."
+	@docker-compose $(COMPOSE_SERVICES) up -d query-service alert-service risk-ml-service graph-service orchestrator bff
+	@echo "✅ Services started"
+
+services-down:
+	@docker-compose $(COMPOSE_SERVICES) stop query-service alert-service risk-ml-service graph-service orchestrator bff
+
+services-ps:
+	@docker-compose $(COMPOSE_SERVICES) ps
+
+services-logs:
+	@docker-compose $(COMPOSE_SERVICES) logs -f query-service alert-service risk-ml-service graph-service orchestrator bff
+
+# ============================================
+# All Services
+# ============================================
+
+up-all:
+	@echo "🚀 Starting ALL services..."
+	@docker-compose $(COMPOSE_ALL) up -d
+	@echo "✅ All services started"
+
+down-all:
+	@echo "🛑 Stopping ALL services..."
+	@docker-compose $(COMPOSE_ALL) down
+
+ps-all:
+	@docker-compose $(COMPOSE_ALL) ps
+
+# ============================================
+# Docker Build
+# ============================================
+
+docker-build: docker-build-query docker-build-alert docker-build-risk docker-build-graph docker-build-orchestrator docker-build-bff
+	@echo "✅ All images built"
+
+docker-build-query:
+	@echo "🐳 Building query-service..."
+	@docker build -t $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) $(DIR_QUERY)
+
+docker-build-alert:
+	@echo "🐳 Building alert-service..."
+	@docker build -t $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) $(DIR_ALERT)
+
+docker-build-risk:
+	@echo "🐳 Building risk-ml-service..."
+	@docker build -t $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) $(DIR_RISK)
+
+docker-build-graph:
+	@echo "🐳 Building graph-service..."
+	@docker build -t $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) $(DIR_GRAPH)
+
+docker-build-orchestrator:
+	@echo "🐳 Building orchestrator..."
+	@docker build -t $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) $(DIR_ORCHESTRATOR)
+
+docker-build-bff:
+	@echo "🐳 Building bff..."
+	@docker build -t $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) $(DIR_BFF)
+
+docker-clean:
+	@echo "🧹 Cleaning images..."
+	@docker rmi $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) 2>/dev/null || true
+	@echo "✅ Images cleaned"
 
 # ============================================
 # Elasticsearch & Jaeger
@@ -184,9 +247,6 @@ es-indices:
 jaeger-verify:
 	@bash -c '$(LOAD_ENV) ./scripts/verify-jaeger-es.sh'
 
-jaeger-indices:
-	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cat/indices/jaeger*?v"'
-
 jaeger-ilm-setup:
 	@bash -c '$(LOAD_ENV) ./scripts/setup-jaeger-ilm.sh'
 
@@ -194,7 +254,20 @@ jaeger-ilm-status:
 	@bash -c '$(LOAD_ENV) ./scripts/check-jaeger-ilm.sh'
 
 # ============================================
-# OpenTelemetry Setup
+# Cleanup
+# ============================================
+
+cleanup:
+	@bash -c '$(LOAD_ENV) ./scripts/cleanup.sh'
+
+cleanup-all:
+	@bash -c '$(LOAD_ENV) ./scripts/cleanup.sh --all -y'
+
+cleanup-rolling:
+	@bash -c '$(LOAD_ENV) ./scripts/cleanup-cron.sh --once'
+
+# ============================================
+# OTel
 # ============================================
 
 otel-download:
@@ -207,7 +280,6 @@ otel-download:
 ingestion-build:
 	@echo "🔨 Building data-ingestion..."
 	@cd $(DIR_INGESTION) && mkdir -p bin && go build -o bin/ingestion ./cmd/ingestion
-	@echo "✅ data-ingestion built"
 
 ingestion-run:
 	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/ingestion'
@@ -223,42 +295,23 @@ ingestion-clean:
 # ============================================
 
 generator-build:
-	@echo "🔨 Building data-generator..."
 	@cd $(DIR_INGESTION) && mkdir -p bin && go build -o bin/generator ./cmd/generator
-	@echo "✅ data-generator built"
 
 generator-run: generator-build
-	@echo "🎲 Running generator (random mode, 10 TPS)..."
 	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=10'
 
 generator-scenario: generator-build
-	@echo "🎲 Running generator (scenario mode)..."
 	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=scenario -scenario=$(SCENARIO) -tps=$(or $(TPS),10)'
 
 generator-stress: generator-build
-	@echo "🎲 Running stress test (100 TPS)..."
 	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=100 -duration=$(or $(DURATION),60)'
-
-generator-dry: generator-build
-	@echo "🎲 Running generator (dry-run mode)..."
-	@bash -c 'cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=50 -dry-run -duration=10'
-
-generator-high-risk: generator-build
-	@echo "🎲 Running high-risk cluster scenario..."
-	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=scenario -scenario=configs/scenarios/high_risk_cluster.json -tps=$(or $(TPS),10)'
-
-generator-whale: generator-build
-	@echo "🎲 Running whale movement scenario..."
-	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=scenario -scenario=configs/scenarios/whale_movement.json -tps=$(or $(TPS),10)'
 
 # ============================================
 # Query Service (Go)
 # ============================================
 
 query-build:
-	@echo "🔨 Building query-service..."
 	@cd $(DIR_QUERY) && mkdir -p bin && go build -o bin/query ./cmd/...
-	@echo "✅ query-service built"
 
 query-run:
 	@bash -c '$(LOAD_ENV) cd $(DIR_QUERY) && go run ./cmd/...'
@@ -274,12 +327,10 @@ query-clean:
 # ============================================
 
 alert-build:
-	@echo "🔨 Building alert-service..."
 	@cd $(DIR_ALERT) && mkdir -p bin && go build -o bin/alert ./cmd/...
-	@echo "✅ alert-service built"
 
 alert-run:
-	@cd $(DIR_ALERT) && go run ./cmd/...
+	@bash -c '$(LOAD_ENV) cd $(DIR_ALERT) && go run ./cmd/...'
 
 alert-test:
 	@cd $(DIR_ALERT) && go test ./...
@@ -324,15 +375,12 @@ bff-clean:
 # ============================================
 
 orchestrator-build:
-	@echo "🔨 Building orchestrator..."
 	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
-	@echo "✅ orchestrator built"
 
 orchestrator-run:
 	@bash -c '$(LOAD_ENV) cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn spring-boot:run'
 
 orchestrator-run-otel: otel-download
-	@echo "🔭 Running orchestrator with OTel agent..."
 	@bash -c '$(LOAD_ENV) cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) java $(OTEL_OPTS) -Dotel.service.name=orchestrator -jar target/orchestrator-1.0.0-SNAPSHOT.jar'
 
 orchestrator-test:
@@ -346,15 +394,12 @@ orchestrator-clean:
 # ============================================
 
 graph-build:
-	@echo "🔨 Building graph-service..."
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
-	@echo "✅ graph-service built"
 
 graph-run:
 	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java -jar target/graph-service-1.0.0-SNAPSHOT.jar'
 
 graph-run-otel: otel-download
-	@echo "🔭 Running graph-service with OTel agent..."
 	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java $(OTEL_OPTS) -Dotel.service.name=graph-service -jar target/graph-service-1.0.0-SNAPSHOT.jar'
 
 graph-test:
@@ -368,15 +413,12 @@ graph-clean:
 # ============================================
 
 flink-build:
-	@echo "🔨 Building stream-processor..."
 	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) -Plocal $(MVN_QUIET)'
-	@echo "✅ stream-processor built"
 
 flink-run:
 	@bash -c '$(LOAD_ENV) ./scripts/run-flink.sh'
 
 flink-run-otel: otel-download
-	@echo "🔭 Running stream-processor with OTel agent..."
 	@bash -c '$(LOAD_ENV) OTEL_ENABLED=true ./scripts/run-flink.sh'
 
 flink-test:
@@ -386,21 +428,14 @@ flink-clean:
 	@bash -c 'cd $(DIR_FLINK) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 
 flink-stop:
-	@echo "🛑 Stopping stream-processor..."
 	@tmux kill-session -t flink-stream 2>/dev/null || pkill -f "stream-processor.*\.jar" 2>/dev/null || true
-	@echo "✅ stream-processor stopped"
-
-flink-logs:
-	@tmux attach -t flink-stream 2>/dev/null || tail -f $(DIR_FLINK)/logs/*.log
 
 # ============================================
 # Batch Processor (Spark)
 # ============================================
 
 batch-build:
-	@echo "🔨 Building batch-processor..."
 	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) -Plocal $(MVN_QUIET)'
-	@echo "✅ batch-processor built"
 
 batch-test:
 	@bash -c 'cd $(DIR_BATCH) && $(JAVA17_ENV) mvn test'
@@ -410,9 +445,6 @@ batch-clean:
 
 batch-archive:
 	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh archive'
-
-batch-correct:
-	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh correct'
 
 batch-features:
 	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh features'
@@ -425,9 +457,6 @@ batch-training:
 
 batch-neo4j:
 	@bash -c '$(LOAD_ENV) ./scripts/run-batch-processor.sh neo4j'
-
-batch-stop:
-	@pkill -f "batch-processor.*\.jar" 2>/dev/null || pkill -f "BatchProcessorApp" 2>/dev/null || true
 
 # ============================================
 # Frontend (React)
@@ -449,26 +478,20 @@ frontend-clean:
 # Batch Operations
 # ============================================
 
-init-all: ingestion-build query-build alert-build risk-build bff-build orchestrator-build graph-build flink-build batch-build frontend-build generator-build
-
-build-all: init-all
+build-all: ingestion-build query-build alert-build risk-build bff-build orchestrator-build graph-build flink-build batch-build frontend-build generator-build
 
 test-all:
-	@$(MAKE) ingestion-test || true
 	@$(MAKE) query-test || true
 	@$(MAKE) alert-test || true
 	@$(MAKE) risk-test || true
 	@$(MAKE) bff-test || true
 	@$(MAKE) orchestrator-test || true
 	@$(MAKE) graph-test || true
-	@$(MAKE) flink-test || true
-	@$(MAKE) batch-test || true
-	@$(MAKE) frontend-test || true
 
 clean-all: ingestion-clean query-clean alert-clean risk-clean bff-clean orchestrator-clean graph-clean flink-clean batch-clean frontend-clean
 
 # ============================================
-# Combined Service Commands
+# Local Service Runner
 # ============================================
 
 run-svc:
@@ -480,199 +503,49 @@ run-svc:
 	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java -jar target/graph-service-1.0.0-SNAPSHOT.jar > ../../$(LOGS_DIR)/graph.log 2>&1 &'
 	@sleep 2
 	@echo "✅ Services: Query(:8081) Risk(:8082) BFF(:3001) Graph(:8084)"
-	@echo "   Logs: $(LOGS_DIR)/"
 
 run-svc-otel: otel-download
 	@mkdir -p $(LOGS_DIR)
-	@echo "🚀 Starting services with OTel tracing..."
 	@bash -c '$(LOAD_ENV) cd $(DIR_QUERY) && go run ./cmd/... > ../../$(LOGS_DIR)/query.log 2>&1 &'
 	@bash -c '$(LOAD_ENV) cd $(DIR_RISK) && uv run uvicorn app.main:app --port 8082 > ../../$(LOGS_DIR)/risk.log 2>&1 &'
 	@cd $(DIR_BFF) && npm run start:dev > ../../$(LOGS_DIR)/bff.log 2>&1 &
 	@bash -c '$(LOAD_ENV) cd $(DIR_GRAPH) && $(JAVA17_ENV) java $(OTEL_OPTS) -Dotel.service.name=graph-service -jar target/graph-service-1.0.0-SNAPSHOT.jar > ../../$(LOGS_DIR)/graph.log 2>&1 &'
 	@sleep 2
-	@echo "✅ Services: Query(:8081) Risk(:8082) BFF(:3001) Graph(:8084) [OTel enabled for Java]"
-	@echo "   Logs: $(LOGS_DIR)/"
-	@echo "   Traces: http://localhost:26686 (Jaeger UI)"
+	@echo "✅ Services with OTel started"
 
 stop-svc:
-	@echo "🛑 Stopping services..."
 	@pkill -f "query-service" 2>/dev/null || true
 	@pkill -f "uvicorn app.main:app" 2>/dev/null || true
 	@pkill -f "nest start" 2>/dev/null || true
 	@pkill -f "graph-service" 2>/dev/null || true
 	@echo "✅ Services stopped"
 
-logs-all:
-	@tail -f $(LOGS_DIR)/*.log
-
-# ============================================
-# Integration Tests
-# ============================================
-
-test-integration:
-	@bash -c '$(LOAD_ENV) ./scripts/test/run-integration-test.sh'
-
-test-integration-phase1:
-	@bash -c '$(LOAD_ENV) ./scripts/test/test-integration-phase1.sh'
-
-test-integration-phase2:
-	@bash -c '$(LOAD_ENV) ./scripts/test/test-integration-phase2.sh'
-
-test-integration-phase3:
-	@bash -c '$(LOAD_ENV) ./scripts/test/test-integration-phase3.sh'
-
 # ============================================
 # E2E Tests
 # ============================================
 
 test-e2e: generator-build
-	@echo "🧪 Running E2E test suite..."
 	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh all'
 
 test-e2e-pipeline: generator-build
-	@echo "🧪 Running E2E pipeline tests..."
 	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh pipeline'
 
 test-e2e-services:
-	@echo "🧪 Running E2E service tests..."
 	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh services'
 
-test-e2e-bff:
-	@echo "🧪 Running E2E BFF tests..."
-	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh bff'
-
-test-e2e-gnn:
-	@echo "🧪 Running GNN E2E tests..."
-	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh gnn'
-
-test-e2e-validation:
-	@echo "🧪 Running validation tests..."
-	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh validation'
-
-# ============================================
-# Mock Servers
-# ============================================
-
-mock-server-build:
-	@cd tests/integration/mock_server && mkdir -p bin && go build -o bin/mock_server .
-
-mock-server-run: mock-server-build
-	@cd tests/integration/mock_server && ./bin/mock_server -fixtures ../fixtures/ethereum -port 8545
-
-# ============================================
-# Trino Query
-# ============================================
-
-trino:
-	@bash -c '$(LOAD_ENV) ./scripts/trino-query.sh "$(Q)"'
-
-# ============================================
-# Staging Deployment
-# ============================================
-
-staging-deploy:
-	@echo "🚀 Deploying to staging..."
-	@./scripts/deploy/staging-deploy.sh deploy
-
-staging-verify:
-	@echo "✅ Verifying staging deployment..."
-	@./scripts/deploy/staging-deploy.sh verify
-
-staging-rollback:
-	@echo "⏪ Rolling back staging..."
-	@./scripts/deploy/staging-deploy.sh rollback
-
-staging-status:
-	@./scripts/deploy/staging-deploy.sh status
-
-staging-e2e:
-	@echo "🧪 Running staging E2E tests..."
-	@./scripts/deploy/staging-e2e.sh all
-
-staging-smoke:
-	@echo "💨 Running staging smoke tests..."
-	@./scripts/deploy/staging-e2e.sh smoke
-
-staging-monitoring:
-	@echo "📊 Verifying monitoring..."
-	@./scripts/deploy/verify-monitoring.sh report
-
-staging-load-test:
-	@echo "⚡ Running load test..."
-	@k6 run tests/load/staging-load.js
-
-# ============================================
-# Docker Build Commands
-# ============================================
-
-# Docker image configuration
-DOCKER_REGISTRY := chainrisk
-DOCKER_TAG := latest
-
-docker-build: docker-build-query docker-build-alert docker-build-risk docker-build-graph docker-build-orchestrator docker-build-bff
-	@echo "✅ All Docker images built"
-
-docker-build-query:
-	@echo "🐳 Building query-service image..."
-	@docker build -t $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) $(DIR_QUERY)
-
-docker-build-alert:
-	@echo "🐳 Building alert-service image..."
-	@docker build -t $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) $(DIR_ALERT)
-
-docker-build-risk:
-	@echo "🐳 Building risk-ml-service image..."
-	@docker build -t $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) $(DIR_RISK)
-
-docker-build-graph:
-	@echo "🐳 Building graph-service image..."
-	@docker build -t $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) $(DIR_GRAPH)
-
-docker-build-orchestrator:
-	@echo "🐳 Building orchestrator image..."
-	@docker build -t $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) $(DIR_ORCHESTRATOR)
-
-docker-build-bff:
-	@echo "🐳 Building bff image..."
-	@docker build -t $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) $(DIR_BFF)
-
-docker-push: docker-build
-	@echo "🚀 Pushing images to registry..."
-	@docker push $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG)
-	@docker push $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG)
-	@echo "✅ All images pushed"
-
-docker-up:
-	@echo "🚀 Starting all services in Docker..."
-	@docker-compose --profile services up -d
-	@echo "✅ All services started"
-
-docker-down:
-	@echo "🛑 Stopping Docker services..."
-	@docker-compose --profile services down
-	@echo "✅ Services stopped"
-
-docker-logs:
-	@docker-compose --profile services logs -f
-
-docker-clean:
-	@echo "🧹 Cleaning Docker images..."
-	@docker rmi $(DOCKER_REGISTRY)/query-service:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) 2>/dev/null || true
-	@echo "✅ Images cleaned"
+test-integration:
+	@bash -c '$(LOAD_ENV) ./scripts/test/run-integration-test.sh'
 
 # ============================================
 # Phase 10 Validation
 # ============================================
 
 validate-phase10:
-	@echo "🔍 Running Phase 10 validation..."
 	@./scripts/validate-phase10.sh
+
+# ============================================
+# Trino
+# ============================================
+
+trino:
+	@bash -c '$(LOAD_ENV) ./scripts/trino-query.sh "$(Q)"'
