@@ -5,7 +5,7 @@ WORKDIR /app
 RUN apk --no-cache add ca-certificates tzdata
 
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go mod download && go mod tidy
 
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /alert-service ./cmd/...
