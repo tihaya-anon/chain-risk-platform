@@ -29,15 +29,6 @@ var (
 	AlertsTriggeredTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "alerts_triggered_total",
-			Help: "Total alerts triggered by severity",
-		},
-		[]string{"severity"}, // critical, high, medium, low
-	)
-
-	// Additional alert metrics with more detail
-	AlertsTriggeredByRule = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "alert_service_alerts_triggered_by_rule_total",
 			Help: "Total alerts triggered by rule type and severity",
 		},
 		[]string{"rule_type", "severity"},
@@ -114,7 +105,6 @@ func init() {
 		HTTPRequestsTotal,
 		HTTPRequestDuration,
 		AlertsTriggeredTotal,
-		AlertsTriggeredByRule,
 		AlertsDeduplicatedTotal,
 		NotificationsSentTotal,
 		NotificationLatency,
@@ -132,32 +122,4 @@ func Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
 	}
-}
-
-// RecordAlertTriggered records an alert being triggered
-func RecordAlertTriggered(ruleType, severity string) {
-	// Business metric (CP-5)
-	AlertsTriggeredTotal.WithLabelValues(severity).Inc()
-	// Detailed metric
-	AlertsTriggeredByRule.WithLabelValues(ruleType, severity).Inc()
-}
-
-// RecordRuleEvaluation records a rule evaluation
-func RecordRuleEvaluation(ruleType string, triggered bool, durationSeconds float64) {
-	result := "not_triggered"
-	if triggered {
-		result = "triggered"
-	}
-	RuleEvaluationsTotal.WithLabelValues(ruleType, result).Inc()
-	RuleEvaluationDuration.WithLabelValues(ruleType).Observe(durationSeconds)
-}
-
-// RecordNotification records a notification being sent
-func RecordNotification(channel string, success bool, latencySeconds float64) {
-	status := "success"
-	if !success {
-		status = "failed"
-	}
-	NotificationsSentTotal.WithLabelValues(channel, status).Inc()
-	NotificationLatency.WithLabelValues(channel).Observe(latencySeconds)
 }
