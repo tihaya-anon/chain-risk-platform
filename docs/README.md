@@ -1,85 +1,78 @@
-# Chain Risk Platform - Documentation Center
-
-> Technical documentation for the Chain Risk Platform.
-
-## Documentation Navigation
-
-### 🏗️ Architecture Design
-
-- **[Project Overview](./architecture/PROJECT_OVERVIEW.md)** - Project goals, tech stack, Lambda architecture
-- **[Lambda Architecture](./architecture/LAMBDA_ARCHITECTURE.md)** - Stream-batch unified processing design
-- **[ML Risk Model Architecture](./architecture/ML_RISK_MODEL_ARCHITECTURE.md)** - ML pipeline for risk scoring
-- **[Gateway & BFF Architecture](./architecture/GATEWAY_BFF_ARCHITECTURE.md)** - Orchestrator and BFF responsibilities
-- **[Orchestrator Architecture](./architecture/ORCHESTRATOR_ARCHITECTURE.md)** - API Gateway unified architecture
-- **[Tech Decisions](./architecture/TECH_DECISIONS.md)** - Technical decision records (TDR)
-
-### 📅 Development Plans
-
-- **[Development Plan](./development/DEVELOPMENT_PLAN.md)** - MVP phased development plan
-- **[Development Status](./development/DEVELOPMENT_STATUS.md)** - Current status and recent changes
-- **[Phase 1 Test Plan](./development/PHASE1_TEST_PLAN.md)** - Core data flow test plan
-- **[Hudi Batch Layer](./development/HUDI_BATCH_LAYER.md)** - Batch processing with Hudi data lake
-
-### 🛠️ Operations Guides
-
-- **[Integration Testing Environment](./operations/INTEGRATION_TESTING_ENVIRONMENT.md)** - Testing environment setup, data generator, rolling cleanup
-- **[Nacos Integration](./operations/NACOS_INTEGRATION.md)** - Config center and service discovery
-- **[Git Workflow](./operations/GIT_WORKFLOW.md)** - Branch strategy, commit conventions
-
-### 📡 API Documentation
-
-- **[API Specs Guide](./api-specs/API_SPECS_GUIDE.md)** - How to generate and update API specs
-- **[API Quick Reference](./api-specs/API_SPECS_QUICK_REF.md)** - API docs access and quick commands
-- **[OpenAPI Spec Files](./api-specs/)** - Microservice OpenAPI JSON files
-
-### 📝 Changelog
-
-- **[Docs Restructure Changelog](./changelog/CHANGELOG_DOCS_RESTRUCTURE.md)** - Documentation restructure record
-
-### 📦 Archive
-
-- **[Session Archive 2024-12-30](./archive/SESSION_ARCHIVE_20241230.md)** - Integration test framework setup
-- **[Session Archive 2026-01-05](./archive/SESSION_ARCHIVE_20260105_ML_DESIGN.md)** - ML design session
-
----
-
-## Quick Start
-
-| Role | Start Here |
-|------|------------|
-| **New Users** | [Project Overview](./architecture/PROJECT_OVERVIEW.md) → [Lambda Architecture](./architecture/LAMBDA_ARCHITECTURE.md) |
-| **Developers** | [Git Workflow](./operations/GIT_WORKFLOW.md) → [Development Status](./development/DEVELOPMENT_STATUS.md) → [API Quick Reference](./api-specs/API_SPECS_QUICK_REF.md) |
-| **Testing** | [Integration Testing Environment](./operations/INTEGRATION_TESTING_ENVIRONMENT.md) → [Phase 1 Test Plan](./development/PHASE1_TEST_PLAN.md) |
-| **Architects** | [Tech Decisions](./architecture/TECH_DECISIONS.md) → [Lambda Architecture](./architecture/LAMBDA_ARCHITECTURE.md) → [ML Risk Model Architecture](./architecture/ML_RISK_MODEL_ARCHITECTURE.md) |
-
----
+# Chain Risk Platform - Documentation
 
 ## Directory Structure
 
 ```
 docs/
-├── README.md                    # Documentation index
-├── architecture/                # Architecture design
-│   ├── PROJECT_OVERVIEW.md
-│   ├── LAMBDA_ARCHITECTURE.md
-│   ├── ML_RISK_MODEL_ARCHITECTURE.md
-│   ├── GATEWAY_BFF_ARCHITECTURE.md
-│   ├── ORCHESTRATOR_ARCHITECTURE.md
-│   └── TECH_DECISIONS.md
-├── development/                 # Development plans
-│   ├── DEVELOPMENT_PLAN.md
-│   ├── DEVELOPMENT_STATUS.md
-│   ├── PHASE1_TEST_PLAN.md
-│   └── HUDI_BATCH_LAYER.md
-├── operations/                  # Operations guides
-│   ├── INTEGRATION_TESTING_ENVIRONMENT.md
-│   ├── GIT_WORKFLOW.md
-│   └── NACOS_INTEGRATION.md
-├── api-specs/                   # API documentation
-├── changelog/                   # Change records
-└── archive/                     # Archived documents
+├── architecture/           # Architecture Design
+│   ├── overview/          # Project overview, goals
+│   ├── components/        # Component architectures (Lambda, BFF, ML, etc.)
+│   └── decisions/         # Technical Decision Records
+├── api-specs/             # API Documentation
+│   └── openapi/           # OpenAPI specification files
+├── development/           # Development Documentation
+│   ├── plans/             # Development plans, roadmaps
+│   ├── guides/            # Implementation guides
+│   └── troubleshooting/   # Debug and troubleshooting
+├── operations/            # Operations Documentation
+│   ├── runbooks/          # Operational runbooks
+│   ├── testing/           # Testing environments and procedures
+│   └── policies/          # Data retention, security policies
+├── changelog/             # Release and change records
+└── archive/               # Historical documents
+    ├── phase-reports/     # Completed phase summaries
+    ├── test-reports/      # Historical test reports
+    └── sessions/          # Development session records
 ```
 
 ---
 
-**Last Updated**: 2026-01-09
+## Quick Navigation
+
+### Architecture
+| Document | Description |
+|----------|-------------|
+| [Project Overview](./architecture/overview/PROJECT_OVERVIEW.md) | System goals, tech stack, high-level design |
+| [Lambda Architecture](./architecture/components/LAMBDA_ARCHITECTURE.md) | Stream-batch unified processing |
+| [ML Risk Model](./architecture/components/ML_RISK_MODEL_ARCHITECTURE.md) | Risk scoring pipeline |
+| [Gateway & BFF](./architecture/components/GATEWAY_BFF_ARCHITECTURE.md) | API gateway design |
+| [Orchestrator](./architecture/components/ORCHESTRATOR_ARCHITECTURE.md) | Service orchestration |
+| [Tech Decisions](./architecture/decisions/TECH_DECISIONS.md) | TDR records |
+
+### Development
+| Document | Description |
+|----------|-------------|
+| [Development Plan](./development/plans/DEVELOPMENT_PLAN.md) | MVP phases |
+| [GNN Plan](./development/plans/GNN_DEVELOPMENT_PLAN.md) | Graph neural network |
+| [Alert Service](./development/guides/ALERT_SERVICE_IMPLEMENTATION.md) | Alert implementation |
+| [Troubleshooting](./development/troubleshooting/INTEGRATION_TEST_TROUBLESHOOTING.md) | Common issues |
+
+### Operations
+| Document | Description |
+|----------|-------------|
+| [Git Workflow](./operations/runbooks/GIT_WORKFLOW.md) | Branch strategy |
+| [Staging Runbook](./operations/runbooks/STAGING_RUNBOOK.md) | Staging environment |
+| [Integration Testing](./operations/testing/INTEGRATION_TESTING_ENVIRONMENT.md) | Test environment setup |
+| [Data Retention](./operations/policies/DATA_RETENTION_POLICY.md) | Data lifecycle |
+
+### API
+| Document | Description |
+|----------|-------------|
+| [API Guide](./api-specs/API_SPECS_GUIDE.md) | How to generate/update specs |
+| [Quick Reference](./api-specs/API_SPECS_QUICK_REF.md) | API endpoints overview |
+
+---
+
+## Role-Based Entry Points
+
+| Role | Recommended Path |
+|------|------------------|
+| **New Developer** | Project Overview → Lambda Architecture → Git Workflow |
+| **Backend Dev** | Development Plan → API Guide → Troubleshooting |
+| **ML Engineer** | ML Risk Model → GNN Plan → Feature Pipeline |
+| **DevOps** | Staging Runbook → Integration Testing → Data Retention |
+| **Architect** | Tech Decisions → Component Architectures |
+
+---
+
+**Last Updated**: 2026-01-10
