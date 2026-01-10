@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter } from "react-router-dom"
 import App from "./App"
+import { WebSocketProvider, ToastContainer } from "./components/notification"
 import "./index.css"
 import { initTheme } from "./store/theme"
 
@@ -31,7 +32,10 @@ enableMocking().then(() => {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <App />
+          <WebSocketProvider>
+            <App />
+            <ToastContainer />
+          </WebSocketProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </StrictMode>
