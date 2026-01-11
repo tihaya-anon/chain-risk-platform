@@ -24,6 +24,9 @@ test-e2e-services:
 test-integration:
 	@bash -c '$(LOAD_ENV) ./scripts/test/run-integration-test.sh'
 
+integration-test:
+	@bash -c '$(LOAD_ENV) ./scripts/integration-test.sh'
+
 # ============================================
 # Phase Validation
 # ============================================
@@ -70,3 +73,9 @@ stop-svc:
 # ============================================
 trino:
 	@bash -c '$(LOAD_ENV) ./scripts/trino-query.sh "$(Q)"'
+
+# ============================================
+# Jaeger Services Check
+# ============================================
+jaeger-services:
+	@curl -s "http://$${DOCKER_HOST_IP:-localhost}:26686/api/services" | jq -r '.data[]' 2>/dev/null || echo "Jaeger not accessible"
