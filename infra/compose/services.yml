@@ -91,7 +91,12 @@ services:
     image: chainrisk/graph-service:latest
     container_name: graph-service
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: chainrisk123
+      NACOS_SERVER: nacos:8848
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_SERVICE_NAME: graph-service
     ports:
       - "0.0.0.0:8084:8084"
     depends_on:
@@ -114,7 +119,9 @@ services:
     image: chainrisk/orchestrator:latest
     container_name: orchestrator
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      NACOS_SERVER: nacos:8848
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_SERVICE_NAME: orchestrator
     ports:
       - "0.0.0.0:8080:8080"
     depends_on:
