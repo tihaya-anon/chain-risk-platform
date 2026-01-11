@@ -15,11 +15,9 @@ else
     HOST="${DOCKER_HOST_IP:-localhost}"
 fi
 
-# Counters
 PASSED=0
 FAILED=0
 SKIPPED=0
-
 declare -a RESULTS
 
 log_pass() {
@@ -35,7 +33,7 @@ log_fail() {
 }
 
 log_skip() {
-    echo -e "${YELLOW}○${NC} $1 (skipped)"
+    echo -e "${YELLOW}○${NC} $1"
     RESULTS+=("SKIP: $1")
     SKIPPED=$((SKIPPED + 1))
 }
@@ -48,15 +46,12 @@ log_section() {
 }
 
 check_container() {
-    local name=$1
-    docker ps --format '{{.Names}}' | grep -q "^${name}$"
+    docker ps --format '{{.Names}}' | grep -q "^${1}$"
 }
 
 check_http() {
-    local url=$1
-    local expected=${2:-200}
-    local status=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "$url" 2>/dev/null || echo "000")
-    [ "$status" = "$expected" ]
+    local status=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "$1" 2>/dev/null || echo "000")
+    [ "$status" = "${2:-200}" ]
 }
 
 #####################################
@@ -65,9 +60,7 @@ check_http() {
 validate_containerization() {
     log_section "Track A: Containerization"
 
-    local services=("query-service" "alert-service" "risk-ml-service" "graph-service" "orchestrator" "bff")
-    
-    for svc in "${services[@]}"; do
+    for svc in query-service alert-service risk-ml-service graph-service orchestrator bff; do
         if check_container "$svc"; then
             log_pass "$svc container running"
         else
@@ -75,8 +68,7 @@ validate_containerization() {
         fi
     done
 
-    # Networks
-    for net in "chainrisk-backend" "chainrisk-monitoring"; do
+    for net in chainrisk-backend chainrisk-monitoring; do
         if docker network ls --format '{{.Name}}' | grep -q "$net"; then
             log_pass "$net network exists"
         else
@@ -92,18 +84,17 @@ validate_security() {
     log_section "Track B: Security"
 
     if check_http "http://${HOST}:18200/v1/sys/health" 200; then
-        log_pass "Vault is healthy and unsealed"
+        log_pass "Vault healthy and unsealed"
     elif check_http "http://${HOST}:18200/v1/sys/health" 501; then
         log_skip "Vault not initialized"
     else
         log_fail "Vault not accessible"
     fi
 
-    # Check secrets exist
     if [ -f "$PROJECT_ROOT/.vault-keys" ]; then
         log_pass "Vault keys file exists"
     else
-        log_skip "Vault keys file not found"
+        log_skip "Vault keys not found"
     fi
 }
 
@@ -113,27 +104,23 @@ validate_security() {
 validate_persistence() {
     log_section "Track C: Persistence"
 
-    # Elasticsearch
     ES_STATUS=$(curl -s "http://${HOST}:19200/_cluster/health" 2>/dev/null | grep -o '"status":"[^"]*"' | cut -d'"' -f4 || echo "")
     if [ "$ES_STATUS" = "green" ] || [ "$ES_STATUS" = "yellow" ]; then
-        log_pass "Elasticsearch cluster: $ES_STATUS"
+        log_pass "Elasticsearch: $ES_STATUS"
     else
         log_fail "Elasticsearch unhealthy"
     fi
 
-    # Jaeger
     if check_http "http://${HOST}:26686/api/services" 200; then
-        log_pass "Jaeger API accessible"
+        log_pass "Jaeger accessible"
     else
         log_fail "Jaeger not accessible"
     fi
 
-    # ILM Policy
-    ILM=$(curl -s "http://${HOST}:19200/_ilm/policy/jaeger-traces-policy" 2>/dev/null)
-    if echo "$ILM" | grep -q '"phases"'; then
-        log_pass "Jaeger ILM policy configured"
+    if curl -s "http://${HOST}:19200/_ilm/policy/jaeger-traces-policy" 2>/dev/null | grep -q '"phases"'; then
+        log_pass "ILM policy configured"
     else
-        log_skip "ILM policy not configured"
+        log_skip "ILM not configured"
     fi
 }
 
@@ -143,9 +130,8 @@ validate_persistence() {
 validate_realtime() {
     log_section "Track D: Real-time"
 
-    # WebSocket endpoint exists in BFF
     if check_http "http://${HOST}:3001/health" 200; then
-        log_pass "BFF WebSocket gateway available"
+        log_pass "BFF (WebSocket) available"
     else
         log_fail "BFF not accessible"
     fi
@@ -157,19 +143,10 @@ validate_realtime() {
 validate_operations() {
     log_section "Track E: Operations"
 
-    local services=(
-        "query-service:8081"
-        "alert-service:8083"
-        "risk-ml-service:8082"
-        "graph-service:8084"
-        "orchestrator:8080"
-        "bff:3001"
-    )
-
-    for entry in "${services[@]}"; do
+    # Go/Python/TS services use /health
+    for entry in "query-service:8081" "alert-service:8083" "risk-ml-service:8082" "bff:3001"; do
         local svc="${entry%%:*}"
         local port="${entry##*:}"
-
         if check_http "http://${HOST}:$port/health" 200; then
             log_pass "$svc health OK"
         else
@@ -177,7 +154,18 @@ validate_operations() {
         fi
     done
 
-    # Monitoring
+    # Java services use /actuator/health
+    for entry in "graph-service:8084" "orchestrator:8080"; do
+        local svc="${entry%%:*}"
+        local port="${entry##*:}"
+        if check_http "http://${HOST}:$port/actuator/health" 200; then
+            log_pass "$svc health OK"
+        else
+            log_fail "$svc health FAILED"
+        fi
+    done
+
+    # Monitoring stack
     if check_http "http://${HOST}:19090/api/v1/targets" 200; then
         log_pass "Prometheus accessible"
     else
@@ -201,23 +189,20 @@ validate_operations() {
 # Summary
 #####################################
 print_summary() {
-    log_section "Validation Summary"
+    log_section "Summary"
 
     echo ""
     echo "Host: $HOST"
     echo ""
-    echo "Results:"
     echo "  Passed:  $PASSED"
     echo "  Failed:  $FAILED"
     echo "  Skipped: $SKIPPED"
     echo ""
 
     if [ $FAILED -gt 0 ]; then
-        echo -e "${RED}Some checks failed!${NC}"
-        echo ""
-        echo "Failed:"
-        for result in "${RESULTS[@]}"; do
-            [[ "$result" == FAIL:* ]] && echo "  - ${result#FAIL: }"
+        echo -e "${RED}Validation failed${NC}"
+        for r in "${RESULTS[@]}"; do
+            [[ "$r" == FAIL:* ]] && echo "  - ${r#FAIL: }"
         done
         exit 1
     else
@@ -225,12 +210,9 @@ print_summary() {
     fi
 }
 
-#####################################
-# Main
-#####################################
 main() {
     echo "============================================================"
-    echo "  Phase 10: Production Hardening - Final Validation"
+    echo "  Phase 10: Production Hardening - Validation"
     echo "============================================================"
 
     validate_containerization
