@@ -1,183 +1,114 @@
-# Phase 10: Production Hardening - Progress Report
+# Phase 10: Production Hardening - Complete
 
-## Branch: `develop/phase10`
-
-## Status: ✅ Complete
-
-All checkpoints completed. Ready for merge to main.
+**Status**: ✅ Complete  
+**Branch**: `develop/phase10`  
+**Date**: 2026-01-11  
 
 ---
 
-## Checkpoint Summary
+## Final Validation
 
-| ID | Task | Status |
-|----|------|--------|
-| CP-1 | Service Dockerfiles | ✅ |
-| CP-2 | Docker Compose Services | ✅ |
-| CP-3 | Service Network Config | ✅ |
-| CP-4 ~ CP-7 | Security (W2) | ✅ Merged |
-| CP-8 ~ CP-13 | Persistence + Real-time (W3) | ✅ Merged |
-| CP-14 ~ CP-18 | Infrastructure Modularization | ✅ |
-| CP-19 ~ CP-26 | Docker Image Building & Deployment | ✅ |
-| CP-27 | Vault Init & Unseal | ✅ |
-| CP-28 | Vault Secrets Configuration | ✅ |
-| CP-29 | Grafana Dashboards | ✅ |
-| CP-30 | Jaeger Tracing Verification | ✅ |
+```
+  Passed:  23
+  Failed:  0
+  Skipped: 0
+
+  Phase 10 validation passed!
+```
 
 ---
 
 ## Deliverables
 
-### Infrastructure Modularization
+### Track A: Containerization ✅
+- 6 services Dockerized and running
+- Multi-stage production builds
+- Network isolation (backend, monitoring)
 
-| File | Purpose |
-|------|---------|
-| `infra/compose/base.yml` | Networks, volumes |
-| `infra/compose/infra.yml` | Kafka, PostgreSQL, Neo4j, Redis, Nacos |
-| `infra/compose/datalake.yml` | MinIO, Hive, Trino |
-| `infra/compose/monitoring.yml` | Prometheus, Grafana, Loki, ES, Jaeger |
-| `infra/compose/security.yml` | Vault |
-| `infra/compose/services.yml` | Application services |
-| `infra/compose/services-standalone.yml` | Standalone deployment |
+### Track B: Security ✅
+- Vault initialized and configured
+- All secrets stored in Vault
+- AppRole authentication enabled
 
-### Makefile Modularization
+### Track C: Persistence ✅
+- Elasticsearch cluster: green
+- Jaeger with ES backend
+- ILM policy: 7-day retention
 
-| File | Purpose |
-|------|---------|
-| `make/docker.mk` | Compose, image build |
-| `make/services.mk` | Service operations |
-| `make/processing.mk` | Flink, batch jobs |
-| `make/observability.mk` | Vault, ES, Jaeger |
-| `make/testing.mk` | E2E, integration tests |
+### Track D: Real-time ✅
+- WebSocket gateway in BFF
+- Alert push service
+- Frontend integration
 
-### Docker Images (All Built & Deployed)
-
-- `chainrisk/query-service`
-- `chainrisk/alert-service`
-- `chainrisk/risk-ml-service`
-- `chainrisk/graph-service`
-- `chainrisk/orchestrator`
-- `chainrisk/bff`
-
-### Vault Secrets (CP-28)
-
-| Path | Contents |
-|------|----------|
-| `secret/chainrisk/database/postgres` | Host, port, user, password, database |
-| `secret/chainrisk/database/neo4j` | URI, user, password |
-| `secret/chainrisk/database/redis` | Host, port, password |
-| `secret/chainrisk/database/kafka` | Brokers |
-| `secret/chainrisk/jwt/config` | Secret, expires_in, refresh_expires_in |
-| `secret/chainrisk/api/etherscan` | API key |
-| `secret/chainrisk/api/minio` | Endpoint, access_key, secret_key |
-
-**Commands:**
-```bash
-make vault-secrets-seed    # Seed all secrets
-make vault-secrets-verify  # Verify secrets exist
-make vault-secrets-status  # Show status
-```
-
-### Grafana Dashboards (CP-29)
-
-| Dashboard | File |
-|-----------|------|
-| Service Health | `service-health.json` |
-| Alert Metrics | `alert-metrics.json` |
-| Data Pipeline | `data-pipeline-overview.json` |
-| ML Performance | `ml-performance.json` |
-| Infrastructure Overview | `infrastructure-overview.json` |
-
-Dashboards auto-provision via `/etc/grafana/provisioning/dashboards`.
-
-### Jaeger Tracing (CP-30)
-
-**Verification Script:**
-```bash
-make jaeger-trace-test     # Full tracing verification
-make jaeger-verify         # ES backend verification
-make jaeger-ilm-status     # ILM policy status
-```
-
-**Verified:**
-- ES backend storage working
-- Services registered in Jaeger
-- Cross-service trace propagation
-- ILM retention policy (7-day default)
+### Track E: Operations ✅
+- Health endpoints for all services
+- Prometheus/Grafana/Loki/Jaeger operational
+- Smoke test and validation scripts
 
 ---
 
-## Commands Reference
+## Key Files
 
-### Vault
+| Category | Files |
+|----------|-------|
+| **Compose** | `infra/compose/{base,infra,monitoring,security,services}.yml` |
+| **Makefile** | `make/{docker,services,observability,testing}.mk` |
+| **Scripts** | `scripts/{smoke-test,validate-phase10,vault-secrets,test-jaeger-tracing}.sh` |
+| **Dashboards** | `infra/grafana/provisioning/dashboards/*.json` |
+
+---
+
+## Commands
+
 ```bash
-make vault-init            # Initialize & configure Vault
-make vault-status          # Check Vault health
-make vault-unseal          # Unseal Vault
+# Validation
+make validate-phase10      # Full validation (23 checks)
+make smoke-test            # Service health + trace generation
+
+# Vault
+make vault-init            # Initialize Vault
 make vault-secrets-seed    # Seed all secrets
 make vault-secrets-verify  # Verify secrets
-```
 
-### Monitoring
-```bash
-make es-check              # Elasticsearch health
-make es-indices            # List ES indices
-make jaeger-verify         # Verify Jaeger ES backend
-make jaeger-trace-test     # Full tracing test
-make jaeger-ilm-setup      # Setup retention policy
-```
+# Monitoring
+make jaeger-trace-test     # Verify distributed tracing
+make jaeger-ilm-setup      # Configure retention policy
 
-### Docker
-```bash
+# Docker
 make up-all                # Start everything
 make down-all              # Stop everything
 make docker-build          # Build all images
-make services-up           # Start app services only
-```
-
-### Validation
-```bash
-make validate-phase10      # Full Phase 10 validation
-make infra-check           # Infrastructure check
 ```
 
 ---
 
-## Files Created/Modified
+## Services
 
-### New Files
-- `scripts/vault-secrets.sh` - Vault secrets management
-- `scripts/test-jaeger-tracing.sh` - Jaeger verification
-- `infra/grafana/provisioning/dashboards/infrastructure-overview.json`
-
-### Modified Files
-- `make/observability.mk` - Added vault-secrets-*, jaeger-trace-test
+| Service | Port | Health Endpoint | Status |
+|---------|------|-----------------|--------|
+| query-service | 8081 | `/health` | ✅ |
+| alert-service | 8083 | `/health` | ✅ |
+| risk-ml-service | 8082 | `/health` | ✅ |
+| graph-service | 8084 | `/actuator/health` | ✅ |
+| orchestrator | 8080 | `/actuator/health` | ✅ |
+| bff | 3001 | `/health` | ✅ |
 
 ---
 
-## Merge Checklist
+## Vault Secrets
 
-- [x] All services containerized
-- [x] All images build successfully
-- [x] All services healthy in Docker
-- [x] Vault initialized and secrets seeded
-- [x] Grafana dashboards provisioned
-- [x] Jaeger tracing verified
-- [x] Documentation updated
+| Path | Contents |
+|------|----------|
+| `chainrisk/database/postgres` | host, port, user, password, database |
+| `chainrisk/database/neo4j` | uri, user, password |
+| `chainrisk/database/redis` | host, port, password |
+| `chainrisk/database/kafka` | brokers |
+| `chainrisk/jwt/config` | secret, expires_in, refresh_expires_in |
+| `chainrisk/api/etherscan` | key |
+| `chainrisk/api/minio` | endpoint, access_key, secret_key |
 
 ---
 
 ## Next Steps
 
-1. **Merge to main**
-   ```bash
-   git checkout main
-   git merge --no-ff develop/phase10
-   git tag -a v0.10.0 -m "Phase 10: Production Hardening"
-   git push origin main --tags
-   ```
-
-2. **Future Phases**
-   - Phase 11: Performance Testing
-   - Phase 12: Security Hardening
-   - Phase 13: CI/CD Pipeline
+See [ROADMAP.md](../ROADMAP.md) for future phases.
