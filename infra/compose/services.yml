@@ -120,6 +120,8 @@ services:
     container_name: orchestrator
     environment:
       NACOS_SERVER: nacos:8848
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_SERVICE_NAME: orchestrator
     ports:
@@ -127,6 +129,8 @@ services:
     depends_on:
       nacos:
         condition: service_healthy
+      redis:
+        condition: service_started
       query-service:
         condition: service_healthy
       risk-ml-service:
