@@ -17,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST Controller for Graph Service API
@@ -98,23 +99,34 @@ public class GraphController {
     @PostMapping("/address/{address}/tags")
     @Operation(summary = "Add tags to address", description = "Add one or more tags to an address (manual tagging)")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tags added"),
-            @ApiResponse(responseCode = "400", description = "Invalid request"),
-            @ApiResponse(responseCode = "404", description = "Address not found")
+            @ApiResponse(responseCode = "200", description = "Tags added successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request body"),
+            @ApiResponse(responseCode = "500", description = "Failed to add tags")
     })
-    public ResponseEntity<AddressInfoResponse> addTags(
+    public ResponseEntity<?> addTags(
             @Parameter(description = "Blockchain address")
             @PathVariable String address,
             @Valid @RequestBody AddTagRequest request) {
         
-        boolean success = tagPropagationService.addTags(address, request.getTags());
-        if (!success) {
-            return ResponseEntity.badRequest().build();
+        try {
+            boolean success = tagPropagationService.addTags(address, request.getTags());
+            if (!success) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Failed to add tags", "message", "Operation returned false"));
+            }
+            
+            return graphQueryService.getAddressInfo(address)
+                    .map(info -> ResponseEntity.ok((Object) info))
+                    .orElse(ResponseEntity.ok(Map.of(
+                            "address", address.toLowerCase(),
+                            "tags", request.getTags(),
+                            "message", "Tags added to new address"
+                    )));
+        } catch (RuntimeException e) {
+            log.error("Failed to add tags to address {}", address, e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Internal error", "message", e.getMessage()));
         }
-        
-        return graphQueryService.getAddressInfo(address)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/address/{address}/tags/{tag}")
