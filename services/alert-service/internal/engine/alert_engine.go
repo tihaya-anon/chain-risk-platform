@@ -43,13 +43,11 @@ func NewAlertEngine(
 
 // ProcessEvent evaluates an event against all enabled rules
 func (e *AlertEngine) ProcessEvent(ctx context.Context, event model.Event) ([]*model.Alert, error) {
-	// Load rules (with caching)
 	rules, err := e.getEnabledRules(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Evaluate event against all rules
 	alerts, err := e.registry.EvaluateAll(ctx, event, rules)
 	if err != nil {
 		return nil, err
@@ -59,7 +57,6 @@ func (e *AlertEngine) ProcessEvent(ctx context.Context, event model.Event) ([]*m
 		return nil, nil
 	}
 
-	// Deduplicate alerts
 	if e.deduplicator != nil {
 		alerts, err = e.deduplicator.Filter(ctx, alerts)
 		if err != nil {
@@ -85,17 +82,16 @@ func (e *AlertEngine) getEnabledRules(ctx context.Context) ([]*model.AlertRule, 
 	}
 	e.rulesMu.RUnlock()
 
-	// Fetch from database
 	e.rulesMu.Lock()
 	defer e.rulesMu.Unlock()
 
-	// Double-check after acquiring write lock
 	if e.cachedRules != nil && time.Since(e.rulesCachedAt) < e.ruleCacheTTL {
 		return e.cachedRules, nil
 	}
 
 	enabled := true
-	rules, err := e.ruleRepo.List(ctx, &enabled)
+	filters := repository.AlertRuleFilters{Enabled: &enabled}
+	rules, err := e.ruleRepo.List(ctx, filters)
 	if err != nil {
 		return nil, err
 	}

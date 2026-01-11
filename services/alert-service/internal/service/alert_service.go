@@ -54,7 +54,6 @@ func (s *AlertService) HandleTransferEvent(ctx context.Context, event model.Tran
 
 // processEvent evaluates an event and sends notifications
 func (s *AlertService) processEvent(ctx context.Context, event model.Event) error {
-	// Process through engine
 	alerts, err := s.engine.ProcessEvent(ctx, event)
 	if err != nil {
 		s.logger.Error("Failed to process event", zap.Error(err))
@@ -65,7 +64,6 @@ func (s *AlertService) processEvent(ctx context.Context, event model.Event) erro
 		return nil
 	}
 
-	// Process each alert
 	for _, alert := range alerts {
 		if err := s.processAlert(ctx, alert); err != nil {
 			s.logger.Error("Failed to process alert",
@@ -79,7 +77,6 @@ func (s *AlertService) processEvent(ctx context.Context, event model.Event) erro
 
 // processAlert saves alert history and sends notifications
 func (s *AlertService) processAlert(ctx context.Context, alert *model.Alert) error {
-	// Create history record
 	history := &model.AlertHistory{
 		RuleID:     alert.RuleID,
 		AlertType:  alert.Type,
@@ -96,26 +93,22 @@ func (s *AlertService) processAlert(ctx context.Context, alert *model.Alert) err
 		return fmt.Errorf("create history: %w", err)
 	}
 
-	// Get subscriptions for this rule
 	subs, err := s.subsRepo.ListByRuleID(ctx, alert.RuleID)
 	if err != nil {
 		s.logger.Warn("Failed to get subscriptions", zap.Error(err))
 	}
 
-	// Also get global subscriptions (nil rule_id)
 	globalSubs, err := s.subsRepo.ListByRuleID(ctx, nil)
 	if err != nil {
 		s.logger.Warn("Failed to get global subscriptions", zap.Error(err))
 	}
 	subs = append(subs, globalSubs...)
 
-	// Send notifications
 	var notifyErrors []error
 	if len(subs) > 0 {
 		notifyErrors = s.dispatcher.SendAll(ctx, alert, subs)
 	}
 
-	// Update status
 	now := time.Now()
 	status := model.AlertStatusSent
 	if len(notifyErrors) > 0 && len(notifyErrors) == len(subs) {
@@ -126,7 +119,6 @@ func (s *AlertService) processAlert(ctx context.Context, alert *model.Alert) err
 		s.logger.Error("Failed to update alert status", zap.Error(err))
 	}
 
-	// Mark as sent in deduplicator
 	if err := s.engine.MarkAlertSent(ctx, alert); err != nil {
 		s.logger.Warn("Failed to mark alert sent in dedup", zap.Error(err))
 	}
@@ -141,7 +133,6 @@ func (s *AlertService) processAlert(ctx context.Context, alert *model.Alert) err
 	return nil
 }
 
-// Ensure AlertService implements kafka.EventHandler
 var _ kafka.EventHandler = (*AlertService)(nil)
 
 // ---- Rule Management ----
@@ -160,9 +151,9 @@ func (s *AlertService) GetRule(ctx context.Context, id int64) (*model.AlertRule,
 	return s.ruleRepo.GetByID(ctx, id)
 }
 
-// ListRules retrieves all rules
-func (s *AlertService) ListRules(ctx context.Context, enabled *bool) ([]*model.AlertRule, error) {
-	return s.ruleRepo.List(ctx, enabled)
+// ListRules retrieves rules with filters
+func (s *AlertService) ListRules(ctx context.Context, filters repository.AlertRuleFilters) ([]*model.AlertRule, error) {
+	return s.ruleRepo.List(ctx, filters)
 }
 
 // UpdateRule updates an existing rule
