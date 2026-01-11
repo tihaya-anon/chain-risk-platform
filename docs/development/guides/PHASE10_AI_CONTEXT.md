@@ -136,10 +136,9 @@ NACOS_SERVER=100.120.144.128:18848
 ### Remote Execution
 
 ```bash
-# Sync code to remote
-rsync -avz --exclude='.git' --exclude='node_modules' --exclude='.venv' \
-  --exclude='target' --exclude='__pycache__' \
-  . dev-win:~/chain-risk-platform/
+# Sync code to remote (use git instead for large changes)
+git push origin main
+ssh dev-win "cd ~/chain-risk-platform && git pull origin main"
 
 # Run make commands on remote
 ssh dev-win "cd ~/chain-risk-platform && make infra-check"
@@ -185,60 +184,10 @@ git push
 
 ---
 
-## Checkpoint Dependency DAG
-
-```
-[CP-1]──────────────[CP-4]──────────────[CP-8]──────────────[CP-11]
-   │                  │ │                  │                    │
-   ▼                  ▼ ▼                  ▼                    ▼
-[CP-2]────────▶[CP-5][CP-6]          [CP-9]              [CP-12]
-   │                │   │                │                    │
-   ▼                └─┬─┘                ▼                    ▼
-[CP-3]              [CP-7]          [CP-10]              [CP-13]
-   │                  │                │                    │
-   ▼                  │                │                    │
-[CP-14]               │                │                    │
-   │                  │                │                    │
-   └──────────────────┴────────────────┴────────────────────┘
-                      │
-                      ▼
-                  [CP-15]
-                      │
-                      ▼
-                  [CP-16]
-```
-
-**Rule**: Do not start a CP until all dependencies are merged to `develop/phase10`.
-
----
-
-## Checkpoint Quick Reference
-
-| CP | Task | Owner | Depends | Done When |
-|----|------|-------|---------|-----------|
-| 1 | Service Dockerfiles | W1 | - | `make docker-build` succeeds |
-| 2 | Docker Compose Services | W1 | 1 | `docker-compose up -d` starts all |
-| 3 | Service Network Config | W1 | 2 | Services communicate via DNS |
-| 4 | Vault Deployment | W2 | - | Vault UI at :18200 |
-| 5 | Vault Secret Migration | W2 | 4 | No plain-text secrets |
-| 6 | JWT Enhancement | W2 | 4 | Token refresh works |
-| 7 | RBAC Implementation | W2 | 5,6 | 403 on unauthorized |
-| 8 | Elasticsearch Deployment | W3 | - | ES health green/yellow |
-| 9 | Jaeger ES Backend | W3 | 8 | Traces persist after restart |
-| 10 | Trace Retention Policy | W3 | 9 | ILM policy applied |
-| 11 | WebSocket Gateway | W3 | - | WS connects at /alerts |
-| 12 | Alert Push Service | W3 | 11 | Alerts in WS within 1s |
-| 13 | Frontend WS Integration | W3 | 12 | Toast notifications work |
-| 14 | Health Check Enhancement | W1 | 2 | K8s probes work |
-| 15 | Integration Validation | W1 | 3,7,10,13,14 | All checks pass |
-| 16 | Documentation Update | W1 | 15 | Docs complete |
-
----
-
 ## Port Reference (Remote)
 
-| Service | Port | Make Command |
-|---------|------|--------------|
+| Service | Port | Notes |
+|---------|------|-------|
 | PostgreSQL | 15432 | - |
 | Redis | 16379 | - |
 | Kafka | 19092 | - |
@@ -248,12 +197,13 @@ git push
 | Grafana | 13001 | - |
 | Loki | 13100 | - |
 | Jaeger | 26686 | - |
-| Query Service | 8081 | `make query-run` |
-| Risk Service | 8082 | `make risk-run` |
-| Alert Service | 8083 | `make alert-run` |
-| Graph Service | 8084 | `make graph-run` |
-| Orchestrator | 8080 | `make orchestrator-run` |
-| BFF | 3001 | `make bff-run` |
+| Elasticsearch | 19200 | - |
+| Query Service | 8081 | - |
+| Risk Service | 8082 | - |
+| Alert Service | 8083 | - |
+| Graph Service | 8084 | - |
+| Orchestrator | 8080 | - |
+| BFF | 3401 | Changed from 3001 due to Windows Hyper-V port exclusion |
 
 ---
 
@@ -265,6 +215,7 @@ git push
 | `source scripts/load-env.sh && ...` | Add to Makefile with `$(LOAD_ENV)` |
 | Hardcode port `15432` | Use `${POSTGRES_PORT}` in scripts |
 | Skip CP dependency | Wait for upstream merge |
+| Use rsync for code sync | Use `git push` + `git pull` |
 
 ---
 
