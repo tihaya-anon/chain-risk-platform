@@ -4,6 +4,27 @@ All notable changes to Chain Risk Platform.
 
 ---
 
+## [0.11.0] - 2026-01-12
+
+### Phase 11: API Integration Testing
+
+#### Added
+- **k6 Testing Framework**: Contract, functional, and performance tests
+- **Contract Tests**: 5 services, 123+ checks validating OpenAPI compliance
+- **Unit Tests**: GraphControllerTest (17), alert_rule_handler_test (13)
+
+#### Fixed
+- **graph-service**: Validation errors now return 400 (was 500)
+- **graph-service**: POST /tags handles new addresses correctly
+- **alert-service**: Severity filter now works in ListRules endpoint
+
+#### Documentation
+- `tests/api/README.md`: Testing framework guide
+- `docs/handover/phase11-fix-plan.md`: Fix plan and verification
+- `docs/archive/phase-docs/PHASE11_SUMMARY.md`: Phase summary
+
+---
+
 ## [0.10.6] - 2026-01-11
 
 ### Fixed
@@ -48,103 +69,106 @@ All notable changes to Chain Risk Platform.
 
 #### Infrastructure
 - Modular Docker Compose: base, infra, monitoring, security, services
-- Modular Makefile: docker, services, observability, testing
-- Network isolation: chainrisk-backend, chainrisk-monitoring
-
-#### Security
-- Vault secrets for databases, JWT, API keys
-- AppRole authentication for services
-- RBAC implementation in BFF/Orchestrator
-
-#### Monitoring
-- Prometheus metrics collection
-- Grafana dashboards (5 dashboards)
-- Loki log aggregation
-- Jaeger distributed tracing with ES backend
+- Unified secret management with environment variables
+- Health checks and restart policies
 
 ---
 
 ## [0.9.0] - 2026-01-10
 
-### Phase 9: Batch Orchestration
-- Airflow integration with DAGs
-- Daily archive pipeline
-- Daily ML feature/training pipeline
-- Weekly label update pipeline
+### Phase 9: Stream Processing & ML Pipeline
+
+#### Added
+- **stream-processor**: Flink-based real-time transaction analysis
+- **batch-processor**: Feature extraction and model training pipelines
+- **ML Model Registry**: Version-controlled model storage
+- **Feature Store**: Centralized feature management
 
 ---
 
-## [0.8.0] - 2026-01-10
+## [0.8.0] - 2026-01-09
 
-### Phase 8: Observability Stack
-- Prometheus metrics collection
-- Grafana dashboards
-- Loki log aggregation
-- Jaeger distributed tracing
-- OpenTelemetry integration
+### Phase 8: Observability Foundation
 
----
-
-## [0.7.0] - 2026-01-10
-
-### Phase 7: Kubernetes Deployment
-- K8s manifests for all services
-- Kustomize overlays (dev, staging, prod)
-- HPA configurations
-- Helm-ready structure
+#### Added
+- **Jaeger**: Distributed tracing
+- **Prometheus + Grafana**: Metrics collection and visualization
+- **Loki**: Log aggregation
+- **OpenTelemetry**: Instrumentation for Go and Java services
 
 ---
 
-## [0.6.0] - 2026-01-09
+## [0.7.0] - 2026-01-08
 
-### Phase 6: GNN Integration
-- Graph Neural Network for risk scoring
-- Neo4j integration
-- GraphSAGE model training
-- Batch inference pipeline
+### Phase 7: Frontend & BFF
 
----
-
-## [0.5.0] - 2026-01-09
-
-### Phase 5: Alert Service
-- Rule-based alerting engine
-- Multiple notification channels
-- Alert deduplication
-- Kafka consumer for real-time events
+#### Added
+- **BFF Service**: Backend-for-frontend aggregation layer
+- **React Dashboard**: Risk monitoring and alert management UI
+- **WebSocket**: Real-time updates
 
 ---
 
-## [0.4.0] - 2026-01-08
+## [0.6.0] - 2026-01-07
 
-### Phase 4: Lambda Architecture
-- Batch layer with Hudi tables
-- Speed layer with Flink
-- Serving layer with Trino
+### Phase 6: Orchestration
 
----
-
-## [0.3.0] - 2026-01-07
-
-### Phase 3: ML Pipeline
-- Risk scoring models
-- Feature engineering
-- Model serving API
+#### Added
+- **orchestrator**: Service coordination and workflow management
+- **Saga Pattern**: Distributed transaction handling
+- **Circuit Breaker**: Resilience patterns with Resilience4j
 
 ---
 
-## [0.2.0] - 2026-01-06
+## [0.5.0] - 2026-01-06
 
-### Phase 2: Data Ingestion
-- Etherscan API integration
-- Kafka event streaming
-- PostgreSQL storage
+### Phase 5: Alert System
+
+#### Added
+- **alert-service**: Rule-based alerting engine
+- **Notification Channels**: Email, Slack, webhook support
+- **Alert Rules**: Configurable thresholds and conditions
 
 ---
 
-## [0.1.0] - 2026-01-05
+## [0.4.0] - 2026-01-05
 
-### Phase 1: Foundation
-- Project structure
-- Core services skeleton
-- Basic API endpoints
+### Phase 4: Graph Analytics
+
+#### Added
+- **graph-service**: Neo4j-based address relationship tracking
+- **Tag Propagation**: BFS-based risk tag spreading
+- **Clustering**: Address clustering algorithms
+
+---
+
+## [0.3.0] - 2026-01-04
+
+### Phase 3: Risk ML Service
+
+#### Added
+- **risk-ml-service**: Machine learning risk scoring
+- **Feature Engineering**: Transaction pattern features
+- **Model Serving**: Real-time prediction API
+
+---
+
+## [0.2.0] - 2026-01-03
+
+### Phase 2: Query Service
+
+#### Added
+- **query-service**: Transaction data query API
+- **PostgreSQL**: Timeseries storage with partitioning
+- **Redis**: Query result caching
+
+---
+
+## [0.1.0] - 2026-01-02
+
+### Phase 1: Data Ingestion
+
+#### Added
+- **data-ingestion**: Etherscan API polling
+- **Kafka**: Event streaming infrastructure
+- **Nacos**: Service discovery and configuration
