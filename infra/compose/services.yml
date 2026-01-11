@@ -161,7 +161,8 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_SERVICE_NAME: bff
     ports:
-      - "0.0.0.0:3001:3001"
+      # Use 3401 externally due to Windows Hyper-V port exclusion (3001-3101)
+      - "0.0.0.0:3401:3001"
     depends_on:
       orchestrator:
         condition: service_healthy
