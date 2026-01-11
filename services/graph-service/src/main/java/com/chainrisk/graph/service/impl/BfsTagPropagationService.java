@@ -20,9 +20,6 @@ import java.util.*;
 
 /**
  * Implementation of TagPropagationService using BFS-based propagation.
- * 
- * Risk scores and tags are propagated through the transaction graph with
- * a decay factor that reduces the propagated score at each hop.
  */
 @Slf4j
 @Service
@@ -46,7 +43,6 @@ public class BfsTagPropagationService implements TagPropagationService {
         log.info("Starting tag propagation from all high-risk addresses");
 
         try {
-            // Find all high-risk addresses
             List<AddressNode> highRiskAddresses = addressRepository.findHighRiskAddresses(
                     HIGH_RISK_THRESHOLD, 1000);
 
@@ -135,7 +131,6 @@ public class BfsTagPropagationService implements TagPropagationService {
             double decayFactor = graphProperties.getPropagation().getDecayFactor();
             double minThreshold = graphProperties.getPropagation().getMinThreshold();
 
-            // BFS propagation using Cypher
             int affected = bfsPropagation(sourceAddress, source.getRiskScore(), 
                     source.getTags(), maxHops, decayFactor, minThreshold);
 
@@ -170,10 +165,7 @@ public class BfsTagPropagationService implements TagPropagationService {
         Instant startTime = Instant.now();
 
         try {
-            // First add the tag to source if not present
             addressRepository.addTag(sourceAddress.toLowerCase(), tag);
-
-            // Then propagate
             return propagateFromAddress(sourceAddress);
 
         } catch (Exception e) {
@@ -190,23 +182,18 @@ public class BfsTagPropagationService implements TagPropagationService {
     @Override
     @Transactional
     public boolean addTags(String address, List<String> tags) {
+        if (tags == null || tags.isEmpty()) {
+            log.warn("addTags called with empty tags for address {}", address);
+            return false;
+        }
+
         try {
             String normalizedAddress = address.toLowerCase();
             
-            // Ensure address exists
             var addressOpt = addressRepository.findByAddressIgnoreCase(normalizedAddress);
             if (addressOpt.isEmpty()) {
-                // Create address node if it doesn't exist
-                AddressNode newAddress = AddressNode.builder()
-                        .address(normalizedAddress)
-                        .firstSeen(Instant.now())
-                        .lastSeen(Instant.now())
-                        .txCount(0L)
-                        .riskScore(0.0)
-                        .tags(new ArrayList<>(tags))
-                        .network(network)
-                        .build();
-                addressRepository.save(newAddress);
+                // Create new address node with MERGE to avoid race conditions
+                createAddressWithTags(normalizedAddress, tags);
             } else {
                 // Add tags to existing address
                 for (String tag : tags) {
@@ -218,8 +205,44 @@ public class BfsTagPropagationService implements TagPropagationService {
             return true;
 
         } catch (Exception e) {
-            log.error("Failed to add tags to address {}", address, e);
-            return false;
+            log.error("Failed to add tags to address {}: {}", address, e.getMessage(), e);
+            throw new RuntimeException("Failed to add tags: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Create address with tags using MERGE to handle concurrent requests
+     */
+    private void createAddressWithTags(String address, List<String> tags) {
+        String cypher = """
+            MERGE (a:Address {address: $address})
+            ON CREATE SET 
+                a.firstSeen = datetime(),
+                a.lastSeen = datetime(),
+                a.txCount = 0,
+                a.riskScore = 0.0,
+                a.tags = $tags,
+                a.tagsString = $tagsString,
+                a.network = $network
+            ON MATCH SET 
+                a.tags = CASE 
+                    WHEN a.tags IS NULL THEN $tags 
+                    ELSE a.tags + [t IN $tags WHERE NOT t IN a.tags] 
+                END,
+                a.tagsString = CASE 
+                    WHEN a.tagsString IS NULL THEN $tagsString 
+                    ELSE a.tagsString + ' ' + $tagsString 
+                END
+            RETURN a
+            """;
+
+        try (Session session = neo4jDriver.session()) {
+            session.run(cypher, Map.of(
+                    "address", address,
+                    "tags", tags,
+                    "tagsString", String.join(" ", tags),
+                    "network", network
+            )).consume();
         }
     }
 
@@ -243,9 +266,6 @@ public class BfsTagPropagationService implements TagPropagationService {
                 .orElse(Collections.emptyList());
     }
 
-    /**
-     * BFS propagation using Cypher query
-     */
     private int bfsPropagation(String sourceAddress, double sourceRiskScore,
                                List<String> sourceTags, int maxHops,
                                double decayFactor, double minThreshold) {

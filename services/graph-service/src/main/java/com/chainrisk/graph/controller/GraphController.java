@@ -13,9 +13,11 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST Controller for Graph Service API
@@ -24,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/graph")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "Graph API", description = "Address graph analysis and clustering operations")
 public class GraphController {
 
@@ -50,6 +53,10 @@ public class GraphController {
 
     @GetMapping("/address/{address}/neighbors")
     @Operation(summary = "Get address neighbors", description = "Get addresses that have transferred to/from this address")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameters")
+    })
     public ResponseEntity<AddressNeighborsResponse> getNeighbors(
             @Parameter(description = "Blockchain address")
             @PathVariable String address,
@@ -91,19 +98,35 @@ public class GraphController {
 
     @PostMapping("/address/{address}/tags")
     @Operation(summary = "Add tags to address", description = "Add one or more tags to an address (manual tagging)")
-    public ResponseEntity<AddressInfoResponse> addTags(
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tags added successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request body"),
+            @ApiResponse(responseCode = "500", description = "Failed to add tags")
+    })
+    public ResponseEntity<?> addTags(
             @Parameter(description = "Blockchain address")
             @PathVariable String address,
             @Valid @RequestBody AddTagRequest request) {
         
-        boolean success = tagPropagationService.addTags(address, request.getTags());
-        if (!success) {
-            return ResponseEntity.badRequest().build();
+        try {
+            boolean success = tagPropagationService.addTags(address, request.getTags());
+            if (!success) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Failed to add tags", "message", "Operation returned false"));
+            }
+            
+            return graphQueryService.getAddressInfo(address)
+                    .map(info -> ResponseEntity.ok((Object) info))
+                    .orElse(ResponseEntity.ok(Map.of(
+                            "address", address.toLowerCase(),
+                            "tags", request.getTags(),
+                            "message", "Tags added to new address"
+                    )));
+        } catch (RuntimeException e) {
+            log.error("Failed to add tags to address {}", address, e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Internal error", "message", e.getMessage()));
         }
-        
-        return graphQueryService.getAddressInfo(address)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/address/{address}/tags/{tag}")
@@ -122,6 +145,10 @@ public class GraphController {
 
     @GetMapping("/path/{fromAddress}/{toAddress}")
     @Operation(summary = "Find path between addresses", description = "Find the shortest path of transfers between two addresses")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameters")
+    })
     public ResponseEntity<PathResponse> findPath(
             @Parameter(description = "Source address")
             @PathVariable String fromAddress,
@@ -192,6 +219,10 @@ public class GraphController {
 
     @GetMapping("/search/tag/{tag}")
     @Operation(summary = "Search by tag", description = "Find addresses with a specific tag")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameters")
+    })
     public ResponseEntity<List<AddressInfoResponse>> searchByTag(
             @Parameter(description = "Tag to search for")
             @PathVariable String tag,
@@ -204,6 +235,10 @@ public class GraphController {
 
     @GetMapping("/search/high-risk")
     @Operation(summary = "Get high-risk addresses", description = "Find addresses with risk score above threshold")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameters")
+    })
     public ResponseEntity<List<AddressInfoResponse>> getHighRiskAddresses(
             @Parameter(description = "Risk score threshold (0.0 - 1.0)")
             @RequestParam(defaultValue = "0.6") @Min(0) @Max(1) double threshold,

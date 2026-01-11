@@ -4,15 +4,23 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/chain-risk-platform/alert-service/internal/model"
 	_ "github.com/lib/pq"
 )
 
+// AlertRuleFilters contains filter options for listing rules
+type AlertRuleFilters struct {
+	Enabled  *bool
+	Severity *string
+	RuleType *string
+}
+
 type AlertRuleRepository interface {
 	Create(ctx context.Context, rule *model.AlertRule) error
 	GetByID(ctx context.Context, id int64) (*model.AlertRule, error)
-	List(ctx context.Context, enabled *bool) ([]*model.AlertRule, error)
+	List(ctx context.Context, filters AlertRuleFilters) ([]*model.AlertRule, error)
 	Update(ctx context.Context, rule *model.AlertRule) error
 	Delete(ctx context.Context, id int64) error
 	SetEnabled(ctx context.Context, id int64, enabled bool) error
@@ -60,16 +68,36 @@ func (r *alertRuleRepository) GetByID(ctx context.Context, id int64) (*model.Ale
 	return rule, err
 }
 
-func (r *alertRuleRepository) List(ctx context.Context, enabled *bool) ([]*model.AlertRule, error) {
+func (r *alertRuleRepository) List(ctx context.Context, filters AlertRuleFilters) ([]*model.AlertRule, error) {
 	query := `
 		SELECT id, name, description, rule_type, conditions, severity, enabled, created_at, updated_at
 		FROM alert.alert_rules
 	`
 
-	args := []any{}
-	if enabled != nil {
-		query += " WHERE enabled = $1"
-		args = append(args, *enabled)
+	var conditions []string
+	var args []any
+	argIdx := 1
+
+	if filters.Enabled != nil {
+		conditions = append(conditions, fmt.Sprintf("enabled = $%d", argIdx))
+		args = append(args, *filters.Enabled)
+		argIdx++
+	}
+
+	if filters.Severity != nil && *filters.Severity != "" {
+		conditions = append(conditions, fmt.Sprintf("severity = $%d", argIdx))
+		args = append(args, *filters.Severity)
+		argIdx++
+	}
+
+	if filters.RuleType != nil && *filters.RuleType != "" {
+		conditions = append(conditions, fmt.Sprintf("rule_type = $%d", argIdx))
+		args = append(args, *filters.RuleType)
+		argIdx++
+	}
+
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
 	query += " ORDER BY created_at DESC"

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/chain-risk-platform/alert-service/internal/model"
+	"github.com/chain-risk-platform/alert-service/internal/repository"
 	"github.com/chain-risk-platform/alert-service/internal/service"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -60,15 +61,35 @@ type UpdateAlertRuleRequest struct {
 	Enabled     *bool       `json:"enabled"`
 }
 
-// List returns all alert rules
+// List returns all alert rules with optional filters
 func (h *AlertRuleHandler) List(c *gin.Context) {
-	var enabled *bool
+	filters := repository.AlertRuleFilters{}
+
+	// Parse enabled filter
 	if e := c.Query("enabled"); e != "" {
 		b := e == "true"
-		enabled = &b
+		filters.Enabled = &b
 	}
 
-	rules, err := h.service.ListRules(c.Request.Context(), enabled)
+	// Parse severity filter
+	if s := c.Query("severity"); s != "" {
+		if !isValidSeverity(s) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid severity value"})
+			return
+		}
+		filters.Severity = &s
+	}
+
+	// Parse rule_type filter
+	if rt := c.Query("rule_type"); rt != "" {
+		if !isValidRuleType(rt) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid rule_type value"})
+			return
+		}
+		filters.RuleType = &rt
+	}
+
+	rules, err := h.service.ListRules(c.Request.Context(), filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -102,13 +123,11 @@ func (h *AlertRuleHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Validate rule type
 	if !isValidRuleType(req.RuleType) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid rule_type"})
 		return
 	}
 
-	// Validate severity
 	if !isValidSeverity(req.Severity) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid severity"})
 		return
@@ -144,7 +163,6 @@ func (h *AlertRuleHandler) Update(c *gin.Context) {
 		return
 	}
 
-	// Get existing rule
 	rule, err := h.service.GetRule(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -157,7 +175,6 @@ func (h *AlertRuleHandler) Update(c *gin.Context) {
 		return
 	}
 
-	// Apply updates
 	if req.Name != "" {
 		rule.Name = req.Name
 	}
