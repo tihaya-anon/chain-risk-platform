@@ -7,12 +7,13 @@ server:
 database:
   host: postgres
   port: 5432
-  database: chainrisk
+  dbname: chainrisk
   user: chainrisk
   password: chainrisk123
-  max_open_conns: 25
-  max_idle_conns: 5
-  conn_max_lifetime: 5m
+  sslmode: disable
+  maxOpenConns: 25
+  maxIdleConns: 5
+  connMaxLifetime: 5m
 
 redis:
   host: redis
