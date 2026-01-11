@@ -68,7 +68,7 @@ services:
       SPRING_NEO4J_URI: bolt://neo4j:7687
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: chainrisk123
-      NACOS_SERVER_ADDR: nacos:8848
+      NACOS_SERVER: nacos:8848
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_SERVICE_NAME: graph-service
       JAVA_OPTS: "-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
@@ -89,7 +89,7 @@ services:
     container_name: orchestrator
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      NACOS_SERVER_ADDR: nacos:8848
+      NACOS_SERVER: nacos:8848
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_SERVICE_NAME: orchestrator
       JAVA_OPTS: "-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
