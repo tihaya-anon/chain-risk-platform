@@ -1,6 +1,8 @@
 # Observability: Vault, ES, Jaeger, OTel
 
+# ============================================
 # Vault
+# ============================================
 vault-init:
 	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh all'
 
@@ -10,14 +12,27 @@ vault-status:
 vault-unseal:
 	@bash -c '$(LOAD_ENV) ./scripts/vault-init.sh unseal'
 
+vault-secrets-status:
+	@bash -c '$(LOAD_ENV) ./scripts/vault-secrets.sh status'
+
+vault-secrets-seed:
+	@bash -c '$(LOAD_ENV) ./scripts/vault-secrets.sh seed'
+
+vault-secrets-verify:
+	@bash -c '$(LOAD_ENV) ./scripts/vault-secrets.sh verify'
+
+# ============================================
 # Elasticsearch
+# ============================================
 es-check:
 	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cluster/health?pretty"'
 
 es-indices:
 	@bash -c '$(LOAD_ENV) curl -s "$${ELASTICSEARCH_URL}/_cat/indices?v"'
 
+# ============================================
 # Jaeger
+# ============================================
 jaeger-verify:
 	@bash -c '$(LOAD_ENV) ./scripts/verify-jaeger-es.sh'
 
@@ -27,15 +42,24 @@ jaeger-ilm-setup:
 jaeger-ilm-status:
 	@bash -c '$(LOAD_ENV) ./scripts/check-jaeger-ilm.sh'
 
+jaeger-trace-test:
+	@bash -c '$(LOAD_ENV) ./scripts/test-jaeger-tracing.sh'
+
+# ============================================
 # OTel
+# ============================================
 otel-download:
 	@./scripts/download-otel-agent.sh
 
-# Infra check
+# ============================================
+# Infrastructure
+# ============================================
 infra-check:
 	@bash -c '$(LOAD_ENV) ./scripts/check-infra.sh'
 
+# ============================================
 # Cleanup
+# ============================================
 cleanup:
 	@bash -c '$(LOAD_ENV) ./scripts/cleanup.sh'
 
