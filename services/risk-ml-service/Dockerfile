@@ -16,7 +16,8 @@ WORKDIR /app
 
 RUN useradd -r -u 1000 appuser && \
     apt-get update && apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /app/logs && chown appuser:appuser /app/logs
 
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/app ./app

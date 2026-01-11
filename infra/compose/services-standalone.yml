@@ -1,19 +1,10 @@
-# Standalone application services (no depends_on, use with existing infra)
+# Standalone application services (use with existing infra)
 services:
   query-service:
     image: chainrisk/query-service:latest
     container_name: query-service
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: chainrisk
-      POSTGRES_PASSWORD: chainrisk123
-      POSTGRES_DB: chainrisk
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      NACOS_SERVER: nacos:8848
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
-      OTEL_SERVICE_NAME: query-service
+    volumes:
+      - ../../services/query-service/configs/config.docker.yaml:/app/configs/config.yaml:ro
     ports:
       - "8081:8081"
     healthcheck:
@@ -29,18 +20,8 @@ services:
   alert-service:
     image: chainrisk/alert-service:latest
     container_name: alert-service
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: chainrisk
-      POSTGRES_PASSWORD: chainrisk123
-      POSTGRES_DB: chainrisk
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      KAFKA_BROKERS: kafka:29092
-      NACOS_SERVER: nacos:8848
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
-      OTEL_SERVICE_NAME: alert-service
+    volumes:
+      - ../../services/alert-service/configs/config.docker.yaml:/app/configs/config.yaml:ro
     ports:
       - "8083:8083"
     healthcheck:
