@@ -50,6 +50,12 @@ export NACOS_NAMESPACE=${NACOS_NAMESPACE:-}
 export NACOS_USERNAME=${NACOS_USERNAME:-}
 export NACOS_PASSWORD=${NACOS_PASSWORD:-}
 
+# ==================== Vault (Security) ====================
+export VAULT_ADDR=${VAULT_ADDR:-"http://${DOCKER_HOST_IP}:18200"}
+export VAULT_ENABLED=${VAULT_ENABLED:-false}
+export VAULT_APPROLE_ROLE_ID=${VAULT_APPROLE_ROLE_ID:-}
+export VAULT_APPROLE_SECRET_ID=${VAULT_APPROLE_SECRET_ID:-}
+
 # ==================== Hudi Data Lake ====================
 export MINIO_ENDPOINT=${MINIO_ENDPOINT:-"http://${DOCKER_HOST_IP}:19000"}
 export MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
@@ -60,10 +66,19 @@ export TRINO_PORT=${TRINO_PORT:-18081}
 export HIVE_METASTORE_URI=${HIVE_METASTORE_URI:-"thrift://${DOCKER_HOST_IP}:19083"}
 export RETENTION_DAYS=${RETENTION_DAYS:-7}
 
+# ==================== Elasticsearch ====================
+export ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST:-$DOCKER_HOST_IP}
+export ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT:-19200}
+export ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-"http://${DOCKER_HOST_IP}:19200"}
+export TRACE_RETENTION_DAYS=${TRACE_RETENTION_DAYS:-7}
+
 # ==================== Monitoring ====================
 export JAEGER_AGENT_HOST=${JAEGER_AGENT_HOST:-$DOCKER_HOST_IP}
 export JAEGER_AGENT_PORT=${JAEGER_AGENT_PORT:-6831}
 export JAEGER_ENDPOINT=${JAEGER_ENDPOINT:-"http://${DOCKER_HOST_IP}:14268/api/traces"}
+
+# ==================== OpenTelemetry ====================
+export OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-"http://${DOCKER_HOST_IP}:14317"}
 
 # ==================== Service Ports ====================
 export ORCHESTRATOR_PORT=${ORCHESTRATOR_PORT:-8080}
@@ -73,6 +88,11 @@ export RISK_SERVICE_PORT=${RISK_SERVICE_PORT:-8082}
 export ALERT_SERVICE_PORT=${ALERT_SERVICE_PORT:-8083}
 export GRAPH_ENGINE_PORT=${GRAPH_ENGINE_PORT:-8084}
 export DATA_INGESTION_PORT=${DATA_INGESTION_PORT:-9091}
+
+# ==================== JWT ====================
+export JWT_SECRET=${JWT_SECRET:-default-secret-change-me}
+export JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-1h}
+export JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
 
 # ==================== Environment ====================
 export NODE_ENV=${NODE_ENV:-development}
@@ -91,4 +111,9 @@ if [ -f "$PROJECT_ROOT/.env.local" ]; then
             export "$key=$value"
         fi
     done < "$PROJECT_ROOT/.env.local"
+fi
+
+# ==================== Load Vault keys if available ====================
+if [ -f "$PROJECT_ROOT/.vault-keys" ]; then
+    source "$PROJECT_ROOT/.vault-keys"
 fi

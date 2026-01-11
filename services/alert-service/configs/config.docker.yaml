@@ -1,0 +1,46 @@
+server:
+  port: 8083
+  mode: release
+  read_timeout: 30s
+  write_timeout: 30s
+
+kafka:
+  brokers:
+    - kafka:29092
+  topics:
+    risk_scores: risk-scores
+    transfers: transfers
+  group_id: alert-service
+  session_timeout: 10s
+  heartbeat_interval: 3s
+
+database:
+  host: postgres
+  port: 5432
+  database: chainrisk
+  user: chainrisk
+  password: chainrisk123
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 5m
+
+redis:
+  host: redis
+  port: 6379
+  password: ""
+  db: 0
+
+nacos:
+  server: nacos:8848
+  namespace: ""
+  group: DEFAULT_GROUP
+
+otel:
+  endpoint: jaeger:4317
+  service_name: alert-service
+  insecure: true
+
+logging:
+  level: info
+  format: json
+  output: stdout

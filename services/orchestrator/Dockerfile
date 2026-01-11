@@ -1,30 +1,28 @@
-# Multi-stage build for Orchestrator
+# Build stage
 FROM maven:3.9-eclipse-temurin-17-alpine AS builder
-
 WORKDIR /app
 
-# Copy pom.xml and download dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy source code and build
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn package -DskipTests -q
 
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine
-
 WORKDIR /app
 
-# Copy jar from builder
-COPY --from=builder /app/target/orchestrator-*.jar app.jar
+RUN apk --no-cache add curl && \
+    adduser -D -u 1000 appuser && \
+    mkdir -p /app/logs && chown appuser:appuser /app/logs
 
-# Expose port
+COPY --from=builder /app/target/orchestrator-*.jar /app/app.jar
+
+USER appuser
+
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# Run application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseG1GC", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]

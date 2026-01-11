@@ -1,51 +1,31 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
-
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
 
-# Install dependencies
-RUN apk add --no-cache git ca-certificates
+RUN apk --no-cache add ca-certificates tzdata
 
-# Copy go mod files
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code
 COPY . .
-
-# Build binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o alert-service ./cmd/main.go
+RUN go mod tidy && CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /alert-service ./cmd/...
 
 # Runtime stage
-FROM alpine:3.18
-
+FROM alpine:3.19
 WORKDIR /app
 
-# Install ca-certificates for HTTPS
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata && \
+    adduser -D -u 1000 appuser && \
+    mkdir -p /app/logs && chown appuser:appuser /app/logs
 
-# Create non-root user
-RUN addgroup -g 1000 -S appgroup && \
-    adduser -u 1000 -S appuser -G appgroup
+COPY --from=builder /alert-service /usr/local/bin/
+COPY configs/config.yaml /app/configs/
 
-# Copy binary from builder
-COPY --from=builder /app/alert-service .
-
-# Copy config
-COPY configs ./configs
-
-# Create logs directory
-RUN mkdir -p logs && chown -R appuser:appgroup /app
-
-# Switch to non-root user
 USER appuser
 
-# Expose port
 EXPOSE 8083
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8083/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:8083/health || exit 1
 
-# Run
-ENTRYPOINT ["./alert-service"]
+ENTRYPOINT ["alert-service"]

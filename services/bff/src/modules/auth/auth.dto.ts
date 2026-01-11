@@ -14,13 +14,36 @@ export class LoginDto {
 }
 
 export class LoginResponse {
-  @ApiProperty()
+  @ApiProperty({ description: "JWT access token" })
   accessToken: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: "Refresh token for obtaining new access tokens" })
+  refreshToken: string;
+
+  @ApiProperty({ description: "Token type", example: "Bearer" })
   tokenType: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: "Access token expiration time", example: "1h" })
+  expiresIn: string;
+}
+
+export class RefreshTokenDto {
+  @ApiProperty({ description: "Refresh token" })
+  @IsString()
+  refreshToken: string;
+}
+
+export class RefreshTokenResponse {
+  @ApiProperty({ description: "New JWT access token" })
+  accessToken: string;
+
+  @ApiProperty({ description: "New refresh token" })
+  refreshToken: string;
+
+  @ApiProperty({ description: "Token type", example: "Bearer" })
+  tokenType: string;
+
+  @ApiProperty({ description: "Access token expiration time", example: "1h" })
   expiresIn: string;
 }
 
@@ -40,7 +63,7 @@ export class UserProfileResponse {
   @ApiProperty({
     description: "User role",
     example: "admin",
-    enum: ["admin", "user"],
+    enum: ["admin", "user", "analyst"],
   })
   role: string;
 }
