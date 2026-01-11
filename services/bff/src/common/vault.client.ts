@@ -1,7 +1,14 @@
-import { getLogger } from "./logger";
 import axios, { AxiosInstance } from "axios";
 
-const logger = getLogger("VaultClient");
+// Lazy logger to avoid circular dependency
+let _logger: any = null;
+function getLoggerLazy() {
+  if (!_logger) {
+    const { getLogger } = require("./logger");
+    _logger = getLogger("VaultClient");
+  }
+  return _logger;
+}
 
 interface VaultConfig {
   addr: string;
@@ -49,9 +56,9 @@ export class VaultClient {
     });
 
     if (this.config.enabled) {
-      logger.info("Vault client initialized", { addr: this.config.addr });
+      getLoggerLazy().info("Vault client initialized", { addr: this.config.addr });
     } else {
-      logger.info("Vault disabled, using environment variables for secrets");
+      getLoggerLazy().info("Vault disabled, using environment variables for secrets");
     }
   }
 
@@ -86,9 +93,9 @@ export class VaultClient {
       const ttl = response.data.auth.lease_duration || 3600;
       this.tokenExpiry = new Date(Date.now() + (ttl - 60) * 1000); // Refresh 1 min early
 
-      logger.debug("Vault authentication successful");
+      getLoggerLazy().debug("Vault authentication successful");
     } catch (error: any) {
-      logger.error("Vault authentication failed", { error: error.message });
+      getLoggerLazy().error("Vault authentication failed", { error: error.message });
       throw new Error(`Vault authentication failed: ${error.message}`);
     }
   }
@@ -122,10 +129,10 @@ export class VaultClient {
         expiry: new Date(Date.now() + this.cacheTTL),
       });
 
-      logger.debug("Secret retrieved from Vault", { path });
+      getLoggerLazy().debug("Secret retrieved from Vault", { path });
       return data;
     } catch (error: any) {
-      logger.error("Failed to get secret from Vault", {
+      getLoggerLazy().error("Failed to get secret from Vault", {
         path,
         error: error.message,
       });
@@ -214,7 +221,7 @@ export class VaultClient {
 
   clearCache(): void {
     this.secretCache.clear();
-    logger.debug("Secret cache cleared");
+    getLoggerLazy().debug("Secret cache cleared");
   }
 }
 

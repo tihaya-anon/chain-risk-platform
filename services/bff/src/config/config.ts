@@ -1,10 +1,6 @@
 import { readFileSync, existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import * as yaml from "js-yaml";
-import { getVaultClient } from "../common/vault.client";
-import { getLogger } from "../common/logger";
-
-const logger = getLogger("Config");
 
 export interface ServerConfig {
   name: string;
@@ -215,6 +211,11 @@ function overrideFromEnv(config: AppConfig): void {
  * This is async because Vault calls are async.
  */
 export async function loadJwtConfig(): Promise<JwtConfig> {
+  // Lazy import to avoid circular dependency
+  const { getVaultClient } = await import("../common/vault.client");
+  const { getLogger } = await import("../common/logger");
+  const logger = getLogger("Config");
+
   const vault = getVaultClient();
 
   if (vault.isEnabled()) {
