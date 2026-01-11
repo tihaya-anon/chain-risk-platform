@@ -13,7 +13,8 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 RUN apk --no-cache add curl && \
-    adduser -D -u 1000 appuser
+    adduser -D -u 1000 appuser && \
+    mkdir -p /app/logs && chown appuser:appuser /app/logs
 
 COPY --from=builder /app/target/graph-service-*.jar /app/app.jar
 
