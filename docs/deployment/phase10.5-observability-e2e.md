@@ -11,19 +11,19 @@
 | Prometheus | Config exists | Targets point to host.docker.internal, services now in Docker |
 | Java OTel | Config exists | graph-service/orchestrator not sending traces |
 | Cross-service trace | Not verified | No E2E trace validation |
-| Frontend E2E | None | No automated UI testing |
+| Frontend E2E | ✅ Complete | Playwright configured |
 
 ---
 
 ## Task Breakdown
 
-| CP | Task | Depends | Est | Parallel |
-|----|------|---------|-----|----------|
-| 1 | Fix Prometheus targets for Docker network | - | 0.5h | ✅ |
-| 2 | Fix Java OTel in Docker containers | - | 1h | ✅ |
+| CP | Task | Depends | Est | Status |
+|----|------|---------|-----|--------|
+| 1 | Fix Prometheus targets for Docker network | - | 0.5h | - |
+| 2 | Fix Java OTel in Docker containers | - | 1h | - |
 | 3 | Integration test script | CP-1,2 | 1h | - |
 | 4 | Frontend E2E setup (Playwright) | - | 2h | ✅ |
-| 5 | WebSocket E2E test | CP-4 | 1h | - |
+| 5 | WebSocket E2E test | CP-4 | 1h | ✅ |
 
 **Parallel**: CP-1, CP-2, CP-4 can run concurrently
 
@@ -37,6 +37,7 @@
 [CP-2 Java OTel]──────┼──────▶[CP-3 Integration Test]
                       │
 [CP-4 Playwright]─────┴──────▶[CP-5 WebSocket E2E]
+       ✅                             ✅
 ```
 
 ---
@@ -116,41 +117,67 @@ BFF → Orchestrator → RiskMLService → QueryService → PostgreSQL
 
 ---
 
-## CP-4: Playwright Setup
+## CP-4: Playwright Setup ✅
 
 **Goal**: Automated frontend testing.
 
 **Structure**:
 ```
-tests/
-├── e2e/
-│   ├── playwright.config.ts
-│   ├── fixtures/
-│   └── specs/
-│       ├── login.spec.ts
-│       ├── dashboard.spec.ts
-│       └── search.spec.ts
+tests/e2e/playwright/
+├── playwright.config.ts      # Playwright configuration
+├── fixtures/
+│   └── test-fixtures.ts      # Auth helpers, test users
+├── specs/
+│   ├── login.spec.ts         # Login tests
+│   ├── dashboard.spec.ts     # Dashboard tests
+│   ├── search.spec.ts        # Address/tag search tests
+│   ├── alerts.spec.ts        # Alert management tests
+│   └── websocket.spec.ts     # WebSocket E2E tests
+└── scripts/
+    ├── run-playwright.sh     # Test runner
+    └── ws-test-helper.sh     # WebSocket test helper
 ```
 
 **Test Cases**:
-| Test | Description |
-|------|-------------|
-| login | Login form, error handling |
-| dashboard | Dashboard loads, charts render |
-| search | Address search, results display |
-| alerts | Alert list, filter, detail |
+| Test | Description | Status |
+|------|-------------|--------|
+| login | Login form, error handling | ✅ |
+| dashboard | Dashboard loads, charts render | ✅ |
+| search | Address search, results display | ✅ |
+| alerts | Alert list, filter, detail | ✅ |
+
+**Commands**:
+```bash
+make playwright-setup        # Install dependencies
+make playwright-test         # Run all tests
+make playwright-test-login   # Run login tests
+make playwright-test-headed  # Run with visible browser
+make playwright-report       # Show HTML report
+```
 
 ---
 
-## CP-5: WebSocket E2E Test
+## CP-5: WebSocket E2E Test ✅
 
 **Goal**: Verify real-time alert push.
 
-**Flow**:
+**Test Flow**:
 ```
 1. Connect WebSocket to BFF
 2. Inject alert event to Kafka
 3. Verify WebSocket receives alert within 5s
+```
+
+**Implementation**:
+- `specs/websocket.spec.ts`: WebSocket connection and message tests
+- `scripts/ws-test-helper.sh`: Kafka alert injection helper
+
+**Commands**:
+```bash
+make playwright-test-websocket  # Run WebSocket tests
+make ws-inject-alert            # Inject test alert to Kafka
+make ws-inject-critical         # Inject critical alert
+make ws-inject-batch N=10       # Inject multiple alerts
 ```
 
 ---
@@ -161,14 +188,14 @@ tests/
 # Day 1 (parallel)
 make fix-prometheus-targets  # CP-1
 make fix-java-otel          # CP-2
-make setup-playwright       # CP-4
+make playwright-setup       # CP-4 ✅
 
 # Day 1.5 (after CP-1, CP-2)
 make integration-test       # CP-3
 
 # Day 2 (after CP-4)
-make e2e-websocket          # CP-5
-make e2e-all                # Full E2E suite
+make playwright-test-websocket  # CP-5 ✅
+make playwright-test            # Full E2E suite
 ```
 
 ---
@@ -186,10 +213,15 @@ make jaeger-trace TRACE_ID=xxx  # Get specific trace
 # Integration
 make integration-test           # Run integration tests
 
-# E2E
-make e2e-setup                  # Install Playwright
-make e2e-test                   # Run all E2E tests
-make e2e-test-ui                # Run with UI (headed)
+# Playwright E2E
+make playwright-setup           # Install Playwright
+make playwright-test            # Run all E2E tests
+make playwright-test-headed     # Run with visible browser
+make playwright-report          # Show HTML report
+
+# WebSocket Testing
+make playwright-test-websocket  # Run WebSocket E2E tests
+make ws-inject-alert            # Inject test alert
 ```
 
 ---
@@ -199,8 +231,8 @@ make e2e-test-ui                # Run with UI (headed)
 - [ ] All Prometheus targets UP (6 services)
 - [ ] Jaeger shows all 6 services
 - [ ] Integration test passes (cross-service trace verified)
-- [ ] Playwright tests pass (4 specs)
-- [ ] WebSocket E2E passes
+- [x] Playwright tests pass (4 specs)
+- [x] WebSocket E2E passes
 
 ---
 
