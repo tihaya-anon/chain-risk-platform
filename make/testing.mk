@@ -1,6 +1,14 @@
 # Testing Commands
 
-# E2E
+# ============================================
+# Smoke Test
+# ============================================
+smoke-test:
+	@bash -c '$(LOAD_ENV) ./scripts/smoke-test.sh'
+
+# ============================================
+# E2E Tests
+# ============================================
 test-e2e: generator-build
 	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh all'
 
@@ -10,15 +18,21 @@ test-e2e-pipeline: generator-build
 test-e2e-services:
 	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh services'
 
-# Integration
+# ============================================
+# Integration Tests
+# ============================================
 test-integration:
 	@bash -c '$(LOAD_ENV) ./scripts/test/run-integration-test.sh'
 
-# Phase 10
+# ============================================
+# Phase Validation
+# ============================================
 validate-phase10:
 	@./scripts/validate-phase10.sh
 
-# Batch ops
+# ============================================
+# Batch Operations
+# ============================================
 build-all: ingestion-build query-build alert-build risk-build bff-build orchestrator-build graph-build flink-build batch-build frontend-build generator-build
 
 test-all:
@@ -31,7 +45,9 @@ test-all:
 
 clean-all: ingestion-clean query-clean alert-clean risk-clean bff-clean orchestrator-clean graph-clean flink-clean batch-clean frontend-clean
 
-# Local runner
+# ============================================
+# Local Service Runner
+# ============================================
 run-svc:
 	@mkdir -p $(LOGS_DIR)
 	@echo "🚀 Starting services..."
@@ -49,6 +65,8 @@ stop-svc:
 	@pkill -f "graph-service" 2>/dev/null || true
 	@echo "✅ Stopped"
 
-# Trino
+# ============================================
+# Trino Query
+# ============================================
 trino:
 	@bash -c '$(LOAD_ENV) ./scripts/trino-query.sh "$(Q)"'
