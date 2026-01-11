@@ -12,7 +12,8 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-RUN apk --no-cache add curl
+RUN apk --no-cache add curl && \
+    mkdir -p /app/logs && chown node:node /app/logs
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
