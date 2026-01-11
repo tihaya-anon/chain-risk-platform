@@ -1,7 +1,6 @@
 package com.chainrisk.graph.model.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +20,7 @@ public class AddTagRequest {
     /**
      * Tags to add
      */
-    @NotBlank(message = "At least one tag is required")
+    @NotEmpty(message = "At least one tag is required")
     private List<String> tags;
 
     /**
