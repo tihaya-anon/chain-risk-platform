@@ -69,6 +69,8 @@ services:
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: chainrisk123
       NACOS_SERVER: nacos:8848
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_SERVICE_NAME: graph-service
       JAVA_OPTS: "-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
@@ -90,6 +92,8 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       NACOS_SERVER: nacos:8848
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_SERVICE_NAME: orchestrator
       JAVA_OPTS: "-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
