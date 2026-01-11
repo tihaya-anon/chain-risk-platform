@@ -4,17 +4,8 @@ services:
     build: ../../services/query-service
     image: chainrisk/query-service:latest
     container_name: query-service
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: chainrisk
-      POSTGRES_PASSWORD: chainrisk123
-      POSTGRES_DB: chainrisk
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      NACOS_SERVER: nacos:8848
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
-      OTEL_SERVICE_NAME: query-service
+    volumes:
+      - ../../services/query-service/configs/config.docker.yaml:/app/configs/config.yaml:ro
     ports:
       - "0.0.0.0:8081:8081"
     depends_on:
@@ -38,18 +29,8 @@ services:
     build: ../../services/alert-service
     image: chainrisk/alert-service:latest
     container_name: alert-service
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: chainrisk
-      POSTGRES_PASSWORD: chainrisk123
-      POSTGRES_DB: chainrisk
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      KAFKA_BROKERS: kafka:29092
-      NACOS_SERVER: nacos:8848
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
-      OTEL_SERVICE_NAME: alert-service
+    volumes:
+      - ../../services/alert-service/configs/config.docker.yaml:/app/configs/config.yaml:ro
     ports:
       - "0.0.0.0:8083:8083"
     depends_on:
@@ -111,13 +92,6 @@ services:
     container_name: graph-service
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_NEO4J_URI: bolt://neo4j:7687
-      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
-      SPRING_NEO4J_AUTHENTICATION_PASSWORD: chainrisk123
-      NACOS_SERVER_ADDR: nacos:8848
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
-      OTEL_SERVICE_NAME: graph-service
-      JAVA_OPTS: "-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
     ports:
       - "0.0.0.0:8084:8084"
     depends_on:
@@ -141,10 +115,6 @@ services:
     container_name: orchestrator
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      NACOS_SERVER_ADDR: nacos:8848
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
-      OTEL_SERVICE_NAME: orchestrator
-      JAVA_OPTS: "-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
     ports:
       - "0.0.0.0:8080:8080"
     depends_on:
