@@ -11,7 +11,11 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
     "generate:api": "orval",
-    "generate:api:watch": "orval --watch"
+    "generate:api:watch": "orval --watch",
+    "e2e": "playwright test --config=../tests/e2e/playwright/playwright.config.ts",
+    "e2e:ui": "playwright test --config=../tests/e2e/playwright/playwright.config.ts --ui",
+    "e2e:headed": "playwright test --config=../tests/e2e/playwright/playwright.config.ts --headed",
+    "e2e:debug": "playwright test --config=../tests/e2e/playwright/playwright.config.ts --debug"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-alpha.10",
@@ -32,6 +36,7 @@
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@faker-js/faker": "^10.2.0",
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",

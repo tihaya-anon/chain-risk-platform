@@ -7,7 +7,7 @@ smoke-test:
 	@bash -c '$(LOAD_ENV) ./scripts/smoke-test.sh'
 
 # ============================================
-# E2E Tests
+# E2E Tests (Go)
 # ============================================
 test-e2e: generator-build
 	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh all'
@@ -17,6 +17,50 @@ test-e2e-pipeline: generator-build
 
 test-e2e-services:
 	@bash -c '$(LOAD_ENV) ./tests/e2e/run_e2e.sh services'
+
+# ============================================
+# Playwright E2E Tests (Frontend)
+# ============================================
+playwright-setup:
+	@echo "🎭 Installing Playwright..."
+	@cd $(DIR_FRONTEND) && npm install
+	@cd $(DIR_FRONTEND) && npx playwright install chromium
+	@echo "✅ Playwright setup complete"
+
+playwright-test:
+	@echo "🎭 Running Playwright tests..."
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/run-playwright.sh all'
+
+playwright-test-login:
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/run-playwright.sh login'
+
+playwright-test-dashboard:
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/run-playwright.sh dashboard'
+
+playwright-test-search:
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/run-playwright.sh search'
+
+playwright-test-alerts:
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/run-playwright.sh alerts'
+
+playwright-test-websocket:
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/run-playwright.sh websocket'
+
+playwright-test-headed:
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/run-playwright.sh all --headed'
+
+playwright-report:
+	@cd tests/e2e/playwright && npx playwright show-report
+
+# WebSocket E2E helpers
+ws-inject-alert:
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/ws-test-helper.sh inject-alert'
+
+ws-inject-critical:
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/ws-test-helper.sh inject-critical'
+
+ws-inject-batch:
+	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/ws-test-helper.sh inject-batch $(N)'
 
 # ============================================
 # Integration Tests
@@ -42,6 +86,8 @@ test-all:
 	@$(MAKE) bff-test || true
 	@$(MAKE) orchestrator-test || true
 	@$(MAKE) graph-test || true
+
+test-e2e-all: test-e2e playwright-test
 
 clean-all: ingestion-clean query-clean alert-clean risk-clean bff-clean orchestrator-clean graph-clean flink-clean batch-clean frontend-clean
 
