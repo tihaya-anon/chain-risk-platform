@@ -12,11 +12,25 @@ RUN mvn package -DskipTests -q
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
+# Install curl for healthcheck and download OTel agent
+ARG OTEL_VERSION=2.10.0
 RUN apk --no-cache add curl && \
     adduser -D -u 1000 appuser && \
-    mkdir -p /app/logs && chown appuser:appuser /app/logs
+    mkdir -p /app/logs && chown appuser:appuser /app/logs && \
+    curl -L -o /app/opentelemetry-javaagent.jar \
+        "https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_VERSION}/opentelemetry-javaagent.jar"
 
 COPY --from=builder /app/target/graph-service-*.jar /app/app.jar
+
+# OTel configuration
+ENV JAVA_TOOL_OPTIONS="-javaagent:/app/opentelemetry-javaagent.jar"
+ENV OTEL_SERVICE_NAME=graph-service
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+ENV OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+ENV OTEL_TRACES_EXPORTER=otlp
+ENV OTEL_METRICS_EXPORTER=none
+ENV OTEL_LOGS_EXPORTER=none
+ENV OTEL_PROPAGATORS=tracecontext,baggage
 
 USER appuser
 
