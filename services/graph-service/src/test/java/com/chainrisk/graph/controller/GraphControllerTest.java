@@ -14,7 +14,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -51,7 +50,9 @@ class GraphControllerTest {
         void shouldReturn200WithValidDepth() throws Exception {
             AddressNeighborsResponse response = AddressNeighborsResponse.builder()
                     .address(TEST_ADDRESS)
-                    .neighbors(Collections.emptyList())
+                    .depth(2)
+                    .nodes(Collections.emptyList())
+                    .edges(Collections.emptyList())
                     .build();
 
             when(graphQueryService.getNeighbors(anyString(), anyInt(), anyInt()))
@@ -102,7 +103,9 @@ class GraphControllerTest {
         void shouldUseDefaultValues() throws Exception {
             AddressNeighborsResponse response = AddressNeighborsResponse.builder()
                     .address(TEST_ADDRESS)
-                    .neighbors(Collections.emptyList())
+                    .depth(1)
+                    .nodes(Collections.emptyList())
+                    .edges(Collections.emptyList())
                     .build();
 
             when(graphQueryService.getNeighbors(anyString(), anyInt(), anyInt()))
