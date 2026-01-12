@@ -78,7 +78,7 @@ jobs:
 
       - name: Lint Go
         if: matrix.service.lang == 'go' && steps.check.outputs.exists == 'true'
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v9
         with:
           working-directory: ${{ matrix.service.path }}
           version: latest
