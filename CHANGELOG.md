@@ -4,6 +4,31 @@ All notable changes to Chain Risk Platform.
 
 ---
 
+## [0.14.0] - 2026-01-12
+
+### Phase 14: CI/CD Pipeline
+
+#### Added
+- **GitHub Actions CI**: Lint, build, test workflows for monorepo
+- **Build Pipeline**: Docker image build with caching and SBOM
+- **Test Automation**: Unit, integration, contract test workflows
+- **Registry Cleanup**: Weekly cleanup of old container images
+- **Dependabot**: Automated dependency updates
+- **Blue-Green Deploy**: Zero-downtime deployment script
+- **Rollback Script**: Quick rollback with history tracking
+
+#### Files
+- `.github/workflows/ci.yml`: CI pipeline
+- `.github/workflows/build.yml`: Docker build
+- `.github/workflows/test.yml`: Test automation
+- `.github/workflows/cleanup.yml`: Image cleanup
+- `.github/dependabot.yml`: Dependency updates
+- `scripts/deploy/blue-green.sh`: Deployment script
+- `scripts/deploy/rollback.sh`: Rollback script
+- `scripts/wait-for-healthy.sh`: Health check script
+
+---
+
 ## [0.11.0] - 2026-01-12
 
 ### Phase 11: API Integration Testing
@@ -58,117 +83,98 @@ All notable changes to Chain Risk Platform.
 ### Phase 10: Production Hardening
 
 #### Added
-- **Containerization**: All 6 services Dockerized with multi-stage builds
-- **Vault Integration**: HashiCorp Vault for secrets management
-- **Elasticsearch**: Persistent storage for Jaeger traces
-- **ILM Policy**: 7-day trace retention with automatic cleanup
-- **WebSocket**: Real-time alert push via Socket.IO
-- **Grafana Dashboards**: Infrastructure overview, service health, ML performance
-- **Smoke Test**: Service verification and trace generation script
-- **Validation Script**: 23-point Phase 10 validation
-
-#### Infrastructure
-- Modular Docker Compose: base, infra, monitoring, security, services
-- Unified secret management with environment variables
-- Health checks and restart policies
+- **Observability Stack**: Prometheus, Grafana, Loki, Jaeger
+- **Service Dashboards**: Per-service Grafana dashboards
+- **Log Aggregation**: Centralized logging with Loki
+- **Distributed Tracing**: Jaeger integration
 
 ---
 
 ## [0.9.0] - 2026-01-10
 
-### Phase 9: Stream Processing & ML Pipeline
+### Phase 9: Graph Service
 
 #### Added
-- **stream-processor**: Flink-based real-time transaction analysis
-- **batch-processor**: Feature extraction and model training pipelines
-- **ML Model Registry**: Version-controlled model storage
-- **Feature Store**: Centralized feature management
+- **Neo4j Integration**: Graph database for address relationships
+- **Graph Queries**: Path finding and risk propagation
 
 ---
 
 ## [0.8.0] - 2026-01-09
 
-### Phase 8: Observability Foundation
+### Phase 8: Alert Service
 
 #### Added
-- **Jaeger**: Distributed tracing
-- **Prometheus + Grafana**: Metrics collection and visualization
-- **Loki**: Log aggregation
-- **OpenTelemetry**: Instrumentation for Go and Java services
+- **Alert Rules**: Configurable risk thresholds
+- **Notification System**: Multi-channel alerts
 
 ---
 
 ## [0.7.0] - 2026-01-08
 
-### Phase 7: Frontend & BFF
+### Phase 7: Risk ML Service
 
 #### Added
-- **BFF Service**: Backend-for-frontend aggregation layer
-- **React Dashboard**: Risk monitoring and alert management UI
-- **WebSocket**: Real-time updates
+- **ML Scoring**: Risk assessment models
+- **Feature Engineering**: Address behavior features
 
 ---
 
 ## [0.6.0] - 2026-01-07
 
-### Phase 6: Orchestration
+### Phase 6: Query Service
 
 #### Added
-- **orchestrator**: Service coordination and workflow management
-- **Saga Pattern**: Distributed transaction handling
-- **Circuit Breaker**: Resilience patterns with Resilience4j
+- **Address Query API**: Blockchain address lookups
+- **Transaction History**: Historical data retrieval
 
 ---
 
 ## [0.5.0] - 2026-01-06
 
-### Phase 5: Alert System
+### Phase 5: BFF Gateway
 
 #### Added
-- **alert-service**: Rule-based alerting engine
-- **Notification Channels**: Email, Slack, webhook support
-- **Alert Rules**: Configurable thresholds and conditions
+- **NestJS BFF**: Business aggregation layer
+- **API Composition**: Multi-service orchestration
 
 ---
 
 ## [0.4.0] - 2026-01-05
 
-### Phase 4: Graph Analytics
+### Phase 4: Orchestrator
 
 #### Added
-- **graph-service**: Neo4j-based address relationship tracking
-- **Tag Propagation**: BFS-based risk tag spreading
-- **Clustering**: Address clustering algorithms
+- **Spring Gateway**: API gateway with JWT auth
+- **Rate Limiting**: Request throttling
 
 ---
 
 ## [0.3.0] - 2026-01-04
 
-### Phase 3: Risk ML Service
+### Phase 3: Data Processing
 
 #### Added
-- **risk-ml-service**: Machine learning risk scoring
-- **Feature Engineering**: Transaction pattern features
-- **Model Serving**: Real-time prediction API
+- **Kafka Streams**: Real-time data processing
+- **Flink Jobs**: Batch analytics
 
 ---
 
 ## [0.2.0] - 2026-01-03
 
-### Phase 2: Query Service
+### Phase 2: Data Ingestion
 
 #### Added
-- **query-service**: Transaction data query API
-- **PostgreSQL**: Timeseries storage with partitioning
-- **Redis**: Query result caching
+- **Blockchain Connectors**: Multi-chain data ingestion
+- **Kafka Producers**: Event streaming
 
 ---
 
 ## [0.1.0] - 2026-01-02
 
-### Phase 1: Data Ingestion
+### Phase 1: Foundation
 
 #### Added
-- **data-ingestion**: Etherscan API polling
-- **Kafka**: Event streaming infrastructure
-- **Nacos**: Service discovery and configuration
+- **Project Structure**: Monorepo layout
+- **Docker Compose**: Local development environment
+- **Infrastructure**: PostgreSQL, Redis, Kafka setup
