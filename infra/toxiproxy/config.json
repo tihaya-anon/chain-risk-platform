@@ -1,0 +1,26 @@
+[
+  {
+    "name": "postgres-proxy",
+    "listen": "0.0.0.0:25432",
+    "upstream": "postgres:5432",
+    "enabled": true
+  },
+  {
+    "name": "redis-proxy",
+    "listen": "0.0.0.0:26379",
+    "upstream": "redis:6379",
+    "enabled": true
+  },
+  {
+    "name": "kafka-proxy",
+    "listen": "0.0.0.0:29092",
+    "upstream": "kafka:9092",
+    "enabled": true
+  },
+  {
+    "name": "neo4j-proxy",
+    "listen": "0.0.0.0:27687",
+    "upstream": "neo4j:7687",
+    "enabled": true
+  }
+]
