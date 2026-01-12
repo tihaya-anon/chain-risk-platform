@@ -1,0 +1,61 @@
+# ============================================
+# Chain Risk Platform - Image Cleanup
+# ============================================
+# Clean up old Docker images from registry
+
+name: Cleanup Images
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly at 2 AM Sunday
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no actual deletion)'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        service:
+          - query-service
+          - alert-service
+          - risk-ml-service
+          - graph-service
+          - orchestrator
+          - bff
+          - data-ingestion
+          - processing
+    steps:
+      - name: Delete old versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: chain-risk-platform/${{ matrix.service }}
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: true
+        continue-on-error: true
+
+  cleanup-summary:
+    needs: cleanup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## Cleanup Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Cleaned up old container images." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Policy:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Keep minimum 10 versions per service" >> $GITHUB_STEP_SUMMARY
+          echo "- Delete untagged versions only" >> $GITHUB_STEP_SUMMARY

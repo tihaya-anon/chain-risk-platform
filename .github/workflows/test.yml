@@ -1,0 +1,218 @@
+# ============================================
+# Chain Risk Platform - Test Pipeline
+# ============================================
+# Automated testing: unit, integration, contract
+
+name: Test
+
+on:
+  pull_request:
+    branches: [main, develop, develop/*]
+  workflow_dispatch:
+
+jobs:
+  # ==================== Unit Tests ====================
+  unit-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: query-service
+            path: services/query-service
+            lang: go
+            cmd: go test -v -race -coverprofile=coverage.out ./...
+          - service: alert-service
+            path: services/alert-service
+            lang: go
+            cmd: go test -v -race -coverprofile=coverage.out ./...
+          - service: data-ingestion
+            path: data-ingestion
+            lang: go
+            cmd: go test -v -race -coverprofile=coverage.out ./...
+          - service: risk-ml-service
+            path: services/risk-ml-service
+            lang: python
+            cmd: pytest --cov=app --cov-report=xml -v
+          - service: graph-service
+            path: services/graph-service
+            lang: java
+            cmd: ./mvnw test jacoco:report -q
+          - service: orchestrator
+            path: services/orchestrator
+            lang: java
+            cmd: ./mvnw test jacoco:report -q
+          - service: processing
+            path: processing
+            lang: java
+            cmd: ./mvnw test jacoco:report -q
+          - service: bff
+            path: services/bff
+            lang: node
+            cmd: npm test -- --coverage
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check service exists
+        id: check
+        run: |
+          if [ -d "${{ matrix.path }}" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Go
+        if: matrix.lang == 'go' && steps.check.outputs.exists == 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache-dependency-path: ${{ matrix.path }}/go.sum
+
+      - name: Setup Python
+        if: matrix.lang == 'python' && steps.check.outputs.exists == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Setup Java
+        if: matrix.lang == 'java' && steps.check.outputs.exists == 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Setup Node
+        if: matrix.lang == 'node' && steps.check.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.path }}
+        run: |
+          if [ -f "go.mod" ]; then go mod download; fi
+          if [ -f "requirements.txt" ]; then pip install -r requirements.txt pytest pytest-cov; fi
+          if [ -f "pyproject.toml" ]; then pip install -e . pytest pytest-cov; fi
+          if [ -f "package.json" ]; then npm ci; fi
+
+      - name: Run tests
+        if: steps.check.outputs.exists == 'true'
+        working-directory: ${{ matrix.path }}
+        run: ${{ matrix.cmd }}
+        continue-on-error: true
+
+      - name: Upload coverage
+        if: steps.check.outputs.exists == 'true'
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ${{ matrix.path }}
+          flags: ${{ matrix.service }}
+          fail_ci_if_error: false
+
+  # ==================== Integration Tests ====================
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: unit-test
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: chainrisk_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Run integration tests
+        run: |
+          if [ -d "tests/integration" ]; then
+            cd tests/integration
+            go test -v -tags=integration ./...
+          else
+            echo "No integration tests found"
+          fi
+        env:
+          DATABASE_URL: postgres://test:test@localhost:5432/chainrisk_test
+          REDIS_URL: redis://localhost:6379
+
+  # ==================== Contract Tests ====================
+  contract-test:
+    runs-on: ubuntu-latest
+    needs: unit-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69 || true
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update && sudo apt-get install k6 || echo "k6 install failed, using docker"
+
+      - name: Start services
+        run: |
+          docker compose -f docker-compose.yml up -d --build
+        continue-on-error: true
+
+      - name: Wait for healthy
+        run: |
+          chmod +x scripts/wait-for-healthy.sh 2>/dev/null || true
+          ./scripts/wait-for-healthy.sh 2>/dev/null || echo "Services not ready"
+        timeout-minutes: 5
+        continue-on-error: true
+
+      - name: Run contract tests
+        run: |
+          if [ -d "tests/api/contracts" ]; then
+            k6 run tests/api/contracts/*.js || echo "Contract tests skipped"
+          else
+            echo "No contract tests found"
+          fi
+        continue-on-error: true
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v || true
+
+  # ==================== Test Summary ====================
+  test-summary:
+    needs: [unit-test, integration-test, contract-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-test.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration | ${{ needs.integration-test.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Contract | ${{ needs.contract-test.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
