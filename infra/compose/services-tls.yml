@@ -1,0 +1,91 @@
+# TLS/mTLS Override for Application Services
+# Usage: docker-compose -f compose/services.yml -f compose/services-tls.yml up
+
+services:
+  query-service:
+    environment:
+      - TLS_ENABLED=true
+      - TLS_CERT_PATH=/certs/cert.pem
+      - TLS_KEY_PATH=/certs/key.pem
+      - TLS_CA_PATH=/certs/ca.pem
+      - TLS_MTLS_MODE=required
+    volumes:
+      - ../../services/query-service/configs/config.docker.yaml:/app/configs/config.yaml:ro
+      - ../certs/query-service:/certs:ro
+    ports:
+      - "0.0.0.0:8444:8444"
+    healthcheck:
+      test: ["CMD", "wget", "--no-check-certificate", "-qO-", "https://localhost:8444/health"]
+
+  alert-service:
+    environment:
+      - TLS_ENABLED=true
+      - TLS_CERT_PATH=/certs/cert.pem
+      - TLS_KEY_PATH=/certs/key.pem
+      - TLS_CA_PATH=/certs/ca.pem
+      - TLS_MTLS_MODE=required
+    volumes:
+      - ../../services/alert-service/configs/config.docker.yaml:/app/configs/config.yaml:ro
+      - ../certs/alert-service:/certs:ro
+    ports:
+      - "0.0.0.0:8446:8446"
+    healthcheck:
+      test: ["CMD", "wget", "--no-check-certificate", "-qO-", "https://localhost:8446/health"]
+
+  risk-ml-service:
+    environment:
+      - TLS_ENABLED=true
+      - TLS_CERT_PATH=/certs/cert.pem
+      - TLS_KEY_PATH=/certs/key.pem
+      - TLS_CA_PATH=/certs/ca.pem
+      - TLS_MTLS_MODE=required
+    volumes:
+      - ../certs/risk-ml-service:/certs:ro
+    ports:
+      - "0.0.0.0:8445:8445"
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:8445/health"]
+
+  graph-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=tls
+      - SSL_KEYSTORE_PATH=/certs/keystore.p12
+      - SSL_KEYSTORE_PASSWORD=changeit
+      - SSL_TRUSTSTORE_PATH=/certs/truststore.p12
+      - SSL_TRUSTSTORE_PASSWORD=changeit
+    volumes:
+      - ../certs/graph-service:/certs:ro
+    ports:
+      - "0.0.0.0:8447:8447"
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:8447/actuator/health"]
+
+  orchestrator:
+    environment:
+      - SPRING_PROFILES_ACTIVE=tls
+      - SSL_KEYSTORE_PATH=/certs/keystore.p12
+      - SSL_KEYSTORE_PASSWORD=changeit
+      - SSL_TRUSTSTORE_PATH=/certs/truststore.p12
+      - SSL_TRUSTSTORE_PASSWORD=changeit
+      - BFF_URL=https://bff:3443
+    volumes:
+      - ../certs/orchestrator:/certs:ro
+    ports:
+      - "0.0.0.0:8443:8443"
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/actuator/health"]
+
+  bff:
+    environment:
+      - TLS_ENABLED=true
+      - TLS_CERT_PATH=/certs/cert.pem
+      - TLS_KEY_PATH=/certs/key.pem
+      - TLS_CA_PATH=/certs/ca.pem
+      - TLS_REQUEST_CERT=false
+      - ORCHESTRATOR_URL=https://orchestrator:8443
+    volumes:
+      - ../certs/bff:/certs:ro
+    ports:
+      - "0.0.0.0:3443:3443"
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:3443/health"]

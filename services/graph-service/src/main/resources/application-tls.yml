@@ -1,0 +1,38 @@
+# TLS/mTLS Configuration Profile
+# Activated via: spring.profiles.active=tls
+
+server:
+  port: 8447
+  ssl:
+    enabled: true
+    key-store: ${SSL_KEYSTORE_PATH:/certs/keystore.p12}
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:changeit}
+    key-store-type: PKCS12
+    key-alias: graph-service
+    # mTLS: require client certificate
+    client-auth: need
+    trust-store: ${SSL_TRUSTSTORE_PATH:/certs/truststore.p12}
+    trust-store-password: ${SSL_TRUSTSTORE_PASSWORD:changeit}
+    trust-store-type: PKCS12
+    protocol: TLS
+    enabled-protocols: TLSv1.2,TLSv1.3
+    ciphers:
+      - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+      - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+      - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+      - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+
+# Neo4j with TLS (if Neo4j is configured with TLS)
+spring:
+  neo4j:
+    uri: bolt+s://${NEO4J_HOST:localhost}:${NEO4J_PORT:17687}
+    security:
+      encrypted: true
+      trust-strategy: TRUST_CUSTOM_CA_SIGNED_CERTIFICATES
+      certificate-file: ${NEO4J_CA_PATH:/certs/ca.pem}
+
+# Logging for TLS debugging
+logging:
+  level:
+    javax.net.ssl: INFO
+    sun.security.ssl: INFO
