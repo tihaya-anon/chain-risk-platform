@@ -1,41 +1,68 @@
 # Phase 13: Security Hardening
 
-> Status: Planning | Priority: High | Est: 1-2 weeks
+> **Status**: Planning → Development  
+> **Priority**: High  
+> **Estimate**: 5-7 days (parallel)
 
 ---
 
-## Objectives
+## Overview
 
-- [ ] TLS/mTLS for inter-service communication
-- [ ] API rate limiting (per user/IP)
-- [ ] Input validation & sanitization
-- [ ] Audit logging
-- [ ] Security scan integration
+Security hardening for Chain Risk Platform: TLS/mTLS, rate limiting, input validation, audit logging, and CI security scanning.
 
 ---
 
-## Tasks
+## Quick Reference
 
-### 1. Transport Security
-- Enable TLS for all service endpoints
-- Configure mTLS between internal services
-- Certificate management (Vault integration)
+| Item | Link |
+|------|------|
+| **Development Plan** | [phase13/PHASE13_OVERVIEW.md](./phase13/PHASE13_OVERVIEW.md) |
+| CP1 - Certificates | [phase13/CP1_CERT_MANAGEMENT.md](./phase13/CP1_CERT_MANAGEMENT.md) |
+| CP2 - TLS/mTLS | [phase13/CP2_TLS_MTLS.md](./phase13/CP2_TLS_MTLS.md) |
+| CP3 - API Hardening | [phase13/CP3_API_HARDENING.md](./phase13/CP3_API_HARDENING.md) |
+| CP4 - Audit Logging | [phase13/CP4_AUDIT_LOGGING.md](./phase13/CP4_AUDIT_LOGGING.md) |
+| CP5 - Security Scanning | [phase13/CP5_SECURITY_SCANNING.md](./phase13/CP5_SECURITY_SCANNING.md) |
+| CP6 - Integration | [phase13/CP6_INTEGRATION.md](./phase13/CP6_INTEGRATION.md) |
 
-### 2. API Hardening
-- Rate limiting middleware (per endpoint/user)
-- Request size limits
-- Input validation (OpenAPI-based)
-- SQL injection / XSS prevention
+---
 
-### 3. Audit & Compliance
-- Audit log for sensitive operations
-- Log retention policy
-- Access control review
+## Worker Prompts
 
-### 4. Security Scanning
-- SAST in CI pipeline (CodeQL/Semgrep)
-- Dependency vulnerability scan (Trivy)
-- Container image scanning
+| Worker | Track | Prompt |
+|--------|-------|--------|
+| W1 | Infrastructure | [PROMPT_W1.md](./phase13/PROMPT_W1.md) |
+| W2 | Application | [PROMPT_W2.md](./phase13/PROMPT_W2.md) |
+| W3 | CI/CD | [PROMPT_W3.md](./phase13/PROMPT_W3.md) |
+
+---
+
+## Checkpoint DAG
+
+```
+     CP1 ──────► CP2 ──────┐
+                           │
+     CP3 ─────────────────►│
+                           ├──► CP6
+     CP4 ─────────────────►│
+                           │
+     CP5 ─────────────────►┘
+```
+
+---
+
+## Branch Strategy
+
+```bash
+# Docs already on develop/phase13
+# Workers fetch and start from there:
+git fetch origin develop/phase13
+git checkout develop/phase13
+git checkout -b feature/cp{X}-{description}
+# ... work ...
+git checkout develop/phase13 && git pull
+git merge --no-ff feature/cp{X}-{description}
+git push origin develop/phase13
+```
 
 ---
 
@@ -43,18 +70,14 @@
 
 | Criteria | Target |
 |----------|--------|
-| TLS Coverage | 100% endpoints |
+| TLS Coverage | 100% |
+| mTLS Internal | All services |
 | Rate Limiting | All public APIs |
 | OWASP Top 10 | Addressed |
-| Audit Logs | Sensitive ops logged |
+| Audit Logs | Sensitive ops |
+| Vulnerabilities | 0 Critical/High |
 
 ---
 
-## References
-
-- [ROADMAP](../../ROADMAP.md)
-- [SLO Definitions](../../sre/SLO_DEFINITIONS.md)
-
----
-
-**Created**: 2026-01-12
+**Created**: 2026-01-12  
+**Updated**: 2026-01-12
