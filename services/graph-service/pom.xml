@@ -23,7 +23,7 @@
         <spring-cloud-alibaba.version>2023.0.1.0</spring-cloud-alibaba.version>
         <neo4j.version>5.15.0</neo4j.version>
         <springdoc.version>2.3.0</springdoc.version>
-        <lombok.version>1.18.34</lombok.version>
+        <lombok.version>1.18.42</lombok.version>
     </properties>
 
     <dependencies>
