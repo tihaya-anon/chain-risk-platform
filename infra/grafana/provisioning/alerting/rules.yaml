@@ -44,7 +44,7 @@ groups:
         annotations:
           summary: "Service {{ $labels.job }} is down"
           description: "The service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute."
-          runbook_url: "https://confluence.example.com/runbooks/service-down"
+          runbook_url: "docs/sre/runbooks/SERVICE_DOWN.md"
         labels:
           severity: critical
           team: platform
@@ -87,6 +87,50 @@ groups:
         annotations:
           summary: "Kafka consumer lag is high for {{ $labels.consumergroup }}"
           description: "Consumer group {{ $labels.consumergroup }} has lag > 10000 messages."
+          runbook_url: "docs/sre/runbooks/KAFKA_LAG.md"
+        labels:
+          severity: warning
+          team: platform
+
+      - uid: infra-postgres-high-latency
+        title: PostgreSQL High Latency
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: histogram_quantile(0.95, sum(rate(pg_stat_statements_seconds_bucket[5m])) by (le)) > 1
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: count
+              refId: C
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "PostgreSQL query latency is high"
+          description: "Database P95 query latency exceeds 1 second."
+          runbook_url: "docs/sre/runbooks/DATABASE_FAILURE.md"
         labels:
           severity: warning
           team: platform
@@ -129,21 +173,32 @@ groups:
         annotations:
           summary: "PostgreSQL connection count is high"
           description: "Database chainrisk has more than 80 connections."
+          runbook_url: "docs/sre/runbooks/DATABASE_FAILURE.md"
         labels:
           severity: warning
           team: platform
 
-      - uid: infra-loki-down
-        title: Loki Down
+  - orgId: 1
+    name: SLO Alerts
+    folder: Chain Risk Platform
+    interval: 1m
+    rules:
+      - uid: slo-error-budget-burn-critical
+        title: Error Budget Burning Fast (Critical)
         condition: C
         data:
           - refId: A
             relativeTimeRange:
-              from: 60
+              from: 3600
               to: 0
             datasourceUid: prometheus
             model:
-              expr: up{job="loki"} == 0
+              expr: |
+                (1 - (sum(rate(http_requests_total{service="query-service",status!~"5.."}[1h])) 
+                / sum(rate(http_requests_total{service="query-service"}[1h])))) / 0.005 > 14.4
+                or
+                (1 - (sum(rate(http_requests_total{service="alert-service",status!~"5.."}[1h])) 
+                / sum(rate(http_requests_total{service="alert-service"}[1h])))) / 0.001 > 14.4
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -167,10 +222,150 @@ groups:
               type: classic_conditions
         noDataState: OK
         execErrState: Error
-        for: 1m
+        for: 2m
         annotations:
-          summary: "Loki log aggregation is down"
-          description: "Log aggregation service is unavailable, logs may be lost."
+          summary: "Error budget burning 14x faster than allowed"
+          description: "Service error budget will be exhausted before end of period at current rate."
+          runbook_url: "docs/sre/runbooks/HIGH_ERROR_RATE.md"
+        labels:
+          severity: critical
+          team: platform
+
+      - uid: slo-error-budget-burn-warning
+        title: Error Budget Burning (Warning)
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: |
+                (1 - (sum(rate(http_requests_total{service=~"query-service|risk-ml-service|alert-service"}[1h])) 
+                / sum(rate(http_requests_total{service=~"query-service|risk-ml-service|alert-service"}[1h])))) > 1
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: count
+              refId: C
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 1h
+        annotations:
+          summary: "Error budget burn rate elevated"
+          description: "Services consuming error budget faster than sustainable."
+          runbook_url: "docs/sre/runbooks/HIGH_ERROR_RATE.md"
+        labels:
+          severity: warning
+          team: platform
+
+      - uid: slo-availability-breach
+        title: SLO Availability Breach
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: |
+                (sum(rate(http_requests_total{service="query-service",status!~"5.."}[5m])) 
+                / sum(rate(http_requests_total{service="query-service"}[5m]))) < 0.985
+                or
+                (sum(rate(http_requests_total{service="alert-service",status!~"5.."}[5m])) 
+                / sum(rate(http_requests_total{service="alert-service"}[5m]))) < 0.989
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: count
+              refId: C
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Service availability below SLO threshold"
+          description: "Availability dropped below SLO - 1% margin."
+          runbook_url: "docs/sre/runbooks/SERVICE_DOWN.md"
+        labels:
+          severity: critical
+          team: platform
+
+      - uid: slo-latency-breach
+        title: SLO Latency Breach
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: |
+                histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service="query-service"}[5m])) by (le)) > 1
+                or
+                histogram_quantile(0.95, sum(rate(ml_inference_duration_seconds_bucket{service="risk-ml-service"}[5m])) by (le)) > 0.4
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    type: count
+              refId: C
+              type: classic_conditions
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Service latency exceeds SLO threshold"
+          description: "P99/P95 latency is 2x the SLO target."
+          runbook_url: "docs/sre/runbooks/HIGH_LATENCY.md"
         labels:
           severity: critical
           team: platform
@@ -191,15 +386,8 @@ groups:
             datasourceUid: prometheus
             model:
               expr: |
-                (
-                  sum by (job) (rate(query_service_http_requests_total{status=~"5.."}[5m]))
-                  + sum by (job) (rate(risk_ml_service_http_requests_total{status=~"5.."}[5m]))
-                  + sum by (job) (rate(alert_service_http_requests_total{status=~"5.."}[5m]))
-                ) / (
-                  sum by (job) (rate(query_service_http_requests_total[5m]))
-                  + sum by (job) (rate(risk_ml_service_http_requests_total[5m]))
-                  + sum by (job) (rate(alert_service_http_requests_total[5m]))
-                ) > 0.05
+                sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+                / sum(rate(http_requests_total[5m])) by (service) > 0.05
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -225,8 +413,9 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: "High error rate detected (>5%)"
-          description: "Error rate across services exceeds 5% for 5 minutes."
+          summary: "High error rate detected on {{ $labels.service }}"
+          description: "Error rate exceeds 5% for 5 minutes."
+          runbook_url: "docs/sre/runbooks/HIGH_ERROR_RATE.md"
         labels:
           severity: warning
           team: platform
@@ -242,11 +431,7 @@ groups:
             datasourceUid: prometheus
             model:
               expr: |
-                histogram_quantile(0.99, 
-                  sum(rate(query_service_http_request_duration_seconds_bucket[5m])) by (le)
-                  + sum(rate(risk_ml_service_http_request_duration_seconds_bucket[5m])) by (le)
-                  + sum(rate(alert_service_http_request_duration_seconds_bucket[5m])) by (le)
-                ) > 2
+                histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 2
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -272,53 +457,9 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: "Service P99 latency exceeds 2 seconds"
+          summary: "Service {{ $labels.service }} P99 latency > 2s"
           description: "High latency detected - P99 > 2s for 5 minutes."
-        labels:
-          severity: warning
-          team: platform
-
-      - uid: svc-query-service-degraded
-        title: Query Service Degraded
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange:
-              from: 300
-              to: 0
-            datasourceUid: prometheus
-            model:
-              expr: |
-                histogram_quantile(0.95, sum(rate(query_service_http_request_duration_seconds_bucket[5m])) by (le)) > 1
-                or
-                sum(rate(query_service_http_requests_total{status=~"5.."}[5m])) / sum(rate(query_service_http_requests_total[5m])) > 0.02
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
-          - refId: C
-            relativeTimeRange:
-              from: 0
-              to: 0
-            datasourceUid: __expr__
-            model:
-              conditions:
-                - evaluator:
-                    params: [0]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [A]
-                  reducer:
-                    type: count
-              refId: C
-              type: classic_conditions
-        noDataState: OK
-        execErrState: Error
-        for: 5m
-        annotations:
-          summary: "Query Service performance degraded"
-          description: "Query service P95 > 1s or error rate > 2%."
+          runbook_url: "docs/sre/runbooks/HIGH_LATENCY.md"
         labels:
           severity: warning
           team: platform
@@ -338,7 +479,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: risk_ml_service_model_loaded == 0
+              expr: ml_model_loaded{service="risk-ml-service"} == 0
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -365,7 +506,8 @@ groups:
         for: 2m
         annotations:
           summary: "ML model {{ $labels.model_type }} not loaded"
-          description: "The {{ $labels.model_type }} model has been in NOT LOADED state for over 2 minutes."
+          description: "Model has been NOT LOADED for over 2 minutes."
+          runbook_url: "docs/sre/runbooks/ML_MODEL_FAILURE.md"
         labels:
           severity: critical
           team: ml
@@ -381,7 +523,7 @@ groups:
             datasourceUid: prometheus
             model:
               expr: |
-                histogram_quantile(0.95, sum(rate(risk_ml_service_risk_score_latency_seconds_bucket{model_type="ensemble"}[5m])) by (le)) > 0.5
+                histogram_quantile(0.95, sum(rate(ml_inference_duration_seconds_bucket[5m])) by (le)) > 0.5
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -408,195 +550,19 @@ groups:
         for: 5m
         annotations:
           summary: "ML inference latency is high"
-          description: "Ensemble model P95 latency is above 500ms for over 5 minutes."
+          description: "Ensemble model P95 latency above 500ms for 5 minutes."
+          runbook_url: "docs/sre/runbooks/ML_MODEL_FAILURE.md"
         labels:
           severity: warning
           team: ml
 
-      - uid: ml-inference-errors
-        title: ML Inference Errors
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange:
-              from: 300
-              to: 0
-            datasourceUid: prometheus
-            model:
-              expr: sum(increase(risk_ml_service_model_inference_errors_total[5m])) > 10
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
-          - refId: C
-            relativeTimeRange:
-              from: 0
-              to: 0
-            datasourceUid: __expr__
-            model:
-              conditions:
-                - evaluator:
-                    params: [0]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [A]
-                  reducer:
-                    type: count
-              refId: C
-              type: classic_conditions
-        noDataState: OK
-        execErrState: Error
-        for: 5m
-        annotations:
-          summary: "ML inference errors detected"
-          description: "More than 10 inference errors in the last 5 minutes."
-        labels:
-          severity: warning
-          team: ml
-
-      - uid: ml-high-risk-score-spike
-        title: High Risk Score Spike
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange:
-              from: 300
-              to: 0
-            datasourceUid: prometheus
-            model:
-              expr: |
-                sum(increase(risk_ml_service_risk_score_value_bucket{le="1.0"}[5m])) 
-                - sum(increase(risk_ml_service_risk_score_value_bucket{le="0.8"}[5m])) > 100
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
-          - refId: C
-            relativeTimeRange:
-              from: 0
-              to: 0
-            datasourceUid: __expr__
-            model:
-              conditions:
-                - evaluator:
-                    params: [0]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [A]
-                  reducer:
-                    type: count
-              refId: C
-              type: classic_conditions
-        noDataState: OK
-        execErrState: Error
-        for: 2m
-        annotations:
-          summary: "Spike in high-risk scores detected"
-          description: "More than 100 addresses scored >0.8 risk in last 5 minutes."
-        labels:
-          severity: warning
-          team: security
-
   - orgId: 1
-    name: Alert Service Alerts
+    name: Circuit Breaker Alerts
     folder: Chain Risk Platform
     interval: 1m
     rules:
-      - uid: alert-notification-failures
-        title: Alert Notification Failures
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange:
-              from: 300
-              to: 0
-            datasourceUid: prometheus
-            model:
-              expr: |
-                sum(rate(alert_service_notifications_sent_total{status="failed"}[5m])) 
-                / sum(rate(alert_service_notifications_sent_total[5m])) > 0.1
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
-          - refId: C
-            relativeTimeRange:
-              from: 0
-              to: 0
-            datasourceUid: __expr__
-            model:
-              conditions:
-                - evaluator:
-                    params: [0]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [A]
-                  reducer:
-                    type: count
-              refId: C
-              type: classic_conditions
-        noDataState: OK
-        execErrState: Error
-        for: 5m
-        annotations:
-          summary: "High notification failure rate"
-          description: "More than 10% of alert notifications are failing."
-        labels:
-          severity: warning
-          team: platform
-
-      - uid: alert-critical-spike
-        title: Critical Alert Spike
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange:
-              from: 300
-              to: 0
-            datasourceUid: prometheus
-            model:
-              expr: sum(increase(alert_service_alerts_triggered_total{severity="critical"}[5m])) > 50
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
-          - refId: C
-            relativeTimeRange:
-              from: 0
-              to: 0
-            datasourceUid: __expr__
-            model:
-              conditions:
-                - evaluator:
-                    params: [0]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [A]
-                  reducer:
-                    type: count
-              refId: C
-              type: classic_conditions
-        noDataState: OK
-        execErrState: Error
-        for: 1m
-        annotations:
-          summary: "Spike in critical alerts"
-          description: "More than 50 critical alerts triggered in the last 5 minutes."
-        labels:
-          severity: critical
-          team: security
-
-  - orgId: 1
-    name: Observability Stack Alerts
-    folder: Chain Risk Platform
-    interval: 1m
-    rules:
-      - uid: obs-jaeger-down
-        title: Jaeger Tracing Down
+      - uid: cb-state-open
+        title: Circuit Breaker Open
         condition: C
         data:
           - refId: A
@@ -605,7 +571,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: up{job="jaeger"} == 0
+              expr: circuit_breaker_state == 2
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -631,50 +597,9 @@ groups:
         execErrState: Error
         for: 1m
         annotations:
-          summary: "Jaeger tracing is down"
-          description: "Distributed tracing is unavailable, traces will be lost."
-        labels:
-          severity: warning
-          team: platform
-
-      - uid: obs-prometheus-target-down
-        title: Prometheus Target Down
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange:
-              from: 300
-              to: 0
-            datasourceUid: prometheus
-            model:
-              expr: up{job=~".*service.*"} == 0
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
-          - refId: C
-            relativeTimeRange:
-              from: 0
-              to: 0
-            datasourceUid: __expr__
-            model:
-              conditions:
-                - evaluator:
-                    params: [0]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [A]
-                  reducer:
-                    type: count
-              refId: C
-              type: classic_conditions
-        noDataState: OK
-        execErrState: Error
-        for: 2m
-        annotations:
-          summary: "Prometheus target {{ $labels.job }} is down"
-          description: "Metrics scraping failed for {{ $labels.job }}."
+          summary: "Circuit breaker {{ $labels.name }} is OPEN"
+          description: "Service {{ $labels.service }} circuit breaker opened due to failures."
+          runbook_url: "docs/sre/runbooks/DATABASE_FAILURE.md"
         labels:
           severity: warning
           team: platform
