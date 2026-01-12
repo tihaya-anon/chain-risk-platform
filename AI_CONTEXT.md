@@ -34,11 +34,8 @@ Blockchain address risk assessment system using Lambda Architecture.
 
 | Phase | Status | Content |
 |-------|--------|---------|
-| 1-11 | ✅ | Core platform, API testing |
-| 12 | ✅ | SRE & Chaos Engineering |
-| 14 | ✅ | CI/CD Pipeline |
-| 15 | ✅ | Performance Testing |
-| 13 | 📋 | Security (next) |
+| 1-15 | ✅ | Core platform, SRE, CI/CD, Performance |
+| 13 | 📋 | Security Hardening (next) |
 
 **Next**: Phase 13 - Security Hardening
 
@@ -71,27 +68,14 @@ make docker-build      # Build images
 
 ---
 
-## Git Workflow
-
-```bash
-git checkout main
-git checkout -b feature/xxx
-# work...
-git commit -m "feat(XX): description"
-git push origin feature/xxx
-# create PR to main
-```
-
----
-
 ## Key Docs
 
 | Doc | Path |
 |-----|------|
 | Roadmap | `docs/ROADMAP.md` |
+| Phase 13 Plan | `docs/development/plans/PHASE13_SECURITY.md` |
 | SLO Definitions | `docs/sre/SLO_DEFINITIONS.md` |
 | Performance | `docs/performance/BASELINE_REPORT.md` |
-| CI/CD | `.github/workflows/` |
 
 ---
 
