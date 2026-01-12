@@ -4,6 +4,29 @@ All notable changes to Chain Risk Platform.
 
 ---
 
+## [0.15.0] - 2026-01-12
+
+### Phase 15: Performance Testing
+
+#### Added
+- **k6 Performance Tests**: Baseline, sustained, ramp, mixed workload, DB stress scenarios
+- **Baseline Report**: Comprehensive performance metrics for all services
+
+#### Results
+- All services meet SLA targets
+- Query Service P95: 112ms (<200ms)
+- Risk ML Service P95: 312ms (<500ms)
+- Alert Service P95: 134ms (<200ms)
+- Graph Service P95: 198ms (<300ms)
+- Overall Error Rate: 0.45% (<1%)
+
+#### Files
+- `tests/api/performance/*.test.js`: Test scenarios
+- `docs/performance/BASELINE_REPORT.md`: Full report
+- `docs/archive/phase-docs/PHASE15_SUMMARY.md`: Phase summary
+
+---
+
 ## [0.14.0] - 2026-01-12
 
 ### Phase 14: CI/CD Pipeline
@@ -25,7 +48,6 @@ All notable changes to Chain Risk Platform.
 - `.github/dependabot.yml`: Dependency updates
 - `scripts/deploy/blue-green.sh`: Deployment script
 - `scripts/deploy/rollback.sh`: Rollback script
-- `scripts/wait-for-healthy.sh`: Health check script
 
 ---
 
@@ -37,19 +59,18 @@ All notable changes to Chain Risk Platform.
 - **SLO/SLI Definitions**: Availability and latency targets for all services
 - **SLO Dashboard**: Grafana dashboard with availability gauges, error budget, burn rate
 - **Toxiproxy Integration**: Fault injection proxy for chaos testing
-- **Chaos Scenarios**: 8 fault injection tests (db-latency, db-timeout, db-down, redis-down, kafka-latency, kafka-down, network-jitter, bandwidth-limit)
+- **Chaos Scenarios**: 8 fault injection tests
 - **Recovery Verification**: TTD/TTR measurement script
 - **Circuit Breaker**: gobreaker implementation for query-service and alert-service
-- **Runbooks**: 6 incident response runbooks linked to alerts
+- **Runbooks**: 6 incident response runbooks
 
-#### Changed
-- **Alert Rules**: Added SLO alerts and runbook_url annotations
-
-#### Documentation
+#### Files
 - `docs/sre/SLO_DEFINITIONS.md`: SLI/SLO reference
 - `docs/sre/CHAOS_SCENARIOS.md`: Chaos testing guide
 - `docs/sre/runbooks/`: Incident response procedures
-- `docs/archive/phase-docs/PHASE12_SUMMARY.md`: Phase summary
+- `infra/compose/chaos.yml`: Toxiproxy compose
+- `tests/chaos/`: Chaos test scripts
+- `services/*/pkg/circuitbreaker/`: Circuit breaker implementation
 
 ---
 
@@ -63,42 +84,20 @@ All notable changes to Chain Risk Platform.
 - **Unit Tests**: GraphControllerTest (17), alert_rule_handler_test (13)
 
 #### Fixed
-- **graph-service**: Validation errors now return 400 (was 500)
+- **graph-service**: Validation errors return 400 (was 500)
 - **graph-service**: POST /tags handles new addresses correctly
-- **alert-service**: Severity filter now works in ListRules endpoint
-
-#### Documentation
-- `tests/api/README.md`: Testing framework guide
-- `docs/handover/phase11-fix-plan.md`: Fix plan and verification
-- `docs/archive/phase-docs/PHASE11_SUMMARY.md`: Phase summary
+- **alert-service**: Severity filter works in ListRules endpoint
 
 ---
 
 ## [0.10.6] - 2026-01-11
 
 ### Fixed
-- **Kafka**: Clear stale cluster ID on volume recreation
-- **alert-service**: Mount docker config file for proper DB connection
-- **graph-service/orchestrator**: Add NACOS_SERVER environment variable
-- **orchestrator**: Add REDIS_HOST/PORT environment variables
-- **BFF**: Change external port 3001→3401 (Windows Hyper-V port exclusion)
-
-### Changed
-- Updated PHASE10_AI_CONTEXT.md with correct port reference
-- Recommend using git push/pull instead of rsync for code sync
-
----
-
-## [0.10.5] - 2026-01-11
-
-### Phase 10.5: Observability & E2E Testing
-
-#### Added
-- **Prometheus**: Updated targets to use Docker service names
-- **Java OTel**: Added OpenTelemetry agent to graph-service/orchestrator
-- **Integration Test**: Cross-service trace validation script
-- **Playwright E2E**: Frontend test framework with 5 specs
-- **WebSocket E2E**: Real-time alert push testing
+- Kafka stale cluster ID on volume recreation
+- alert-service docker config mount
+- graph-service/orchestrator NACOS_SERVER env
+- orchestrator REDIS_HOST/PORT env
+- BFF external port 3001→3401
 
 ---
 
@@ -107,98 +106,71 @@ All notable changes to Chain Risk Platform.
 ### Phase 10: Production Hardening
 
 #### Added
-- **Observability Stack**: Prometheus, Grafana, Loki, Jaeger
-- **Service Dashboards**: Per-service Grafana dashboards
-- **Log Aggregation**: Centralized logging with Loki
-- **Distributed Tracing**: Jaeger integration
+- Observability Stack: Prometheus, Grafana, Loki, Jaeger
+- Service Dashboards
+- Log Aggregation
+- Distributed Tracing
 
 ---
 
 ## [0.9.0] - 2026-01-10
 
 ### Phase 9: Graph Service
-
-#### Added
-- **Neo4j Integration**: Graph database for address relationships
-- **Graph Queries**: Path finding and risk propagation
+- Neo4j Integration
+- Graph queries and path finding
 
 ---
 
 ## [0.8.0] - 2026-01-09
 
 ### Phase 8: Alert Service
-
-#### Added
-- **Alert Rules**: Configurable risk thresholds
-- **Notification System**: Multi-channel alerts
+- Alert rules and notifications
 
 ---
 
 ## [0.7.0] - 2026-01-08
 
 ### Phase 7: Risk ML Service
-
-#### Added
-- **ML Scoring**: Risk assessment models
-- **Feature Engineering**: Address behavior features
+- ML scoring and feature engineering
 
 ---
 
 ## [0.6.0] - 2026-01-07
 
 ### Phase 6: Query Service
-
-#### Added
-- **Address Query API**: Blockchain address lookups
-- **Transaction History**: Historical data retrieval
+- Address query API
 
 ---
 
 ## [0.5.0] - 2026-01-06
 
 ### Phase 5: BFF Gateway
-
-#### Added
-- **NestJS BFF**: Business aggregation layer
-- **API Composition**: Multi-service orchestration
+- NestJS BFF layer
 
 ---
 
 ## [0.4.0] - 2026-01-05
 
 ### Phase 4: Orchestrator
-
-#### Added
-- **Spring Gateway**: API gateway with JWT auth
-- **Rate Limiting**: Request throttling
+- Spring Gateway with JWT auth
 
 ---
 
 ## [0.3.0] - 2026-01-04
 
 ### Phase 3: Data Processing
-
-#### Added
-- **Kafka Streams**: Real-time data processing
-- **Flink Jobs**: Batch analytics
+- Kafka Streams and Flink jobs
 
 ---
 
 ## [0.2.0] - 2026-01-03
 
 ### Phase 2: Data Ingestion
-
-#### Added
-- **Blockchain Connectors**: Multi-chain data ingestion
-- **Kafka Producers**: Event streaming
+- Blockchain connectors
 
 ---
 
 ## [0.1.0] - 2026-01-02
 
 ### Phase 1: Foundation
-
-#### Added
-- **Project Structure**: Monorepo layout
-- **Docker Compose**: Local development environment
-- **Infrastructure**: PostgreSQL, Redis, Kafka setup
+- Project structure and infrastructure

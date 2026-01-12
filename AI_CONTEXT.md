@@ -30,17 +30,17 @@ Blockchain address risk assessment system using Lambda Architecture.
 
 ---
 
-## Current Phase: 12-15 (Parallel)
+## Current Status
 
-**Branch**: `develop/phase12-15`
+| Phase | Status | Content |
+|-------|--------|---------|
+| 1-11 | ✅ | Core platform, API testing |
+| 12 | ✅ | SRE & Chaos Engineering |
+| 14 | ✅ | CI/CD Pipeline |
+| 15 | ✅ | Performance Testing |
+| 13 | 📋 | Security (next) |
 
-| Worker | Phase | Role | Doc |
-|--------|-------|------|-----|
-| A | 12 | SRE & Chaos | `WORKER_A_SRE.md` |
-| B | 14 | CI/CD | `WORKER_B_CICD.md` |
-| C | 15 | Performance | `WORKER_C_PERF.md` |
-
-**Plan Location**: `docs/development/plans/phase12-15/`
+**Next**: Phase 13 - Security Hardening
 
 ---
 
@@ -74,13 +74,12 @@ make docker-build      # Build images
 ## Git Workflow
 
 ```bash
-git checkout develop/phase12-15
+git checkout main
 git checkout -b feature/xxx
 # work...
 git commit -m "feat(XX): description"
-git checkout develop/phase12-15
-git merge feature/xxx
-git push
+git push origin feature/xxx
+# create PR to main
 ```
 
 ---
@@ -90,9 +89,10 @@ git push
 | Doc | Path |
 |-----|------|
 | Roadmap | `docs/ROADMAP.md` |
-| Phase Plan | `docs/development/plans/phase12-15/OVERVIEW.md` |
-| Agent Guide | `docs/development/plans/phase12-15/AGENT_STARTUP.md` |
+| SLO Definitions | `docs/sre/SLO_DEFINITIONS.md` |
+| Performance | `docs/performance/BASELINE_REPORT.md` |
+| CI/CD | `.github/workflows/` |
 
 ---
 
-**Version**: v0.11.0 | **Updated**: 2026-01-12
+**Version**: v0.15.0 | **Updated**: 2026-01-12
