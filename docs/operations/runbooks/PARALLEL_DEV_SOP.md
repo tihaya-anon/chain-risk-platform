@@ -1,6 +1,6 @@
 # Parallel Development SOP
 
-> Branch strategy and coordination for multi-worker checkpoint-based development
+> Branch strategy for multi-worker checkpoint-based development
 
 ---
 
@@ -8,7 +8,7 @@
 
 ```
 main
-└── develop/{phase}                    # Integration branch
+└── develop/{phase}                    # Integration branch (temporary)
     ├── feature/{cp}-{description}     # Worker feature branches
     └── ...
 ```
@@ -20,7 +20,6 @@ main
 ### 1. Phase Setup
 
 ```bash
-# Create integration branch from main
 git checkout main && git pull
 git checkout -b develop/phase{N}
 git push -u origin develop/phase{N}
@@ -29,38 +28,44 @@ git push -u origin develop/phase{N}
 ### 2. Checkpoint Development
 
 ```bash
-# Start: sync and branch
+# Start
 git checkout develop/phase{N} && git pull
 git checkout -b feature/cp{X}-{description}
 
 # Work...
 
-# Complete: merge back
+# Complete - merge and DELETE feature branch
 git checkout develop/phase{N} && git pull
 git merge --no-ff feature/cp{X}-{description}
+git branch -d feature/cp{X}-{description}
 git push
 ```
 
-### 3. Dependency Handling
-
-Before starting a checkpoint with dependencies:
-
-```bash
-# Ensure all upstream CPs merged
-git checkout develop/phase{N}
-git pull origin develop/phase{N}
-# Verify upstream CPs are included, then branch
-git checkout -b feature/cp{X}-{description}
-```
-
-### 4. Phase Completion
+### 3. Phase Completion
 
 ```bash
 git checkout main
 git merge --no-ff develop/phase{N} -m "feat: Phase {N} complete"
 git tag -a v0.{N}.0 -m "Phase {N}"
 git push origin main --tags
+
+# DELETE develop branch
+git branch -d develop/phase{N}
+git push origin --delete develop/phase{N}
 ```
+
+---
+
+## Branch Cleanup Checklist
+
+After each checkpoint:
+- [ ] Feature branch deleted locally
+- [ ] Feature branch deleted remotely (if pushed)
+
+After phase completion:
+- [ ] Develop branch deleted locally
+- [ ] Develop branch deleted remotely
+- [ ] `git fetch --prune` executed
 
 ---
 
@@ -70,14 +75,11 @@ git push origin main --tags
 feat(cp{X}): description
 fix(cp{X}): description
 docs(cp{X}): description
-test(cp{X}): description
 ```
 
 ---
 
-## Assignment Table Template
-
-Use this format for phase planning:
+## Assignment Table
 
 | CP | Task | Worker | Depends | Notify |
 |----|------|--------|---------|--------|
@@ -86,15 +88,11 @@ Use this format for phase planning:
 | 3 | API Layer | W2 | CP-1 | - |
 | 4 | Integration | W1 | CP-2,3 | W2 |
 
-- **Worker**: Assigned owner
-- **Depends**: Must be merged before starting
-- **Notify**: Ping when complete (downstream owners)
-
 ---
 
 ## Coordination Rules
 
-1. **Merge Order**: Follow DAG strictly, no skip
+1. **Merge Order**: Follow dependency DAG
 2. **Conflict Resolution**: Upstream owner resolves
-3. **Blocking**: If blocked, notify in channel immediately
-4. **Handoff**: Ping downstream workers after merge
+3. **Blocking**: Notify immediately if blocked
+4. **Cleanup**: Delete branches after merge (mandatory)
