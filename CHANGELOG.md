@@ -4,6 +4,40 @@ All notable changes to Chain Risk Platform.
 
 ---
 
+## [0.13.0] - 2026-01-12
+
+### Phase 13: Security Hardening
+
+#### Added
+- **Vault PKI Infrastructure**: Certificate lifecycle management with Root/Intermediate CA
+- **TLS/mTLS**: All services support TLS, internal services require mTLS
+- **Rate Limiting**: Configurable rate limits on all public APIs
+- **Input Validation**: OWASP Top 10 compliant validation across services
+- **Audit Logging**: Structured security event logging to Loki
+- **Security Scanning CI**: CodeQL, Semgrep, Trivy, Gitleaks integration
+
+#### Security Coverage
+| Control | Coverage |
+|---------|----------|
+| TLS | 100% services |
+| mTLS | 5/6 services (BFF edge excluded) |
+| Rate Limiting | All public APIs |
+| Input Validation | All endpoints |
+| Audit Logging | All sensitive operations |
+
+#### Files
+- `infra/vault/pki-config.hcl`: Vault PKI policy
+- `infra/certs/`: Certificate directory structure
+- `scripts/certs/`: PKI management scripts
+- `services/*/pkg/tls/`: Go TLS packages
+- `services/*/application-tls.yml`: Java TLS config
+- `services/risk-ml-service/app/core/tls.py`: Python TLS module
+- `services/bff/src/config/tls.ts`: TypeScript TLS config
+- `.github/workflows/security.yml`: Security scanning pipeline
+- `tests/security/`: Security test suite
+
+---
+
 ## [0.15.0] - 2026-01-12
 
 ### Phase 15: Performance Testing

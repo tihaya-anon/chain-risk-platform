@@ -1,0 +1,34 @@
+# ============================================
+# Trivy Configuration - Chain Risk Platform
+# ============================================
+
+# Severity levels to report
+severity:
+  - CRITICAL
+  - HIGH
+
+# Skip unfixed vulnerabilities
+ignore-unfixed: true
+
+# Vulnerability scanning options
+vulnerability:
+  type:
+    - os
+    - library
+
+# Secret scanning configuration
+secret:
+  config: .trivy-secret.yaml
+
+# Cache settings
+cache:
+  backend: fs
+
+# Scan timeout
+timeout: 10m
+
+# Output format options
+format: table
+
+# Ignore specific CVEs (document reason)
+# ignorefile: .trivyignore

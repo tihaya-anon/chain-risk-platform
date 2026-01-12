@@ -1,0 +1,97 @@
+# ============================================
+# Gitleaks Configuration - Chain Risk Platform
+# ============================================
+# Secret detection for git repositories
+
+title = "Chain Risk Platform Gitleaks Config"
+
+[extend]
+useDefault = true
+
+# ==================== Custom Rules ====================
+[[rules]]
+id = "chain-risk-api-key"
+description = "Chain Risk Platform API Key"
+regex = '''(?i)chainrisk[_-]?api[_-]?key['"\s:=]+['"]?[\w-]{32,}['"]?'''
+secretGroup = 0
+entropy = 3.5
+keywords = ["chainrisk"]
+
+[[rules]]
+id = "vault-token"
+description = "HashiCorp Vault Token"
+regex = '''(?i)vault[_-]?token['"\s:=]+['"]?(?:hvs\.|s\.)?[\w-]{20,}['"]?'''
+secretGroup = 0
+keywords = ["vault"]
+
+[[rules]]
+id = "nacos-credentials"
+description = "Nacos Credentials"
+regex = '''(?i)nacos[_-]?(?:username|password|secret)['"\s:=]+['"]?[\w-]{8,}['"]?'''
+secretGroup = 0
+keywords = ["nacos"]
+
+[[rules]]
+id = "kafka-credentials"
+description = "Kafka SASL Credentials"
+regex = '''(?i)kafka[_-]?(?:password|secret)['"\s:=]+['"]?[\w-]{8,}['"]?'''
+secretGroup = 0
+keywords = ["kafka"]
+
+[[rules]]
+id = "database-url"
+description = "Database Connection String with Credentials"
+regex = '''(?i)(?:postgres|mysql|mongodb)(?:ql)?:\/\/[^:]+:[^@]+@[^\s'"]+'''
+secretGroup = 0
+keywords = ["postgres", "mysql", "mongodb"]
+
+[[rules]]
+id = "jwt-secret"
+description = "JWT Secret Key"
+regex = '''(?i)jwt[_-]?secret['"\s:=]+['"]?[\w+/=-]{32,}['"]?'''
+secretGroup = 0
+entropy = 4.0
+keywords = ["jwt"]
+
+[[rules]]
+id = "neo4j-password"
+description = "Neo4j Password"
+regex = '''(?i)neo4j[_-]?(?:password|auth)['"\s:=]+['"]?[\w-]{8,}['"]?'''
+secretGroup = 0
+keywords = ["neo4j"]
+
+[[rules]]
+id = "redis-password"
+description = "Redis Password"
+regex = '''(?i)redis[_-]?(?:password|auth)['"\s:=]+['"]?[\w-]{8,}['"]?'''
+secretGroup = 0
+keywords = ["redis"]
+
+# ==================== Allowlist ====================
+[allowlist]
+description = "Global allowlist"
+
+paths = [
+    '''\.env\.example$''',
+    '''\.env\.sample$''',
+    '''\.env\.template$''',
+    '''.*_test\.go$''',
+    '''.*Test\.java$''',
+    '''test_.*\.py$''',
+    '''.*\.spec\.ts$''',
+    '''.*\.md$''',
+    '''docs/.*''',
+    '''infra/vault/policies/.*''',
+]
+
+regexes = [
+    '''(?i)example[_-]?(?:password|secret|key|token)''',
+    '''(?i)your[_-]?(?:password|secret|key|token)[_-]?here''',
+    '''(?i)placeholder''',
+    '''(?i)<.*>''',
+    '''(?i)\$\{.*\}''',
+]
+
+commits = [
+    # Add specific commit SHAs to ignore if needed
+]
