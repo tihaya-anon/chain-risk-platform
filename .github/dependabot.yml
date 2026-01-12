@@ -1,0 +1,81 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /services/query-service
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(go):"
+    labels:
+      - dependencies
+      - go
+
+  - package-ecosystem: gomod
+    directory: /services/alert-service
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(go):"
+    labels:
+      - dependencies
+      - go
+
+  - package-ecosystem: pip
+    directory: /services/risk-ml-service
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(python):"
+    labels:
+      - dependencies
+      - python
+
+  - package-ecosystem: maven
+    directory: /services/graph-service
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(java):"
+    labels:
+      - dependencies
+      - java
+
+  - package-ecosystem: maven
+    directory: /services/orchestrator
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(java):"
+    labels:
+      - dependencies
+      - java
+
+  - package-ecosystem: npm
+    directory: /services/bff
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(node):"
+    labels:
+      - dependencies
+      - node
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(frontend):"
+    labels:
+      - dependencies
+      - frontend
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps(actions):"
+    labels:
+      - dependencies
+      - github-actions
