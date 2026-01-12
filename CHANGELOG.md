@@ -29,6 +29,30 @@ All notable changes to Chain Risk Platform.
 
 ---
 
+## [0.12.0] - 2026-01-12
+
+### Phase 12: SRE & Chaos Engineering
+
+#### Added
+- **SLO/SLI Definitions**: Availability and latency targets for all services
+- **SLO Dashboard**: Grafana dashboard with availability gauges, error budget, burn rate
+- **Toxiproxy Integration**: Fault injection proxy for chaos testing
+- **Chaos Scenarios**: 8 fault injection tests (db-latency, db-timeout, db-down, redis-down, kafka-latency, kafka-down, network-jitter, bandwidth-limit)
+- **Recovery Verification**: TTD/TTR measurement script
+- **Circuit Breaker**: gobreaker implementation for query-service and alert-service
+- **Runbooks**: 6 incident response runbooks linked to alerts
+
+#### Changed
+- **Alert Rules**: Added SLO alerts and runbook_url annotations
+
+#### Documentation
+- `docs/sre/SLO_DEFINITIONS.md`: SLI/SLO reference
+- `docs/sre/CHAOS_SCENARIOS.md`: Chaos testing guide
+- `docs/sre/runbooks/`: Incident response procedures
+- `docs/archive/phase-docs/PHASE12_SUMMARY.md`: Phase summary
+
+---
+
 ## [0.11.0] - 2026-01-12
 
 ### Phase 11: API Integration Testing

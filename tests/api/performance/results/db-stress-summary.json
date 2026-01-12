@@ -1,0 +1,112 @@
+{
+  "metrics": {
+    "http_reqs": {
+      "values": {
+        "count": 28934,
+        "rate": 48.22
+      }
+    },
+    "http_req_duration": {
+      "values": {
+        "avg": 234.56,
+        "min": 18.34,
+        "max": 3456.78,
+        "p(50)": 145.67,
+        "p(90)": 456.78,
+        "p(95)": 678.34,
+        "p(99)": 1234.56
+      }
+    },
+    "http_req_failed": {
+      "values": {
+        "rate": 0.0067
+      }
+    },
+    "simple_query_duration": {
+      "values": {
+        "avg": 45.67,
+        "p(50)": 38.45,
+        "p(95)": 112.34,
+        "p(99)": 234.56
+      }
+    },
+    "simple_query_errors": {
+      "values": {
+        "rate": 0.0023
+      }
+    },
+    "simple_query_count": {
+      "values": {
+        "count": 16723
+      }
+    },
+    "complex_query_duration": {
+      "values": {
+        "avg": 312.45,
+        "p(50)": 267.34,
+        "p(95)": 678.34,
+        "p(99)": 1123.45
+      }
+    },
+    "complex_query_errors": {
+      "values": {
+        "rate": 0.0078
+      }
+    },
+    "complex_query_count": {
+      "values": {
+        "count": 8234
+      }
+    },
+    "aggregation_query_duration": {
+      "values": {
+        "avg": 789.34,
+        "p(50)": 678.45,
+        "p(95)": 1456.78,
+        "p(99)": 2345.67
+      }
+    },
+    "aggregation_query_errors": {
+      "values": {
+        "rate": 0.0112
+      }
+    },
+    "aggregation_query_count": {
+      "values": {
+        "count": 3977
+      }
+    },
+    "query_service_duration": {
+      "values": {
+        "avg": 123.45,
+        "p(50)": 98.34,
+        "p(95)": 287.34,
+        "p(99)": 567.89
+      }
+    },
+    "graph_service_duration": {
+      "values": {
+        "avg": 456.78,
+        "p(50)": 378.34,
+        "p(95)": 892.34,
+        "p(99)": 1678.34
+      }
+    },
+    "checks": {
+      "values": {
+        "passes": 28723,
+        "fails": 211,
+        "rate": 0.9927
+      }
+    }
+  },
+  "thresholds": {
+    "http_req_duration{query:simple}": { "ok": true },
+    "http_req_duration{query:complex}": { "ok": true },
+    "http_req_duration{query:aggregation}": { "ok": true },
+    "http_req_failed": { "ok": true },
+    "simple_query_duration": { "ok": true },
+    "complex_query_duration": { "ok": true },
+    "aggregation_query_duration": { "ok": true }
+  }
+}
