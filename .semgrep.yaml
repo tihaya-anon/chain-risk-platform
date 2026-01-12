@@ -1,0 +1,13 @@
+# ============================================
+# Semgrep Configuration - Chain Risk Platform
+# ============================================
+# Note: This is a semgrep.yaml for CLI usage
+# CI workflow uses --config flags directly
+
+rules:
+  # Import custom rules - semgrep will load these
+  - id: import-custom-rules
+    message: "Placeholder - custom rules loaded from .semgrep/custom-rules.yaml"
+    languages: [generic]
+    severity: INFO
+    pattern: "SEMGREP_PLACEHOLDER_NEVER_MATCH_12345"
