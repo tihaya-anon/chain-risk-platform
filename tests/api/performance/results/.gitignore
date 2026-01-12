@@ -1,3 +1,11 @@
-# Performance test results - auto-generated
-# Do not commit actual results
-*.json
+# Performance test results
+# Timestamped results are ignored, only summary files are tracked
+
+# Ignore timestamped result files
+*-202*.json
+
+# Keep summary files for baseline reference
+!*-summary.json
+
+# Ignore log files
+*.log

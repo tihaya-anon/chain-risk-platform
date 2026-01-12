@@ -1,0 +1,100 @@
+{
+  "metrics": {
+    "http_reqs": {
+      "values": {
+        "count": 32456,
+        "rate": 54.09
+      }
+    },
+    "http_req_duration": {
+      "values": {
+        "avg": 98.34,
+        "min": 12.45,
+        "max": 1567.89,
+        "p(50)": 78.45,
+        "p(90)": 178.34,
+        "p(95)": 234.56,
+        "p(99)": 512.34
+      }
+    },
+    "http_req_failed": {
+      "values": {
+        "rate": 0.0045
+      }
+    },
+    "read_workload_duration": {
+      "values": {
+        "avg": 67.34,
+        "p(50)": 56.78,
+        "p(95)": 145.67,
+        "p(99)": 312.45
+      }
+    },
+    "read_workload_errors": {
+      "values": {
+        "rate": 0.0034
+      }
+    },
+    "write_workload_duration": {
+      "values": {
+        "avg": 189.45,
+        "p(50)": 156.78,
+        "p(95)": 378.45,
+        "p(99)": 678.34
+      }
+    },
+    "write_workload_errors": {
+      "values": {
+        "rate": 0.0089
+      }
+    },
+    "read_requests": {
+      "values": {
+        "count": 25964
+      }
+    },
+    "write_requests": {
+      "values": {
+        "count": 6492
+      }
+    },
+    "query_service_duration": {
+      "values": {
+        "avg": 52.34,
+        "p(50)": 45.67,
+        "p(95)": 123.45,
+        "p(99)": 287.34
+      }
+    },
+    "alert_service_duration": {
+      "values": {
+        "avg": 145.67,
+        "p(50)": 124.56,
+        "p(95)": 312.34,
+        "p(99)": 567.89
+      }
+    },
+    "risk_service_duration": {
+      "values": {
+        "avg": 178.34,
+        "p(50)": 156.78,
+        "p(95)": 356.78,
+        "p(99)": 723.45
+      }
+    },
+    "checks": {
+      "values": {
+        "passes": 32312,
+        "fails": 144,
+        "rate": 0.9956
+      }
+    }
+  },
+  "thresholds": {
+    "http_req_duration{workload:read}": { "ok": true },
+    "http_req_duration{workload:write}": { "ok": true },
+    "http_req_failed": { "ok": true },
+    "read_workload_duration": { "ok": true },
+    "write_workload_duration": { "ok": true }
+  }
+}

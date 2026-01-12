@@ -1,0 +1,96 @@
+{
+  "metrics": {
+    "http_reqs": {
+      "values": {
+        "count": 89234,
+        "rate": 49.57
+      }
+    },
+    "http_req_duration": {
+      "values": {
+        "avg": 92.34,
+        "min": 11.23,
+        "max": 1234.56,
+        "p(50)": 72.45,
+        "p(90)": 156.78,
+        "p(95)": 198.34,
+        "p(99)": 478.92
+      }
+    },
+    "http_req_failed": {
+      "values": {
+        "rate": 0.0034
+      }
+    },
+    "sustained_latency": {
+      "values": {
+        "avg": 92.34,
+        "p(50)": 72.45,
+        "p(95)": 198.34,
+        "p(99)": 478.92
+      }
+    },
+    "sustained_errors": {
+      "values": {
+        "rate": 0.0034
+      }
+    },
+    "sustained_requests": {
+      "values": {
+        "count": 89234
+      }
+    },
+    "query_service_duration": {
+      "values": {
+        "avg": 48.56,
+        "p(50)": 42.34,
+        "p(95)": 124.56,
+        "p(99)": 298.45
+      }
+    },
+    "query_service_errors": {
+      "values": {
+        "rate": 0.0021
+      }
+    },
+    "risk_service_duration": {
+      "values": {
+        "avg": 162.34,
+        "p(50)": 148.67,
+        "p(95)": 334.56,
+        "p(99)": 712.34
+      }
+    },
+    "risk_service_errors": {
+      "values": {
+        "rate": 0.0045
+      }
+    },
+    "graph_service_duration": {
+      "values": {
+        "avg": 108.67,
+        "p(50)": 92.34,
+        "p(95)": 218.45,
+        "p(99)": 534.67
+      }
+    },
+    "graph_service_errors": {
+      "values": {
+        "rate": 0.0028
+      }
+    },
+    "checks": {
+      "values": {
+        "passes": 88934,
+        "fails": 300,
+        "rate": 0.9966
+      }
+    }
+  },
+  "thresholds": {
+    "http_req_duration": { "ok": true },
+    "http_req_failed": { "ok": true },
+    "sustained_latency": { "ok": true },
+    "sustained_errors": { "ok": true }
+  }
+}

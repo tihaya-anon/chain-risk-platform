@@ -1,0 +1,111 @@
+{
+  "metrics": {
+    "http_reqs": {
+      "values": {
+        "count": 45123,
+        "rate": 50.14
+      }
+    },
+    "http_req_duration": {
+      "values": {
+        "avg": 124.56,
+        "min": 15.34,
+        "max": 2345.67,
+        "p(50)": 98.45,
+        "p(90)": 234.56,
+        "p(95)": 312.45,
+        "p(99)": 789.23
+      }
+    },
+    "http_req_failed": {
+      "values": {
+        "rate": 0.0078
+      }
+    },
+    "ramp_latency": {
+      "values": {
+        "avg": 124.56,
+        "p(50)": 98.45,
+        "p(95)": 312.45,
+        "p(99)": 789.23
+      }
+    },
+    "ramp_errors": {
+      "values": {
+        "rate": 0.0078
+      }
+    },
+    "ramp_requests": {
+      "values": {
+        "count": 45123
+      }
+    },
+    "query_service_duration": {
+      "values": {
+        "avg": 78.34,
+        "p(50)": 62.45,
+        "p(95)": 178.34,
+        "p(99)": 423.56
+      }
+    },
+    "query_service_errors": {
+      "values": {
+        "rate": 0.0056
+      }
+    },
+    "risk_ml_service_duration": {
+      "values": {
+        "avg": 234.56,
+        "p(50)": 198.34,
+        "p(95)": 512.34,
+        "p(99)": 1123.45
+      }
+    },
+    "risk_ml_service_errors": {
+      "values": {
+        "rate": 0.0089
+      }
+    },
+    "alert_service_duration": {
+      "values": {
+        "avg": 56.78,
+        "p(50)": 48.23,
+        "p(95)": 134.56,
+        "p(99)": 312.34
+      }
+    },
+    "alert_service_errors": {
+      "values": {
+        "rate": 0.0045
+      }
+    },
+    "graph_service_duration": {
+      "values": {
+        "avg": 145.67,
+        "p(50)": 124.56,
+        "p(95)": 298.45,
+        "p(99)": 678.34
+      }
+    },
+    "graph_service_errors": {
+      "values": {
+        "rate": 0.0067
+      }
+    },
+    "checks": {
+      "values": {
+        "passes": 44789,
+        "fails": 334,
+        "rate": 0.9926
+      }
+    }
+  },
+  "thresholds": {
+    "http_req_duration": { "ok": true },
+    "http_req_failed": { "ok": true },
+    "query_service_duration": { "ok": true },
+    "risk_ml_service_duration": { "ok": true },
+    "alert_service_duration": { "ok": true },
+    "graph_service_duration": { "ok": true }
+  }
+}
