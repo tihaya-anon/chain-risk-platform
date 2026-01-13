@@ -9,6 +9,8 @@
 
 Phase 13 delivered security infrastructure and component packages. This document outlines remaining integration work.
 
+**IMPORTANT**: Make sure have understood `Phase 13`, refer to `docs/archive/phase-plans/phase13`
+
 ---
 
 ## 1. TLS Integration

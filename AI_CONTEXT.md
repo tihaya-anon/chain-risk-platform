@@ -1,82 +1,125 @@
 # Chain Risk Platform - AI Context
 
----
+> Entry point for AI assistants. Read this first, then task-specific docs.
 
-## Project
+## Quick Reference
 
-Blockchain address risk assessment system using Lambda Architecture.
+| Item       | Value                             |
+| ---------- | --------------------------------- |
+| Repo       | `tihaya-anon/chain-risk-platform` |
+| Version    | v0.15.0                           |
+| Next Phase | 13 (Security Hardening)           |
 
-| Stack | Technologies |
-|-------|--------------|
-| Backend | Go (Gin), Java (Spring Boot), Python (FastAPI), TypeScript (NestJS) |
-| Data | Kafka, Flink, Spark, Hudi, PostgreSQL, Redis, Neo4j |
-| Observability | Prometheus, Grafana, Loki, Jaeger |
-| Infra | Docker Compose, Nacos, Vault |
-
-**Repo**: `tihaya-anon/chain-risk-platform`
-
----
-
-## Services
-
-| Service | Lang | Port |
-|---------|------|------|
-| orchestrator | Java | 8080 |
-| bff | TypeScript | 3001 |
-| query-service | Go | 8081 |
-| risk-ml-service | Python | 8082 |
-| alert-service | Go | 8083 |
-| graph-service | Java | 8084 |
-
----
-
-## Current Status
-
-| Phase | Status | Content |
-|-------|--------|---------|
-| 1-15 | ✅ | Core platform, SRE, CI/CD, Performance |
-| 13 | 📋 | Security Hardening (next) |
-
-**Next**: Phase 13 - Security Hardening
-
----
-
-## Remote Environment
+**Environment Split:**
+- **Local (macOS)**: Development, code editing, local testing
+- **Remote (WSL Ubuntu 24.04)**: Docker infrastructure, integration testing
 
 ```bash
+# Remote access
 ssh dev-win "cd ~/chain-risk-platform && make services-up"
 ```
 
-| Service | External Port |
-|---------|---------------|
-| PostgreSQL | 15432 |
-| Redis | 16379 |
-| Kafka | 19092 |
-| Grafana | 13001 |
-| BFF | 3401 |
+---
+
+## Architecture
+
+Lambda Architecture for blockchain risk assessment.
+
+```
+Frontend (React) → Orchestrator (Java/Spring) → BFF (TypeScript/NestJS)
+                                                      ↓
+                    ┌─────────────────────────────────┼─────────────────────────────────┐
+                    ↓                                 ↓                                 ↓
+            Query Service (Go)              Graph Service (Java)              Risk ML (Python)
+                    ↓                                 ↓                                 ↓
+                PostgreSQL                        Neo4j                          ML Models
+                                                      ↓
+                              Kafka → Flink (Stream) / Spark (Batch) → Hudi
+```
+
+| Service         | Language          | Port | Responsibility            |
+| --------------- | ----------------- | ---- | ------------------------- |
+| orchestrator    | Java/Spring       | 8080 | Gateway, Auth, Routing    |
+| bff             | TypeScript/NestJS | 3001 | Aggregation, Frontend API |
+| query-service   | Go/Gin            | 8081 | Address queries           |
+| risk-ml-service | Python/FastAPI    | 8082 | ML inference              |
+| alert-service   | Go/Gin            | 8083 | Alert rules               |
+| graph-service   | Java/Spring       | 8084 | Graph analysis            |
+
+---
+
+## Infrastructure (Remote)
+
+| Component  | External Port |
+| ---------- | ------------- |
+| PostgreSQL | 15432         |
+| Redis      | 16379         |
+| Kafka      | 19092         |
+| Neo4j      | 17687         |
+| Grafana    | 13001         |
+| Jaeger     | 26686         |
+| Nacos      | 18848         |
+| BFF        | 3401          |
 
 ---
 
 ## Commands
 
 ```bash
-make infra-up          # Start infrastructure
-make services-up       # Start all services
-make test-all          # Run tests
-make docker-build      # Build images
+# Infrastructure
+make infra-up           # Start infra containers
+make infra-check        # Verify connectivity
+
+# Services  
+make services-up        # Start all services
+make <svc>-run          # Run single service (query/risk/alert/graph/orch/bff)
+
+# Test
+make test-unit          # Unit tests
+make test-integration   # Integration tests
 ```
 
 ---
 
-## Key Docs
+## Key Documentation
 
-| Doc | Path |
-|-----|------|
-| Roadmap | `docs/ROADMAP.md` |
-| Phase 13 Plan | `docs/development/plans/PHASE13_SECURITY.md` |
-| SLO Definitions | `docs/sre/SLO_DEFINITIONS.md` |
-| Performance | `docs/performance/BASELINE_REPORT.md` |
+| Topic             | Path                                             |
+| ----------------- | ------------------------------------------------ |
+| **Current Tasks** | `docs/development/plans/FOLLOWUP_INTEGRATION.md`     |
+| Quick Start       | `docs/getting-start/QUICK_START.md`              |
+| Development SOP   | `docs/operations/runbooks/DEV_SOP.md`            |
+| API Specs         | `docs/api-specs/`                                |
+| SLO/SRE           | `docs/sre/SLO_DEFINITIONS.md`                    |
+| Architecture      | `docs/architecture/overview/PROJECT_OVERVIEW.md` |
+| Troubleshooting   | `docs/development/troubleshooting/`              |
 
 ---
 
-**Version**: v0.15.0 | **Updated**: 2026-01-12
+## Git Convention
+
+```bash
+# Branch naming
+main                          # Production
+develop/phase{N}              # Integration
+feature/cp{X}-description     # Feature
+
+# Commit format
+<type>(<scope>): <description>
+# feat(cp1): add rate limiting
+# fix(alert): null pointer in handler
+```
+
+---
+
+## Project Status
+
+| Phase       | Status     |
+| ----------- | ---------- |
+| 1-12, 14-15 | ✅ Complete |
+| 13 Security | 📋 Next     |
+
+See `CHANGELOG.md` for history, `docs/ROADMAP.md` for backlog.
+
+---
+
+**Updated**: 2026-01-13
