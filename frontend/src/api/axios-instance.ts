@@ -1,8 +1,10 @@
 import Axios, { AxiosError, AxiosRequestConfig } from "axios"
 import { useAuthStore } from "@/store/auth"
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ""
+
 export const AXIOS_INSTANCE = Axios.create({
-  baseURL: "",
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
