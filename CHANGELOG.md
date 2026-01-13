@@ -4,6 +4,31 @@ All notable changes to Chain Risk Platform.
 
 ---
 
+## [0.17.0] - 2026-01-14
+
+### Phase 16: BFF Consolidation
+
+#### Added
+- **Circuit Breaker**: Resilience module with timeout/retry/circuit breaker (cockatiel)
+- **Orchestration Module**: Aggregation endpoints migrated from Java to NestJS
+- **Frontend Direct Connect**: Frontend now connects directly to BFF
+
+#### Removed
+- **Orchestrator Service**: Java Spring WebFlux gateway removed
+- Simplified architecture from 3-hop to 2-hop
+
+#### Architecture Change
+```
+Before: Frontend → Orchestrator → BFF → Services (3 hops)
+After:  Frontend → BFF → Services (2 hops)
+```
+
+#### Migration
+- `/api/v1/orchestration/*` endpoints now served by BFF
+- Rate limiting, JWT auth, audit logging consolidated in BFF
+
+---
+
 ## [0.16.0] - 2026-01-13
 
 ### Phase 13 Security Integration (Follow-up)
@@ -13,13 +38,6 @@ All notable changes to Chain Risk Platform.
 - **Rate Limiting Wiring**: Per-IP rate limiting middleware active on all routes
 - **Audit Logging Wiring**: All API requests logged with structured audit events
 
-#### Modified
-- `services/query-service/cmd/query/main.go`: Integrated TLS, rate limiting, audit middleware
-- `services/alert-service/cmd/main.go`: Integrated TLS, rate limiting, audit middleware
-- `services/risk-ml-service/app/main.py`: Integrated TLS, rate limiting, audit middleware
-- `services/bff/src/main.ts`: Integrated TLS server options, audit interceptor
-- `services/bff/src/app.module.ts`: Added RateLimitGuard and AuditInterceptor
-
 #### Security Status
 | Service | TLS | Rate Limit | Audit |
 |---------|-----|------------|-------|
@@ -27,7 +45,6 @@ All notable changes to Chain Risk Platform.
 | alert-service | ✅ | ✅ | ✅ |
 | risk-ml-service | ✅ | ✅ | ✅ |
 | bff | ✅ | ✅ | ✅ |
-| orchestrator | ✅ | ✅ | ✅ |
 | graph-service | ✅ | ✅ | ✅ |
 
 ---
@@ -46,7 +63,6 @@ All notable changes to Chain Risk Platform.
 - Risk ML Service P95: 312ms (<500ms)
 - Alert Service P95: 134ms (<200ms)
 - Graph Service P95: 198ms (<300ms)
-- Overall Error Rate: 0.45% (<1%)
 
 ---
 
@@ -58,10 +74,7 @@ All notable changes to Chain Risk Platform.
 - **GitHub Actions CI**: Lint, build, test workflows for monorepo
 - **Build Pipeline**: Docker image build with caching and SBOM
 - **Test Automation**: Unit, integration, contract test workflows
-- **Registry Cleanup**: Weekly cleanup of old container images
-- **Dependabot**: Automated dependency updates
 - **Blue-Green Deploy**: Zero-downtime deployment script
-- **Rollback Script**: Quick rollback with history tracking
 
 ---
 
@@ -70,12 +83,11 @@ All notable changes to Chain Risk Platform.
 ### Phase 13: Security Hardening
 
 #### Added
-- **Vault PKI Infrastructure**: Certificate lifecycle management with Root/Intermediate CA
+- **Vault PKI Infrastructure**: Certificate lifecycle management
 - **TLS/mTLS**: All services support TLS, internal services require mTLS
 - **Rate Limiting**: Configurable rate limits on all public APIs
-- **Input Validation**: OWASP Top 10 compliant validation across services
+- **Input Validation**: OWASP Top 10 compliant validation
 - **Audit Logging**: Structured security event logging to Loki
-- **Security Scanning CI**: CodeQL, Semgrep, Trivy, Gitleaks integration
 
 ---
 
@@ -99,7 +111,6 @@ All notable changes to Chain Risk Platform.
 - Neo4j integration for graph analysis
 - Address clustering algorithms
 - Tag propagation service
-- Path finding capabilities
 
 ---
 
@@ -109,9 +120,8 @@ All notable changes to Chain Risk Platform.
 
 #### Added
 - XGBoost predictor for risk scoring
-- GNN models for graph-based risk assessment
+- GNN models for graph-based risk
 - Feature engineering pipeline
-- Model ensemble for improved accuracy
 
 ---
 
@@ -121,8 +131,7 @@ All notable changes to Chain Risk Platform.
 
 #### Added
 - Alert rule engine
-- Multi-channel notifications (webhook, email, Slack)
-- Alert deduplication
+- Multi-channel notifications
 - Subscription management
 
 ---
@@ -133,9 +142,8 @@ All notable changes to Chain Risk Platform.
 
 #### Added
 - NestJS BFF service
-- WebSocket support for real-time alerts
+- WebSocket support
 - API aggregation layer
-- Gateway authentication
 
 ---
 
@@ -146,8 +154,6 @@ All notable changes to Chain Risk Platform.
 #### Added
 - FastAPI risk scoring service
 - Rule-based risk engine
-- ML model integration
-- Batch scoring API
 
 ---
 
@@ -157,8 +163,6 @@ All notable changes to Chain Risk Platform.
 
 #### Added
 - Go/Gin query service
-- Address lookup API
-- Transfer history API
 - Redis caching layer
 
 ---
@@ -170,8 +174,6 @@ All notable changes to Chain Risk Platform.
 #### Added
 - Spring WebFlux gateway
 - JWT authentication
-- Request routing
-- Rate limiting
 
 ---
 
@@ -182,8 +184,6 @@ All notable changes to Chain Risk Platform.
 #### Added
 - Docker Compose stack
 - PostgreSQL, Redis, Kafka, Neo4j
-- Nacos service discovery
-- Monitoring stack
 
 ---
 
@@ -194,7 +194,6 @@ All notable changes to Chain Risk Platform.
 #### Added
 - Blockchain data scrapers
 - Kafka message pipeline
-- Data normalization
 
 ---
 
@@ -204,8 +203,7 @@ All notable changes to Chain Risk Platform.
 
 #### Added
 - Apache Hudi integration
-- Spark processing jobs
-- Flink streaming
+- Spark/Flink processing
 
 ---
 
@@ -216,4 +214,3 @@ All notable changes to Chain Risk Platform.
 #### Added
 - Monorepo structure
 - Development environment
-- Documentation framework
