@@ -8,6 +8,7 @@ import { GraphModule } from "./modules/graph/graph.module";
 import { TransfersModule } from "./modules/transfers/transfers.module";
 import { AlertModule } from "./modules/alert/alert.module";
 import { WebsocketModule } from "./modules/websocket/websocket.module";
+import { OrchestrationModule } from "./modules/orchestration/orchestration.module";
 import { ResilienceModule } from "./common/resilience";
 import { NacosService } from "./common/nacos.service";
 import { AuditService } from "./common/audit/audit.service";
@@ -37,6 +38,8 @@ const config = getConfig();
     RiskModule,
     GraphModule,
     AlertModule,
+    // Orchestration module (migrated from Java orchestrator)
+    OrchestrationModule,
   ],
   providers: [
     // Nacos service for service discovery and config
