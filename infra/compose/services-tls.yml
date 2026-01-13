@@ -1,7 +1,43 @@
 # TLS/mTLS Override for Application Services
 # Usage: docker-compose -f compose/services.yml -f compose/services-tls.yml up
+#
+# Architecture: External Client → Orchestrator (edge) → BFF → Backend Services
+# - Orchestrator: Edge gateway, TLS only (no mTLS for external clients)
+# - BFF + Backend Services: Internal, mTLS required
 
 services:
+  # === EDGE SERVICE (No mTLS) ===
+  orchestrator:
+    environment:
+      - SPRING_PROFILES_ACTIVE=tls-edge
+      - SSL_KEYSTORE_PATH=/certs/keystore.p12
+      - SSL_KEYSTORE_PASSWORD=changeit
+      - SSL_TRUSTSTORE_PATH=/certs/truststore.p12
+      - SSL_TRUSTSTORE_PASSWORD=changeit
+      - BFF_URL=https://bff:3443
+    volumes:
+      - ../certs/orchestrator:/certs:ro
+    ports:
+      - "0.0.0.0:8443:8443"
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/actuator/health"]
+
+  # === INTERNAL SERVICES (mTLS Required) ===
+  bff:
+    environment:
+      - TLS_ENABLED=true
+      - TLS_CERT_PATH=/certs/cert.pem
+      - TLS_KEY_PATH=/certs/key.pem
+      - TLS_CA_PATH=/certs/ca.pem
+      - TLS_REQUEST_CERT=true
+      - TLS_MTLS_MODE=required
+    volumes:
+      - ../certs/bff:/certs:ro
+    ports:
+      - "0.0.0.0:3443:3443"
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:3443/health"]
+
   query-service:
     environment:
       - TLS_ENABLED=true
@@ -59,33 +95,3 @@ services:
       - "0.0.0.0:8447:8447"
     healthcheck:
       test: ["CMD", "curl", "-k", "-f", "https://localhost:8447/actuator/health"]
-
-  orchestrator:
-    environment:
-      - SPRING_PROFILES_ACTIVE=tls
-      - SSL_KEYSTORE_PATH=/certs/keystore.p12
-      - SSL_KEYSTORE_PASSWORD=changeit
-      - SSL_TRUSTSTORE_PATH=/certs/truststore.p12
-      - SSL_TRUSTSTORE_PASSWORD=changeit
-      - BFF_URL=https://bff:3443
-    volumes:
-      - ../certs/orchestrator:/certs:ro
-    ports:
-      - "0.0.0.0:8443:8443"
-    healthcheck:
-      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/actuator/health"]
-
-  bff:
-    environment:
-      - TLS_ENABLED=true
-      - TLS_CERT_PATH=/certs/cert.pem
-      - TLS_KEY_PATH=/certs/key.pem
-      - TLS_CA_PATH=/certs/ca.pem
-      - TLS_REQUEST_CERT=false
-      - ORCHESTRATOR_URL=https://orchestrator:8443
-    volumes:
-      - ../certs/bff:/certs:ro
-    ports:
-      - "0.0.0.0:3443:3443"
-    healthcheck:
-      test: ["CMD", "curl", "-k", "-f", "https://localhost:3443/health"]

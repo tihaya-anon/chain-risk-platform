@@ -26,21 +26,21 @@ ssh dev-win "cd ~/chain-risk-platform && make services-up"
 Lambda Architecture for blockchain risk assessment.
 
 ```
-Frontend (React) → Orchestrator (Java/Spring) → BFF (TypeScript/NestJS)
-                                                      ↓
-                    ┌─────────────────────────────────┼─────────────────────────────────┐
-                    ↓                                 ↓                                 ↓
-            Query Service (Go)              Graph Service (Java)              Risk ML (Python)
-                    ↓                                 ↓                                 ↓
-                PostgreSQL                        Neo4j                          ML Models
-                                                      ↓
-                              Kafka → Flink (Stream) / Spark (Batch) → Hudi
+External Client → Orchestrator (Gateway/Edge) → BFF → Backend Services
+                                                  ↓
+                    ┌─────────────────────────────┼─────────────────────────────┐
+                    ↓                             ↓                             ↓
+            Query Service (Go)          Graph Service (Java)          Risk ML (Python)
+                    ↓                             ↓                             ↓
+                PostgreSQL                    Neo4j                        ML Models
+                                                  ↓
+                          Kafka → Flink (Stream) / Spark (Batch) → Hudi
 ```
 
 | Service         | Language          | Port | TLS Port | Responsibility       |
 | --------------- | ----------------- | ---- | -------- | -------------------- |
-| orchestrator    | Java/Spring       | 8080 | 8443     | Gateway, Auth        |
-| bff             | TypeScript/NestJS | 3001 | 3443     | Aggregation, API     |
+| orchestrator    | Java/Spring       | 8080 | 8443     | Gateway, Auth (Edge) |
+| bff             | TypeScript/NestJS | 3001 | 3443     | API Aggregation      |
 | query-service   | Go/Gin            | 8081 | 8444     | Address queries      |
 | risk-ml-service | Python/FastAPI    | 8082 | 8445     | ML inference         |
 | alert-service   | Go/Gin            | 8083 | 8446     | Alert rules          |
@@ -54,14 +54,14 @@ All services fully integrated with security components:
 
 | Service         | TLS | mTLS | Rate Limit | Audit |
 | --------------- | --- | ---- | ---------- | ----- |
-| orchestrator    | ✅   | ✅    | ✅          | ✅     |
-| bff             | ✅   | ❌*   | ✅          | ✅     |
+| orchestrator    | ✅   | ❌*   | ✅          | ✅     |
+| bff             | ✅   | ✅    | ✅          | ✅     |
 | query-service   | ✅   | ✅    | ✅          | ✅     |
 | risk-ml-service | ✅   | ✅    | ✅          | ✅     |
 | alert-service   | ✅   | ✅    | ✅          | ✅     |
 | graph-service   | ✅   | ✅    | ✅          | ✅     |
 
-*BFF is edge service, no mTLS required for browser clients
+*Orchestrator is edge gateway, no mTLS required (external clients don't have certs)
 
 ---
 

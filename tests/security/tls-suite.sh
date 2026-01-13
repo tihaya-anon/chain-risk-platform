@@ -1,6 +1,10 @@
 #!/bin/bash
 # TLS/mTLS Verification Test Suite
 # Validates TLS configuration across all services
+#
+# Architecture: External Client → Orchestrator (edge) → BFF → Backend Services
+# - orchestrator: Edge gateway, TLS only (no mTLS)
+# - All other services: Internal, mTLS required
 
 set -euo pipefail
 
@@ -23,13 +27,15 @@ log_fail() { echo -e "${RED}[FAIL]${NC} $1"; ((FAIL++)); }
 log_info() { echo -e "${YELLOW}[INFO]${NC} $1"; }
 
 # Service configuration: name:port:mtls_required
+# orchestrator is edge gateway - no mTLS required
+# all other services are internal - mTLS required
 SERVICES=(
-    "orchestrator:8443:true"
+    "orchestrator:8443:false"
+    "bff:3443:true"
     "query-service:8444:true"
     "alert-service:8446:true"
     "risk-ml-service:8445:true"
     "graph-service:8447:true"
-    "bff:3443:false"
 )
 
 check_tls_handshake() {
@@ -94,7 +100,7 @@ check_tls_only() {
     
     log_info "Testing TLS-only (no mTLS): $name"
     
-    # BFF should accept requests without client cert
+    # Edge gateway should accept requests without client cert
     local response
     response=$(curl -s -o /dev/null -w "%{http_code}" --insecure "https://$host:$port/health" 2>/dev/null || echo "000")
     
@@ -191,6 +197,9 @@ main() {
     echo "=============================================="
     echo "  TLS/mTLS Verification Test Suite"
     echo "=============================================="
+    echo ""
+    echo "Architecture:"
+    echo "  External → Orchestrator (edge/TLS) → Internal (mTLS)"
     echo ""
     
     local host="${1:-localhost}"
