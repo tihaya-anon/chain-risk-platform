@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)](https://python.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://typescriptlang.org/)
 
-**Version**: 0.10.0 | **Status**: Production Ready
+**Version**: 0.11.0 | **Status**: Production Ready
 
 ---
 
@@ -23,7 +23,6 @@ cp .env.example .env.local  # Configure DOCKER_HOST_IP
 make up-all
 
 # Validate
-make validate-phase10
 make smoke-test
 ```
 
@@ -37,12 +36,9 @@ make smoke-test
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
-│              BFF (NestJS) + WebSocket                       │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│           Orchestrator (Spring Cloud Gateway)               │
-│              JWT / RBAC / Rate Limiting                     │
+│                  BFF (NestJS) + WebSocket                   │
+│          Gateway / JWT / RBAC / Rate Limiting               │
+│           Orchestration / Circuit Breaker                   │
 └───────┬─────────────┬─────────────┬─────────────┬───────────┘
         │             │             │             │
    ┌────▼────┐  ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐
@@ -69,7 +65,6 @@ make smoke-test
 | risk-ml-service | Python/FastAPI | 8082 | `/health` |
 | alert-service | Go/Gin | 8083 | `/health` |
 | graph-service | Java/Spring | 8084 | `/actuator/health` |
-| orchestrator | Java/Spring | 8080 | `/actuator/health` |
 | bff | TypeScript/NestJS | 3001 | `/health` |
 
 ---
@@ -84,7 +79,6 @@ make docker-build        # Build all images
 
 # Development
 make smoke-test          # Service health check
-make validate-phase10    # Full validation
 
 # Vault
 make vault-init          # Initialize Vault
@@ -139,9 +133,9 @@ make jaeger-ilm-setup    # Setup retention policy
 | 8 | Observability Stack | ✅ |
 | 9 | Batch Orchestration (Airflow) | ✅ |
 | 10 | Production Hardening | ✅ |
-| 11 | Performance Testing | 📋 Planned |
-| 12 | Security Hardening | 📋 Planned |
-| 13 | CI/CD Pipeline | 📋 Planned |
+| 11 | BFF Consolidation | ✅ |
+| 12 | Performance Testing | 📋 Planned |
+| 13 | Security Hardening | 📋 Planned |
 
 ---
 
@@ -151,4 +145,4 @@ MIT
 
 ---
 
-**Last Updated**: 2026-01-11
+**Last Updated**: 2026-01-13
