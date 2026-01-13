@@ -93,7 +93,6 @@ function Toast({ alert, onDismiss }: ToastProps) {
 
 export function ToastContainer() {
   const alerts = useAlertStore((state) => state.alerts);
-  const removeAlert = useAlertStore((state) => state.removeAlert);
   const [visibleToasts, setVisibleToasts] = useState<Alert[]>([]);
 
   useEffect(() => {

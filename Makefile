@@ -21,7 +21,6 @@ DIR_QUERY := services/query-service
 DIR_ALERT := services/alert-service
 DIR_RISK := services/risk-ml-service
 DIR_BFF := services/bff
-DIR_ORCHESTRATOR := services/orchestrator
 DIR_GRAPH := services/graph-service
 DIR_FLINK := processing/stream-processor
 DIR_BATCH := processing/batch-processor
@@ -62,7 +61,7 @@ help:
 	@echo "  docker-build       Build all images"
 	@echo ""
 	@echo "🔧 Services: {name}-{build,run,test,clean}"
-	@echo "  ingestion, query, alert, risk, bff, orchestrator, graph"
+	@echo "  ingestion, query, alert, risk, bff, graph"
 	@echo ""
 	@echo "⚡ Processing: flink-{build,run,stop}, batch-{build,archive,...}"
 	@echo ""

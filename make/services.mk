@@ -65,7 +65,7 @@ risk-test:
 risk-clean:
 	@find $(DIR_RISK) -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# BFF Service (TypeScript)
+# BFF Service (TypeScript) - Now includes orchestration
 bff-build:
 	@cd $(DIR_BFF) && npm install && npm run build
 
@@ -77,22 +77,6 @@ bff-test:
 
 bff-clean:
 	@rm -rf $(DIR_BFF)/dist
-
-# Orchestrator (Java)
-orchestrator-build:
-	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
-
-orchestrator-run:
-	@bash -c '$(LOAD_ENV) cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn spring-boot:run'
-
-orchestrator-run-otel: otel-download
-	@bash -c '$(LOAD_ENV) cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) java $(OTEL_OPTS) -Dotel.service.name=orchestrator -jar target/orchestrator-1.0.0-SNAPSHOT.jar'
-
-orchestrator-test:
-	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn test'
-
-orchestrator-clean:
-	@bash -c 'cd $(DIR_ORCHESTRATOR) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 
 # Graph Service (Java)
 graph-build:
@@ -122,3 +106,7 @@ frontend-test:
 
 frontend-clean:
 	@rm -rf $(DIR_FRONTEND)/dist
+
+# NOTE: Orchestrator has been deprecated and merged into BFF.
+# The services/orchestrator directory is kept for reference but not built.
+# See: docs/development/plans/bff-consolidation for migration details.

@@ -1,6 +1,9 @@
 /**
  * Environment configuration for k6 API tests
  * Supports local, docker, and remote environments
+ * 
+ * Note: Orchestrator has been deprecated and merged into BFF.
+ * The 'orchestrator' key is kept as alias to 'bff' for backward compatibility.
  */
 
 const environments = {
@@ -9,24 +12,27 @@ const environments = {
         riskMlService: 'http://localhost:8082',
         alertService: 'http://localhost:8083',
         graphService: 'http://localhost:8084',
-        orchestrator: 'http://localhost:8080',
         bff: 'http://localhost:3001',
+        // Backward compatibility: orchestrator endpoints now served by bff
+        orchestrator: 'http://localhost:3001',
     },
     docker: {
         queryService: 'http://query-service:8081',
         riskMlService: 'http://risk-ml-service:8082',
         alertService: 'http://alert-service:8083',
         graphService: 'http://graph-service:8084',
-        orchestrator: 'http://orchestrator:8080',
         bff: 'http://bff:3001',
+        // Backward compatibility: orchestrator endpoints now served by bff
+        orchestrator: 'http://bff:3001',
     },
     remote: {
         queryService: `http://${__ENV.DOCKER_HOST_IP || 'localhost'}:8081`,
         riskMlService: `http://${__ENV.DOCKER_HOST_IP || 'localhost'}:8082`,
         alertService: `http://${__ENV.DOCKER_HOST_IP || 'localhost'}:8083`,
         graphService: `http://${__ENV.DOCKER_HOST_IP || 'localhost'}:8084`,
-        orchestrator: `http://${__ENV.DOCKER_HOST_IP || 'localhost'}:8080`,
         bff: `http://${__ENV.DOCKER_HOST_IP || 'localhost'}:3401`,
+        // Backward compatibility: orchestrator endpoints now served by bff
+        orchestrator: `http://${__ENV.DOCKER_HOST_IP || 'localhost'}:3401`,
     },
 };
 
