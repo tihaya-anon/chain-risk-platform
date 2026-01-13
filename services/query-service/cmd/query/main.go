@@ -19,6 +19,9 @@ import (
 	"github.com/0ksks/chain-risk-platform/query-service/internal/nacos"
 	"github.com/0ksks/chain-risk-platform/query-service/internal/repository"
 	"github.com/0ksks/chain-risk-platform/query-service/internal/service"
+	"github.com/0ksks/chain-risk-platform/query-service/pkg/audit"
+	"github.com/0ksks/chain-risk-platform/query-service/pkg/ratelimit"
+	"github.com/0ksks/chain-risk-platform/query-service/pkg/tls"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	swaggerFiles "github.com/swaggo/files"
@@ -69,7 +72,6 @@ func main() {
 		} else {
 			zapLogger.Info("Nacos client initialized", zap.String("server", nacosServer))
 
-			// Register service with Nacos
 			if err := nacosClient.RegisterService(map[string]string{
 				"version": version,
 				"env":     cfg.Server.Env,
@@ -108,17 +110,43 @@ func main() {
 	addressHandler := handler.NewAddressHandler(queryService, zapLogger)
 	cacheHandler := handler.NewCacheHandler(queryService, zapLogger)
 
-	// Setup router
-	router := setupRouter(cfg, transferHandler, addressHandler, cacheHandler, nacosClient, zapLogger)
+	// Initialize security components
+	auditLogger := audit.NewLogger(audit.Config{
+		ServiceName: "query-service",
+		Output:      "stdout",
+		Format:      "json",
+	})
+	rateLimiter := ratelimit.NewWithConfig(ratelimit.Config{
+		RequestsPerMinute: 100,
+		BurstSize:         20,
+		CleanupInterval:   5 * time.Minute,
+		MaxEntries:        10000,
+	})
+	defer rateLimiter.Stop()
 
-	// Start server
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler: router,
+	// Setup router with security middleware
+	router := setupRouter(cfg, transferHandler, addressHandler, cacheHandler, nacosClient, auditLogger, rateLimiter, zapLogger)
+
+	// Load TLS configuration
+	tlsCfg := tls.LoadFromEnv()
+
+	// Create server with TLS support
+	srv, err := tls.NewServer(fmt.Sprintf(":%d", cfg.Server.Port), router, tlsCfg)
+	if err != nil {
+		zapLogger.Fatal("Failed to create server", zap.Error(err))
 	}
 
-	// Graceful shutdown
+	// Start server
 	go func() {
+		if srv.IsTLSEnabled() {
+			zapLogger.Info("Starting HTTPS server with TLS",
+				zap.Int("port", cfg.Server.Port),
+				zap.String("mtls_mode", tlsCfg.MTLSMode))
+		} else {
+			zapLogger.Info("Starting HTTP server (TLS disabled)",
+				zap.Int("port", cfg.Server.Port))
+		}
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			zapLogger.Fatal("Failed to start server", zap.Error(err))
 		}
@@ -161,7 +189,6 @@ func initNacosClient(servicePort int, logger *zap.Logger) (*nacos.Client, error)
 		return nil, fmt.Errorf("NACOS_SERVER not set")
 	}
 
-	// Parse host:port
 	var serverAddr string
 	var serverPort uint64 = 18848
 
@@ -173,7 +200,6 @@ func initNacosClient(servicePort int, logger *zap.Logger) (*nacos.Client, error)
 		}
 	}
 
-	// Get service IP
 	serviceIP := os.Getenv("SERVICE_IP")
 	if serviceIP == "" {
 		serviceIP = "127.0.0.1"
@@ -208,12 +234,10 @@ func initLogger(cfg config.LoggingConfig) (*zap.Logger, error) {
 
 	zapCfg.Level = zap.NewAtomicLevelAt(level)
 
-	// Configure output paths
 	if len(cfg.OutputPaths) > 0 {
 		zapCfg.OutputPaths = cfg.OutputPaths
 		zapCfg.ErrorOutputPaths = cfg.OutputPaths
 
-		// Ensure log directory exists for file outputs
 		for _, path := range cfg.OutputPaths {
 			if path != "stdout" && path != "stderr" {
 				dir := filepath.Dir(path)
@@ -228,7 +252,6 @@ func initLogger(cfg config.LoggingConfig) (*zap.Logger, error) {
 }
 
 func initDatabase(cfg config.DatabaseConfig, zapLogger *zap.Logger) (*gorm.DB, error) {
-	// Configure GORM logger
 	gormLogger := logger.New(
 		&zapLogAdapter{zapLogger},
 		logger.Config{
@@ -255,7 +278,6 @@ func initDatabase(cfg config.DatabaseConfig, zapLogger *zap.Logger) (*gorm.DB, e
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
 	sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
 
-	// Test connection
 	if err := sqlDB.Ping(); err != nil {
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
@@ -285,20 +307,33 @@ func initRedis(cfg config.RedisConfig) (*redis.Client, error) {
 	return client, nil
 }
 
-func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, addressHandler *handler.AddressHandler, cacheHandler *handler.CacheHandler, nacosClient *nacos.Client, zapLogger *zap.Logger) *gin.Engine {
+func setupRouter(
+	cfg *config.Config,
+	transferHandler *handler.TransferHandler,
+	addressHandler *handler.AddressHandler,
+	cacheHandler *handler.CacheHandler,
+	nacosClient *nacos.Client,
+	auditLogger *audit.Logger,
+	rateLimiter *ratelimit.RateLimiter,
+	zapLogger *zap.Logger,
+) *gin.Engine {
 	if cfg.Server.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.New()
 
-	// Middleware
+	// Core middleware
 	router.Use(gin.Recovery())
 	router.Use(metrics.Middleware())
 	router.Use(requestLogger(zapLogger))
 	router.Use(corsMiddleware())
 
-	// Health check
+	// Security middleware - Rate limiting and Audit logging
+	router.Use(rateLimiter.Middleware())
+	router.Use(audit.Middleware(auditLogger))
+
+	// Health check (excluded from rate limiting via high limits)
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -306,14 +341,15 @@ func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, a
 	// Prometheus metrics endpoint
 	router.GET("/metrics", metrics.Handler())
 
-	// Admin status endpoint (if Nacos is enabled)
+	// Admin status endpoint
 	if nacosClient != nil {
 		router.GET("/admin/status", func(c *gin.Context) {
 			config := nacosClient.GetConfig()
 			c.JSON(http.StatusOK, gin.H{
-				"service": "query-service",
-				"status":  "healthy",
-				"nacos":   true,
+				"service":     "query-service",
+				"status":      "healthy",
+				"nacos":       true,
+				"tls_enabled": tls.LoadFromEnv().Enabled,
 				"config": gin.H{
 					"pipelineEnabled": config.Pipeline.Enabled,
 					"cacheTtlSeconds": config.Risk.CacheTtlSeconds,
@@ -330,7 +366,6 @@ func setupRouter(cfg *config.Config, transferHandler *handler.TransferHandler, a
 
 	api := router.Group("/api/v1")
 	{
-		// Register all handlers that implement RouteRegistrar interface
 		handler.RegisterAll(api,
 			transferHandler,
 			addressHandler,
@@ -378,7 +413,6 @@ func corsMiddleware() gin.HandlerFunc {
 	}
 }
 
-// zapLogAdapter adapts zap.Logger to GORM's logger interface
 type zapLogAdapter struct {
 	logger *zap.Logger
 }

@@ -4,16 +4,26 @@ import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { IoAdapter } from "@nestjs/platform-socket.io";
 import { AppModule } from "./app.module";
 import { NacosService } from "./common/nacos.service";
+import { AuditService } from "./common/audit/audit.service";
+import { AuditInterceptor } from "./common/audit/audit.interceptor";
 import { AlertsGateway } from "./modules/websocket/alerts.gateway";
 import { AlertPushService } from "./modules/websocket/alert-push.service";
 import { getConfig } from "./config/config";
+import { loadTLSConfig, createHttpsOptions, NestHttpsOptions } from "./config/tls";
 import { logger } from "./common/logger";
 
 async function bootstrap() {
   const config = getConfig();
+  const tlsConfig = loadTLSConfig();
+
+  // Create app - TLS configured via NestJS options
+  const httpsOptions = tlsConfig.enabled
+    ? (createHttpsOptions(tlsConfig) as any)
+    : undefined;
 
   const app = await NestFactory.create(AppModule, {
     logger: ["error", "warn", "log"],
+    httpsOptions,
   });
 
   // WebSocket adapter
@@ -22,12 +32,13 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix("api/v1");
 
-  // Validation pipe
+  // CORS
   app.enableCors({
     origin: config.cors.origins,
     credentials: config.cors.credentials,
   });
 
+  // Validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -36,36 +47,44 @@ async function bootstrap() {
     }),
   );
 
-  // Admin status endpoint
+  // Global audit interceptor
+  const auditService = app.get(AuditService);
+  app.useGlobalInterceptors(new AuditInterceptor(auditService));
+
+  // Admin endpoints
   const httpAdapter = app.getHttpAdapter();
   const nacosService = app.get(NacosService);
   const alertsGateway = app.get(AlertsGateway);
   const alertPushService = app.get(AlertPushService);
 
-  httpAdapter.get("/admin/status", (req, res) => {
+  httpAdapter.get("/admin/status", (req: any, res: any) => {
     res.json({
       ...nacosService.getStatus(),
       status: "healthy",
+      tls_enabled: tlsConfig.enabled,
       timestamp: Date.now(),
     });
   });
 
-  httpAdapter.get("/health", (req, res) => {
-    res.json({ status: "ok" });
+  httpAdapter.get("/health", (req: any, res: any) => {
+    res.json({
+      status: "ok",
+      tls_enabled: tlsConfig.enabled,
+    });
   });
 
   // WebSocket stats endpoint
-  httpAdapter.get("/admin/ws/stats", (req, res) => {
+  httpAdapter.get("/admin/ws/stats", (req: any, res: any) => {
     res.json(alertsGateway.getStats());
   });
 
   // Alert push service status
-  httpAdapter.get("/admin/alerts/status", (req, res) => {
+  httpAdapter.get("/admin/alerts/status", (req: any, res: any) => {
     res.json(alertPushService.getStatus());
   });
 
   // Test alert endpoint (for debugging)
-  httpAdapter.post("/admin/alerts/test", (req, res) => {
+  httpAdapter.post("/admin/alerts/test", (req: any, res: any) => {
     const body = req.body || {};
     alertPushService.pushManualAlert({
       type: body.type || "test",
@@ -99,12 +118,14 @@ async function bootstrap() {
     logger.info("Swagger UI enabled", { url: "/docs" });
   }
 
-  await app.listen(config.server.port);
+  const port = config.server.port;
+  await app.listen(port);
 
   logger.info("BFF started", {
     name: config.server.name,
-    port: config.server.port,
+    port: port,
     env: config.server.env,
+    tls_enabled: tlsConfig.enabled,
     nacos: nacosService.isEnabled(),
     websocket: {
       namespace: "/alerts",

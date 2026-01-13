@@ -22,6 +22,9 @@ import (
 	"github.com/chain-risk-platform/alert-service/internal/notifier"
 	"github.com/chain-risk-platform/alert-service/internal/repository"
 	"github.com/chain-risk-platform/alert-service/internal/service"
+	"github.com/chain-risk-platform/alert-service/pkg/audit"
+	"github.com/chain-risk-platform/alert-service/pkg/ratelimit"
+	"github.com/chain-risk-platform/alert-service/pkg/tls"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
@@ -142,16 +145,34 @@ func main() {
 	subsHandler := handler.NewSubscriptionHandler(alertService, logger)
 	testHandler := handler.NewTestAlertHandler(alertService, logger)
 
-	// Initialize Gin router
+	// Initialize security components
+	auditLogger := audit.NewLogger(audit.Config{
+		ServiceName: "alert-service",
+		Output:      "stdout",
+		Format:      "json",
+	})
+	rateLimiter := ratelimit.NewWithConfig(ratelimit.Config{
+		RequestsPerMinute: 60,
+		BurstSize:         12,
+		CleanupInterval:   5 * time.Minute,
+		MaxEntries:        10000,
+	})
+	defer rateLimiter.Stop()
+
+	// Initialize Gin router with security middleware
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.New()
 
-	// Middleware
+	// Core middleware
 	router.Use(gin.Recovery())
 	router.Use(metrics.Middleware())
+
+	// Security middleware
+	router.Use(rateLimiter.Middleware())
+	router.Use(audit.Middleware(auditLogger))
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
@@ -174,12 +195,13 @@ func main() {
 		testHandler,
 	)
 
-	// Create HTTP server
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler:      router,
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
+	// Load TLS configuration
+	tlsCfg := tls.LoadFromEnv()
+
+	// Create HTTP server with TLS support
+	srv, err := tls.NewServer(fmt.Sprintf(":%d", cfg.Server.Port), router, tlsCfg)
+	if err != nil {
+		logger.Fatal("Failed to create server", zap.Error(err))
 	}
 
 	// Context for graceful shutdown
@@ -198,7 +220,6 @@ func main() {
 			HeartbeatInterval: cfg.Kafka.HeartbeatInterval,
 		}, alertService, logger)
 
-		// Start Kafka consumer
 		go func() {
 			logger.Info("Starting Kafka consumer")
 			if err := kafkaConsumer.Start(ctx); err != nil && err != context.Canceled {
@@ -211,7 +232,15 @@ func main() {
 
 	// Start HTTP server
 	go func() {
-		logger.Info("HTTP server starting", zap.Int("port", cfg.Server.Port))
+		if srv.IsTLSEnabled() {
+			logger.Info("Starting HTTPS server with TLS",
+				zap.Int("port", cfg.Server.Port),
+				zap.String("mtls_mode", tlsCfg.MTLSMode))
+		} else {
+			logger.Info("Starting HTTP server (TLS disabled)",
+				zap.Int("port", cfg.Server.Port))
+		}
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Fatal("Failed to start server", zap.Error(err))
 		}

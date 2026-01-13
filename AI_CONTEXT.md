@@ -7,8 +7,8 @@
 | Item       | Value                             |
 | ---------- | --------------------------------- |
 | Repo       | `tihaya-anon/chain-risk-platform` |
-| Version    | v0.15.0                           |
-| Next Phase | 13 (Security Hardening)           |
+| Version    | v0.16.0                           |
+| Next Phase | Production Readiness              |
 
 **Environment Split:**
 - **Local (macOS)**: Development, code editing, local testing
@@ -37,14 +37,31 @@ Frontend (React) → Orchestrator (Java/Spring) → BFF (TypeScript/NestJS)
                               Kafka → Flink (Stream) / Spark (Batch) → Hudi
 ```
 
-| Service         | Language          | Port | Responsibility            |
-| --------------- | ----------------- | ---- | ------------------------- |
-| orchestrator    | Java/Spring       | 8080 | Gateway, Auth, Routing    |
-| bff             | TypeScript/NestJS | 3001 | Aggregation, Frontend API |
-| query-service   | Go/Gin            | 8081 | Address queries           |
-| risk-ml-service | Python/FastAPI    | 8082 | ML inference              |
-| alert-service   | Go/Gin            | 8083 | Alert rules               |
-| graph-service   | Java/Spring       | 8084 | Graph analysis            |
+| Service         | Language          | Port | TLS Port | Responsibility       |
+| --------------- | ----------------- | ---- | -------- | -------------------- |
+| orchestrator    | Java/Spring       | 8080 | 8443     | Gateway, Auth        |
+| bff             | TypeScript/NestJS | 3001 | 3443     | Aggregation, API     |
+| query-service   | Go/Gin            | 8081 | 8444     | Address queries      |
+| risk-ml-service | Python/FastAPI    | 8082 | 8445     | ML inference         |
+| alert-service   | Go/Gin            | 8083 | 8446     | Alert rules          |
+| graph-service   | Java/Spring       | 8084 | 8447     | Graph analysis       |
+
+---
+
+## Security Status
+
+All services fully integrated with security components:
+
+| Service         | TLS | mTLS | Rate Limit | Audit |
+| --------------- | --- | ---- | ---------- | ----- |
+| orchestrator    | ✅   | ✅    | ✅          | ✅     |
+| bff             | ✅   | ❌*   | ✅          | ✅     |
+| query-service   | ✅   | ✅    | ✅          | ✅     |
+| risk-ml-service | ✅   | ✅    | ✅          | ✅     |
+| alert-service   | ✅   | ✅    | ✅          | ✅     |
+| graph-service   | ✅   | ✅    | ✅          | ✅     |
+
+*BFF is edge service, no mTLS required for browser clients
 
 ---
 
@@ -72,11 +89,17 @@ make infra-check        # Verify connectivity
 
 # Services  
 make services-up        # Start all services
-make <svc>-run          # Run single service (query/risk/alert/graph/orch/bff)
+make <svc>-run          # Run single service
+
+# TLS Mode
+docker-compose -f infra/compose/base.yml \
+               -f infra/compose/services.yml \
+               -f infra/compose/services-tls.yml up -d
 
 # Test
 make test-unit          # Unit tests
 make test-integration   # Integration tests
+./tests/security/tls-suite.sh  # TLS verification
 ```
 
 ---
@@ -85,7 +108,7 @@ make test-integration   # Integration tests
 
 | Topic             | Path                                             |
 | ----------------- | ------------------------------------------------ |
-| **Current Tasks** | `docs/development/plans/FOLLOWUP_INTEGRATION.md`     |
+| **Current Tasks** | `docs/development/plans/FOLLOWUP_INTEGRATION.md` |
 | Quick Start       | `docs/getting-start/QUICK_START.md`              |
 | Development SOP   | `docs/operations/runbooks/DEV_SOP.md`            |
 | API Specs         | `docs/api-specs/`                                |
@@ -115,8 +138,8 @@ feature/cp{X}-description     # Feature
 
 | Phase       | Status     |
 | ----------- | ---------- |
-| 1-12, 14-15 | ✅ Complete |
-| 13 Security | 📋 Next     |
+| 1-15        | ✅ Complete |
+| 13 Security | ✅ Integrated |
 
 See `CHANGELOG.md` for history, `docs/ROADMAP.md` for backlog.
 

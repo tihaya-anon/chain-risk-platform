@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { AddressModule } from "./modules/address/address.module";
 import { RiskModule } from "./modules/risk/risk.module";
 import { AuthModule } from "./modules/auth/auth.module";
@@ -9,13 +9,16 @@ import { TransfersModule } from "./modules/transfers/transfers.module";
 import { AlertModule } from "./modules/alert/alert.module";
 import { WebsocketModule } from "./modules/websocket/websocket.module";
 import { NacosService } from "./common/nacos.service";
+import { AuditService } from "./common/audit/audit.service";
+import { AuditInterceptor } from "./common/audit/audit.interceptor";
+import { RateLimitGuard } from "./common/guards/rate-limit.guard";
 import { getConfig } from "./config/config";
 
 const config = getConfig();
 
 @Module({
   imports: [
-    // Rate limiting
+    // Rate limiting (using @nestjs/throttler as backup)
     ThrottlerModule.forRoot([
       {
         ttl: config.rateLimit.ttl,
@@ -35,12 +38,19 @@ const config = getConfig();
   providers: [
     // Nacos service for service discovery and config
     NacosService,
-    // Global rate limit guard
+    // Audit service for security logging
+    AuditService,
+    // Custom rate limit guard (route-specific limits)
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: RateLimitGuard,
+    },
+    // Audit interceptor for request logging
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
   ],
-  exports: [NacosService],
+  exports: [NacosService, AuditService],
 })
 export class AppModule {}

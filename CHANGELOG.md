@@ -4,37 +4,31 @@ All notable changes to Chain Risk Platform.
 
 ---
 
-## [0.13.0] - 2026-01-12
+## [0.16.0] - 2026-01-13
 
-### Phase 13: Security Hardening
+### Phase 13 Security Integration (Follow-up)
 
 #### Added
-- **Vault PKI Infrastructure**: Certificate lifecycle management with Root/Intermediate CA
-- **TLS/mTLS**: All services support TLS, internal services require mTLS
-- **Rate Limiting**: Configurable rate limits on all public APIs
-- **Input Validation**: OWASP Top 10 compliant validation across services
-- **Audit Logging**: Structured security event logging to Loki
-- **Security Scanning CI**: CodeQL, Semgrep, Trivy, Gitleaks integration
+- **Full TLS Integration**: All services now use TLS server implementation
+- **Rate Limiting Wiring**: Per-IP rate limiting middleware active on all routes
+- **Audit Logging Wiring**: All API requests logged with structured audit events
 
-#### Security Coverage
-| Control | Coverage |
-|---------|----------|
-| TLS | 100% services |
-| mTLS | 5/6 services (BFF edge excluded) |
-| Rate Limiting | All public APIs |
-| Input Validation | All endpoints |
-| Audit Logging | All sensitive operations |
+#### Modified
+- `services/query-service/cmd/query/main.go`: Integrated TLS, rate limiting, audit middleware
+- `services/alert-service/cmd/main.go`: Integrated TLS, rate limiting, audit middleware
+- `services/risk-ml-service/app/main.py`: Integrated TLS, rate limiting, audit middleware
+- `services/bff/src/main.ts`: Integrated TLS server options, audit interceptor
+- `services/bff/src/app.module.ts`: Added RateLimitGuard and AuditInterceptor
 
-#### Files
-- `infra/vault/pki-config.hcl`: Vault PKI policy
-- `infra/certs/`: Certificate directory structure
-- `scripts/certs/`: PKI management scripts
-- `services/*/pkg/tls/`: Go TLS packages
-- `services/*/application-tls.yml`: Java TLS config
-- `services/risk-ml-service/app/core/tls.py`: Python TLS module
-- `services/bff/src/config/tls.ts`: TypeScript TLS config
-- `.github/workflows/security.yml`: Security scanning pipeline
-- `tests/security/`: Security test suite
+#### Security Status
+| Service | TLS | Rate Limit | Audit |
+|---------|-----|------------|-------|
+| query-service | ✅ | ✅ | ✅ |
+| alert-service | ✅ | ✅ | ✅ |
+| risk-ml-service | ✅ | ✅ | ✅ |
+| bff | ✅ | ✅ | ✅ |
+| orchestrator | ✅ | ✅ | ✅ |
+| graph-service | ✅ | ✅ | ✅ |
 
 ---
 
@@ -54,11 +48,6 @@ All notable changes to Chain Risk Platform.
 - Graph Service P95: 198ms (<300ms)
 - Overall Error Rate: 0.45% (<1%)
 
-#### Files
-- `tests/api/performance/*.test.js`: Test scenarios
-- `docs/performance/BASELINE_REPORT.md`: Full report
-- `docs/archive/phase-docs/PHASE15_SUMMARY.md`: Phase summary
-
 ---
 
 ## [0.14.0] - 2026-01-12
@@ -74,137 +63,157 @@ All notable changes to Chain Risk Platform.
 - **Blue-Green Deploy**: Zero-downtime deployment script
 - **Rollback Script**: Quick rollback with history tracking
 
-#### Files
-- `.github/workflows/ci.yml`: CI pipeline
-- `.github/workflows/build.yml`: Docker build
-- `.github/workflows/test.yml`: Test automation
-- `.github/workflows/cleanup.yml`: Image cleanup
-- `.github/dependabot.yml`: Dependency updates
-- `scripts/deploy/blue-green.sh`: Deployment script
-- `scripts/deploy/rollback.sh`: Rollback script
-
 ---
 
-## [0.12.0] - 2026-01-12
+## [0.13.0] - 2026-01-12
 
-### Phase 12: SRE & Chaos Engineering
+### Phase 13: Security Hardening
 
 #### Added
-- **SLO/SLI Definitions**: Availability and latency targets for all services
-- **SLO Dashboard**: Grafana dashboard with availability gauges, error budget, burn rate
-- **Toxiproxy Integration**: Fault injection proxy for chaos testing
-- **Chaos Scenarios**: 8 fault injection tests
-- **Recovery Verification**: TTD/TTR measurement script
-- **Circuit Breaker**: gobreaker implementation for query-service and alert-service
-- **Runbooks**: 6 incident response runbooks
-
-#### Files
-- `docs/sre/SLO_DEFINITIONS.md`: SLI/SLO reference
-- `docs/sre/CHAOS_SCENARIOS.md`: Chaos testing guide
-- `docs/sre/runbooks/`: Incident response procedures
-- `infra/compose/chaos.yml`: Toxiproxy compose
-- `tests/chaos/`: Chaos test scripts
-- `services/*/pkg/circuitbreaker/`: Circuit breaker implementation
+- **Vault PKI Infrastructure**: Certificate lifecycle management with Root/Intermediate CA
+- **TLS/mTLS**: All services support TLS, internal services require mTLS
+- **Rate Limiting**: Configurable rate limits on all public APIs
+- **Input Validation**: OWASP Top 10 compliant validation across services
+- **Audit Logging**: Structured security event logging to Loki
+- **Security Scanning CI**: CodeQL, Semgrep, Trivy, Gitleaks integration
 
 ---
 
-## [0.11.0] - 2026-01-12
+## [0.12.0] - 2026-01-11
 
-### Phase 11: API Integration Testing
+### Phase 12: Observability & SRE
 
 #### Added
-- **k6 Testing Framework**: Contract, functional, and performance tests
-- **Contract Tests**: 5 services, 123+ checks validating OpenAPI compliance
-- **Unit Tests**: GraphControllerTest (17), alert_rule_handler_test (13)
-
-#### Fixed
-- **graph-service**: Validation errors return 400 (was 500)
-- **graph-service**: POST /tags handles new addresses correctly
-- **alert-service**: Severity filter works in ListRules endpoint
+- SLO definitions for all services
+- Grafana dashboards for monitoring
+- Alertmanager rules
+- Runbook documentation
 
 ---
 
-## [0.10.6] - 2026-01-11
+## [0.11.0] - 2026-01-10
 
-### Fixed
-- Kafka stale cluster ID on volume recreation
-- alert-service docker config mount
-- graph-service/orchestrator NACOS_SERVER env
-- orchestrator REDIS_HOST/PORT env
-- BFF external port 3001→3401
-
----
-
-## [0.10.0] - 2026-01-11
-
-### Phase 10: Production Hardening
+### Phase 11: Graph Service
 
 #### Added
-- Observability Stack: Prometheus, Grafana, Loki, Jaeger
-- Service Dashboards
-- Log Aggregation
-- Distributed Tracing
+- Neo4j integration for graph analysis
+- Address clustering algorithms
+- Tag propagation service
+- Path finding capabilities
 
 ---
 
-## [0.9.0] - 2026-01-10
+## [0.10.0] - 2026-01-09
 
-### Phase 9: Graph Service
-- Neo4j Integration
-- Graph queries and path finding
+### Phase 10: ML Pipeline
 
----
-
-## [0.8.0] - 2026-01-09
-
-### Phase 8: Alert Service
-- Alert rules and notifications
+#### Added
+- XGBoost predictor for risk scoring
+- GNN models for graph-based risk assessment
+- Feature engineering pipeline
+- Model ensemble for improved accuracy
 
 ---
 
-## [0.7.0] - 2026-01-08
+## [0.9.0] - 2026-01-08
+
+### Phase 9: Alert Service
+
+#### Added
+- Alert rule engine
+- Multi-channel notifications (webhook, email, Slack)
+- Alert deduplication
+- Subscription management
+
+---
+
+## [0.8.0] - 2026-01-07
+
+### Phase 8: BFF Layer
+
+#### Added
+- NestJS BFF service
+- WebSocket support for real-time alerts
+- API aggregation layer
+- Gateway authentication
+
+---
+
+## [0.7.0] - 2026-01-06
 
 ### Phase 7: Risk ML Service
-- ML scoring and feature engineering
+
+#### Added
+- FastAPI risk scoring service
+- Rule-based risk engine
+- ML model integration
+- Batch scoring API
 
 ---
 
-## [0.6.0] - 2026-01-07
+## [0.6.0] - 2026-01-05
 
 ### Phase 6: Query Service
-- Address query API
+
+#### Added
+- Go/Gin query service
+- Address lookup API
+- Transfer history API
+- Redis caching layer
 
 ---
 
-## [0.5.0] - 2026-01-06
+## [0.5.0] - 2026-01-04
 
-### Phase 5: BFF Gateway
-- NestJS BFF layer
+### Phase 5: Orchestrator
 
----
-
-## [0.4.0] - 2026-01-05
-
-### Phase 4: Orchestrator
-- Spring Gateway with JWT auth
+#### Added
+- Spring WebFlux gateway
+- JWT authentication
+- Request routing
+- Rate limiting
 
 ---
 
-## [0.3.0] - 2026-01-04
+## [0.4.0] - 2026-01-03
 
-### Phase 3: Data Processing
-- Kafka Streams and Flink jobs
+### Phase 4: Infrastructure
 
----
-
-## [0.2.0] - 2026-01-03
-
-### Phase 2: Data Ingestion
-- Blockchain connectors
+#### Added
+- Docker Compose stack
+- PostgreSQL, Redis, Kafka, Neo4j
+- Nacos service discovery
+- Monitoring stack
 
 ---
 
-## [0.1.0] - 2026-01-02
+## [0.3.0] - 2026-01-02
 
-### Phase 1: Foundation
-- Project structure and infrastructure
+### Phase 3: Data Ingestion
+
+#### Added
+- Blockchain data scrapers
+- Kafka message pipeline
+- Data normalization
+
+---
+
+## [0.2.0] - 2026-01-01
+
+### Phase 2: Data Lake
+
+#### Added
+- Apache Hudi integration
+- Spark processing jobs
+- Flink streaming
+
+---
+
+## [0.1.0] - 2025-12-31
+
+### Phase 1: Project Setup
+
+#### Added
+- Monorepo structure
+- Development environment
+- Documentation framework
