@@ -63,11 +63,12 @@ docs/
 | Phase | Status | Description |
 |-------|--------|-------------|
 | 1-11 | ✅ | Core platform |
-| 12 | ✅ | SRE & Chaos Engineering |
+| 12 | ✅ | Observability & SRE |
 | 13 | ✅ | Security Hardening |
 | 14 | ✅ | CI/CD Pipeline |
 | 15 | ✅ | Performance Testing |
+| 16 | ✅ | BFF Consolidation |
 
 ---
 
-**Version**: v0.16.0 | **Updated**: 2026-01-13
+**Version**: v0.17.0 | **Updated**: 2026-01-14
