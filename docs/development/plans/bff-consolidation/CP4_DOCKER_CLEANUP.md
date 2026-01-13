@@ -44,6 +44,7 @@ bff:
 ### 4.2 Update Makefile
 
 ```makefile
+# Remove DIR_ORCHESTRATOR variable
 # Update targets that reference orchestrator
 .PHONY: start
 start:
@@ -53,7 +54,38 @@ start:
     docker-compose up -d frontend
 ```
 
-### 4.3 Update Startup Order
+### 4.3 Update Test Configuration
+
+Update `tests/api/config/environments.js`:
+
+```javascript
+const environments = {
+    local: {
+        queryService: 'http://localhost:8081',
+        riskMlService: 'http://localhost:8082',
+        alertService: 'http://localhost:8083',
+        graphService: 'http://localhost:8084',
+        // orchestrator removed - BFF handles all
+        bff: 'http://localhost:3001',
+    },
+    // ... same for docker and remote
+};
+
+export function getBaseUrl(service) {
+    const env = getEnv();
+    const urls = {
+        'query-service': env.queryService,
+        'risk-ml-service': env.riskMlService,
+        'alert-service': env.alertService,
+        'graph-service': env.graphService,
+        'orchestrator': env.bff,  // alias for backward compatibility
+        'bff': env.bff,
+    };
+    return urls[service] || env.bff;
+}
+```
+
+### 4.4 Update Startup Order in Docs
 
 New order (in README and docs):
 
@@ -62,13 +94,11 @@ New order (in README and docs):
 3. BFF (:3001)
 4. Frontend (:5173)
 
-### 4.4 Archive Orchestrator Directory
+### 4.5 Archive Orchestrator Directory
 
 ```bash
-# Don't delete yet - archive for reference
-git mv services/orchestrator services/_archived_orchestrator
-# Or simply delete after validation
-rm -rf services/orchestrator
+# Don't delete yet - wait for CP5 validation
+# Just mark as deprecated in this phase
 ```
 
 ---
@@ -79,7 +109,7 @@ rm -rf services/orchestrator
 |----------|------|
 | Updated compose | `docker-compose.yml` |
 | Updated Makefile | `Makefile` |
-| Archived orchestrator | `services/_archived_orchestrator/` or deleted |
+| Updated test config | `tests/api/config/environments.js` |
 
 ---
 
@@ -90,6 +120,7 @@ rm -rf services/orchestrator
 | Compose valid | `docker-compose config` |
 | No orchestrator | `docker-compose ps \| grep orchestrator` (empty) |
 | Services start | `make start` |
+| Tests run | `cd tests/api && npm test` |
 
 ---
 
@@ -97,7 +128,8 @@ rm -rf services/orchestrator
 
 - [ ] docker-compose.yml updated
 - [ ] Makefile updated
-- [ ] No references to orchestrator in infra
+- [ ] Test environments.js updated
+- [ ] No references to orchestrator:8080 in infra
 - [ ] All services start correctly
 
 ---
