@@ -10,7 +10,7 @@ make infra-check
 make query-run
 ```
 
-**Reading order**: [Quick Start](./getting-started/QUICK_START.md) → [Overview](./architecture/overview/PROJECT_OVERVIEW.md) → [Workflow](./getting-started/DEVELOPMENT_WORKFLOW.md)
+**Reading order**: [AI Context](../AI_CONTEXT.md) → [Quick Start](./getting-started/QUICK_START.md) → [Architecture](./architecture/overview/PROJECT_OVERVIEW.md)
 
 ---
 
@@ -21,12 +21,12 @@ docs/
 ├── getting-started/       # Environment setup
 ├── architecture/          # System design & decisions
 ├── api-specs/             # OpenAPI specs
-├── development/           # Plans & implementation guides
-├── operations/            # Runbooks & deployment
-├── sre/                   # SLO definitions & runbooks
+├── development/           # Implementation guides
+├── operations/            # Runbooks & policies
+├── sre/                   # SLO definitions & chaos testing
 ├── performance/           # Baseline reports
-├── changelog/             # Release notes
-└── archive/               # Historical docs
+├── security/              # Security reports
+└── archive/               # Historical phase docs
 ```
 
 ---
@@ -35,18 +35,18 @@ docs/
 
 | Role | Start | Reference |
 |------|-------|-----------|
+| AI Assistant | [AI Context](../AI_CONTEXT.md) | [Roadmap](./ROADMAP.md) |
 | New Dev | [Quick Start](./getting-started/QUICK_START.md) | [Overview](./architecture/overview/PROJECT_OVERVIEW.md) |
-| Backend | [Workflow](./getting-started/DEVELOPMENT_WORKFLOW.md) | [API Specs](./api-specs/API_SPECS_QUICK_REF.md) |
-| ML | [ML Arch](./architecture/components/ML_RISK_MODEL_ARCHITECTURE.md) | [GNN Plan](./development/plans/GNN_DEVELOPMENT_PLAN.md) |
+| Backend | [API Specs](./api-specs/API_SPECS_QUICK_REF.md) | [Dev SOP](./operations/runbooks/DEV_SOP.md) |
 | SRE | [SLO Defs](./sre/SLO_DEFINITIONS.md) | [Runbooks](./sre/runbooks/) |
 | DevOps | [CI/CD](../.github/workflows/) | [Deploy](../scripts/deploy/) |
 
 ---
 
-## Infrastructure
+## Infrastructure (Remote)
 
-| Service | Remote Port |
-|---------|-------------|
+| Service | Port |
+|---------|------|
 | Grafana | 13001 |
 | Prometheus | 19090 |
 | Jaeger | 26686 |
@@ -56,16 +56,18 @@ docs/
 
 ---
 
-## Current Status
+## Project Status
+
+**All Phases Complete** - Production Ready
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| 1-11 | ✅ | Core platform, testing |
+| 1-11 | ✅ | Core platform |
 | 12 | ✅ | SRE & Chaos Engineering |
+| 13 | ✅ | Security Hardening |
 | 14 | ✅ | CI/CD Pipeline |
 | 15 | ✅ | Performance Testing |
-| 13 | 📋 | Security (deferred) |
 
 ---
 
-**Version**: v0.15.0 | **Updated**: 2026-01-12
+**Version**: v0.16.0 | **Updated**: 2026-01-13

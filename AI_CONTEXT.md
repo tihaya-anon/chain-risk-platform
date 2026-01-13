@@ -4,11 +4,11 @@
 
 ## Quick Reference
 
-| Item       | Value                             |
-| ---------- | --------------------------------- |
-| Repo       | `tihaya-anon/chain-risk-platform` |
-| Version    | v0.16.0                           |
-| Next Phase | Production Readiness              |
+| Item    | Value                             |
+| ------- | --------------------------------- |
+| Repo    | `tihaya-anon/chain-risk-platform` |
+| Version | v0.16.0                           |
+| Status  | **Production Ready**              |
 
 **Environment Split:**
 - **Local (macOS)**: Development, code editing, local testing
@@ -22,8 +22,6 @@ ssh dev-win "cd ~/chain-risk-platform && make services-up"
 ---
 
 ## Architecture
-
-Lambda Architecture for blockchain risk assessment.
 
 ```
 External Client → Orchestrator (Gateway/Edge) → BFF → Backend Services
@@ -48,9 +46,19 @@ External Client → Orchestrator (Gateway/Edge) → BFF → Backend Services
 
 ---
 
-## Security Status
+## Project Status
 
-All services fully integrated with security components:
+**All Phases Complete** - Platform is production ready.
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1-11 | Core Platform | ✅ |
+| 12 | SRE & Chaos | ✅ |
+| 13 | Security Hardening | ✅ |
+| 14 | CI/CD Pipeline | ✅ |
+| 15 | Performance Testing | ✅ |
+
+### Security Matrix
 
 | Service         | TLS | mTLS | Rate Limit | Audit |
 | --------------- | --- | ---- | ---------- | ----- |
@@ -61,22 +69,7 @@ All services fully integrated with security components:
 | alert-service   | ✅   | ✅    | ✅          | ✅     |
 | graph-service   | ✅   | ✅    | ✅          | ✅     |
 
-*Orchestrator is edge gateway, no mTLS required (external clients don't have certs)
-
----
-
-## Infrastructure (Remote)
-
-| Component  | External Port |
-| ---------- | ------------- |
-| PostgreSQL | 15432         |
-| Redis      | 16379         |
-| Kafka      | 19092         |
-| Neo4j      | 17687         |
-| Grafana    | 13001         |
-| Jaeger     | 26686         |
-| Nacos      | 18848         |
-| BFF        | 3401          |
+*Orchestrator is edge gateway (external clients don't have certs)
 
 ---
 
@@ -106,15 +99,15 @@ make test-integration   # Integration tests
 
 ## Key Documentation
 
-| Topic             | Path                                             |
-| ----------------- | ------------------------------------------------ |
-| **Current Tasks** | `docs/development/plans/FOLLOWUP_INTEGRATION.md` |
-| Quick Start       | `docs/getting-start/QUICK_START.md`              |
-| Development SOP   | `docs/operations/runbooks/DEV_SOP.md`            |
-| API Specs         | `docs/api-specs/`                                |
-| SLO/SRE           | `docs/sre/SLO_DEFINITIONS.md`                    |
-| Architecture      | `docs/architecture/overview/PROJECT_OVERVIEW.md` |
-| Troubleshooting   | `docs/development/troubleshooting/`              |
+| Topic         | Path                                             |
+| ------------- | ------------------------------------------------ |
+| Quick Start   | `docs/getting-started/QUICK_START.md`            |
+| Architecture  | `docs/architecture/overview/PROJECT_OVERVIEW.md` |
+| API Specs     | `docs/api-specs/`                                |
+| SLO/SRE       | `docs/sre/SLO_DEFINITIONS.md`                    |
+| Roadmap       | `docs/ROADMAP.md`                                |
+| Dev SOP       | `docs/operations/runbooks/DEV_SOP.md`            |
+| Phase Archive | `docs/archive/phase-docs/`                       |
 
 ---
 
@@ -128,20 +121,9 @@ feature/cp{X}-description     # Feature
 
 # Commit format
 <type>(<scope>): <description>
-# feat(cp1): add rate limiting
+# feat(security): add TLS support
 # fix(alert): null pointer in handler
 ```
-
----
-
-## Project Status
-
-| Phase       | Status     |
-| ----------- | ---------- |
-| 1-15        | ✅ Complete |
-| 13 Security | ✅ Integrated |
-
-See `CHANGELOG.md` for history, `docs/ROADMAP.md` for backlog.
 
 ---
 
