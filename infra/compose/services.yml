@@ -114,49 +114,17 @@ services:
     networks:
       - backend
 
-  orchestrator:
-    build: ../../services/orchestrator
-    image: chainrisk/orchestrator:latest
-    container_name: orchestrator
-    environment:
-      NACOS_SERVER: nacos:8848
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
-      OTEL_SERVICE_NAME: orchestrator
-    ports:
-      - "0.0.0.0:8080:8080"
-    depends_on:
-      nacos:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      query-service:
-        condition: service_healthy
-      risk-ml-service:
-        condition: service_healthy
-      alert-service:
-        condition: service_healthy
-      graph-service:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
-    restart: unless-stopped
-    networks:
-      - frontend
-      - backend
-
+  # BFF - Now handles orchestration directly (migrated from Java orchestrator)
   bff:
     build: ../../services/bff
     image: chainrisk/bff:latest
     container_name: bff
     environment:
       NODE_ENV: production
-      ORCHESTRATOR_URL: http://orchestrator:8080
+      QUERY_SERVICE_URL: http://query-service:8081
+      RISK_SERVICE_URL: http://risk-ml-service:8082
+      ALERT_SERVICE_URL: http://alert-service:8083
+      GRAPH_SERVICE_URL: http://graph-service:8084
       NACOS_SERVER: nacos:8848
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_SERVICE_NAME: bff
@@ -164,7 +132,13 @@ services:
       # Use 3401 externally due to Windows Hyper-V port exclusion (3001-3101)
       - "0.0.0.0:3401:3001"
     depends_on:
-      orchestrator:
+      query-service:
+        condition: service_healthy
+      risk-ml-service:
+        condition: service_healthy
+      alert-service:
+        condition: service_healthy
+      graph-service:
         condition: service_healthy
       nacos:
         condition: service_healthy
