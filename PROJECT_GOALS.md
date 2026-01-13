@@ -56,6 +56,16 @@
 
 **TODO**: Add `docs/business/RISK_MODEL_RATIONALE.md`
 
+**Learning Checklist**:
+
+| Topic | Keywords | Reference |
+|-------|----------|-----------|
+| Risk Types | Mixer (Tornado Cash), Bridge exploit, Rug pull, Flash loan attack, MEV sandwich | Chainalysis reports |
+| Sanction Lists | OFAC SDN list, address screening, compliance workflow | OFAC website |
+| Label Taxonomy | Exchange hot/cold wallet, DeFi protocol, Gambling, Darknet, Scam | Etherscan labels |
+| Graph Patterns | Peel chain, Fan-out/Fan-in, Layering, Smurfing | Elliptic research |
+| On-chain Forensics | Taint analysis, Heuristic clustering, Cross-chain tracing | Arkham, Nansen |
+
 ---
 
 ### 3. SRE Capabilities ✅ 80%
