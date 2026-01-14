@@ -4,28 +4,44 @@ All notable changes to Chain Risk Platform.
 
 ---
 
+## [0.18.0] - 2026-01-14
+
+### Phase 17: AIOps Foundation
+
+#### Added
+- **OTel Data Lake**: Kafka export + Spark archive to Hudi for ML training
+- **USE Method Metrics**: Utilization/Saturation/Errors for all services
+- **Load Generator**: Go-based load generator with multiple arrival patterns
+- **Capacity Modeling**: Little's Law validation + USL curve fitting tools
+- **SLO Automation**: Error budget tracking, multi-window burn rate alerts
+- **Structured Logging**: JSON loggers with trace correlation for all services
+
+#### Dashboards
+- USE Method dashboard
+- Capacity Modeling dashboard
+- SLO Overview dashboard (updated)
+
+#### Files Added
+- `infra/otel/otel-collector-config.yaml`
+- `infra/prometheus/rules/capacity-rules.yml`
+- `infra/prometheus/rules/slo-rules.yml`
+- `services/load-generator/` (new service)
+- `scripts/capacity/usl_fitting.py`
+- Structured loggers for Go, Python, TypeScript, Java services
+
+---
+
 ## [0.17.0] - 2026-01-14
 
 ### Phase 16: BFF Consolidation
 
 #### Added
-- **Circuit Breaker**: Resilience module with timeout/retry/circuit breaker (cockatiel)
+- **Circuit Breaker**: Resilience module with timeout/retry/circuit breaker
 - **Orchestration Module**: Aggregation endpoints migrated from Java to NestJS
-- **Frontend Direct Connect**: Frontend now connects directly to BFF
+- **Frontend Direct Connect**: Frontend connects directly to BFF
 
 #### Removed
 - **Orchestrator Service**: Java Spring WebFlux gateway removed
-- Simplified architecture from 3-hop to 2-hop
-
-#### Architecture Change
-```
-Before: Frontend → Orchestrator → BFF → Services (3 hops)
-After:  Frontend → BFF → Services (2 hops)
-```
-
-#### Migration
-- `/api/v1/orchestration/*` endpoints now served by BFF
-- Rate limiting, JWT auth, audit logging consolidated in BFF
 
 ---
 
@@ -34,18 +50,9 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 13 Security Integration (Follow-up)
 
 #### Added
-- **Full TLS Integration**: All services now use TLS server implementation
-- **Rate Limiting Wiring**: Per-IP rate limiting middleware active on all routes
-- **Audit Logging Wiring**: All API requests logged with structured audit events
-
-#### Security Status
-| Service | TLS | Rate Limit | Audit |
-|---------|-----|------------|-------|
-| query-service | ✅ | ✅ | ✅ |
-| alert-service | ✅ | ✅ | ✅ |
-| risk-ml-service | ✅ | ✅ | ✅ |
-| bff | ✅ | ✅ | ✅ |
-| graph-service | ✅ | ✅ | ✅ |
+- **Full TLS Integration**: All services use TLS
+- **Rate Limiting**: Per-IP rate limiting on all routes
+- **Audit Logging**: Structured audit events
 
 ---
 
@@ -54,15 +61,8 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 15: Performance Testing
 
 #### Added
-- **k6 Performance Tests**: Baseline, sustained, ramp, mixed workload, DB stress scenarios
-- **Baseline Report**: Comprehensive performance metrics for all services
-
-#### Results
-- All services meet SLA targets
-- Query Service P95: 112ms (<200ms)
-- Risk ML Service P95: 312ms (<500ms)
-- Alert Service P95: 134ms (<200ms)
-- Graph Service P95: 198ms (<300ms)
+- **k6 Performance Tests**: Baseline, sustained, ramp, mixed workload scenarios
+- **Baseline Report**: All services meet SLA targets
 
 ---
 
@@ -71,9 +71,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 14: CI/CD Pipeline
 
 #### Added
-- **GitHub Actions CI**: Lint, build, test workflows for monorepo
-- **Build Pipeline**: Docker image build with caching and SBOM
-- **Test Automation**: Unit, integration, contract test workflows
+- **GitHub Actions CI**: Lint, build, test workflows
 - **Blue-Green Deploy**: Zero-downtime deployment script
 
 ---
@@ -83,11 +81,9 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 13: Security Hardening
 
 #### Added
-- **Vault PKI Infrastructure**: Certificate lifecycle management
-- **TLS/mTLS**: All services support TLS, internal services require mTLS
-- **Rate Limiting**: Configurable rate limits on all public APIs
-- **Input Validation**: OWASP Top 10 compliant validation
-- **Audit Logging**: Structured security event logging to Loki
+- **Vault PKI**: Certificate lifecycle management
+- **TLS/mTLS**: All internal services require mTLS
+- **Input Validation**: OWASP Top 10 compliant
 
 ---
 
@@ -96,10 +92,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 12: Observability & SRE
 
 #### Added
-- SLO definitions for all services
-- Grafana dashboards for monitoring
-- Alertmanager rules
-- Runbook documentation
+- SLO definitions, Grafana dashboards, Alertmanager rules
 
 ---
 
@@ -108,9 +101,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 11: Graph Service
 
 #### Added
-- Neo4j integration for graph analysis
-- Address clustering algorithms
-- Tag propagation service
+- Neo4j integration, address clustering, tag propagation
 
 ---
 
@@ -119,9 +110,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 10: ML Pipeline
 
 #### Added
-- XGBoost predictor for risk scoring
-- GNN models for graph-based risk
-- Feature engineering pipeline
+- XGBoost predictor, GNN models, feature engineering
 
 ---
 
@@ -130,9 +119,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 9: Alert Service
 
 #### Added
-- Alert rule engine
-- Multi-channel notifications
-- Subscription management
+- Alert rule engine, multi-channel notifications
 
 ---
 
@@ -141,9 +128,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 8: BFF Layer
 
 #### Added
-- NestJS BFF service
-- WebSocket support
-- API aggregation layer
+- NestJS BFF, WebSocket support
 
 ---
 
@@ -153,7 +138,6 @@ After:  Frontend → BFF → Services (2 hops)
 
 #### Added
 - FastAPI risk scoring service
-- Rule-based risk engine
 
 ---
 
@@ -162,8 +146,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 6: Query Service
 
 #### Added
-- Go/Gin query service
-- Redis caching layer
+- Go/Gin query service, Redis caching
 
 ---
 
@@ -172,8 +155,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 5: Orchestrator
 
 #### Added
-- Spring WebFlux gateway
-- JWT authentication
+- Spring WebFlux gateway, JWT auth
 
 ---
 
@@ -183,7 +165,6 @@ After:  Frontend → BFF → Services (2 hops)
 
 #### Added
 - Docker Compose stack
-- PostgreSQL, Redis, Kafka, Neo4j
 
 ---
 
@@ -192,8 +173,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 3: Data Ingestion
 
 #### Added
-- Blockchain data scrapers
-- Kafka message pipeline
+- Blockchain scrapers, Kafka pipeline
 
 ---
 
@@ -202,8 +182,7 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 2: Data Lake
 
 #### Added
-- Apache Hudi integration
-- Spark/Flink processing
+- Apache Hudi, Spark/Flink processing
 
 ---
 
@@ -212,5 +191,4 @@ After:  Frontend → BFF → Services (2 hops)
 ### Phase 1: Project Setup
 
 #### Added
-- Monorepo structure
-- Development environment
+- Monorepo structure, dev environment

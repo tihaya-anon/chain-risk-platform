@@ -7,7 +7,7 @@
 | Item    | Value                             |
 | ------- | --------------------------------- |
 | Repo    | `tihaya-anon/chain-risk-platform` |
-| Version | v0.17.0                           |
+| Version | v0.18.0                           |
 | Status  | **Production Ready**              |
 
 **Environment Split:**
@@ -39,6 +39,7 @@ PostgreSQL     Neo4j       ML Models
 | risk-ml-service | Python/FastAPI    | 8082 | ML inference                   |
 | alert-service   | Go/Gin            | 8083 | Alert rules                    |
 | graph-service   | Java/Spring       | 8084 | Graph analysis                 |
+| load-generator  | Go                | 9100 | Load testing (Phase 17)        |
 
 ---
 
@@ -52,18 +53,18 @@ PostgreSQL     Neo4j       ML Models
 | 14 | CI/CD Pipeline | ✅ |
 | 15 | Performance Testing | ✅ |
 | 16 | BFF Consolidation | ✅ |
+| 17 | AIOps Foundation | ✅ |
 
-### Security Matrix
+### Phase 17 Deliverables
 
-| Service         | TLS | mTLS | Rate Limit | Audit |
-| --------------- | --- | ---- | ---------- | ----- |
-| bff             | ✅   | ❌*   | ✅          | ✅     |
-| query-service   | ✅   | ✅    | ✅          | ✅     |
-| risk-ml-service | ✅   | ✅    | ✅          | ✅     |
-| alert-service   | ✅   | ✅    | ✅          | ✅     |
-| graph-service   | ✅   | ✅    | ✅          | ✅     |
-
-*BFF is edge gateway (external clients don't have certs)
+| Component | Description |
+|-----------|-------------|
+| OTel Data Lake | Kafka → Spark → Hudi archival |
+| USE Metrics | Utilization/Saturation/Errors |
+| Load Generator | Multi-pattern load testing |
+| Capacity Modeling | Little's Law, USL fitting |
+| SLO Automation | Error budget, burn rate alerts |
+| Structured Logging | JSON + trace correlation |
 
 ---
 
@@ -85,14 +86,14 @@ make test-integration   # Integration tests
 | Architecture  | `docs/architecture/`                  |
 | API Specs     | `docs/api-specs/`                     |
 | SRE           | `docs/sre/`                           |
-| Phase Archive | `docs/archive/phase-docs/`            |
+| Phase 17      | `docs/development/plans/PHASE17_AIOPS_FOUNDATION.md` |
 
 ---
 
 ## Git Convention
 
 ```bash
-# Branch: main, feature/*, fix/*
+# Branch: main, develop/phase{N}, feature/cp{X}-desc
 # Commit: <type>(<scope>): <description>
 ```
 
