@@ -120,7 +120,6 @@ make docker-build-query
 make docker-build-alert
 make docker-build-risk
 make docker-build-graph
-make docker-build-orchestrator
 make docker-build-bff
 ```
 
@@ -138,7 +137,6 @@ docker images | grep chainrisk
 Expected output:
 ```
 chainrisk/bff               latest   338MB
-chainrisk/orchestrator      latest   247MB
 chainrisk/graph-service     latest   240MB
 chainrisk/risk-ml-service   latest   283MB
 chainrisk/alert-service     latest   39MB
@@ -173,7 +171,6 @@ query-service       Up X minutes (healthy)
 alert-service       Up X minutes (healthy)
 risk-ml-service     Up X minutes (healthy)
 graph-service       Up X minutes (healthy)
-orchestrator        Up X minutes (healthy)
 bff                 Up X minutes (healthy)
 ```
 
@@ -187,7 +184,6 @@ bff                 Up X minutes (healthy)
 | risk-ml-service | 8082 | 8082 | HTTP |
 | alert-service | 8083 | 8083 | HTTP |
 | graph-service | 8084 | 8084 | HTTP |
-| orchestrator | 8080 | 8080 | HTTP |
 | bff | 3001 | 3001 | HTTP/WS |
 
 Infrastructure ports:
@@ -212,9 +208,6 @@ Infrastructure ports:
 # BFF
 curl http://localhost:3001/health
 
-# Orchestrator
-curl http://localhost:8080/actuator/health
-
 # Query Service
 curl http://localhost:8081/health
 
@@ -237,12 +230,24 @@ Check registered services:
 curl 'http://localhost:18848/nacos/v1/ns/service/list?pageNo=1&pageSize=20'
 ```
 
-Currently registered:
-- orchestrator (Java)
-- graph-service (Java)
-- bff (TypeScript)
+### Registered Services
 
-Go and Python services do not implement Nacos registration yet.
+| Service | Language | Nacos Registration |
+|---------|----------|-------------------|
+| graph-service | Java/Spring | ✅ Auto (Spring Cloud) |
+| bff | TypeScript | ✅ `nacos.service.ts` |
+| query-service | Go | ✅ `internal/nacos/` |
+| alert-service | Go | ✅ `internal/nacos/` |
+| risk-ml-service | Python | ✅ `app/core/nacos.py` |
+
+**Environment Variables** (required for Nacos registration):
+```bash
+NACOS_SERVER=nacos:8848
+SERVICE_IP=<container_ip>  # optional, defaults to 127.0.0.1
+NACOS_NAMESPACE=           # optional
+NACOS_USERNAME=            # optional
+NACOS_PASSWORD=            # optional
+```
 
 ---
 
