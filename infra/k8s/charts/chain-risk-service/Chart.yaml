@@ -1,0 +1,12 @@
+apiVersion: v2
+name: chain-risk-service
+description: Generic Helm chart for Chain Risk Platform microservices
+type: application
+version: 0.1.0
+appVersion: "0.18.0"
+keywords:
+  - blockchain
+  - risk
+  - microservice
+maintainers:
+  - name: Chain Risk Team

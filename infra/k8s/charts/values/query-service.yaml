@@ -1,0 +1,25 @@
+# Query Service values
+nameOverride: query-service
+fullnameOverride: query-service
+
+image:
+  repository: chain-risk/query-service
+  tag: "0.18.0"
+
+service:
+  port: 8081
+  metricsPort: 9090
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
