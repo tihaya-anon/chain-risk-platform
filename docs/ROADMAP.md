@@ -1,48 +1,51 @@
 # Chain Risk Platform - Roadmap
 
+## Current: v0.18.0
+
+**Platform**: On-chain Security Monitoring (Risk Analysis + MEV Detection)
+
 ---
 
-## Completed Phases
+## Completed
 
 | Phase | Content | Version |
 |-------|---------|---------|
-| 1-4 | Project Setup, Data Lake, Ingestion, Infrastructure | v0.1-0.4 |
-| 5-7 | Orchestrator, Query Service, Risk ML | v0.5-0.7 |
-| 8-9 | BFF Layer, Alert Service | v0.8-0.9 |
-| 10-11 | ML Pipeline (XGBoost, GNN), Graph Service | v0.10-0.11 |
-| 12 | SRE & Chaos Engineering | v0.12.0 |
-| 13 | Security Hardening | v0.13.0-0.16.0 |
+| 1-11 | Core Platform (Services, ML, Graph) | v0.1-0.11 |
+| 12 | SRE & Observability | v0.12.0 |
+| 13 | Security Hardening | v0.13.0 |
 | 14 | CI/CD Pipeline | v0.14.0 |
 | 15 | Performance Testing | v0.15.0 |
 | 16 | BFF Consolidation | v0.17.0 |
+| 17 | AIOps Foundation | v0.18.0 |
 
 ---
 
-## Current Status: Production Ready
+## Upcoming
 
-**Version**: v0.17.0  
-**Architecture**: Frontend → BFF → Backend Services
-
-### Service Matrix
-| Service | TLS | Rate Limit | Audit | P95 |
-|---------|-----|------------|-------|-----|
-| bff | ✅ | ✅ | ✅ | - |
-| query-service | ✅ | ✅ | ✅ | 112ms |
-| risk-ml-service | ✅ | ✅ | ✅ | 312ms |
-| alert-service | ✅ | ✅ | ✅ | 134ms |
-| graph-service | ✅ | ✅ | ✅ | 198ms |
+| Phase | Focus | Status |
+|-------|-------|--------|
+| 18 | MEV Detection + K8s Migration | Planning |
+| 19 | Anomaly Detection (ML) | Backlog |
+| 20 | Multi-chain Support | Backlog |
 
 ---
 
-## Backlog
+## Architecture
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Business Documentation | High | Risk model rationale, label taxonomy |
-| Kubernetes Migration | Medium | Helm charts, K8s deployment |
-| Multi-chain Support | Medium | BSC, Polygon integration |
-| Report Export | Low | PDF/CSV compliance reports |
+```
+┌─────────────────────────────────────────────────────────┐
+│              Chain Risk Platform                        │
+├─────────────────────────────────────────────────────────┤
+│  On-chain Risk (v0.1+)    │  Transaction Risk (v0.19+)  │
+│  • AML/Sanctions          │  • MEV Detection            │
+│  • Graph Analysis         │  • Sandwich Attack          │
+│  • Risk Scoring           │  • Front-running            │
+├─────────────────────────────────────────────────────────┤
+│  Data: Blockchain         │  Data: Mempool              │
+│  Latency: Seconds         │  Latency: Milliseconds      │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
-**Last Updated**: 2026-01-14
+**Updated**: 2026-01-14

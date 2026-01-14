@@ -1,110 +1,83 @@
 # Project Goals & Status
 
-> Internal document. Not for public README.
+> Internal document.
 
 ---
 
 ## Objectives
 
-| Goal | Scenario | Priority |
-|------|----------|----------|
-| Multi-language Backend | Freelance work | Short-term |
-| Web3 Business Understanding | Continue in Web3 | Medium-term |
-| SRE Capabilities | Career advancement | Optimistic |
+| Goal | Priority | Status |
+|------|----------|--------|
+| Multi-language Backend | ★★★ | ✅ 90% |
+| Web3 Business Understanding | ★★☆ | ⚠️ 50% |
+| DevOps/SRE Capabilities | ★★★ | 🔄 80% |
 
 ---
 
-## Completion Assessment
-
-### 1. Multi-language Backend ✅ 90%
-
-**Target**: Demonstrate full-stack microservice proficiency across languages.
+## 1. Multi-language Backend ✅ 90%
 
 | Language | Service | Status |
 |----------|---------|--------|
-| Go/Gin | query-service, alert-service | ✅ |
+| Go/Gin | query-service, alert-service, load-generator | ✅ |
 | Java/Spring | graph-service | ✅ |
 | Python/FastAPI | risk-ml-service | ✅ |
-| TypeScript/NestJS | bff (gateway + orchestration) | ✅ |
+| TypeScript/NestJS | bff | ✅ |
 | Spark/Flink | processing layer | ✅ |
 
-**Strengths**:
-- Real service interactions, not isolated demos
-- Security (TLS/mTLS), monitoring, CI/CD full pipeline
-- Clean architecture patterns per language
-
-**Verdict**: Ready for portfolio use.
+**Verdict**: Portfolio ready.
 
 ---
 
-### 2. Web3 Business Understanding ⚠️ 50%
+## 2. Web3 Business Understanding ⚠️ 50%
 
-**Target**: Show domain expertise, not just coding ability.
+**Done**:
+- Data pipeline: blockchain → lake → services
+- Graph analysis: address clustering
+- Risk scoring: ML integration
 
-**Current State**:
-- ✅ Data pipeline: blockchain → lake → services
-- ✅ Graph analysis: address clustering, path finding
-- ✅ Risk scoring: ML model integration
-- ❌ Missing business rationale documentation
+**Gap**: Business rationale documentation
 
-**Gaps**:
-| Missing | Why It Matters |
-|---------|----------------|
-| Risk feature rationale | Why these features? (mixer patterns, bridge exploits, MEV) |
-| Label taxonomy | How addresses are categorized (exchange, mixer, phishing, OFAC) |
-| Detection logic | What patterns indicate laundering vs normal activity |
-
-**TODO**: Add `docs/business/RISK_MODEL_RATIONALE.md`
-
-**Learning Checklist**:
-
-| Topic | Keywords | Reference |
-|-------|----------|-----------|
-| Risk Types | Mixer (Tornado Cash), Bridge exploit, Rug pull, Flash loan attack, MEV sandwich | Chainalysis reports |
-| Sanction Lists | OFAC SDN list, address screening, compliance workflow | OFAC website |
-| Label Taxonomy | Exchange hot/cold wallet, DeFi protocol, Gambling, Darknet, Scam | Etherscan labels |
-| Graph Patterns | Peel chain, Fan-out/Fan-in, Layering, Smurfing | Elliptic research |
-| On-chain Forensics | Taint analysis, Heuristic clustering, Cross-chain tracing | Arkham, Nansen |
+**Reference**: `docs/business/CRYPTO_RISK_TAXONOMY.md`
 
 ---
 
-### 3. SRE Capabilities ✅ 80%
+## 3. DevOps/SRE Capabilities 🔄 80%
 
-**Target**: Demonstrate production operations expertise.
+**Done**:
+- SLO/Error Budget (Phase 17)
+- Observability stack (Prometheus/Grafana/Loki/Jaeger)
+- CI/CD (GitHub Actions)
+- Runbooks, Chaos scenarios
 
-**Implemented**:
-- ✅ SLO definitions with error budgets
-- ✅ Grafana dashboards, Prometheus metrics
-- ✅ Alertmanager rules and routing
-- ✅ Runbooks for common scenarios
-- ✅ Chaos engineering scenarios
+**In Progress (Phase 18)**:
+- Kubernetes migration
+- GitOps (ArgoCD)
+- MEV detection (real-time SRE challenge)
 
 **Gap**:
-- All documentation is "design" stage
-- No incident postmortem to prove real-world application
-
-**Optional TODO**: Add fake postmortem `docs/sre/postmortems/SAMPLE_INCIDENT.md`
+- No production K8s deployment yet
+- No incident postmortem
 
 ---
 
 ## Summary
 
 ```
-Multi-lang Backend  ████████████████████░░  90%  → Ready
-Web3 Business       ██████████░░░░░░░░░░░░  50%  → Needs rationale doc
-SRE                 ████████████████░░░░░░  80%  → Optional postmortem
+Multi-lang Backend  ████████████████████░░  90%
+Web3 Business       ██████████░░░░░░░░░░░░  50%
+DevOps/SRE          ████████████████░░░░░░  80%
 ```
 
 ---
 
 ## Next Actions
 
-| Action | Effort | Impact |
-|--------|--------|--------|
-| Write RISK_MODEL_RATIONALE.md | 2h | High (Web3) |
-| Add sample postmortem | 1h | Medium (SRE) |
-| Polish README for public | 1h | Medium (All) |
+| Action | Phase |
+|--------|-------|
+| MEV Detection + K8s | 18 |
+| Crypto Risk Taxonomy doc | - |
+| Sample Postmortem | - |
 
 ---
 
-**Last Updated**: 2026-01-14
+**Updated**: 2026-01-14

@@ -1,100 +1,73 @@
 # Chain Risk Platform - AI Context
 
-> Entry point for AI assistants. Read this first, then task-specific docs.
+> Entry point for AI assistants.
 
 ## Quick Reference
 
-| Item    | Value                             |
-| ------- | --------------------------------- |
-| Repo    | `tihaya-anon/chain-risk-platform` |
-| Version | v0.18.0                           |
-| Status  | **Production Ready**              |
-
-**Environment Split:**
-- **Local (macOS)**: Development, code editing, local testing
-- **Remote (WSL Ubuntu 24.04)**: Docker infrastructure, integration testing
-
-```bash
-ssh dev-win "cd ~/chain-risk-platform && make services-up"
-```
+| Item | Value |
+|------|-------|
+| Repo | `tihaya-anon/chain-risk-platform` |
+| Version | v0.18.0 |
+| Platform | On-chain Security Monitoring |
 
 ---
 
 ## Architecture
 
 ```
-Frontend → BFF (Gateway/Edge) → Backend Services
-                 ↓
-   ┌─────────────┼─────────────┐
-   ↓             ↓             ↓
-Query (Go)   Graph (Java)   Risk ML (Python)
-   ↓             ↓             ↓
-PostgreSQL     Neo4j       ML Models
+┌─────────────────────────────────────────────────┐
+│  On-chain Risk        │  Transaction Risk       │
+│  (Blockchain data)    │  (Mempool data) [WIP]   │
+│  Latency: seconds     │  Latency: milliseconds  │
+└─────────────────────────────────────────────────┘
+          ↓                       ↓
+      Kafka ────────────────── Kafka
+          ↓                       ↓
+    Flink/Spark ───────────── Flink CEP
+          ↓                       ↓
+      Alert Service ←─────────────┘
 ```
 
-| Service         | Language          | Port | Responsibility                 |
-| --------------- | ----------------- | ---- | ------------------------------ |
-| bff             | TypeScript/NestJS | 3001 | Gateway, Auth, Orchestration   |
-| query-service   | Go/Gin            | 8081 | Address queries                |
-| risk-ml-service | Python/FastAPI    | 8082 | ML inference                   |
-| alert-service   | Go/Gin            | 8083 | Alert rules                    |
-| graph-service   | Java/Spring       | 8084 | Graph analysis                 |
-| load-generator  | Go                | 9100 | Load testing (Phase 17)        |
+## Services
+
+| Service | Lang | Port | Role |
+|---------|------|------|------|
+| bff | TypeScript | 3001 | Gateway |
+| query-service | Go | 8081 | Queries |
+| risk-ml-service | Python | 8082 | ML |
+| alert-service | Go | 8083 | Alerts |
+| graph-service | Java | 8084 | Graph |
+| load-generator | Go | 9100 | Testing |
 
 ---
 
 ## Project Status
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1-11 | Core Platform | ✅ |
-| 12 | Observability & SRE | ✅ |
-| 13 | Security Hardening | ✅ |
-| 14 | CI/CD Pipeline | ✅ |
-| 15 | Performance Testing | ✅ |
-| 16 | BFF Consolidation | ✅ |
+| Phase | Focus | Status |
+|-------|-------|--------|
+| 1-16 | Core + Security + CI/CD | ✅ |
 | 17 | AIOps Foundation | ✅ |
+| 18 | MEV Detection + K8s | 📋 Planning |
 
-### Phase 17 Deliverables
+---
 
-| Component | Description |
-|-----------|-------------|
-| OTel Data Lake | Kafka → Spark → Hudi archival |
-| USE Metrics | Utilization/Saturation/Errors |
-| Load Generator | Multi-pattern load testing |
-| Capacity Modeling | Little's Law, USL fitting |
-| SLO Automation | Error budget, burn rate alerts |
-| Structured Logging | JSON + trace correlation |
+## Key Docs
+
+| Topic | Path |
+|-------|------|
+| Roadmap | `docs/ROADMAP.md` |
+| Goals | `PROJECT_GOALS.md` |
+| Phase 18 | `docs/development/plans/PHASE18_MEV_K8S.md` |
+| Risk Taxonomy | `docs/business/CRYPTO_RISK_TAXONOMY.md` |
 
 ---
 
 ## Commands
 
 ```bash
-make infra-up           # Start infra
-make services-up        # Start services
-make test-unit          # Unit tests
-make test-integration   # Integration tests
-```
-
----
-
-## Key Documentation
-
-| Topic         | Path                                  |
-| ------------- | ------------------------------------- |
-| Architecture  | `docs/architecture/`                  |
-| API Specs     | `docs/api-specs/`                     |
-| SRE           | `docs/sre/`                           |
-| Phase 17      | `docs/development/plans/PHASE17_AIOPS_FOUNDATION.md` |
-
----
-
-## Git Convention
-
-```bash
-# Branch: main, develop/phase{N}, feature/cp{X}-desc
-# Commit: <type>(<scope>): <description>
+make infra-up        # Infrastructure
+make services-up     # Services
+make test-unit       # Tests
 ```
 
 ---
