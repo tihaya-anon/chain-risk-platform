@@ -67,6 +67,7 @@ type Event struct {
 const (
 	EventTypeRiskScore = "risk_score"
 	EventTypeTransfer  = "transfer"
+	EventTypeMev       = "mev"
 )
 
 // GetString extracts a string value from event data

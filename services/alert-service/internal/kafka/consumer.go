@@ -16,6 +16,7 @@ import (
 type EventHandler interface {
 	HandleRiskScoreEvent(ctx context.Context, event model.RiskScoreEvent) error
 	HandleTransferEvent(ctx context.Context, event model.TransferEvent) error
+	HandleMevAlertEvent(ctx context.Context, event model.MevAlertEvent) error
 }
 
 // Consumer wraps Kafka consumer with graceful shutdown
@@ -32,6 +33,7 @@ type Config struct {
 	GroupID           string
 	RiskScoresTopic   string
 	TransfersTopic    string
+	MevAlertsTopic    string
 	SessionTimeout    time.Duration
 	HeartbeatInterval time.Duration
 }
@@ -43,30 +45,45 @@ func NewConsumer(cfg Config, handler EventHandler, logger *zap.Logger) *Consumer
 	// Risk scores reader
 	if cfg.RiskScoresTopic != "" {
 		readers[cfg.RiskScoresTopic] = kafka.NewReader(kafka.ReaderConfig{
-			Brokers:        cfg.Brokers,
-			GroupID:        cfg.GroupID,
-			Topic:          cfg.RiskScoresTopic,
-			MinBytes:       1,
-			MaxBytes:       10e6,
-			MaxWait:        500 * time.Millisecond,
-			SessionTimeout: cfg.SessionTimeout,
+			Brokers:           cfg.Brokers,
+			GroupID:           cfg.GroupID,
+			Topic:             cfg.RiskScoresTopic,
+			MinBytes:          1,
+			MaxBytes:          10e6,
+			MaxWait:           500 * time.Millisecond,
+			SessionTimeout:    cfg.SessionTimeout,
 			HeartbeatInterval: cfg.HeartbeatInterval,
-			StartOffset:    kafka.LastOffset,
+			StartOffset:       kafka.LastOffset,
 		})
 	}
 
 	// Transfers reader
 	if cfg.TransfersTopic != "" {
 		readers[cfg.TransfersTopic] = kafka.NewReader(kafka.ReaderConfig{
-			Brokers:        cfg.Brokers,
-			GroupID:        cfg.GroupID,
-			Topic:          cfg.TransfersTopic,
-			MinBytes:       1,
-			MaxBytes:       10e6,
-			MaxWait:        500 * time.Millisecond,
-			SessionTimeout: cfg.SessionTimeout,
+			Brokers:           cfg.Brokers,
+			GroupID:           cfg.GroupID,
+			Topic:             cfg.TransfersTopic,
+			MinBytes:          1,
+			MaxBytes:          10e6,
+			MaxWait:           500 * time.Millisecond,
+			SessionTimeout:    cfg.SessionTimeout,
 			HeartbeatInterval: cfg.HeartbeatInterval,
-			StartOffset:    kafka.LastOffset,
+			StartOffset:       kafka.LastOffset,
+		})
+	}
+
+	// MEV alerts reader
+	if cfg.MevAlertsTopic != "" {
+		readers[cfg.MevAlertsTopic] = kafka.NewReader(kafka.ReaderConfig{
+			Brokers:           cfg.Brokers,
+			GroupID:           cfg.GroupID,
+			Topic:             cfg.MevAlertsTopic,
+			MinBytes:          1,
+			MaxBytes:          10e6,
+			MaxWait:           500 * time.Millisecond,
+			SessionTimeout:    cfg.SessionTimeout,
+			HeartbeatInterval: cfg.HeartbeatInterval,
+			StartOffset:       kafka.LastOffset,
 		})
 	}
 
@@ -137,23 +154,23 @@ func (c *Consumer) processMessage(ctx context.Context, topic string, msg kafka.M
 		return c.handleRiskScoreMessage(ctx, msg)
 	case c.isTransfersTopic(topic):
 		return c.handleTransferMessage(ctx, msg)
+	case c.isMevAlertsTopic(topic):
+		return c.handleMevAlertMessage(ctx, msg)
 	default:
 		return fmt.Errorf("unknown topic: %s", topic)
 	}
 }
 
 func (c *Consumer) isRiskScoresTopic(topic string) bool {
-	for t := range c.readers {
-		if t == topic && (topic == "risk-scores" || topic == "risk_scores") {
-			return true
-		}
-	}
-	// Check by topic name pattern
 	return topic == "risk-scores" || topic == "risk_scores"
 }
 
 func (c *Consumer) isTransfersTopic(topic string) bool {
 	return topic == "transfers"
+}
+
+func (c *Consumer) isMevAlertsTopic(topic string) bool {
+	return topic == "mev-alerts" || topic == "mev_alerts"
 }
 
 func (c *Consumer) handleRiskScoreMessage(ctx context.Context, msg kafka.Message) error {
@@ -180,6 +197,20 @@ func (c *Consumer) handleTransferMessage(ctx context.Context, msg kafka.Message)
 		zap.Float64("value_usd", event.ValueUSD))
 
 	return c.handler.HandleTransferEvent(ctx, event)
+}
+
+func (c *Consumer) handleMevAlertMessage(ctx context.Context, msg kafka.Message) error {
+	var event model.MevAlertEvent
+	if err := json.Unmarshal(msg.Value, &event); err != nil {
+		return fmt.Errorf("unmarshal mev alert event: %w", err)
+	}
+
+	c.logger.Debug("Received MEV alert event",
+		zap.String("alert_id", event.AlertID),
+		zap.String("alert_type", event.AlertType),
+		zap.String("attacker", event.AttackerAddress))
+
+	return c.handler.HandleMevAlertEvent(ctx, event)
 }
 
 // Stop gracefully stops the consumer
