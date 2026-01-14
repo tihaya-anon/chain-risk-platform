@@ -1,0 +1,457 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "panels": [],
+      "title": "Utilization",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 2,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "query_service_cpu_utilization_ratio",
+          "legendFormat": "query-service",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "alert_service_cpu_utilization_ratio",
+          "legendFormat": "alert-service",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "risk_ml_service_cpu_utilization_ratio",
+          "legendFormat": "risk-ml-service",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "graph_service_cpu_utilization_ratio",
+          "legendFormat": "graph-service",
+          "refId": "D"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "bff_cpu_utilization_ratio",
+          "legendFormat": "bff",
+          "refId": "E"
+        }
+      ],
+      "title": "CPU Utilization",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "pointSize": 5,
+            "showPoints": "never",
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.8 },
+              { "color": "red", "value": 0.95 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "query_service_memory_utilization_ratio",
+          "legendFormat": "query-service",
+          "refId": "A"
+        },
+        {
+          "expr": "alert_service_memory_utilization_ratio",
+          "legendFormat": "alert-service",
+          "refId": "B"
+        },
+        {
+          "expr": "risk_ml_service_memory_utilization_ratio",
+          "legendFormat": "risk-ml-service",
+          "refId": "C"
+        },
+        {
+          "expr": "graph_service_memory_utilization_ratio",
+          "legendFormat": "graph-service",
+          "refId": "D"
+        },
+        {
+          "expr": "bff_memory_utilization_ratio",
+          "legendFormat": "bff",
+          "refId": "E"
+        }
+      ],
+      "title": "Memory Utilization",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "never" },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 9 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "query_service_active_requests",
+          "legendFormat": "query-service",
+          "refId": "A"
+        },
+        {
+          "expr": "alert_service_active_requests",
+          "legendFormat": "alert-service",
+          "refId": "B"
+        },
+        {
+          "expr": "risk_ml_service_active_requests",
+          "legendFormat": "risk-ml-service",
+          "refId": "C"
+        },
+        {
+          "expr": "graph_service_active_requests",
+          "legendFormat": "graph-service",
+          "refId": "D"
+        },
+        {
+          "expr": "bff_active_requests",
+          "legendFormat": "bff",
+          "refId": "E"
+        }
+      ],
+      "title": "Active Requests (Concurrency)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 },
+          "max": 1,
+          "min": 0,
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 9 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "query_service_db_connection_pool_utilization",
+          "legendFormat": "query-service DB",
+          "refId": "A"
+        },
+        {
+          "expr": "alert_service_db_connection_pool_utilization",
+          "legendFormat": "alert-service DB",
+          "refId": "B"
+        },
+        {
+          "expr": "graph_service_neo4j_connection_pool_utilization",
+          "legendFormat": "graph-service Neo4j",
+          "refId": "C"
+        }
+      ],
+      "title": "Connection Pool Utilization",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 9 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "query_service_goroutines_count",
+          "legendFormat": "query-service goroutines",
+          "refId": "A"
+        },
+        {
+          "expr": "alert_service_goroutines_count",
+          "legendFormat": "alert-service goroutines",
+          "refId": "B"
+        },
+        {
+          "expr": "graph_service_thread_pool_active",
+          "legendFormat": "graph-service threads",
+          "refId": "C"
+        },
+        {
+          "expr": "risk_ml_service_thread_pool_active",
+          "legendFormat": "risk-ml threads",
+          "refId": "D"
+        }
+      ],
+      "title": "Goroutines / Threads",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "id": 10,
+      "panels": [],
+      "title": "Saturation",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "id": 11,
+      "targets": [
+        {
+          "expr": "rate(query_service_db_connection_wait_total[5m])",
+          "legendFormat": "query-service DB wait",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(alert_service_db_connection_wait_total[5m])",
+          "legendFormat": "alert-service DB wait",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(graph_service_neo4j_connection_wait_total[5m])",
+          "legendFormat": "graph-service Neo4j wait",
+          "refId": "C"
+        }
+      ],
+      "title": "Connection Wait Rate (Saturation Signal)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "id": 12,
+      "targets": [
+        {
+          "expr": "rate(query_service_rate_limit_exceeded_total[5m])",
+          "legendFormat": "query-service",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(alert_service_rate_limit_exceeded_total[5m])",
+          "legendFormat": "alert-service",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(risk_ml_service_rate_limit_exceeded_total[5m])",
+          "legendFormat": "risk-ml-service",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(bff_rate_limit_exceeded_total[5m])",
+          "legendFormat": "bff",
+          "refId": "D"
+        }
+      ],
+      "title": "Rate Limit Exceeded Rate",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "id": 20,
+      "panels": [],
+      "title": "Errors",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "id": 21,
+      "targets": [
+        {
+          "expr": "sum by (type) (rate(query_service_errors_total[5m]))",
+          "legendFormat": "query: {{type}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (type) (rate(alert_service_errors_total[5m]))",
+          "legendFormat": "alert: {{type}}",
+          "refId": "B"
+        },
+        {
+          "expr": "sum by (type) (rate(risk_ml_service_errors_total[5m]))",
+          "legendFormat": "risk-ml: {{type}}",
+          "refId": "C"
+        },
+        {
+          "expr": "sum by (type) (rate(graph_service_errors_total[5m]))",
+          "legendFormat": "graph: {{type}}",
+          "refId": "D"
+        },
+        {
+          "expr": "sum by (type) (rate(bff_errors_total[5m]))",
+          "legendFormat": "bff: {{type}}",
+          "refId": "E"
+        }
+      ],
+      "title": "Error Rate by Type",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "green", "index": 0, "text": "CLOSED" } }, "type": "value" },
+            { "options": { "1": { "color": "yellow", "index": 1, "text": "HALF-OPEN" } }, "type": "value" },
+            { "options": { "2": { "color": "red", "index": 2, "text": "OPEN" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+      "id": 22,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.1.0",
+      "targets": [
+        {
+          "expr": "query_service_circuit_breaker_state",
+          "legendFormat": "query-service: {{target}}",
+          "refId": "A"
+        },
+        {
+          "expr": "alert_service_circuit_breaker_state",
+          "legendFormat": "alert-service: {{target}}",
+          "refId": "B"
+        },
+        {
+          "expr": "bff_circuit_breaker_state",
+          "legendFormat": "bff: {{target}}",
+          "refId": "C"
+        }
+      ],
+      "title": "Circuit Breaker States",
+      "type": "gauge"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["use-method", "capacity", "phase17"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "USE Method - All Services",
+  "uid": "use-method-dashboard",
+  "version": 1,
+  "weekStart": ""
+}
