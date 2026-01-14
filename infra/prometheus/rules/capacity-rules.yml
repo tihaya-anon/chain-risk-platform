@@ -1,0 +1,190 @@
+# Prometheus Recording Rules for Capacity Modeling
+# Little's Law validation and USL data collection
+
+groups:
+  - name: capacity_littles_law
+    interval: 15s
+    rules:
+      # Little's Law: L = λ × W
+      # L = concurrency (active requests)
+      # λ = throughput (requests/second)
+      # W = latency (average response time)
+
+      # Query Service
+      - record: query_service:littles_law_expected_concurrency
+        expr: |
+          (
+            rate(query_service_http_requests_total[1m])
+            *
+            histogram_avg(rate(query_service_http_request_duration_seconds_bucket[1m]))
+          )
+
+      - record: query_service:littles_law_deviation_ratio
+        expr: |
+          (
+            query_service_active_requests
+            /
+            clamp_min(query_service:littles_law_expected_concurrency, 0.001)
+          )
+
+      # Alert Service
+      - record: alert_service:littles_law_expected_concurrency
+        expr: |
+          (
+            rate(alert_service_http_requests_total[1m])
+            *
+            histogram_avg(rate(alert_service_http_request_duration_seconds_bucket[1m]))
+          )
+
+      - record: alert_service:littles_law_deviation_ratio
+        expr: |
+          (
+            alert_service_active_requests
+            /
+            clamp_min(alert_service:littles_law_expected_concurrency, 0.001)
+          )
+
+      # Risk ML Service
+      - record: risk_ml_service:littles_law_expected_concurrency
+        expr: |
+          (
+            rate(risk_ml_service_http_requests_total[1m])
+            *
+            histogram_avg(rate(risk_ml_service_http_request_duration_seconds_bucket[1m]))
+          )
+
+      - record: risk_ml_service:littles_law_deviation_ratio
+        expr: |
+          (
+            risk_ml_service_active_requests
+            /
+            clamp_min(risk_ml_service:littles_law_expected_concurrency, 0.001)
+          )
+
+      # Graph Service
+      - record: graph_service:littles_law_expected_concurrency
+        expr: |
+          (
+            rate(http_server_requests_seconds_count{job="graph-service"}[1m])
+            *
+            rate(http_server_requests_seconds_sum{job="graph-service"}[1m])
+            /
+            clamp_min(rate(http_server_requests_seconds_count{job="graph-service"}[1m]), 0.001)
+          )
+
+      - record: graph_service:littles_law_deviation_ratio
+        expr: |
+          (
+            graph_service_active_requests
+            /
+            clamp_min(graph_service:littles_law_expected_concurrency, 0.001)
+          )
+
+      # BFF
+      - record: bff:littles_law_expected_concurrency
+        expr: |
+          (
+            rate(bff_http_requests_total[1m])
+            *
+            histogram_avg(rate(bff_http_request_duration_seconds_bucket[1m]))
+          )
+
+      - record: bff:littles_law_deviation_ratio
+        expr: |
+          (
+            bff_active_requests
+            /
+            clamp_min(bff:littles_law_expected_concurrency, 0.001)
+          )
+
+  - name: capacity_usl_data
+    interval: 30s
+    rules:
+      # USL data collection: concurrency vs throughput
+      # Used for fitting USL curve: X(N) = λN / (1 + σ(N-1) + κN(N-1))
+
+      # Query Service USL data
+      - record: query_service:usl_concurrency
+        expr: query_service_active_requests
+
+      - record: query_service:usl_throughput
+        expr: rate(query_service_http_requests_total{status=~"2.."}[1m])
+
+      - record: query_service:usl_latency_p99
+        expr: histogram_quantile(0.99, rate(query_service_http_request_duration_seconds_bucket[1m]))
+
+      # Alert Service USL data
+      - record: alert_service:usl_concurrency
+        expr: alert_service_active_requests
+
+      - record: alert_service:usl_throughput
+        expr: rate(alert_service_http_requests_total{status=~"2.."}[1m])
+
+      # Risk ML Service USL data
+      - record: risk_ml_service:usl_concurrency
+        expr: risk_ml_service_active_requests
+
+      - record: risk_ml_service:usl_throughput
+        expr: rate(risk_ml_service_http_requests_total{status=~"2.."}[1m])
+
+      # Graph Service USL data
+      - record: graph_service:usl_concurrency
+        expr: graph_service_active_requests
+
+      - record: graph_service:usl_throughput
+        expr: rate(http_server_requests_seconds_count{job="graph-service",status=~"2.."}[1m])
+
+  - name: capacity_alerts
+    rules:
+      # Little's Law deviation alert - indicates metrics collection issues
+      - alert: LittlesLawDeviation
+        expr: |
+          (
+            query_service:littles_law_deviation_ratio > 1.5
+            or
+            query_service:littles_law_deviation_ratio < 0.5
+          )
+          and
+          query_service:littles_law_expected_concurrency > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Little's Law deviation detected in {{ $labels.job }}"
+          description: |
+            Deviation ratio: {{ $value | printf "%.2f" }}
+            Expected: L = λ × W
+            This may indicate metrics collection issues or unusual traffic patterns.
+
+      - alert: HighUtilization
+        expr: |
+          (
+            query_service_cpu_utilization_ratio > 0.8
+            or alert_service_cpu_utilization_ratio > 0.8
+            or risk_ml_service_cpu_utilization_ratio > 0.8
+            or graph_service_cpu_utilization_ratio > 0.8
+            or bff_cpu_utilization_ratio > 0.8
+          )
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "High CPU utilization in service"
+          description: "CPU utilization > 80% for 5 minutes. Consider scaling."
+
+      - alert: ConnectionPoolSaturation
+        expr: |
+          (
+            query_service_db_connection_pool_utilization > 0.9
+            or alert_service_db_connection_pool_utilization > 0.9
+            or graph_service_neo4j_connection_pool_utilization > 0.9
+          )
+        for: 2m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Connection pool near exhaustion"
+          description: "Connection pool utilization > 90%. Immediate action required."
