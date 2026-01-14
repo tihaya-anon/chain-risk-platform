@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)](https://python.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://typescriptlang.org/)
 
-**Version**: 0.17.0 | **Status**: Production Ready
+**Version**: 0.18.0 | **Status**: Production Ready
 
 ---
 
@@ -48,10 +48,29 @@ make smoke-test
 ┌───────┴─────────────┴─────────────┴─────────────┴───────────┐
 │   PostgreSQL    Redis    Kafka    Neo4j    Nacos    Vault   │
 └─────────────────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│       Prometheus    Grafana    Loki    Jaeger (ES)          │
-└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Project Structure
+
+```
+services/              # Backend business services
+├── bff/               # Gateway (TypeScript)
+├── query-service/     # Queries (Go)
+├── risk-ml-service/   # ML (Python)
+├── alert-service/     # Alerts (Go)
+└── graph-service/     # Graph (Java)
+
+data-ingestion/        # On-chain data collection
+mempool-collector/     # Mempool data collection
+
+processing/            # Data processing
+├── stream-processor/  # Flink
+└── batch-processor/   # Spark
+
+tools/                 # Development tools
+└── load-generator/    # Load testing
 ```
 
 ---
@@ -65,6 +84,7 @@ make smoke-test
 | risk-ml-service | Python/FastAPI | 8082 | `/health` |
 | alert-service | Go/Gin | 8083 | `/health` |
 | graph-service | Java/Spring | 8084 | `/actuator/health` |
+| mempool-collector | Go | 9090 | `/health` |
 
 ---
 
@@ -81,6 +101,8 @@ make smoke-test
 | 14 | CI/CD Pipeline | ✅ |
 | 15 | Performance Testing | ✅ |
 | 16 | BFF Consolidation | ✅ |
+| 17 | AIOps Foundation | ✅ |
+| 18 | MEV Detection + K8s | ✅ |
 
 ---
 
@@ -96,28 +118,28 @@ make smoke-test          # Service health check
 make test-unit           # Unit tests
 make test-integration    # Integration tests
 
+# Data collectors
+make mempool-build       # Build mempool collector
+make mempool-run         # Run mempool collector
+
+# Tools
+make loadgen-run         # Run load generator
+
 # Security
 make vault-init          # Initialize Vault
-./tests/security/tls-suite.sh  # TLS verification
 ```
 
 ---
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [CHANGELOG.md](./CHANGELOG.md) | Version history |
-| [docs/architecture/](./docs/architecture/) | Architecture design |
-| [docs/api-specs/](./docs/api-specs/) | OpenAPI specs |
-| [docs/sre/](./docs/sre/) | SLO & runbooks |
+- [AI Context](AI_CONTEXT.md) - Entry point for AI assistants
+- [Project Overview](docs/architecture/overview/PROJECT_OVERVIEW.md)
+- [Development SOP](docs/operations/runbooks/DEV_SOP.md)
+- [Risk Taxonomy](docs/business/CRYPTO_RISK_TAXONOMY.md)
 
 ---
 
 ## License
 
 MIT
-
----
-
-**Last Updated**: 2026-01-14

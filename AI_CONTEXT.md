@@ -28,6 +28,27 @@
       Alert Service ←─────────────┘
 ```
 
+## Project Structure
+
+```
+services/              # Backend business services
+├── bff/               # Gateway (TypeScript)
+├── query-service/     # Queries (Go)
+├── risk-ml-service/   # ML (Python)
+├── alert-service/     # Alerts (Go)
+└── graph-service/     # Graph (Java)
+
+data-ingestion/        # On-chain data collection (Go)
+mempool-collector/     # Mempool data collection (Go)
+
+processing/            # Data processing
+├── stream-processor/  # Flink (Java)
+└── batch-processor/   # Spark (Java)
+
+tools/                 # Development tools
+└── load-generator/    # Load testing (Go)
+```
+
 ## Services
 
 | Service | Lang | Port | Role |
@@ -38,7 +59,6 @@
 | alert-service | Go | 8083 | Alerts |
 | graph-service | Java | 8084 | Graph |
 | mempool-collector | Go | 9090 | Mempool |
-| load-generator | Go | 9100 | Testing |
 
 ---
 
@@ -67,9 +87,16 @@
 ## Commands
 
 ```bash
-make infra-up        # Infrastructure
-make services-up     # Services
-make test-unit       # Tests
+make infra-up          # Infrastructure
+make services-up       # Services
+make test-unit         # Tests
+
+# Data collectors
+make mempool-build     # Build mempool collector
+make mempool-run       # Run mempool collector
+
+# Tools
+make loadgen-run       # Run load generator
 
 # K8s deployment
 helm install <service> infra/k8s/charts/chain-risk-service -f infra/k8s/charts/values/<service>.yaml
