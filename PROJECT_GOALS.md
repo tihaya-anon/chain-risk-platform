@@ -23,9 +23,9 @@
 | Language | Service | Status |
 |----------|---------|--------|
 | Go/Gin | query-service, alert-service | ✅ |
-| Java/Spring | orchestrator, graph-service | ✅ |
+| Java/Spring | graph-service | ✅ |
 | Python/FastAPI | risk-ml-service | ✅ |
-| TypeScript/NestJS | bff | ✅ |
+| TypeScript/NestJS | bff (gateway + orchestration) | ✅ |
 | Spark/Flink | processing layer | ✅ |
 
 **Strengths**:
@@ -107,4 +107,4 @@ SRE                 ████████████████░░░░
 
 ---
 
-**Last Updated**: 2026-01-13
+**Last Updated**: 2026-01-14

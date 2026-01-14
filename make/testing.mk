@@ -80,19 +80,18 @@ validate-phase10:
 # ============================================
 # Batch Operations
 # ============================================
-build-all: ingestion-build query-build alert-build risk-build bff-build orchestrator-build graph-build flink-build batch-build frontend-build generator-build
+build-all: ingestion-build query-build alert-build risk-build bff-build graph-build flink-build batch-build frontend-build generator-build
 
 test-all:
 	@$(MAKE) query-test || true
 	@$(MAKE) alert-test || true
 	@$(MAKE) risk-test || true
 	@$(MAKE) bff-test || true
-	@$(MAKE) orchestrator-test || true
 	@$(MAKE) graph-test || true
 
 test-e2e-all: test-e2e playwright-test
 
-clean-all: ingestion-clean query-clean alert-clean risk-clean bff-clean orchestrator-clean graph-clean flink-clean batch-clean frontend-clean
+clean-all: ingestion-clean query-clean alert-clean risk-clean bff-clean graph-clean flink-clean batch-clean frontend-clean
 
 # ============================================
 # Local Service Runner

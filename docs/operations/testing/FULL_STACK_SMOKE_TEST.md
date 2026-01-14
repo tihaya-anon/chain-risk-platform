@@ -8,18 +8,17 @@ Quick guide to start all services for smoke testing.
 
 ### Infrastructure (docker-compose)
 
-| Service | Port | Status |
-|---------|------|--------|
-| PostgreSQL | 15432 | ✅ Running |
-| Neo4j | 17474/17687 | ✅ Running |
-| Kafka | 19092 | ✅ Running |
-| Redis | 16379 | ✅ Running |
-| Nacos | 18848 | ✅ Running |
-| Trino | 18081 | ✅ Running |
-| Hive Metastore | 19083 | ✅ Running |
-| MinIO | 19000/19001 | ✅ Running |
-| Prometheus | 19090 | ✅ Running |
-| Grafana | 13001 | ✅ Running |
+| Service | Port |
+|---------|------|
+| PostgreSQL | 15432 |
+| Neo4j | 17474/17687 |
+| Kafka | 19092 |
+| Redis | 16379 |
+| Nacos | 18848 |
+| Trino | 18081 |
+| MinIO | 19000/19001 |
+| Prometheus | 19090 |
+| Grafana | 13001 |
 
 ### Application Services
 
@@ -27,17 +26,16 @@ Quick guide to start all services for smoke testing.
 |---------|------|------|---------------|
 | Query Service | 8081 | Go/Gin | `make query-run` |
 | Risk Service | 8082 | Python/FastAPI | `make risk-run` |
+| Alert Service | 8083 | Go/Gin | `make alert-run` |
 | Graph Service | 8084 | Java/Spring | `make graph-run` |
-| Alert Service | 8085 | Go/Gin | `make alert-run` |
 | BFF | 3001 | TypeScript/NestJS | `make bff-run` |
-| Orchestrator | 8083 | Java/Spring | `make orchestrator-run` |
 
 ### Processing
 
 | Service | Tech | Start Command |
 |---------|------|---------------|
 | Stream Processor | Flink | `make flink-run` |
-| Batch Processor | Spark | `make batch-archive` / `make batch-correct` |
+| Batch Processor | Spark | `make batch-archive` |
 | Data Generator | Go | `make generator-run` |
 
 ---
@@ -45,23 +43,20 @@ Quick guide to start all services for smoke testing.
 ## Quick Start
 
 ```bash
-# 1. Ensure infrastructure is up
+# 1. Check infrastructure
 make infra-check
 
-# 2. Build all services
+# 2. Build services
 make build-all
 
-# 3. Start all application services
+# 3. Start services
 make run-svc
 
-# 4. Start Flink stream processor
+# 4. Start Flink
 make flink-run
 
-# 5. Run data generator (low TPS for smoke test)
+# 5. Run generator (smoke test)
 make generator-run TPS=5 DURATION=60
-
-# 6. Check logs
-make logs-all
 ```
 
 ---
@@ -72,13 +67,12 @@ make logs-all
 # Health checks
 curl http://localhost:8081/health  # Query
 curl http://localhost:8082/health  # Risk
+curl http://localhost:8083/health  # Alert
 curl http://localhost:8084/actuator/health  # Graph
-curl http://localhost:8085/health  # Alert
 curl http://localhost:3001/health  # BFF
 
-# API smoke test
-curl http://localhost:3001/api/addresses/0x0000000000000000000000000000000000000000
-curl http://localhost:3001/api/alerts/rules
+# API test
+curl http://localhost:3001/api/v1/addresses/0x0000000000000000000000000000000000000000
 ```
 
 ---

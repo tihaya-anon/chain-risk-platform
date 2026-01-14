@@ -2,43 +2,34 @@
 
 ## Overview
 
-All API specifications are stored in `docs/api-specs/`:
-
 ```
 docs/api-specs/
 ├── query-service.openapi.json      # Query Service (Go)
 ├── bff.openapi.json                # BFF (NestJS)
 ├── risk-ml-service.openapi.json    # Risk ML Service (FastAPI)
-├── orchestrator.openapi.json       # Orchestrator (Spring Boot)
+├── alert-service.openapi.json      # Alert Service (Go)
 └── graph-service.openapi.json      # Graph Service (Spring Boot)
 ```
 
-## Generation Methods
+## Service Endpoints
 
-| Service | Tech Stack | Command | Swagger UI |
-|---------|------------|---------|------------|
-| Query Service | Go/swag | `swag init` | :8081/swagger |
-| BFF | NestJS | `curl :3001/docs-json` | :3001/docs |
-| Risk ML | FastAPI | `curl :8082/openapi.json` | :8082/docs |
-| Orchestrator | Spring Boot | `curl :8080/v3/api-docs` | :8080/swagger-ui.html |
-| Graph Service | Spring Boot | `curl :8084/v3/api-docs` | :8084/swagger-ui.html |
+| Service | Tech | Swagger UI | Port |
+|---------|------|------------|------|
+| Query Service | Go/Gin | :8081/swagger/index.html | 8081 |
+| BFF | NestJS | :3001/docs | 3001 |
+| Risk ML | FastAPI | :8082/docs | 8082 |
+| Alert Service | Go/Gin | :8083/swagger/index.html | 8083 |
+| Graph Service | Spring Boot | :8084/swagger-ui.html | 8084 |
 
 ## Update Commands
 
 ```bash
-# Update all services
-make api-update
-
-# Update individual service
-make api-update-query
-make api-update-bff
-make api-update-risk
-make api-update-orch
-make api-update-graph
-
-# Using script directly
-./scripts/update-api-specs.sh --all
-./scripts/update-api-specs.sh --graph
+make api-update            # Update all services
+make api-update-query      # Query Service
+make api-update-bff        # BFF
+make api-update-risk       # Risk ML Service
+make api-update-alert      # Alert Service
+make api-update-graph      # Graph Service
 ```
 
 ## Workflow
@@ -48,18 +39,19 @@ make api-update-graph
 3. Run `make api-update-<service>`
 4. Commit both code and spec changes
 
-## Validation
-
-```bash
-# Using OpenAPI CLI
-npm install -g @redocly/cli
-redocly lint docs/api-specs/query-service.openapi.json
-```
-
 ## Troubleshooting
 
-**Service not running**: Start with `make <service>-run`
+```bash
+# swag not found (Go services)
+go install github.com/swaggo/swag/cmd/swag@latest
 
-**Port conflict**: Check with `lsof -i :<port>`
+# Service not running
+make <service>-run
 
-**swag not found**: `go install github.com/swaggo/swag/cmd/swag@latest`
+# Port conflict
+lsof -i :<port>
+```
+
+---
+
+**Updated**: 2026-01-14
