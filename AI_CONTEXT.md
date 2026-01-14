@@ -17,7 +17,7 @@
 ```
 ┌─────────────────────────────────────────────────┐
 │  On-chain Risk        │  Transaction Risk       │
-│  (Blockchain data)    │  (Mempool data) [WIP]   │
+│  (Blockchain data)    │  (Mempool data)         │
 │  Latency: seconds     │  Latency: milliseconds  │
 └─────────────────────────────────────────────────┘
           ↓                       ↓
@@ -37,6 +37,7 @@
 | risk-ml-service | Python | 8082 | ML |
 | alert-service | Go | 8083 | Alerts |
 | graph-service | Java | 8084 | Graph |
+| mempool-collector | Go | 9090 | Mempool |
 | load-generator | Go | 9100 | Testing |
 
 ---
@@ -47,7 +48,7 @@
 |-------|-------|--------|
 | 1-16 | Core + Security + CI/CD | ✅ |
 | 17 | AIOps Foundation | ✅ |
-| 18 | MEV Detection + K8s | 📋 Planning |
+| 18 | MEV Detection + K8s | ✅ |
 
 ---
 
@@ -58,7 +59,8 @@
 | Roadmap | `docs/ROADMAP.md` |
 | Goals | `PROJECT_GOALS.md` |
 | Phase 18 | `docs/development/plans/PHASE18_MEV_K8S.md` |
-| Risk Taxonomy | `docs/business/CRYPTO_RISK_TAXONOMY.md` |
+| K8s/Helm | `infra/k8s/charts/` |
+| ArgoCD | `infra/k8s/argocd/` |
 
 ---
 
@@ -68,6 +70,9 @@
 make infra-up        # Infrastructure
 make services-up     # Services
 make test-unit       # Tests
+
+# K8s deployment
+helm install <service> infra/k8s/charts/chain-risk-service -f infra/k8s/charts/values/<service>.yaml
 ```
 
 ---
