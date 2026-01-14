@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: chain-risk
+  namespace: argocd
+spec:
+  description: Chain Risk Platform
+  sourceRepos:
+    - 'https://github.com/tihaya-anon/chain-risk-platform.git'
+  destinations:
+    - namespace: chain-risk-prod
+      server: https://kubernetes.default.svc
+    - namespace: chain-risk-staging
+      server: https://kubernetes.default.svc
+    - namespace: chain-risk-dev
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  roles:
+    - name: developer
+      description: Developer access
+      policies:
+        - p, proj:chain-risk:developer, applications, get, chain-risk/*, allow
+        - p, proj:chain-risk:developer, applications, sync, chain-risk/*, allow
+      groups:
+        - chain-risk-devs
+    - name: admin
+      description: Admin access
+      policies:
+        - p, proj:chain-risk:admin, applications, *, chain-risk/*, allow
+      groups:
+        - chain-risk-admins

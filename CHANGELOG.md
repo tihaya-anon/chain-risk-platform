@@ -6,6 +6,62 @@ All notable changes to Chain Risk Platform.
 
 ## [0.18.0] - 2026-01-14
 
+### Phase 18: MEV Detection & Kubernetes Migration
+
+#### Part A: MEV Detection
+
+##### Added
+- **Mempool Collector**: Go service for real-time mempool monitoring
+  - WebSocket subscription to `newPendingTransactions`
+  - DEX swap method detection (Uniswap V2/V3 patterns)
+  - Kafka producer to `mempool-pending-txs` topic
+  - Auto-reconnect with exponential backoff
+
+- **Flink MEV Detection Job**: CEP patterns for MEV attack detection
+  - Sandwich attack pattern: front-tx → victim-tx → back-tx
+  - Front-run pattern: similar tx with higher gas
+  - Abnormal gas detector: anomalous gas price detection
+  - Outputs to `mev-alerts` topic
+
+- **Alert Service Integration**: MEV event types and evaluator
+  - MevAlertEvent model with severity levels
+  - MevEvaluator for rule-based filtering
+  - Kafka consumer for `mev-alerts` topic
+
+#### Part B: Kubernetes Migration
+
+##### Added
+- **Helm Charts**: Generic chart for all microservices
+  - Deployment, Service, HPA, PDB templates
+  - NetworkPolicy, Ingress templates
+  - Per-service values files
+
+- **ArgoCD GitOps**: Automated deployment pipeline
+  - AppProject with RBAC
+  - ApplicationSet for all services
+  - Automated sync with prune and self-heal
+
+- **Network Security**:
+  - Default deny-all NetworkPolicy
+  - Service-to-service communication policies
+  - Infrastructure egress policies
+  - Production Ingress with TLS and rate limiting
+
+#### Files Added
+- `data-ingestion/mempool-collector/` (new service)
+- `processing/stream-processor/src/main/java/.../mev/` (new package)
+- `services/alert-service/internal/model/mev_event.go`
+- `services/alert-service/internal/engine/mev_evaluator.go`
+- `infra/k8s/charts/chain-risk-service/`
+- `infra/k8s/charts/values/`
+- `infra/k8s/argocd/`
+- `infra/k8s/base/network-policies.yaml`
+- `infra/k8s/base/ingress-prod.yaml`
+
+---
+
+## [0.17.0] - 2026-01-14
+
 ### Phase 17: AIOps Foundation
 
 #### Added
@@ -31,7 +87,7 @@ All notable changes to Chain Risk Platform.
 
 ---
 
-## [0.17.0] - 2026-01-14
+## [0.16.0] - 2026-01-14
 
 ### Phase 16: BFF Consolidation
 
@@ -45,7 +101,7 @@ All notable changes to Chain Risk Platform.
 
 ---
 
-## [0.16.0] - 2026-01-13
+## [0.15.0] - 2026-01-13
 
 ### Phase 13 Security Integration (Follow-up)
 
@@ -56,7 +112,7 @@ All notable changes to Chain Risk Platform.
 
 ---
 
-## [0.15.0] - 2026-01-12
+## [0.14.0] - 2026-01-12
 
 ### Phase 15: Performance Testing
 
@@ -66,7 +122,7 @@ All notable changes to Chain Risk Platform.
 
 ---
 
-## [0.14.0] - 2026-01-12
+## [0.13.0] - 2026-01-12
 
 ### Phase 14: CI/CD Pipeline
 
@@ -76,119 +132,11 @@ All notable changes to Chain Risk Platform.
 
 ---
 
-## [0.13.0] - 2026-01-12
+## [0.12.0] - 2026-01-12
 
-### Phase 13: Security Hardening
-
-#### Added
-- **Vault PKI**: Certificate lifecycle management
-- **TLS/mTLS**: All internal services require mTLS
-- **Input Validation**: OWASP Top 10 compliant
-
----
-
-## [0.12.0] - 2026-01-11
-
-### Phase 12: Observability & SRE
+### Phase 13: Security
 
 #### Added
-- SLO definitions, Grafana dashboards, Alertmanager rules
-
----
-
-## [0.11.0] - 2026-01-10
-
-### Phase 11: Graph Service
-
-#### Added
-- Neo4j integration, address clustering, tag propagation
-
----
-
-## [0.10.0] - 2026-01-09
-
-### Phase 10: ML Pipeline
-
-#### Added
-- XGBoost predictor, GNN models, feature engineering
-
----
-
-## [0.9.0] - 2026-01-08
-
-### Phase 9: Alert Service
-
-#### Added
-- Alert rule engine, multi-channel notifications
-
----
-
-## [0.8.0] - 2026-01-07
-
-### Phase 8: BFF Layer
-
-#### Added
-- NestJS BFF, WebSocket support
-
----
-
-## [0.7.0] - 2026-01-06
-
-### Phase 7: Risk ML Service
-
-#### Added
-- FastAPI risk scoring service
-
----
-
-## [0.6.0] - 2026-01-05
-
-### Phase 6: Query Service
-
-#### Added
-- Go/Gin query service, Redis caching
-
----
-
-## [0.5.0] - 2026-01-04
-
-### Phase 5: Orchestrator
-
-#### Added
-- Spring WebFlux gateway, JWT auth
-
----
-
-## [0.4.0] - 2026-01-03
-
-### Phase 4: Infrastructure
-
-#### Added
-- Docker Compose stack
-
----
-
-## [0.3.0] - 2026-01-02
-
-### Phase 3: Data Ingestion
-
-#### Added
-- Blockchain scrapers, Kafka pipeline
-
----
-
-## [0.2.0] - 2026-01-01
-
-### Phase 2: Data Lake
-
-#### Added
-- Apache Hudi, Spark/Flink processing
-
----
-
-## [0.1.0] - 2025-12-31
-
-### Phase 1: Project Setup
-
-#### Added
-- Monorepo structure, dev environment
+- **Vault Integration**: Secret management
+- **mTLS**: Service-to-service encryption
+- **JWT Validation**: Token validation in BFF

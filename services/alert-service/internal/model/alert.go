@@ -96,6 +96,9 @@ const (
 	RuleTypeGraphPattern     = "graph_pattern"
 	RuleTypeVelocity         = "velocity"
 	RuleTypeClusterRisk      = "cluster_risk"
+	RuleTypeMevSandwich      = "mev_sandwich"
+	RuleTypeMevFrontRun      = "mev_frontrun"
+	RuleTypeMevAbnormalGas   = "mev_abnormal_gas"
 )
 
 // Severity constants
@@ -127,6 +130,7 @@ const (
 	EntityTypeAddress     = "address"
 	EntityTypeTransaction = "transaction"
 	EntityTypeCluster     = "cluster"
+	EntityTypeMev         = "mev"
 )
 
 // RiskScoreConditions represents conditions for risk_score rule type
@@ -153,6 +157,14 @@ type TagMatchConditions struct {
 type VelocityConditions struct {
 	Count  int    `json:"count"`
 	Window string `json:"window"` // e.g., "1h", "1d"
+}
+
+// MevConditions represents conditions for MEV alert rule types
+type MevConditions struct {
+	AlertTypes       []string `json:"alert_types,omitempty"`       // Filter by MEV alert types
+	MinSeverity      string   `json:"min_severity,omitempty"`      // Minimum severity to trigger
+	TargetContracts  []string `json:"target_contracts,omitempty"`  // Specific contracts to monitor
+	MinGasPriceDiff  string   `json:"min_gas_price_diff,omitempty"` // Minimum gas price diff in wei
 }
 
 // EmailChannelConfig represents email channel configuration

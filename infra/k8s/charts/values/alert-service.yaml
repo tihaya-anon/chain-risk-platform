@@ -1,0 +1,25 @@
+# Alert Service values
+nameOverride: alert-service
+fullnameOverride: alert-service
+
+image:
+  repository: chain-risk/alert-service
+  tag: "0.18.0"
+
+service:
+  port: 8083
+  metricsPort: 9090
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70

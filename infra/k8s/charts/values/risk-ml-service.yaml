@@ -1,0 +1,41 @@
+# Risk ML Service values
+nameOverride: risk-ml-service
+fullnameOverride: risk-ml-service
+
+image:
+  repository: chain-risk/risk-ml-service
+  tag: "0.18.0"
+
+service:
+  port: 8082
+  metricsPort: 9090
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 60
+  targetMemoryUtilizationPercentage: 70
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 15
+  timeoutSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 20
+  periodSeconds: 10

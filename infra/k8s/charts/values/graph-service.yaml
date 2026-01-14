@@ -1,0 +1,39 @@
+# Graph Service values
+nameOverride: graph-service
+fullnameOverride: graph-service
+
+image:
+  repository: chain-risk/graph-service
+  tag: "0.18.0"
+
+service:
+  port: 8084
+  metricsPort: 9090
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 15
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10

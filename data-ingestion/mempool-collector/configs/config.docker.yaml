@@ -1,0 +1,29 @@
+server:
+  port: 9090
+  read_timeout: 10s
+  write_timeout: 10s
+
+ethereum:
+  ws_url: ${ETHEREUM_WS_URL:ws://geth:8546}
+  network: ${ETHEREUM_NETWORK:ethereum}
+  reconnect_interval: 5s
+  max_reconnect_delay: 60s
+  subscription_buffer: 20000
+
+kafka:
+  brokers: ${KAFKA_BROKERS:kafka:9092}
+  topic: mempool-pending-txs
+  batch_size: 2000
+  linger_ms: 5
+  compression_type: lz4
+  flush_timeout: 5s
+
+nacos:
+  enabled: ${NACOS_ENABLED:true}
+  server_addr: ${NACOS_SERVER_ADDR:nacos:8848}
+  namespace_id: ${NACOS_NAMESPACE_ID:}
+  service_name: mempool-collector
+
+metrics:
+  enabled: true
+  port: 9091

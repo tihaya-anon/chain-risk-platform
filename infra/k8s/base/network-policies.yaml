@@ -1,0 +1,193 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: chain-risk-prod
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: chain-risk-prod
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: chain-risk-prod
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 9091
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bff-ingress
+  namespace: chain-risk-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: bff
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3001
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bff-egress
+  namespace: chain-risk-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: bff
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: query-service
+      ports:
+        - protocol: TCP
+          port: 8081
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: risk-ml-service
+      ports:
+        - protocol: TCP
+          port: 8082
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alert-service
+      ports:
+        - protocol: TCP
+          port: 8083
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: graph-service
+      ports:
+        - protocol: TCP
+          port: 8084
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-services-internal
+  namespace: chain-risk-prod
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - query-service
+          - risk-ml-service
+          - alert-service
+          - graph-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: bff
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: chain-risk-platform
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-infra-egress
+  namespace: chain-risk-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: chain-risk-platform
+  policyTypes:
+    - Egress
+  egress:
+    # Kafka
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: chain-risk-infra
+        - podSelector:
+            matchLabels:
+              app: kafka
+      ports:
+        - protocol: TCP
+          port: 9092
+    # PostgreSQL
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: chain-risk-infra
+        - podSelector:
+            matchLabels:
+              app: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Redis
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: chain-risk-infra
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Neo4j
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: chain-risk-infra
+        - podSelector:
+            matchLabels:
+              app: neo4j
+      ports:
+        - protocol: TCP
+          port: 7687
