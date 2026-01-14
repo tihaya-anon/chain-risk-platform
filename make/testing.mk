@@ -1,10 +1,57 @@
 # Testing Commands
 
 # ============================================
+# Unit Tests
+# ============================================
+test-unit:
+	@$(MAKE) query-test || true
+	@$(MAKE) alert-test || true
+	@$(MAKE) risk-test || true
+	@$(MAKE) bff-test || true
+	@$(MAKE) graph-test || true
+	@$(MAKE) mempool-test || true
+
+# ============================================
 # Smoke Test
 # ============================================
 smoke-test:
 	@bash -c '$(LOAD_ENV) ./scripts/smoke-test.sh'
+
+# ============================================
+# Integration Tests
+# ============================================
+
+# Data Pipeline IT (data-ingestion → Kafka → Flink → PostgreSQL → Batch)
+it-pipeline:
+	@bash -c '$(LOAD_ENV) ./scripts/test/integration/pipeline/run-all.sh'
+
+it-pipeline-phase1:
+	@bash -c '$(LOAD_ENV) ./scripts/test/integration/pipeline/phase1-ingestion.sh'
+
+it-pipeline-phase2:
+	@bash -c '$(LOAD_ENV) ./scripts/test/integration/pipeline/phase2-flink.sh'
+
+it-pipeline-phase3:
+	@bash -c '$(LOAD_ENV) ./scripts/test/integration/pipeline/phase3-batch.sh'
+
+# OTel/Tracing IT (cross-service trace verification)
+it-otel:
+	@bash -c '$(LOAD_ENV) ./scripts/test/integration/otel/trace-verification.sh'
+
+# Alert Service IT (Kafka → alert-service → webhook)
+it-alert:
+	@bash -c '$(LOAD_ENV) ./scripts/test/integration/alert/run.sh'
+
+# Mempool Collector IT (mempool-collector → Kafka)
+it-mempool:
+	@bash -c '$(LOAD_ENV) ./scripts/test/integration/mempool/run.sh'
+
+# All integration tests
+it-all: it-pipeline it-otel it-alert it-mempool
+
+# Legacy aliases (deprecated, use it-* instead)
+test-integration: it-pipeline
+integration-test: it-otel
 
 # ============================================
 # E2E Tests (Go)
@@ -63,15 +110,6 @@ ws-inject-batch:
 	@bash -c '$(LOAD_ENV) ./tests/e2e/playwright/scripts/ws-test-helper.sh inject-batch $(N)'
 
 # ============================================
-# Integration Tests
-# ============================================
-test-integration:
-	@bash -c '$(LOAD_ENV) ./scripts/test/run-integration-test.sh'
-
-integration-test:
-	@bash -c '$(LOAD_ENV) ./scripts/integration-test.sh'
-
-# ============================================
 # Phase Validation
 # ============================================
 validate-phase10:
@@ -80,18 +118,13 @@ validate-phase10:
 # ============================================
 # Batch Operations
 # ============================================
-build-all: ingestion-build query-build alert-build risk-build bff-build graph-build flink-build batch-build frontend-build generator-build
+build-all: ingestion-build query-build alert-build risk-build bff-build graph-build flink-build batch-build frontend-build generator-build mempool-build loadgen-build
 
-test-all:
-	@$(MAKE) query-test || true
-	@$(MAKE) alert-test || true
-	@$(MAKE) risk-test || true
-	@$(MAKE) bff-test || true
-	@$(MAKE) graph-test || true
+test-all: test-unit
 
 test-e2e-all: test-e2e playwright-test
 
-clean-all: ingestion-clean query-clean alert-clean risk-clean bff-clean graph-clean flink-clean batch-clean frontend-clean
+clean-all: ingestion-clean query-clean alert-clean risk-clean bff-clean graph-clean flink-clean batch-clean frontend-clean mempool-clean loadgen-clean
 
 # ============================================
 # Local Service Runner
