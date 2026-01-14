@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: chain-risk-services
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: bff
+            values: infra/k8s/charts/values/bff.yaml
+          - name: query-service
+            values: infra/k8s/charts/values/query-service.yaml
+          - name: risk-ml-service
+            values: infra/k8s/charts/values/risk-ml-service.yaml
+          - name: alert-service
+            values: infra/k8s/charts/values/alert-service.yaml
+          - name: graph-service
+            values: infra/k8s/charts/values/graph-service.yaml
+          - name: mempool-collector
+            values: infra/k8s/charts/values/mempool-collector.yaml
+  template:
+    metadata:
+      name: '{{name}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: chain-risk-platform
+    spec:
+      project: chain-risk
+      source:
+        repoURL: https://github.com/tihaya-anon/chain-risk-platform.git
+        targetRevision: HEAD
+        path: infra/k8s/charts/chain-risk-service
+        helm:
+          valueFiles:
+            - '../values/{{name}}.yaml'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: chain-risk-prod
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

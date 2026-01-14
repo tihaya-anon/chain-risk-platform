@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: chain-risk-infra
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: chain-risk-platform
+spec:
+  project: chain-risk
+  source:
+    repoURL: https://github.com/tihaya-anon/chain-risk-platform.git
+    targetRevision: HEAD
+    path: infra/k8s/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: chain-risk-infra
+  syncPolicy:
+    automated:
+      prune: false  # Manual prune for infra
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
