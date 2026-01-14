@@ -19,6 +19,7 @@ import (
 	"github.com/chain-risk-platform/alert-service/internal/handler"
 	"github.com/chain-risk-platform/alert-service/internal/kafka"
 	"github.com/chain-risk-platform/alert-service/internal/metrics"
+	"github.com/chain-risk-platform/alert-service/internal/nacos"
 	"github.com/chain-risk-platform/alert-service/internal/notifier"
 	"github.com/chain-risk-platform/alert-service/internal/repository"
 	"github.com/chain-risk-platform/alert-service/internal/service"
@@ -30,6 +31,10 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+)
+
+var (
+	version = "1.0.0"
 )
 
 func main() {
@@ -48,9 +53,29 @@ func main() {
 	defer logger.Sync()
 
 	logger.Info("Starting Alert Service",
-		zap.String("version", "1.0.0"),
+		zap.String("version", version),
 		zap.Int("port", cfg.Server.Port),
 	)
+
+	// Initialize Nacos client (optional)
+	var nacosClient *nacos.Client
+	if nacosServer := os.Getenv("NACOS_SERVER"); nacosServer != "" {
+		nacosClient, err = initNacosClient(cfg.Server.Port, logger)
+		if err != nil {
+			logger.Warn("Failed to initialize Nacos client, running without Nacos", zap.Error(err))
+		} else {
+			logger.Info("Nacos client initialized", zap.String("server", nacosServer))
+
+			if err := nacosClient.RegisterService(map[string]string{
+				"version": version,
+				"env":     cfg.Server.Mode,
+			}); err != nil {
+				logger.Warn("Failed to register service with Nacos", zap.Error(err))
+			}
+		}
+	} else {
+		logger.Info("NACOS_SERVER not set, running without Nacos integration")
+	}
 
 	// Initialize database
 	db, err := initDatabase(cfg)
@@ -186,6 +211,28 @@ func main() {
 	// Prometheus metrics endpoint
 	router.GET("/metrics", metrics.Handler())
 
+	// Admin status endpoint (with Nacos info)
+	router.GET("/admin/status", func(c *gin.Context) {
+		status := gin.H{
+			"service":     "alert-service",
+			"version":     version,
+			"status":      "healthy",
+			"tls_enabled": tls.LoadFromEnv().Enabled,
+		}
+
+		if nacosClient != nil {
+			config := nacosClient.GetConfig()
+			status["nacos"] = true
+			status["config"] = gin.H{
+				"pipelineEnabled": config.Pipeline.Enabled,
+			}
+		} else {
+			status["nacos"] = false
+		}
+
+		c.JSON(http.StatusOK, status)
+	})
+
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 	handler.RegisterAll(v1,
@@ -256,6 +303,11 @@ func main() {
 	// Cancel context to stop Kafka consumer
 	cancel()
 
+	// Cleanup Nacos
+	if nacosClient != nil {
+		nacosClient.Close()
+	}
+
 	// Stop Kafka consumer
 	if kafkaConsumer != nil {
 		if err := kafkaConsumer.Stop(); err != nil {
@@ -272,6 +324,33 @@ func main() {
 	}
 
 	logger.Info("Server exited")
+}
+
+func initNacosClient(servicePort int, logger *zap.Logger) (*nacos.Client, error) {
+	nacosServer := os.Getenv("NACOS_SERVER")
+	if nacosServer == "" {
+		return nil, fmt.Errorf("NACOS_SERVER not set")
+	}
+
+	serverAddr, serverPort := nacos.ParseServerAddr(nacosServer)
+
+	serviceIP := os.Getenv("SERVICE_IP")
+	if serviceIP == "" {
+		serviceIP = "127.0.0.1"
+	}
+
+	nacosCfg := &nacos.Config{
+		ServerAddr:  serverAddr,
+		ServerPort:  serverPort,
+		NamespaceID: os.Getenv("NACOS_NAMESPACE"),
+		Username:    os.Getenv("NACOS_USERNAME"),
+		Password:    os.Getenv("NACOS_PASSWORD"),
+		ServiceName: "alert-service",
+		ServiceIP:   serviceIP,
+		ServicePort: uint64(servicePort),
+	}
+
+	return nacos.NewClient(nacosCfg, logger)
 }
 
 func initLogger(cfg config.LoggingConfig) *zap.Logger {
