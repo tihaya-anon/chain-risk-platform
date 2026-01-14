@@ -44,6 +44,13 @@
             <scope>${flink.scope}</scope>
         </dependency>
 
+        <!-- Flink CEP for MEV detection -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-cep</artifactId>
+            <scope>${flink.scope}</scope>
+        </dependency>
+
         <!-- Flink Connectors -->
         <dependency>
             <groupId>org.apache.flink</groupId>
