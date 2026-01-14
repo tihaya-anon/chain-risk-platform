@@ -1,0 +1,46 @@
+# Mixed Workload Scenario: Realistic traffic patterns
+name: mixed-workload
+duration: 15m
+
+workloads:
+  # High frequency: Address lookups (read-heavy)
+  - service: query-service
+    endpoint: /api/v1/addresses/0x28c6c06298d514db089934071355e5743bf21d60
+    method: GET
+    pattern: diurnal
+    rps_start: 20  # base RPS
+    rps_end: 100   # peak RPS
+    timeout: 5s
+
+  # Medium frequency: Risk scoring (compute-heavy)
+  - service: risk-ml-service
+    endpoint: /api/v1/risk/score
+    method: POST
+    pattern: constant
+    rps: 25
+    body: '{"address": "0x28c6c06298d514db089934071355e5743bf21d60", "network": "ethereum"}'
+    timeout: 10s
+
+  # Low frequency: Graph queries (I/O-heavy)
+  - service: graph-service
+    endpoint: /api/v1/addresses/0x28c6c06298d514db089934071355e5743bf21d60/neighbors
+    method: GET
+    pattern: constant
+    rps: 15
+    timeout: 15s
+
+  # Aggregation: BFF orchestration
+  - service: bff
+    endpoint: /api/v1/orchestration/address-analysis/0x28c6c06298d514db089934071355e5743bf21d60
+    method: GET
+    pattern: constant
+    rps: 10
+    timeout: 20s
+
+  # Background: Alert polling
+  - service: alert-service
+    endpoint: /api/v1/alerts
+    method: GET
+    pattern: constant
+    rps: 5
+    timeout: 5s

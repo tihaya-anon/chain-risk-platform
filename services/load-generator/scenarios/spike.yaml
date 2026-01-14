@@ -1,0 +1,35 @@
+# Spike Scenario: Tests burst handling and recovery
+name: spike-test
+duration: 10m
+
+workloads:
+  - service: query-service
+    endpoint: /api/v1/addresses/0x28c6c06298d514db089934071355e5743bf21d60
+    method: GET
+    pattern: spike
+    rps: 50
+    spike_at: 3m
+    spike_duration: 1m
+    spike_multiplier: 10
+    timeout: 5s
+
+  - service: risk-ml-service
+    endpoint: /api/v1/risk/score
+    method: POST
+    pattern: spike
+    rps: 30
+    spike_at: 4m
+    spike_duration: 30s
+    spike_multiplier: 8
+    body: '{"address": "0x28c6c06298d514db089934071355e5743bf21d60", "network": "ethereum"}'
+    timeout: 10s
+
+  - service: bff
+    endpoint: /api/v1/orchestration/address-profile/0x28c6c06298d514db089934071355e5743bf21d60
+    method: GET
+    pattern: spike
+    rps: 20
+    spike_at: 5m
+    spike_duration: 1m
+    spike_multiplier: 5
+    timeout: 15s

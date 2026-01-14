@@ -1,0 +1,315 @@
+# SLO Recording Rules and Alerts
+# Implements multi-window burn rate alerting per Google SRE best practices
+
+groups:
+  - name: slo_recording_rules
+    interval: 30s
+    rules:
+      # ============== SLI Recording Rules ==============
+      
+      # Query Service: Availability SLI
+      - record: query_service:sli_availability
+        expr: |
+          sum(rate(query_service_http_requests_total{status=~"2.."}[5m]))
+          /
+          clamp_min(sum(rate(query_service_http_requests_total[5m])), 0.001)
+
+      # Query Service: Latency SLI (% requests < 200ms)
+      - record: query_service:sli_latency
+        expr: |
+          sum(rate(query_service_http_request_duration_seconds_bucket{le="0.2"}[5m]))
+          /
+          clamp_min(sum(rate(query_service_http_request_duration_seconds_count[5m])), 0.001)
+
+      # Alert Service: Availability SLI
+      - record: alert_service:sli_availability
+        expr: |
+          sum(rate(alert_service_http_requests_total{status=~"2.."}[5m]))
+          /
+          clamp_min(sum(rate(alert_service_http_requests_total[5m])), 0.001)
+
+      # Alert Service: Latency SLI
+      - record: alert_service:sli_latency
+        expr: |
+          sum(rate(alert_service_http_request_duration_seconds_bucket{le="0.2"}[5m]))
+          /
+          clamp_min(sum(rate(alert_service_http_request_duration_seconds_count[5m])), 0.001)
+
+      # Risk ML Service: Availability SLI
+      - record: risk_ml_service:sli_availability
+        expr: |
+          sum(rate(risk_ml_service_http_requests_total{status=~"2.."}[5m]))
+          /
+          clamp_min(sum(rate(risk_ml_service_http_requests_total[5m])), 0.001)
+
+      # Risk ML Service: Latency SLI (% requests < 500ms)
+      - record: risk_ml_service:sli_latency
+        expr: |
+          sum(rate(risk_ml_service_http_request_duration_seconds_bucket{le="0.5"}[5m]))
+          /
+          clamp_min(sum(rate(risk_ml_service_http_request_duration_seconds_count[5m])), 0.001)
+
+      # Graph Service: Availability SLI
+      - record: graph_service:sli_availability
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="graph-service",status=~"2.."}[5m]))
+          /
+          clamp_min(sum(rate(http_server_requests_seconds_count{job="graph-service"}[5m])), 0.001)
+
+      # Graph Service: Latency SLI (% requests < 300ms)
+      - record: graph_service:sli_latency
+        expr: |
+          sum(rate(http_server_requests_seconds_bucket{job="graph-service",le="0.3"}[5m]))
+          /
+          clamp_min(sum(rate(http_server_requests_seconds_count{job="graph-service"}[5m])), 0.001)
+
+      # BFF: Availability SLI
+      - record: bff:sli_availability
+        expr: |
+          sum(rate(bff_http_requests_total{status=~"2.."}[5m]))
+          /
+          clamp_min(sum(rate(bff_http_requests_total[5m])), 0.001)
+
+      # BFF: Latency SLI (% requests < 500ms for aggregation)
+      - record: bff:sli_latency
+        expr: |
+          sum(rate(bff_http_request_duration_seconds_bucket{le="0.5"}[5m]))
+          /
+          clamp_min(sum(rate(bff_http_request_duration_seconds_count[5m])), 0.001)
+
+  - name: slo_error_budget
+    interval: 1m
+    rules:
+      # ============== Error Budget Calculations ==============
+      # SLO Targets (configurable):
+      #   Availability: 99.9% (error budget = 0.1%)
+      #   Latency: 99% (error budget = 1%)
+
+      # Query Service Error Budget Remaining (30-day window)
+      - record: query_service:error_budget_remaining_availability
+        expr: |
+          1 - (
+            (1 - avg_over_time(query_service:sli_availability[30d])) / 0.001
+          )
+
+      - record: query_service:error_budget_remaining_latency
+        expr: |
+          1 - (
+            (1 - avg_over_time(query_service:sli_latency[30d])) / 0.01
+          )
+
+      # Alert Service Error Budget Remaining
+      - record: alert_service:error_budget_remaining_availability
+        expr: |
+          1 - (
+            (1 - avg_over_time(alert_service:sli_availability[30d])) / 0.001
+          )
+
+      # Risk ML Service Error Budget Remaining
+      - record: risk_ml_service:error_budget_remaining_availability
+        expr: |
+          1 - (
+            (1 - avg_over_time(risk_ml_service:sli_availability[30d])) / 0.001
+          )
+
+      # Graph Service Error Budget Remaining
+      - record: graph_service:error_budget_remaining_availability
+        expr: |
+          1 - (
+            (1 - avg_over_time(graph_service:sli_availability[30d])) / 0.001
+          )
+
+      # BFF Error Budget Remaining
+      - record: bff:error_budget_remaining_availability
+        expr: |
+          1 - (
+            (1 - avg_over_time(bff:sli_availability[30d])) / 0.001
+          )
+
+  - name: slo_burn_rate
+    interval: 30s
+    rules:
+      # ============== Burn Rate Calculations ==============
+      # Burn Rate = (1 - SLI) / (1 - SLO Target)
+      # For 99.9% SLO: Burn Rate = Error Rate / 0.001
+
+      # Query Service Burn Rates (multiple windows)
+      - record: query_service:burn_rate_1h
+        expr: |
+          (1 - query_service:sli_availability) / 0.001
+
+      - record: query_service:burn_rate_6h
+        expr: |
+          (1 - avg_over_time(query_service:sli_availability[6h])) / 0.001
+
+      - record: query_service:burn_rate_1d
+        expr: |
+          (1 - avg_over_time(query_service:sli_availability[1d])) / 0.001
+
+      - record: query_service:burn_rate_3d
+        expr: |
+          (1 - avg_over_time(query_service:sli_availability[3d])) / 0.001
+
+      # Risk ML Service Burn Rates
+      - record: risk_ml_service:burn_rate_1h
+        expr: |
+          (1 - risk_ml_service:sli_availability) / 0.001
+
+      - record: risk_ml_service:burn_rate_6h
+        expr: |
+          (1 - avg_over_time(risk_ml_service:sli_availability[6h])) / 0.001
+
+      # Graph Service Burn Rates
+      - record: graph_service:burn_rate_1h
+        expr: |
+          (1 - graph_service:sli_availability) / 0.001
+
+      - record: graph_service:burn_rate_6h
+        expr: |
+          (1 - avg_over_time(graph_service:sli_availability[6h])) / 0.001
+
+      # BFF Burn Rates
+      - record: bff:burn_rate_1h
+        expr: |
+          (1 - bff:sli_availability) / 0.001
+
+      - record: bff:burn_rate_6h
+        expr: |
+          (1 - avg_over_time(bff:sli_availability[6h])) / 0.001
+
+  - name: slo_alerts
+    rules:
+      # ============== Multi-Window Burn Rate Alerts ==============
+      # Based on Google SRE recommendations:
+      # | Severity | Burn Rate | Long Window | Short Window | Time to Exhaust |
+      # |----------|-----------|-------------|--------------|-----------------|
+      # | Page     | 14.4x     | 1h          | 5m           | 2 days          |
+      # | Page     | 6x        | 6h          | 30m          | 5 days          |
+      # | Ticket   | 3x        | 1d          | 2h           | 10 days         |
+      # | Ticket   | 1x        | 3d          | 6h           | 30 days         |
+
+      # Critical: 14.4x burn rate (budget exhausts in ~2 days)
+      - alert: SLOBurnRateCritical
+        expr: |
+          (
+            query_service:burn_rate_1h > 14.4
+            and
+            (1 - query_service:sli_availability) > 0.001 * 14.4 * (5/60)
+          )
+          or
+          (
+            risk_ml_service:burn_rate_1h > 14.4
+            and
+            (1 - risk_ml_service:sli_availability) > 0.001 * 14.4 * (5/60)
+          )
+          or
+          (
+            bff:burn_rate_1h > 14.4
+            and
+            (1 - bff:sli_availability) > 0.001 * 14.4 * (5/60)
+          )
+        for: 2m
+        labels:
+          severity: critical
+          team: sre
+          alert_type: slo_burn_rate
+        annotations:
+          summary: "Critical SLO burn rate - budget exhausts in ~2 days"
+          description: |
+            Service is burning error budget at 14.4x the sustainable rate.
+            At this rate, the monthly error budget will be exhausted in ~2 days.
+            Immediate action required.
+          runbook_url: "https://wiki.chainrisk.io/runbooks/slo-burn-rate-critical"
+
+      # High: 6x burn rate (budget exhausts in ~5 days)
+      - alert: SLOBurnRateHigh
+        expr: |
+          (
+            query_service:burn_rate_6h > 6
+            and
+            avg_over_time((1 - query_service:sli_availability)[30m:]) > 0.001 * 6 * (30/60)
+          )
+          or
+          (
+            risk_ml_service:burn_rate_6h > 6
+            and
+            avg_over_time((1 - risk_ml_service:sli_availability)[30m:]) > 0.001 * 6 * (30/60)
+          )
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+          alert_type: slo_burn_rate
+        annotations:
+          summary: "High SLO burn rate - budget exhausts in ~5 days"
+          description: |
+            Service is burning error budget at 6x the sustainable rate.
+            Urgent investigation needed within business hours.
+
+      # Medium: 3x burn rate (ticket)
+      - alert: SLOBurnRateMedium
+        expr: |
+          (
+            query_service:burn_rate_1d > 3
+            and
+            avg_over_time((1 - query_service:sli_availability)[2h:]) > 0.001 * 3 * (2/24)
+          )
+        for: 15m
+        labels:
+          severity: info
+          team: sre
+          alert_type: slo_burn_rate
+        annotations:
+          summary: "Elevated SLO burn rate - create ticket for investigation"
+          description: |
+            Service is burning error budget at 3x the sustainable rate.
+            Schedule investigation for next business day.
+
+      # Error Budget Exhausted
+      - alert: ErrorBudgetExhausted
+        expr: |
+          query_service:error_budget_remaining_availability < 0
+          or
+          alert_service:error_budget_remaining_availability < 0
+          or
+          risk_ml_service:error_budget_remaining_availability < 0
+          or
+          graph_service:error_budget_remaining_availability < 0
+          or
+          bff:error_budget_remaining_availability < 0
+        for: 5m
+        labels:
+          severity: critical
+          team: sre
+          alert_type: error_budget
+        annotations:
+          summary: "Error budget exhausted"
+          description: |
+            Monthly error budget has been fully consumed.
+            No more errors can be tolerated without violating SLO.
+            Feature freeze recommended until budget recovers.
+
+      # Error Budget Low Warning
+      - alert: ErrorBudgetLow
+        expr: |
+          (
+            query_service:error_budget_remaining_availability < 0.2
+            and
+            query_service:error_budget_remaining_availability > 0
+          )
+          or
+          (
+            risk_ml_service:error_budget_remaining_availability < 0.2
+            and
+            risk_ml_service:error_budget_remaining_availability > 0
+          )
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+          alert_type: error_budget
+        annotations:
+          summary: "Error budget running low (<20% remaining)"
+          description: |
+            Less than 20% of monthly error budget remains.
+            Reduce risky deployments and prioritize reliability work.

@@ -1,0 +1,33 @@
+# Ramp Scenario: For USL (Universal Scalability Law) curve fitting
+# Gradually increases load to find throughput limits
+name: ramp-for-usl
+duration: 30m
+
+workloads:
+  - service: query-service
+    endpoint: /api/v1/addresses/0x28c6c06298d514db089934071355e5743bf21d60
+    method: GET
+    pattern: ramp
+    rps_start: 10
+    rps_end: 500
+    step_duration: 2m
+    timeout: 5s
+
+  - service: risk-ml-service
+    endpoint: /api/v1/risk/score
+    method: POST
+    pattern: ramp
+    rps_start: 5
+    rps_end: 200
+    step_duration: 2m
+    body: '{"address": "0x28c6c06298d514db089934071355e5743bf21d60", "network": "ethereum"}'
+    timeout: 10s
+
+  - service: graph-service
+    endpoint: /api/v1/addresses/0x28c6c06298d514db089934071355e5743bf21d60/neighbors
+    method: GET
+    pattern: ramp
+    rps_start: 5
+    rps_end: 150
+    step_duration: 2m
+    timeout: 10s

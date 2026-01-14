@@ -1,20 +1,8 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
+  "annotations": { "list": [] },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": null,
   "links": [],
   "liveNow": false,
@@ -24,7 +12,7 @@
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
       "id": 1,
       "panels": [],
-      "title": "Service Availability",
+      "title": "SLO Overview",
       "type": "row"
     },
     {
@@ -33,21 +21,20 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [],
+          "max": 1,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
-              { "color": "orange", "value": 0.99 },
-              { "color": "green", "value": 0.995 }
+              { "color": "yellow", "value": 0.99 },
+              { "color": "green", "value": 0.999 }
             ]
           },
-          "unit": "percentunit",
-          "min": 0.95,
-          "max": 1
-        },
-        "overrides": []
+          "unit": "percentunit"
+        }
       },
-      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
       "id": 2,
       "options": {
         "orientation": "auto",
@@ -55,16 +42,13 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "10.0.0",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_requests_total{service=\"query-service\",status!~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"query-service\"}[5m]))",
-          "legendFormat": "query-service",
+          "expr": "query_service:sli_availability",
           "refId": "A"
         }
       ],
-      "title": "Query Service (99.5% SLO)",
+      "title": "Query Service Availability",
       "type": "gauge"
     },
     {
@@ -72,77 +56,28 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "mappings": [],
+          "max": 1,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
-              { "color": "orange", "value": 0.98 },
-              { "color": "green", "value": 0.99 }
-            ]
-          },
-          "unit": "percentunit",
-          "min": 0.95,
-          "max": 1
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
-      "id": 3,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_requests_total{service=\"risk-ml-service\",status!~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"risk-ml-service\"}[5m]))",
-          "legendFormat": "risk-ml-service",
-          "refId": "A"
-        }
-      ],
-      "title": "Risk ML Service (99% SLO)",
-      "type": "gauge"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "orange", "value": 0.998 },
+              { "color": "yellow", "value": 0.99 },
               { "color": "green", "value": 0.999 }
             ]
           },
-          "unit": "percentunit",
-          "min": 0.95,
-          "max": 1
-        },
-        "overrides": []
+          "unit": "percentunit"
+        }
       },
-      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
-      "id": 4,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 3,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_requests_total{service=\"alert-service\",status!~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"alert-service\"}[5m]))",
-          "legendFormat": "alert-service",
+          "expr": "risk_ml_service:sli_availability",
           "refId": "A"
         }
       ],
-      "title": "Alert Service (99.9% SLO)",
+      "title": "Risk ML Availability",
       "type": "gauge"
     },
     {
@@ -150,289 +85,211 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "mappings": [],
+          "max": 1,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
-              { "color": "orange", "value": 0.98 },
-              { "color": "green", "value": 0.99 }
+              { "color": "yellow", "value": 0.99 },
+              { "color": "green", "value": 0.999 }
             ]
           },
-          "unit": "percentunit",
-          "min": 0.95,
-          "max": 1
-        },
-        "overrides": []
+          "unit": "percentunit"
+        }
       },
-      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
-      "id": 5,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 4,
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_server_requests_seconds_count{service=\"graph-service\",status!~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count{service=\"graph-service\"}[5m]))",
-          "legendFormat": "graph-service",
+          "expr": "alert_service:sli_availability",
           "refId": "A"
         }
       ],
-      "title": "Graph Service (99% SLO)",
+      "title": "Alert Service Availability",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.99 },
+              { "color": "green", "value": 0.999 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "graph_service:sli_availability",
+          "refId": "A"
+        }
+      ],
+      "title": "Graph Service Availability",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.99 },
+              { "color": "green", "value": 0.999 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "bff:sli_availability",
+          "refId": "A"
+        }
+      ],
+      "title": "BFF Availability",
       "type": "gauge"
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
-      "id": 6,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 10,
       "panels": [],
       "title": "Error Budget",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Error budget remaining (30-day). 100%=full, 0%=exhausted",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "mappings": [],
+          "max": 1,
+          "min": -0.5,
           "thresholds": {
-            "mode": "percentage",
+            "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
-              { "color": "orange", "value": 20 },
-              { "color": "green", "value": 50 }
+              { "color": "orange", "value": 0 },
+              { "color": "yellow", "value": 0.2 },
+              { "color": "green", "value": 0.5 }
             ]
           },
-          "unit": "percentunit",
-          "min": 0,
-          "max": 1
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 8 },
-      "id": 7,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "clamp_min(1 - ((1 - (sum(increase(http_requests_total{service=\"query-service\",status!~\"5..\"}[30d])) / sum(increase(http_requests_total{service=\"query-service\"}[30d])))) / 0.005), 0)",
-          "legendFormat": "Budget Remaining",
-          "refId": "A"
+          "unit": "percentunit"
         }
-      ],
-      "title": "Query Service Budget (30d)",
-      "type": "gauge"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "orange", "value": 20 },
-              { "color": "green", "value": 50 }
-            ]
-          },
-          "unit": "percentunit",
-          "min": 0,
-          "max": 1
-        },
-        "overrides": []
       },
-      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 8 },
-      "id": 8,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "clamp_min(1 - ((1 - (sum(increase(http_requests_total{service=\"risk-ml-service\",status!~\"5..\"}[30d])) / sum(increase(http_requests_total{service=\"risk-ml-service\"}[30d])))) / 0.01), 0)",
-          "legendFormat": "Budget Remaining",
-          "refId": "A"
-        }
-      ],
-      "title": "Risk ML Budget (30d)",
-      "type": "gauge"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "orange", "value": 20 },
-              { "color": "green", "value": 50 }
-            ]
-          },
-          "unit": "percentunit",
-          "min": 0,
-          "max": 1
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 8 },
-      "id": 9,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "clamp_min(1 - ((1 - (sum(increase(http_requests_total{service=\"alert-service\",status!~\"5..\"}[30d])) / sum(increase(http_requests_total{service=\"alert-service\"}[30d])))) / 0.001), 0)",
-          "legendFormat": "Budget Remaining",
-          "refId": "A"
-        }
-      ],
-      "title": "Alert Service Budget (30d)",
-      "type": "gauge"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "orange", "value": 20 },
-              { "color": "green", "value": 50 }
-            ]
-          },
-          "unit": "percentunit",
-          "min": 0,
-          "max": 1
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 8 },
-      "id": 10,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "clamp_min(1 - ((1 - (sum(increase(http_server_requests_seconds_count{service=\"graph-service\",status!~\"5..\"}[30d])) / sum(increase(http_server_requests_seconds_count{service=\"graph-service\"}[30d])))) / 0.01), 0)",
-          "legendFormat": "Budget Remaining",
-          "refId": "A"
-        }
-      ],
-      "title": "Graph Service Budget (30d)",
-      "type": "gauge"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 6 },
       "id": 11,
-      "panels": [],
-      "title": "Error Budget Burn Rate",
-      "type": "row"
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "expr": "query_service:error_budget_remaining_availability", "legendFormat": "query", "refId": "A" },
+        { "expr": "alert_service:error_budget_remaining_availability", "legendFormat": "alert", "refId": "B" },
+        { "expr": "risk_ml_service:error_budget_remaining_availability", "legendFormat": "risk-ml", "refId": "C" },
+        { "expr": "graph_service:error_budget_remaining_availability", "legendFormat": "graph", "refId": "D" },
+        { "expr": "bff:error_budget_remaining_availability", "legendFormat": "bff", "refId": "E" }
+      ],
+      "title": "Error Budget Remaining (30d)",
+      "type": "bargauge"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "line" }
-          },
-          "mappings": [],
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 },
+          "max": 1, "min": -0.5, "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 6, "w": 16, "x": 8, "y": 6 },
+      "id": 12,
+      "targets": [
+        { "expr": "query_service:error_budget_remaining_availability", "legendFormat": "query", "refId": "A" },
+        { "expr": "risk_ml_service:error_budget_remaining_availability", "legendFormat": "risk-ml", "refId": "B" },
+        { "expr": "bff:error_budget_remaining_availability", "legendFormat": "bff", "refId": "C" }
+      ],
+      "title": "Error Budget Trend",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 12 },
+      "id": 20,
+      "panels": [],
+      "title": "Burn Rate",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Burn rate: >14.4x=critical, >6x=high, >3x=medium",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "max": 20, "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "red", "value": 1 }
+              { "color": "yellow", "value": 3 },
+              { "color": "orange", "value": 6 },
+              { "color": "red", "value": 14.4 }
             ]
           },
           "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
-      "id": 12,
-      "options": {
-        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "(1 - (sum(rate(http_requests_total{service=\"query-service\",status!~\"5..\"}[1h])) / sum(rate(http_requests_total{service=\"query-service\"}[1h])))) / 0.005",
-          "legendFormat": "query-service",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "(1 - (sum(rate(http_requests_total{service=\"risk-ml-service\",status!~\"5..\"}[1h])) / sum(rate(http_requests_total{service=\"risk-ml-service\"}[1h])))) / 0.01",
-          "legendFormat": "risk-ml-service",
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "(1 - (sum(rate(http_requests_total{service=\"alert-service\",status!~\"5..\"}[1h])) / sum(rate(http_requests_total{service=\"alert-service\"}[1h])))) / 0.001",
-          "legendFormat": "alert-service",
-          "refId": "C"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "(1 - (sum(rate(http_server_requests_seconds_count{service=\"graph-service\",status!~\"5..\"}[1h])) / sum(rate(http_server_requests_seconds_count{service=\"graph-service\"}[1h])))) / 0.01",
-          "legendFormat": "graph-service",
-          "refId": "D"
         }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 13 },
+      "id": 21,
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": true },
+      "targets": [
+        { "expr": "query_service:burn_rate_1h", "legendFormat": "query (1h)", "refId": "A" },
+        { "expr": "risk_ml_service:burn_rate_1h", "legendFormat": "risk-ml (1h)", "refId": "B" },
+        { "expr": "bff:burn_rate_1h", "legendFormat": "bff (1h)", "refId": "C" }
       ],
-      "title": "Burn Rate (1 = on track, >1 = burning fast)",
+      "title": "Current Burn Rate (1h)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 13 },
+      "id": 22,
+      "targets": [
+        { "expr": "query_service:burn_rate_1h", "legendFormat": "query", "refId": "A" },
+        { "expr": "risk_ml_service:burn_rate_1h", "legendFormat": "risk-ml", "refId": "B" },
+        { "expr": "bff:burn_rate_1h", "legendFormat": "bff", "refId": "C" }
+      ],
+      "title": "Burn Rate Over Time",
       "type": "timeseries"
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
-      "id": 13,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "id": 30,
       "panels": [],
-      "title": "Latency Distribution",
+      "title": "SLI Details",
       "type": "row"
     },
     {
@@ -440,58 +297,20 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
-      "id": 14,
-      "options": {
-        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{service=\"query-service\"}[5m])) by (le))",
-          "legendFormat": "P50",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=\"query-service\"}[5m])) by (le))",
-          "legendFormat": "P95",
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service=\"query-service\"}[5m])) by (le))",
-          "legendFormat": "P99",
-          "refId": "C"
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 },
+          "max": 1, "min": 0.99, "unit": "percentunit"
         }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "id": 31,
+      "targets": [
+        { "expr": "query_service:sli_availability", "legendFormat": "query", "refId": "A" },
+        { "expr": "alert_service:sli_availability", "legendFormat": "alert", "refId": "B" },
+        { "expr": "risk_ml_service:sli_availability", "legendFormat": "risk-ml", "refId": "C" },
+        { "expr": "graph_service:sli_availability", "legendFormat": "graph", "refId": "D" },
+        { "expr": "bff:sli_availability", "legendFormat": "bff", "refId": "E" }
       ],
-      "title": "Query Service Latency",
+      "title": "Availability SLI",
       "type": "timeseries"
     },
     {
@@ -499,202 +318,31 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
-      "id": 15,
-      "options": {
-        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, sum(rate(ml_inference_duration_seconds_bucket{service=\"risk-ml-service\"}[5m])) by (le))",
-          "legendFormat": "P50",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(ml_inference_duration_seconds_bucket{service=\"risk-ml-service\"}[5m])) by (le))",
-          "legendFormat": "P95",
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, sum(rate(ml_inference_duration_seconds_bucket{service=\"risk-ml-service\"}[5m])) by (le))",
-          "legendFormat": "P99",
-          "refId": "C"
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1 },
+          "max": 1, "min": 0.95, "unit": "percentunit"
         }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "id": 32,
+      "targets": [
+        { "expr": "query_service:sli_latency", "legendFormat": "query (<200ms)", "refId": "A" },
+        { "expr": "risk_ml_service:sli_latency", "legendFormat": "risk-ml (<500ms)", "refId": "B" },
+        { "expr": "graph_service:sli_latency", "legendFormat": "graph (<300ms)", "refId": "C" },
+        { "expr": "bff:sli_latency", "legendFormat": "bff (<500ms)", "refId": "D" }
       ],
-      "title": "Risk ML Inference Latency",
+      "title": "Latency SLI",
       "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
-      "id": 16,
-      "panels": [],
-      "title": "SLO Compliance (7 Day)",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
-          "unit": "percentunit",
-          "min": 0.95,
-          "max": 1
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
-      "id": 17,
-      "options": {
-        "legend": { "calcs": ["mean", "min"], "displayMode": "table", "placement": "right", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_requests_total{service=\"query-service\",status!~\"5..\"}[1h])) / sum(rate(http_requests_total{service=\"query-service\"}[1h]))",
-          "legendFormat": "query-service (99.5%)",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_requests_total{service=\"risk-ml-service\",status!~\"5..\"}[1h])) / sum(rate(http_requests_total{service=\"risk-ml-service\"}[1h]))",
-          "legendFormat": "risk-ml-service (99%)",
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_requests_total{service=\"alert-service\",status!~\"5..\"}[1h])) / sum(rate(http_requests_total{service=\"alert-service\"}[1h]))",
-          "legendFormat": "alert-service (99.9%)",
-          "refId": "C"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_server_requests_seconds_count{service=\"graph-service\",status!~\"5..\"}[1h])) / sum(rate(http_server_requests_seconds_count{service=\"graph-service\"}[1h]))",
-          "legendFormat": "graph-service (99%)",
-          "refId": "D"
-        }
-      ],
-      "title": "Availability Trend",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
-      "id": 18,
-      "panels": [],
-      "title": "Circuit Breaker Status",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [
-            { "options": { "0": { "color": "green", "index": 0, "text": "CLOSED" } }, "type": "value" },
-            { "options": { "1": { "color": "yellow", "index": 1, "text": "HALF-OPEN" } }, "type": "value" },
-            { "options": { "2": { "color": "red", "index": 2, "text": "OPEN" } }, "type": "value" }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "red", "value": 2 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 41 },
-      "id": 19,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "horizontal",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "value_and_name"
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "circuit_breaker_state{service=\"query-service\"}",
-          "legendFormat": "{{name}}",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "circuit_breaker_state{service=\"alert-service\"}",
-          "legendFormat": "{{name}}",
-          "refId": "B"
-        }
-      ],
-      "title": "Circuit Breaker States",
-      "type": "stat"
     }
   ],
   "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["slo", "sre", "availability"],
+  "tags": ["slo", "error-budget", "burn-rate", "phase17"],
   "templating": { "list": [] },
-  "time": { "from": "now-7d", "to": "now" },
+  "time": { "from": "now-24h", "to": "now" },
   "timepicker": {},
-  "timezone": "browser",
+  "timezone": "",
   "title": "SLO Overview",
-  "uid": "slo-overview",
-  "version": 1,
-  "weekStart": ""
+  "uid": "slo-overview-v2",
+  "version": 1
 }
