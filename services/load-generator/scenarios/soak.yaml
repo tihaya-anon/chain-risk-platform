@@ -1,0 +1,40 @@
+# Soak Scenario: Long-duration test for memory leaks and stability
+name: soak-test
+duration: 2h
+
+workloads:
+  - service: query-service
+    endpoint: /api/v1/addresses/0x28c6c06298d514db089934071355e5743bf21d60
+    method: GET
+    pattern: constant
+    rps: 30
+    timeout: 5s
+
+  - service: risk-ml-service
+    endpoint: /api/v1/risk/score
+    method: POST
+    pattern: constant
+    rps: 20
+    body: '{"address": "0x28c6c06298d514db089934071355e5743bf21d60", "network": "ethereum"}'
+    timeout: 10s
+
+  - service: alert-service
+    endpoint: /api/v1/alerts
+    method: GET
+    pattern: constant
+    rps: 10
+    timeout: 5s
+
+  - service: graph-service
+    endpoint: /api/v1/addresses/0x28c6c06298d514db089934071355e5743bf21d60/neighbors
+    method: GET
+    pattern: constant
+    rps: 15
+    timeout: 10s
+
+  - service: bff
+    endpoint: /api/v1/orchestration/address-profile/0x28c6c06298d514db089934071355e5743bf21d60
+    method: GET
+    pattern: constant
+    rps: 10
+    timeout: 15s
