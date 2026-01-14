@@ -17,6 +17,7 @@ MVN_SKIP_TESTS := -DskipTests
 LOAD_ENV := set -a && source .env.local && source ./scripts/load-env.sh > /dev/null &&
 
 DIR_INGESTION := data-ingestion
+DIR_MEMPOOL := mempool-collector
 DIR_QUERY := services/query-service
 DIR_ALERT := services/alert-service
 DIR_RISK := services/risk-ml-service
@@ -26,6 +27,7 @@ DIR_FLINK := processing/stream-processor
 DIR_BATCH := processing/batch-processor
 DIR_FRONTEND := frontend
 DIR_OTEL := infra/otel
+DIR_LOADGEN := tools/load-generator
 
 OTEL_AGENT := $(DIR_OTEL)/opentelemetry-javaagent.jar
 OTEL_CONFIG := $(DIR_OTEL)/otel-agent.properties
@@ -63,6 +65,9 @@ help:
 	@echo "🔧 Services: {name}-{build,run,test,clean}"
 	@echo "  ingestion, query, alert, risk, bff, graph"
 	@echo ""
+	@echo "📡 Data Collectors:"
+	@echo "  mempool-{build,run}  Mempool collector"
+	@echo ""
 	@echo "⚡ Processing: flink-{build,run,stop}, batch-{build,archive,...}"
 	@echo ""
 	@echo "🔐 Vault: vault-{init,status,unseal}"
@@ -71,4 +76,5 @@ help:
 	@echo "🧪 Testing:"
 	@echo "  test-e2e, test-integration, validate-phase10"
 	@echo "  run-svc/stop-svc - local service runner"
+	@echo "  loadgen-{build,run} - load generator"
 	@echo ""

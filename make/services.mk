@@ -1,6 +1,8 @@
 # Service Build/Run Commands
 
+# ============================================
 # Data Ingestion (Go)
+# ============================================
 ingestion-build:
 	@cd $(DIR_INGESTION) && mkdir -p bin && go build -o bin/ingestion ./cmd/ingestion
 
@@ -26,7 +28,24 @@ generator-scenario: generator-build
 generator-stress: generator-build
 	@bash -c '$(LOAD_ENV) cd $(DIR_INGESTION) && ./bin/generator -mode=random -tps=100 -duration=$(or $(DURATION),60)'
 
+# ============================================
+# Mempool Collector (Go)
+# ============================================
+mempool-build:
+	@cd $(DIR_MEMPOOL) && mkdir -p bin && go build -o bin/mempool-collector ./cmd
+
+mempool-run: mempool-build
+	@bash -c '$(LOAD_ENV) cd $(DIR_MEMPOOL) && ./bin/mempool-collector'
+
+mempool-test:
+	@cd $(DIR_MEMPOOL) && go test ./...
+
+mempool-clean:
+	@rm -rf $(DIR_MEMPOOL)/bin
+
+# ============================================
 # Query Service (Go)
+# ============================================
 query-build:
 	@cd $(DIR_QUERY) && mkdir -p bin && go build -o bin/query ./cmd/...
 
@@ -39,7 +58,9 @@ query-test:
 query-clean:
 	@rm -rf $(DIR_QUERY)/bin
 
+# ============================================
 # Alert Service (Go)
+# ============================================
 alert-build:
 	@cd $(DIR_ALERT) && mkdir -p bin && go build -o bin/alert ./cmd/...
 
@@ -52,7 +73,9 @@ alert-test:
 alert-clean:
 	@rm -rf $(DIR_ALERT)/bin
 
+# ============================================
 # Risk ML Service (Python)
+# ============================================
 risk-build:
 	@cd $(DIR_RISK) && uv sync
 
@@ -65,7 +88,9 @@ risk-test:
 risk-clean:
 	@find $(DIR_RISK) -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# BFF Service (TypeScript) - Now includes orchestration
+# ============================================
+# BFF Service (TypeScript)
+# ============================================
 bff-build:
 	@cd $(DIR_BFF) && npm install && npm run build
 
@@ -78,7 +103,9 @@ bff-test:
 bff-clean:
 	@rm -rf $(DIR_BFF)/dist
 
+# ============================================
 # Graph Service (Java)
+# ============================================
 graph-build:
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn package $(MVN_SKIP_TESTS) $(MVN_QUIET)'
 
@@ -94,7 +121,9 @@ graph-test:
 graph-clean:
 	@bash -c 'cd $(DIR_GRAPH) && $(JAVA17_ENV) mvn clean $(MVN_QUIET)'
 
+# ============================================
 # Frontend (React)
+# ============================================
 frontend-build:
 	@cd $(DIR_FRONTEND) && npm install && npm run build
 
@@ -106,6 +135,21 @@ frontend-test:
 
 frontend-clean:
 	@rm -rf $(DIR_FRONTEND)/dist
+
+# ============================================
+# Load Generator (Go) - tools/
+# ============================================
+loadgen-build:
+	@cd $(DIR_LOADGEN) && mkdir -p bin && go build -o bin/load-generator ./cmd
+
+loadgen-run: loadgen-build
+	@bash -c '$(LOAD_ENV) cd $(DIR_LOADGEN) && ./bin/load-generator'
+
+loadgen-test:
+	@cd $(DIR_LOADGEN) && go test ./...
+
+loadgen-clean:
+	@rm -rf $(DIR_LOADGEN)/bin
 
 # NOTE: Orchestrator has been deprecated and merged into BFF.
 # The services/orchestrator directory is kept for reference but not built.
