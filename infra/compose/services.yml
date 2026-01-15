@@ -7,7 +7,7 @@ services:
     volumes:
       - ../../services/query-service/configs/config.docker.yaml:/app/configs/config.yaml:ro
     ports:
-      - "0.0.0.0:8081:8081"
+      - "0.0.0.0:18081:8081"
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,7 +32,7 @@ services:
     volumes:
       - ../../services/alert-service/configs/config.docker.yaml:/app/configs/config.yaml:ro
     ports:
-      - "0.0.0.0:8083:8083"
+      - "0.0.0.0:18083:8083"
     depends_on:
       postgres:
         condition: service_healthy
