@@ -56,17 +56,17 @@ security-down:
 # App Services
 services-up:
 	@echo "🚀 Starting application services..."
-	@docker-compose $(COMPOSE_SERVICES) up -d query-service alert-service risk-ml-service graph-service orchestrator bff
+	@docker-compose $(COMPOSE_SERVICES) up -d query-service alert-service risk-ml-service graph-service bff
 	@echo "✅ Services started"
 
 services-down:
-	@docker-compose $(COMPOSE_SERVICES) stop query-service alert-service risk-ml-service graph-service orchestrator bff
+	@docker-compose $(COMPOSE_SERVICES) stop query-service alert-service risk-ml-service graph-service bff
 
 services-ps:
 	@docker-compose $(COMPOSE_SERVICES) ps
 
 services-logs:
-	@docker-compose $(COMPOSE_SERVICES) logs -f query-service alert-service risk-ml-service graph-service orchestrator bff
+	@docker-compose $(COMPOSE_SERVICES) logs -f query-service alert-service risk-ml-service graph-service bff
 
 # All
 up-all:
@@ -81,7 +81,7 @@ ps-all:
 	@docker-compose $(COMPOSE_ALL) ps
 
 # Build
-docker-build: docker-build-query docker-build-alert docker-build-risk docker-build-graph docker-build-orchestrator docker-build-bff
+docker-build: docker-build-query docker-build-alert docker-build-risk docker-build-graph docker-build-bff docker-build-mempool
 	@echo "✅ All images built"
 
 docker-build-query:
@@ -100,13 +100,13 @@ docker-build-graph:
 	@echo "🐳 Building graph-service..."
 	@docker build -t $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) $(DIR_GRAPH)
 
-docker-build-orchestrator:
-	@echo "🐳 Building orchestrator..."
-	@docker build -t $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) $(DIR_ORCHESTRATOR)
-
 docker-build-bff:
 	@echo "🐳 Building bff..."
 	@docker build -t $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) $(DIR_BFF)
+
+docker-build-mempool:
+	@echo "🐳 Building mempool-collector..."
+	@docker build -t $(DOCKER_REGISTRY)/mempool-collector:$(DOCKER_TAG) $(DIR_MEMPOOL)
 
 docker-clean:
 	@echo "🧹 Cleaning images..."
@@ -114,6 +114,6 @@ docker-clean:
 	@docker rmi $(DOCKER_REGISTRY)/alert-service:$(DOCKER_TAG) 2>/dev/null || true
 	@docker rmi $(DOCKER_REGISTRY)/risk-ml-service:$(DOCKER_TAG) 2>/dev/null || true
 	@docker rmi $(DOCKER_REGISTRY)/graph-service:$(DOCKER_TAG) 2>/dev/null || true
-	@docker rmi $(DOCKER_REGISTRY)/orchestrator:$(DOCKER_TAG) 2>/dev/null || true
 	@docker rmi $(DOCKER_REGISTRY)/bff:$(DOCKER_TAG) 2>/dev/null || true
+	@docker rmi $(DOCKER_REGISTRY)/mempool-collector:$(DOCKER_TAG) 2>/dev/null || true
 	@echo "✅ Cleaned"
