@@ -4,6 +4,9 @@ WORKDIR /app
 
 RUN apk add --no-cache gcc musl-dev
 
+# Set GOTOOLCHAIN to auto to allow automatic toolchain upgrades
+ENV GOTOOLCHAIN=auto
+
 COPY go.mod go.sum* ./
 RUN go mod download || true
 

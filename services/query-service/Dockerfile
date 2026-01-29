@@ -4,6 +4,9 @@ WORKDIR /app
 
 RUN apk --no-cache add ca-certificates tzdata
 
+# Set GOTOOLCHAIN to auto to allow automatic toolchain upgrades
+ENV GOTOOLCHAIN=auto
+
 COPY go.mod go.sum ./
 RUN go mod download
 
