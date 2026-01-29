@@ -21,12 +21,21 @@ docs/
 ├── getting-started/       # Environment setup
 ├── architecture/          # System design & decisions
 ├── api-specs/             # OpenAPI specs
-├── development/           # Implementation guides
+├── development/           # Implementation guides & phase plans
+│   ├── guides/           # Development guides
+│   ├── plans/            # Phase plans (including Phase 19)
+│   └── troubleshooting/  # Troubleshooting guides
 ├── operations/            # Runbooks & policies
+│   ├── runbooks/         # Operational runbooks
+│   ├── postmortems/      # Incident postmortems (Phase 19)
+│   ├── policies/         # Operational policies
+│   └── testing/          # Testing procedures
 ├── sre/                   # SLO definitions & chaos testing
+│   ├── runbooks/         # SRE runbooks
+│   └── capacity-planning/ # Capacity planning (Phase 19)
 ├── performance/           # Baseline reports
-├── security/              # Security reports
-└── archive/               # Historical phase docs
+├── business/              # Business domain knowledge
+└── archive/               # Historical phase docs (Phase 1-18)
 ```
 
 ---
@@ -37,9 +46,10 @@ docs/
 |------|-------|-----------|
 | AI Assistant | [AI Context](../AI_CONTEXT.md) | [Roadmap](./ROADMAP.md) |
 | New Dev | [Quick Start](./getting-started/QUICK_START.md) | [Overview](./architecture/overview/PROJECT_OVERVIEW.md) |
-| Backend | [API Specs](./api-specs/API_SPECS_QUICK_REF.md) | [Dev SOP](./operations/runbooks/DEV_SOP.md) |
+| Backend | [API Specs](./api-specs/API_SPECS_GUIDE.md) | [Dev SOP](./operations/runbooks/DEV_SOP.md) |
 | SRE | [SLO Defs](./sre/SLO_DEFINITIONS.md) | [Runbooks](./sre/runbooks/) |
-| DevOps | [CI/CD](../.github/workflows/) | [Deploy](../scripts/deploy/) |
+| DevOps | [CI/CD](../.github/workflows/) | [K8s Guide](../infra/k8s/README.md) |
+| Platform Engineer | [Phase 19 Plan](./development/plans/PHASE19_PLATFORM_ENGINEERING.md) | [Architecture](./architecture/) |
 
 ---
 
@@ -58,7 +68,7 @@ docs/
 
 ## Project Status
 
-**All Phases Complete** - Production Ready
+**Current Phase: 19 - Platform Engineering** 🔄
 
 | Phase | Status | Description |
 |-------|--------|-------------|
@@ -68,7 +78,12 @@ docs/
 | 14 | ✅ | CI/CD Pipeline |
 | 15 | ✅ | Performance Testing |
 | 16 | ✅ | BFF Consolidation |
+| 17 | ✅ | AIOps Foundation |
+| 18 | ✅ | MEV Detection + K8s |
+| **19** | **🔄** | **Platform Engineering & Production Readiness** |
+
+**See**: [Phase 19 Plan](development/plans/PHASE19_PLATFORM_ENGINEERING.md)
 
 ---
 
-**Version**: v0.17.0 | **Updated**: 2026-01-14
+**Version**: v0.19.0 (In Progress) | **Updated**: 2026-01-29
