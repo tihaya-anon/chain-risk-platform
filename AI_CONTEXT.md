@@ -8,25 +8,38 @@
 |------|-------|
 | Repo | `tihaya-anon/chain-risk-platform` |
 | Version | v0.18.0 |
-| Platform | On-chain Security Monitoring |
+| Platform | Multi-language Microservices + DevOps/SRE |
+| Focus | Backend Architecture, Real-time Processing, K8s |
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│  On-chain Risk        │  Transaction Risk       │
-│  (Blockchain data)    │  (Mempool data)         │
-│  Latency: seconds     │  Latency: milliseconds  │
-└─────────────────────────────────────────────────┘
-          ↓                       ↓
-      Kafka ────────────────── Kafka
-          ↓                       ↓
-    Flink/Spark ───────────── Flink CEP
-          ↓                       ↓
-      Alert Service ←─────────────┘
+┌─────────────────────────────────────────────────────────┐
+│              Multi-language Microservices               │
+│  TypeScript (Gateway) │ Go (APIs) │ Python (ML) │ Java  │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│         Message Queue (Kafka) + Cache (Redis)           │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│    Stream Processing (Flink) + Batch (Spark)            │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│  Storage: PostgreSQL │ Neo4j │ Data Lake                │
+└─────────────────────────────────────────────────────────┘
 ```
+
+**Key Technical Highlights**:
+- Lambda Architecture (batch + stream processing)
+- Event-driven with Kafka
+- Real-time CEP (Complex Event Processing) with Flink
+- Distributed tracing & observability
+- Kubernetes deployment with GitOps
 
 ## Project Structure
 
@@ -51,14 +64,21 @@ tools/                 # Development tools
 
 ## Services
 
-| Service | Lang | Port | Role |
-|---------|------|------|------|
-| bff | TypeScript | 3001 | Gateway |
-| query-service | Go | 8081 | Queries |
-| risk-ml-service | Python | 8082 | ML |
-| alert-service | Go | 8083 | Alerts |
-| graph-service | Java | 8084 | Graph |
-| mempool-collector | Go | 9090 | Mempool |
+| Service | Lang | Port | Key Features |
+|---------|------|------|--------------|
+| bff | TypeScript/NestJS | 3001 | Gateway, Circuit Breaker, Rate Limiting, WebSocket |
+| query-service | Go/Gin | 8081 | RESTful API, PostgreSQL, Redis cache |
+| risk-ml-service | Python/FastAPI | 8082 | ML scoring, async processing |
+| alert-service | Go/Gin | 8083 | Real-time alerts, Kafka consumer |
+| graph-service | Java/Spring | 8084 | Neo4j graph analysis, JPA |
+| mempool-collector | Go | 9090 | WebSocket streaming, Kafka producer |
+
+**Tech Stack**:
+- **Languages**: TypeScript, Go, Python, Java
+- **Frameworks**: NestJS, Gin, FastAPI, Spring Boot
+- **Processing**: Flink (stream), Spark (batch)
+- **Storage**: PostgreSQL, Redis, Neo4j, Kafka
+- **Infra**: Docker, Kubernetes, Helm, ArgoCD
 
 ---
 
@@ -66,9 +86,16 @@ tools/                 # Development tools
 
 | Phase | Focus | Status |
 |-------|-------|--------|
-| 1-16 | Core + Security + CI/CD | ✅ |
-| 17 | AIOps Foundation | ✅ |
-| 18 | MEV Detection + K8s | ✅ |
+| 1-16 | Core Services + Security + CI/CD | ✅ |
+| 17 | Observability + SLO/Error Budget | ✅ |
+| 18 | Real-time Processing + K8s Migration | ✅ |
+
+**Portfolio Strengths**:
+- ✅ Multi-language backend (4 languages, 6 services)
+- ✅ DevOps/SRE practices (K8s, GitOps, Observability)
+- ✅ Real-time & batch processing (Flink/Spark)
+- ✅ Distributed systems patterns
+- ⚠️ Domain knowledge (blockchain as use case)
 
 ---
 
@@ -104,4 +131,4 @@ helm install <service> infra/k8s/charts/chain-risk-service -f infra/k8s/charts/v
 
 ---
 
-**Updated**: 2026-01-14
+**Updated**: 2026-01-29
