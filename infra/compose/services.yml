@@ -114,7 +114,7 @@ services:
     networks:
       - backend
 
-  # BFF - Now handles orchestration directly (migrated from Java orchestrator)
+  # BFF - API Gateway with WebSocket support
   bff:
     build: ../../services/bff
     image: chainrisk/bff:latest
@@ -125,6 +125,8 @@ services:
       RISK_SERVICE_URL: http://risk-ml-service:8082
       ALERT_SERVICE_URL: http://alert-service:8083
       GRAPH_SERVICE_URL: http://graph-service:8084
+      # Use internal Kafka listener (29092) for container-to-container communication
+      KAFKA_BROKERS: kafka:29092
       NACOS_SERVER: nacos:8848
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
       OTEL_SERVICE_NAME: bff
@@ -140,6 +142,8 @@ services:
         condition: service_healthy
       graph-service:
         condition: service_healthy
+      kafka:
+        condition: service_started
       nacos:
         condition: service_healthy
     healthcheck:

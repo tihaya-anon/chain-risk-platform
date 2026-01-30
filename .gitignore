@@ -49,6 +49,7 @@ secrets/
 
 # Large data
 tests/integration/fixtures/ethereum/
+tests/integration/fixtures/mempool/
 
 # OTel agent (downloaded at runtime)
 infra/otel/opentelemetry-javaagent.jar
