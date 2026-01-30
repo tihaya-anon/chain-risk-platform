@@ -1,89 +1,86 @@
 # Chain Risk Platform - Documentation
 
-## Quick Start
+## Quick Navigation
 
-```bash
-git clone <repo-url> && cd chain-risk-platform
-echo "DOCKER_HOST_IP=<remote-ip>" > .env.local
-source scripts/load-env.sh
-make infra-check
-make query-run
-```
-
-**Reading order**: [AI Context](../AI_CONTEXT.md) → [Quick Start](./getting-started/QUICK_START.md) → [Architecture](./architecture/overview/PROJECT_OVERVIEW.md)
+| Purpose | Document |
+|---------|----------|
+| Project Overview | [AI_CONTEXT.md](../AI_CONTEXT.md) |
+| Getting Started | [QUICK_START.md](getting-started/QUICK_START.md) |
+| Architecture | [PROJECT_OVERVIEW.md](architecture/overview/PROJECT_OVERVIEW.md) |
+| Roadmap | [ROADMAP.md](ROADMAP.md) |
 
 ---
 
-## Documentation Map
+## Structure
 
 ```
 docs/
-├── getting-started/       # Environment setup
-├── architecture/          # System design & decisions
-├── api-specs/             # OpenAPI specs
-├── development/           # Implementation guides & phase plans
-│   ├── guides/           # Development guides
-│   ├── plans/            # Phase plans (including Phase 19)
-│   └── troubleshooting/  # Troubleshooting guides
-├── operations/            # Runbooks & policies
-│   ├── runbooks/         # Operational runbooks
-│   ├── postmortems/      # Incident postmortems (Phase 19)
-│   ├── policies/         # Operational policies
-│   └── testing/          # Testing procedures
-├── sre/                   # SLO definitions & chaos testing
-│   ├── runbooks/         # SRE runbooks
-│   └── capacity-planning/ # Capacity planning (Phase 19)
-├── performance/           # Baseline reports
-├── business/              # Business domain knowledge
-└── archive/               # Historical phase docs (Phase 1-18)
+├── architecture/          # System design
+│   ├── overview/         # High-level architecture
+│   ├── components/       # Component deep-dives
+│   └── decisions/        # Tech decisions
+├── api-specs/            # OpenAPI specifications
+├── development/          # Development resources
+│   ├── plans/           # Current phase plans
+│   └── troubleshooting/ # Issue resolution
+├── operations/           # Operational docs
+│   ├── runbooks/        # Deployment & workflow
+│   ├── policies/        # Data policies
+│   └── testing/         # Test procedures
+├── sre/                  # SRE practices
+│   └── runbooks/        # Incident response
+├── business/             # Domain knowledge
+├── performance/          # Benchmarks
+└── archive/              # Historical (Phase 1-18)
 ```
 
 ---
 
-## By Role
+## Key Documents
 
-| Role | Start | Reference |
-|------|-------|-----------|
-| AI Assistant | [AI Context](../AI_CONTEXT.md) | [Roadmap](./ROADMAP.md) |
-| New Dev | [Quick Start](./getting-started/QUICK_START.md) | [Overview](./architecture/overview/PROJECT_OVERVIEW.md) |
-| Backend | [API Specs](./api-specs/API_SPECS_GUIDE.md) | [Dev SOP](./operations/runbooks/DEV_SOP.md) |
-| SRE | [SLO Defs](./sre/SLO_DEFINITIONS.md) | [Runbooks](./sre/runbooks/) |
-| DevOps | [CI/CD](../.github/workflows/) | [K8s Guide](../infra/k8s/README.md) |
-| Platform Engineer | [Phase 19 Plan](./development/plans/PHASE19_PLATFORM_ENGINEERING.md) | [Architecture](./architecture/) |
+### Architecture
+- [Project Overview](architecture/overview/PROJECT_OVERVIEW.md)
+- [Lambda Architecture](architecture/components/LAMBDA_ARCHITECTURE.md)
+- [BFF Architecture](architecture/components/BFF_ARCHITECTURE.md)
+- [Tech Decisions](architecture/decisions/TECH_DECISIONS.md)
 
----
+### Development
+- [Dev SOP](operations/runbooks/DEV_SOP.md)
+- [Git Workflow](operations/runbooks/GIT_WORKFLOW.md)
+- [Phase 19 Plan](development/plans/PHASE19_PLATFORM_ENGINEERING.md)
 
-## Infrastructure (Remote)
+### Operations
+- [Docker Deployment](operations/runbooks/DOCKER_DEPLOYMENT.md)
+- [Nacos Integration](operations/runbooks/NACOS_INTEGRATION.md)
+- [Integration Testing](operations/testing/THREE_PHASE_TESTING.md)
 
-| Service | Port |
-|---------|------|
-| Grafana | 13001 |
-| Prometheus | 19090 |
-| Jaeger | 26686 |
-| Kafka UI | 18080 |
-| Nacos | 18848 |
-| Airflow | 18088 |
+### SRE
+- [SLO Definitions](sre/SLO_DEFINITIONS.md)
+- [Chaos Scenarios](sre/CHAOS_SCENARIOS.md)
+- [Incident Runbooks](sre/runbooks/)
 
----
-
-## Project Status
-
-**Current Phase: 19 - Platform Engineering** 🔄
-
-| Phase | Status | Description |
-|-------|--------|-------------|
-| 1-11 | ✅ | Core platform |
-| 12 | ✅ | Observability & SRE |
-| 13 | ✅ | Security Hardening |
-| 14 | ✅ | CI/CD Pipeline |
-| 15 | ✅ | Performance Testing |
-| 16 | ✅ | BFF Consolidation |
-| 17 | ✅ | AIOps Foundation |
-| 18 | ✅ | MEV Detection + K8s |
-| **19** | **🔄** | **Platform Engineering & Production Readiness** |
-
-**See**: [Phase 19 Plan](development/plans/PHASE19_PLATFORM_ENGINEERING.md)
+### API
+- [API Specs Guide](api-specs/API_SPECS_GUIDE.md)
 
 ---
 
-**Version**: v0.19.0 (In Progress) | **Updated**: 2026-01-29
+## Services (Remote Docker)
+
+| Service | Port | Health |
+|---------|------|--------|
+| BFF | 3401 | /health |
+| Query | 18081 | /health |
+| Risk ML | 8082 | /health |
+| Alert | 18083 | /health |
+| Graph | 8084 | /actuator/health |
+
+---
+
+## Status
+
+**Version**: v0.19.0 | **Phase 19**: Platform Engineering
+
+| Phase | Content | Status |
+|-------|---------|--------|
+| 1-18 | Core Platform | ✅ |
+| **19** | **Platform Engineering** | 🔄 |
