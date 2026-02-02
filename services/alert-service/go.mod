@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/gin-gonic/gin v1.11.0
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.11.1
 	github.com/nacos-group/nacos-sdk-go/v2 v2.3.5
 	github.com/prometheus/client_golang v1.19.1
 	github.com/redis/go-redis/v9 v9.17.2
