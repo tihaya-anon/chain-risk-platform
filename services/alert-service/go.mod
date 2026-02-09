@@ -1,6 +1,6 @@
 module github.com/chain-risk-platform/alert-service
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/gin-gonic/gin v1.11.0
@@ -12,7 +12,7 @@ require (
 	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/viper v1.21.0
 	go.uber.org/zap v1.27.1
-	golang.org/x/time v0.1.0
+	golang.org/x/time v0.14.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
