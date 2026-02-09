@@ -8,7 +8,7 @@ require (
 	github.com/nacos-group/nacos-sdk-go/v2 v2.3.5
 	github.com/prometheus/client_golang v1.19.1
 	github.com/redis/go-redis/v9 v9.17.2
-	github.com/segmentio/kafka-go v0.4.49
+	github.com/segmentio/kafka-go v0.4.50
 	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/viper v1.21.0
 	go.uber.org/zap v1.27.1
